@@ -3,7 +3,7 @@
 Plugin Name: Digital Public Humanities Toolkit
 Plugin URI: http://diph.org/download
 Description: diPH is a flexible, repurposable, fully extensible digital public humanities toolkit designed for non-technical users.
-Version: 0.1.0
+Version: 0.1.1
 Author: diPH Team: Joe E Hope, Bryan Gaston, Pam Lach
 Author URI: http://diph.org/team
 License: GPLv2
@@ -23,45 +23,57 @@ License: GPLv2
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-add_action('admin_menu', 'myplugin_menu_pages');
 
-function myplugin_menu_pages() {
-    // Add the top-level admin menu
-    $page_title = 'My Plugin Settings';
-    $menu_title = 'My Plugin';
-    $capability = 'manage_options';
-    $menu_slug = 'myplugin-settings';
-    $function = 'myplugin_settings';
-    add_menu_page($page_title, $menu_title, $capability, $menu_slug, $function);
 
-    // Add submenu page with same slug as parent to ensure no duplicates
-    $sub_menu_title = 'Settings';
-    add_submenu_page($menu_slug, $page_title, $sub_menu_title, $capability, $menu_slug, $function);
 
-    // Now add the submenu page for Help
-    $submenu_page_title = 'My Plugin Help';
-    $submenu_title = 'Help';
-    $submenu_slug = 'myplugin-help';
-    $submenu_function = 'myplugin_help';
-    add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, $submenu_function);
+define( 'DIPH_NAME', 'Digital Public Humanities Toolkit' );
+define( 'DIPH_REQUIRED_PHP_VERSON', '5.2' );
+define( 'DIPH_REQUIRED_WP_VERSION', '3.1' );
 
-	add_submenu_page('edit.php', 'Custom Post Type Admin', 'Custom Settings', 'edit_posts', 'myplugin-edit', $submenu_function);
+/**
+ * Checks if the system requirements are met
+ * @return bool True if system requirements are met, false if not
+ */
+function diph_requirements_met()
+{
+	global $wp_version;
+	
+	if( version_compare( PHP_VERSION, DIPH_REQUIRED_PHP_VERSON, '<') )
+		return false;
+	
+	if( version_compare( $wp_version, DIPH_REQUIRED_WP_VERSION, "<") )
+		return false;
+	
+	return true;
 }
 
-function myplugin_settings() {
-    if (!current_user_can('manage_options')) {
-        wp_die('You do not have sufficient permissions to access this page.');
-    }
-
-    // Render the HTML for the Settings page or include a file that does
+/**
+ * Prints an error that the system requirements weren't met.
+ */
+function diph_requirements_not_met()
+{
+	global $wp_version;
+	
+	echo sprintf('
+		<div id="message" class="error">
+			<p>
+				%s <strong>requires PHP %s</strong> and <strong>WordPress %s</strong> in order to work. You\'re running PHP %s and WordPress %s. You\'ll need to upgrade in order to use this plugin. If you\'re not sure how to <a href="http://codex.wordpress.org/Switching_to_PHP5">upgrade to PHP 5</a> you can ask your hosting company for assistance, and if you need help upgrading WordPress you can refer to <a href="http://codex.wordpress.org/Upgrading_WordPress">the Codex</a>.
+			</p>
+		</div>',
+		DIPH_NAME,
+		DIPH_REQUIRED_PHP_VERSON,
+		DIPH_REQUIRED_WP_VERSION,
+		PHP_VERSION,
+		esc_html( $wp_version )
+	);
 }
 
-function myplugin_help() {
-    if (!current_user_can('manage_options')) {
-        wp_die('You do not have sufficient permissions to access this page.');
-    }
-
-    // Render the HTML for the Help page or include a file that does
+// Check requirements and instantiate
+if( diph_requirements_met() )
+{
+   include_once( dirname(__FILE__) . '/php/diph-core.php' );
 }
+else
+	add_action( 'admin_notices', 'diph_requirements_not_met' );
 
 ?>
