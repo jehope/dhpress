@@ -3,7 +3,7 @@
 Plugin Name: Digital Public Humanities Toolkit
 Plugin URI: http://diph.org/download
 Description: diPH is a flexible, repurposable, fully extensible digital public humanities toolkit designed for non-technical users.
-Version: 0.1.1
+Version: 0.1.2
 Author: diPH Team: Joe E Hope, Bryan Gaston, Pam Lach
 Author URI: http://diph.org/team
 License: GPLv2
