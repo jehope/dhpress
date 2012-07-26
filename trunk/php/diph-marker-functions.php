@@ -36,7 +36,7 @@ function diph_marker_init() {
     'has_archive' => true, 
     'hierarchical' => true,
     'menu_position' => null,
-    'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments' )
+    'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions' )
   ); 
   register_post_type('diph-markers',$args);
 }
@@ -67,92 +67,109 @@ function diph_marker_updated_messages( $messages ) {
 }
 add_filter( 'post_updated_messages', 'diph_marker_updated_messages' );
 
-// Add the Meta Box
-function add_custom_meta_box() {
-    add_meta_box(
-		'custom_meta_box', // $id
-		'Slider Content', // $title
-		'show_custom_meta_box', // $callback
-		'post', // $page
-		'normal', // $context
-		'high'); // $priority
+/*
+Sorts an array based on a specific key
+Courtesy of http://php.net/manual/en/function.sort.php
+*/
+function diph_array_sort($array, $on, $order=SORT_ASC)
+{
+    $new_array = array();
+    $sortable_array = array();
+
+    if (count($array) > 0) {
+        foreach ($array as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $k2 => $v2) {
+                    if ($k2 == $on) {
+                        $sortable_array[$k] = $v2;
+                    }
+                }
+            } else {
+                $sortable_array[$k] = $v;
+            }
+        }
+
+        switch ($order) {
+            case SORT_ASC:
+                asort($sortable_array);
+            break;
+            case SORT_DESC:
+                arsort($sortable_array);
+            break;
+        }
+
+        foreach ($sortable_array as $k => $v) {
+            $new_array[$k] = $array[$k];
+        }
+    }
+
+    return $new_array;
 }
-add_action('add_meta_boxes', 'add_custom_meta_box');
+
+function diph_get_projects() {
+
+	// I'm assuming that project titles will have already been trimmed, so I haven't included code to deal with that.  I can if you want.
+	global $wpdb;
+
+	$args = array( 
+		'post_type' => 'project',
+		'post_status' => 'publish'
+	);
+	
+	// Get array of all projects (as post objects)
+	$projects_query = get_posts ( $args );
+	
+	$projects_array = array();
+
+	// add project ID and project title to $projects array as ID=>title
+	foreach( $projects_query as $project ) {
+		$this_project = array(
+			'value' => $project->ID,
+			'label' => $project->post_title
+		);
+	
+		array_push( $projects_array, $this_project );
+	}
+	
+	$projects_array = diph_array_sort( $projects_array, 'label' );
+	return $projects_array;
+	
+}
+
+// an array of project IDs and titles as ID=>title
+$projects = diph_get_projects();
+
+// Add the Meta Box
+function add_diph_marker_settings_box() {
+    add_meta_box(
+		'diph_marker_settings_meta_box', 		// $id
+		'Marker Settings', 						// $title
+		'show_diph_marker_settings_box', 		// $callback
+		'diph-markers', 						// $page
+		'normal',								// $context
+		'high'); 								// $priority
+}
+add_action('add_meta_boxes', 'add_diph_marker_settings_box');
 // Field Array
 $prefix = 'marker_';
-$custom_meta_fields = array(
+$diph_marker_settings_fields = array(
 	array(
-		'label'=> 'Show as Slider',
-		'desc'	=> 'Check here to display post in slider format. Assign images that are 1000px x 500px in the Slide Image boxes to the right.',
-		'id'	=> $prefix.'true',
-		'type'	=> 'checkbox'
-	),
-	array(
-		'label'=> 'Project Date',
-		'desc'	=> 'Date of project.',
-		'id'	=> $prefix.'date',
-		'type'	=> 'text'
-	),
-	array(
-		'label'=> 'Project Type',
-		'desc'	=> 'Type of project.',
-		'id'	=> $prefix.'type',
-		'type'	=> 'text'
-	),
-	array(
-		'label'=> 'Client Name',
-		'desc'	=> 'Name of client.',
-		'id'	=> $prefix.'client',
-		'type'	=> 'text'
-	),
-	array(
-		'label'=> 'Website',
-		'desc'	=> 'URL for website.',
-		'id'	=> $prefix.'weblink',
-		'type'	=> 'text'
-	),
-	array(
-		'label'=> 'Profile Image',
-		'desc'	=> 'Put url of image here. No html code required.',
-		'id'	=> $prefix.'profile',
-		'type'	=> 'text'
-	),
-	array(
-		'label'=> 'Project Description',
-		'desc'	=> 'A description of the project.',
-		'id'	=> $prefix.'desc',
-		'type'	=> 'textarea'
-	),array(
-		'label'=> 'Previous Project Link',
-		'desc'	=> 'Url to previous project.',
-		'id'	=> $prefix.'prev_link',
-		'type'	=> 'text'
-	),array(
-		'label'=> 'Previous Link Text',
-		'desc'	=> 'Previous text to display below slider.',
-		'id'	=> $prefix.'prevtext_link',
-		'type'	=> 'text'
-	),array(
-		'label'=> 'Next Project Link',
-		'desc'	=> 'Url to next project.',
-		'id'	=> $prefix.'next_link',
-		'type'	=> 'text'
-	),array(
-		'label'=> 'Next Link Text',
-		'desc'	=> 'Next text to display below slider.',
-		'id'	=> $prefix.'nexttext_link',
-		'type'	=> 'text'
-	)
+		'label'=> 'Associated Project',
+		'desc'	=> 'Select which project this marker should belong to.',
+		'id'	=> $prefix .'project',
+		'type'	=> 'select',
+		'options' => $projects
+		)
 );
 // The Callback
-function show_custom_meta_box() {
-global $custom_meta_fields, $post;
+function show_diph_marker_settings_box() {
+global $diph_marker_settings_fields, $post;
 // Use nonce for verification
-echo '<input type="hidden" name="custom_meta_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
+echo '<input type="hidden" name="diph_marker_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
 
 	// Begin the field table and loop
 	echo '<table class="form-table">';
-	foreach ($custom_meta_fields as $field) {
+	foreach ($diph_marker_settings_fields as $field) {
 		// get value of this field if it exists for this post
 		$meta = get_post_meta($post->ID, $field['id'], true);
 		// begin a table row with
@@ -191,11 +208,11 @@ echo '<input type="hidden" name="custom_meta_box_nonce" value="'.wp_create_nonce
 }
 
 // Save the Data
-function save_custom_meta($post_id) {
-    global $custom_meta_fields;
+function save_diph_marker_settings($post_id) {
+    global $diph_marker_settings_fields;
 
 	// verify nonce
-	if (!wp_verify_nonce($_POST['custom_meta_box_nonce'], basename(__FILE__)))
+	if (!wp_verify_nonce($_POST['diph_marker_settings_box_nonce'], basename(__FILE__)))
 		return $post_id;
 	// check autosave
 	if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)
@@ -209,7 +226,7 @@ function save_custom_meta($post_id) {
 	}
 
 	// loop through fields and save the data
-	foreach ($custom_meta_fields as $field) {
+	foreach ($diph_marker_settings_fields as $field) {
 		$old = get_post_meta($post_id, $field['id'], true);
 		$new = $_POST[$field['id']];
 		if ($new && $new != $old) {
@@ -219,4 +236,21 @@ function save_custom_meta($post_id) {
 		}
 	} // end foreach
 }
-add_action('save_post', 'save_custom_meta');  
+add_action('save_post', 'save_diph_marker_settings');  
+
+// If we want to use revisions with markers, we need to add 'revisions' in 'supports' within the diph-marker-functions.php file.
+// Restore revision
+function diph_marker_restore_revision( $post_id, $revision_id ) {
+	global $diph_marker_settings_fields;
+	$post     = get_post( $post_id );
+	$revision = get_post( $revision_id );
+	foreach ($diph_marker_settings_fields as $field) {
+			$old = get_metadata( 'post', $revision->ID, $field['id'], true);
+			if ( false !== $old) {
+				update_post_meta($post_id, $field['id'], $old);
+			} else {
+				delete_post_meta($post_id, $field['id'] );
+			}
+		} // end foreach
+}
+add_action( 'wp_restore_post_revision', 'diph_marker_restore_revision', 10, 2 );
