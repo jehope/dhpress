@@ -121,7 +121,6 @@ function diph_get_projects() {
 	
 	$projects_array = array();
 
-	// add project ID and project title to $projects array as ID=>title
 	foreach( $projects_query as $project ) {
 		$this_project = array(
 			'value' => $project->ID,
@@ -136,7 +135,7 @@ function diph_get_projects() {
 	
 }
 
-// an array of project IDs and titles as ID=>title
+// an array of arrays containing 'value' and 'label' for each project
 $projects = diph_get_projects();
 
 // Add the Meta Box
@@ -210,7 +209,8 @@ echo '<input type="hidden" name="diph_marker_settings_box_nonce" value="'.wp_cre
 // Save the Data
 function save_diph_marker_settings($post_id) {
     global $diph_marker_settings_fields;
-
+	$parent_id = wp_is_post_revision( $post_id );
+	
 	// verify nonce
 	if (!wp_verify_nonce($_POST['diph_marker_settings_box_nonce'], basename(__FILE__)))
 		return $post_id;
@@ -224,21 +224,35 @@ function save_diph_marker_settings($post_id) {
 		} elseif (!current_user_can('edit_post', $post_id)) {
 			return $post_id;
 	}
-
-	// loop through fields and save the data
-	foreach ($diph_marker_settings_fields as $field) {
-		$old = get_post_meta($post_id, $field['id'], true);
-		$new = $_POST[$field['id']];
-		if ($new && $new != $old) {
-			update_post_meta($post_id, $field['id'], $new);
-		} elseif ('' == $new && $old) {
-			delete_post_meta($post_id, $field['id'], $old);
-		}
-	} // end foreach
+	if ( $parent_id ) {
+		// loop through fields and save the data
+		$parent  = get_post( $parent_id );
+		
+		foreach ($diph_marker_settings_fields as $field) {
+			$old = get_post_meta( $parent->ID, $field['id'], true);
+			$new = $_POST[$field['id']];
+			if ($new && $new != $old) {
+				update_metadata( 'post', $post_id, $field['id'], $new);
+			} elseif ('' == $new && $old) {
+				delete_metadata( 'post', $post_id, $field['id'], $old);
+			}
+		} // end foreach
+	}
+	else {
+		// loop through fields and save the data
+		foreach ($diph_marker_settings_fields as $field) {
+			$old = get_post_meta($post_id, $field['id'], true);
+			$new = $_POST[$field['id']];
+			if ($new && $new != $old) {
+				update_post_meta($post_id, $field['id'], $new);
+			} elseif ('' == $new && $old) {
+				delete_post_meta($post_id, $field['id'], $old);
+			}
+		} // end foreach
+	}
 }
 add_action('save_post', 'save_diph_marker_settings');  
 
-// If we want to use revisions with markers, we need to add 'revisions' in 'supports' within the diph-marker-functions.php file.
 // Restore revision
 function diph_marker_restore_revision( $post_id, $revision_id ) {
 	global $diph_marker_settings_fields;
