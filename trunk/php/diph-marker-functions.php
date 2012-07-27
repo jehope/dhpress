@@ -42,6 +42,23 @@ function diph_marker_init() {
 }
 add_action( 'init', 'diph_marker_init' );
 
+// Custom scripts to be run on Project new/edit pages only
+function add_diph_marker_admin_scripts( $hook ) {
+
+    global $post;
+
+    if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
+        if ( 'diph-markers' === $post->post_type ) {     
+			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			wp_enqueue_script(  'jquery' );
+             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+			 wp_enqueue_script(  'diph-marker-script', plugins_url('/js/diph-marker-admin.js', dirname(__FILE__) ));
+			 
+        }
+    }
+}
+add_action( 'admin_enqueue_scripts', 'add_diph_marker_admin_scripts', 10, 1 );
 //add filter to ensure the text Marker, or marker, is displayed when user updates a marker
 function diph_marker_updated_messages( $messages ) {
   global $post, $post_ID;
