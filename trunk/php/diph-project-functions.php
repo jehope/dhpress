@@ -38,7 +38,7 @@ function diph_project_init() {
     'has_archive' => true, 
     'hierarchical' => true,
     'menu_position' => null,
-    'supports' => array( 'title', 'author', 'thumbnail', 'excerpt', 'comments','revisions' )
+    'supports' => array( 'title', 'author', 'thumbnail', 'excerpt', 'comments','revisions', 'custom-fields' )
   ); 
   register_post_type('project',$args);
 }
@@ -76,7 +76,12 @@ function add_diph_project_admin_scripts( $hook ) {
 
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( 'project' === $post->post_type ) {     
-            wp_enqueue_script(  'diph-project-script', plugins_url('/js/diph-project-admin.js', dirname(__FILE__) ));
+			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			wp_enqueue_script(  'jquery' );
+             wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+			 wp_enqueue_script(  'diph-project-script', plugins_url('/js/diph-project-admin.js', dirname(__FILE__) ));
+			 
         }
     }
 }
@@ -93,15 +98,20 @@ function add_diph_project_settings_box() {
 		'high'); // $priority
 }
 add_action('add_meta_boxes', 'add_diph_project_settings_box');
+// Add the Icon Box
+function add_diph_project_icons_box() {
+    add_meta_box(
+		'diph_icons_box', // $id
+		'Marker Icons', // $title
+		'show_diph_project_icons_box', // $callback
+		'project', // $page
+		'side', // $context
+		'default'); // $priority
+}
+add_action('add_meta_boxes', 'add_diph_project_icons_box');
 // Field Array
 $prefix = 'project_';
 $diph_project_settings_fields = array(
-	array(
-		'label'=> 'Show as Slider',
-		'desc'	=> 'Check here to display post in slider format. Assign images that are 1000px x 500px in the Slide Image boxes to the right.',
-		'id'	=> $prefix.'true',
-		'type'	=> 'checkbox'
-	),
 	array(
 		'label'=> 'Project Date',
 		'desc'	=> 'Date of project.',
@@ -112,18 +122,6 @@ $diph_project_settings_fields = array(
 		'label'=> 'Project Type',
 		'desc'	=> 'Type of project.',
 		'id'	=> $prefix.'type',
-		'type'	=> 'text'
-	),
-	array(
-		'label'=> 'Client Name',
-		'desc'	=> 'Name of client.',
-		'id'	=> $prefix.'client',
-		'type'	=> 'text'
-	),
-	array(
-		'label'=> 'Website',
-		'desc'	=> 'URL for website.',
-		'id'	=> $prefix.'weblink',
 		'type'	=> 'text'
 	),
 	array(
@@ -138,32 +136,22 @@ $diph_project_settings_fields = array(
 		'id'	=> $prefix.'desc',
 		'type'	=> 'textarea'
 	),array(
-		'label'=> 'Previous Project Link',
-		'desc'	=> 'Url to previous project.',
-		'id'	=> $prefix.'prev_link',
-		'type'	=> 'text'
-	),array(
-		'label'=> 'Previous Link Text',
-		'desc'	=> 'Previous text to display below slider.',
-		'id'	=> $prefix.'prevtext_link',
-		'type'	=> 'text'
-	),array(
-		'label'=> 'Next Project Link',
-		'desc'	=> 'Url to next project.',
-		'id'	=> $prefix.'next_link',
-		'type'	=> 'text'
-	),array(
-		'label'=> 'Next Link Text',
-		'desc'	=> 'Next text to display below slider.',
-		'id'	=> $prefix.'nexttext_link',
-		'type'	=> 'text'
+		'label'=> 'Icons',
+		'desc'	=> 'Icons for categories.',
+		'id'	=> $prefix.'icons',
+		'type'	=> 'icons'
 	)
 );
+// The Callback
+function show_diph_project_icons_box() {
+	diph_deploy_icons();
+}
 // The Callback
 function show_diph_project_settings_box() {
 global $diph_project_settings_fields, $post;
 // Use nonce for verification
 echo '<input type="hidden" name="diph_project_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
+	echo '<div id="map-div"></div><button id="locate">Locate me!</button>';
 
 	// Begin the field table and loop
 	echo '<table class="form-table">';
@@ -171,38 +159,60 @@ echo '<input type="hidden" name="diph_project_settings_box_nonce" value="'.wp_cr
 		// get value of this field if it exists for this post
 		$meta = get_post_meta($post->ID, $field['id'], true);
 		// begin a table row with
-		echo '<tr>
-				<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
-				<td>';
+		
 				switch($field['type']) {
 					// case items will go here
 					// text
 					case 'text':
+						echo '<tr>
+							<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
+							<td>';
 						echo '<input type="text" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" size="30" />
 							<br /><span class="description">'.$field['desc'].'</span>';
+							echo '</td></tr>';
 					break;
 					// textarea
 					case 'textarea':
+						echo '<tr>
+							<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
+							<td>';
 						echo '<textarea name="'.$field['id'].'" id="'.$field['id'].'" cols="60" rows="4">'.$meta.'</textarea>
 							<br /><span class="description">'.$field['desc'].'</span>';
+							echo '</td></tr>';
 					break;
 					// checkbox
 					case 'checkbox':
+						echo '<tr>
+							<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
+							<td>';
 						echo '<input type="checkbox" name="'.$field['id'].'" id="'.$field['id'].'" ',$meta ? ' checked="checked"' : '','/>
 							<label for="'.$field['id'].'">'.$field['desc'].'</label>';
+							echo '</td></tr>';
 					break;
 					// select
 					case 'select':
+						echo '<tr>
+							<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
+							<td>';
 						echo '<select name="'.$field['id'].'" id="'.$field['id'].'">';
 						foreach ($field['options'] as $option) {
 							echo '<option', $meta == $option['value'] ? ' selected="selected"' : '', ' value="'.$option['value'].'">'.$option['label'].'</option>';
 						}
 						echo '</select><br /><span class="description">'.$field['desc'].'</span>';
+						echo '</td></tr>';
+					break;
+					// textarea
+					case 'icons':
+					
+						echo '<input type="hidden" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" />';
+		
 					break;
 				} //end switch
-		echo '</td></tr>';
+		
 	} // end foreach
 	echo '</table>'; // end table
+	
+	
 }
 
 // Save the Data
@@ -296,3 +306,47 @@ function diph_page_template( $page_template )
     return $page_template;
 }
 add_filter( 'single_template', 'diph_page_template' );
+
+/**
+ * Deploy the icons list to select one
+ */
+function diph_deploy_icons(){ 
+	
+	
+	$icon_path = DIPH_PLUGIN_URL.'/images/icons/';
+	$icon_dir = DIPH_PLUGIN_DIR.'/images/icons/';	
+	
+	$icons_array = array();
+	
+	
+	if ($handle = opendir($icon_dir)) {
+		
+		while (false !== ($file = readdir($handle))) {
+	
+			$file_type = wp_check_filetype($file);
+	
+			$file_ext = $file_type['ext'];
+		
+			if ($file != "." && $file != ".." && ($file_ext == 'gif' || $file_ext == 'jpg' || $file_ext == 'png') ) {
+				array_push($icons_array,$icon_path.$file);
+			}
+		}
+	}
+	?>
+          	   
+		<div id="diph_icon_cont">
+        	
+		<?php $i = 1; foreach ($icons_array as $icon){ ?>
+		  <div class="diph_icon" id="icon_<?php echo $i;?>">
+		  <img src="<?php echo $icon; $i++; ?>" /> 
+		  </div>
+		<?php } ?>
+        
+		 </div> 
+         <div id="icon-cats"><ul>
+         
+         </ul></div>
+         
+         	
+	<?php
+}

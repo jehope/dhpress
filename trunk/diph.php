@@ -29,7 +29,8 @@ License: GPLv2
 define( 'DIPH_NAME', 'Digital Public Humanities Toolkit' );
 define( 'DIPH_REQUIRED_PHP_VERSON', '5.2' );
 define( 'DIPH_REQUIRED_WP_VERSION', '3.1' );
-
+define( 'DIPH_PLUGIN_DIR', WP_PLUGIN_DIR."/".dirname(plugin_basename(__FILE__)) );
+define( 'DIPH_PLUGIN_URL', plugins_url('', __FILE__ ) );
 /**
  * Checks if the system requirements are met
  * @return bool True if system requirements are met, false if not

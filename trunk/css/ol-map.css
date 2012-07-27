@@ -1,0 +1,26 @@
+@charset "UTF-8";
+/* CSS Document */
+
+#map-div {
+        background : #7391ad;
+        width      : 100%;
+    }
+#map-div {
+        border : 0;
+        height : 250px;
+    }
+#diph_icon_cont {
+	min-height:50px;
+}
+.diph_icon {
+	cursor:pointer;
+	float:left;
+	width:24px;
+	height:24px;
+}
+.diph_icon img {
+	padding:2px
+}
+#diph_icon_cont .selected {
+	background:#999;
+}
