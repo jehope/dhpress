@@ -137,7 +137,11 @@ function diph_get_projects() {
 	$projects_query = get_posts ( $args );
 	
 	$projects_array = array();
-
+	$choose_project = array(
+			'value' => 0,
+			'label' => '---'
+		);
+	array_push( $projects_array, $choose_project );
 	foreach( $projects_query as $project ) {
 		$this_project = array(
 			'value' => $project->ID,
@@ -166,6 +170,38 @@ function add_diph_marker_settings_box() {
 		'high'); 								// $priority
 }
 add_action('add_meta_boxes', 'add_diph_marker_settings_box');
+
+// Add the Marker Icon Box
+function add_diph_marker_icon_box() {
+    add_meta_box(
+		'diph_marker_icon_box', 		// $id
+		'Marker Settings', 						// $title
+		'show_diph_marker_icon_box', 		// $callback
+		'diph-markers', 						// $page
+		'side',								// $context
+		'default'); 								// $priority
+}
+add_action('add_meta_boxes', 'add_diph_marker_icon_box');
+//Get the project id and it's marker icons
+function get_selected_project() {
+	global $diph_marker_settings_fields, $post;
+	foreach ($diph_marker_settings_fields as $field) {
+		// get value of this field if it exists for this post
+		if($field['id']=='marker_project') {
+			$meta = get_post_meta($post->ID, $field['id'], true);
+			foreach ($field['options'] as $option) {
+				if($meta == $option['value']) {
+					if ($option['value']==0) {return 'Pick a project';}
+					else {
+						get_project_icons($option['value']);
+					return $option['label'];
+					}
+				}
+				
+			}
+		}
+	}
+}
 // Field Array
 $prefix = 'marker_';
 $diph_marker_settings_fields = array(
@@ -177,6 +213,10 @@ $diph_marker_settings_fields = array(
 		'options' => $projects
 		)
 );
+// The icon settings callback
+function show_diph_marker_icon_box() {
+	echo get_selected_project();
+}
 // The Callback
 function show_diph_marker_settings_box() {
 global $diph_marker_settings_fields, $post;
@@ -285,3 +325,13 @@ function diph_marker_restore_revision( $post_id, $revision_id ) {
 		} // end foreach
 }
 add_action( 'wp_restore_post_revision', 'diph_marker_restore_revision', 10, 2 );
+function get_project_icons( $project_id ){
+		$icons = get_metadata( 'post', $project_id, 'project_icons', true);
+		$icon_array = explode(',',$icons);
+		echo '<div id="icon-cats"><ul>';
+			for ($i=0; $i<count($icon_array)-2; $i=$i+3) {
+		echo '<li><img src="'.$icon_array[$i+2].'"/><span>'.$icon_array[$i+1].'</span>';
+			}
+        echo  '</ul></div>';
+		 
+	}

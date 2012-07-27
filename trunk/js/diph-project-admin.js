@@ -204,7 +204,7 @@ loadSelectedIcons($('#project_icons').val());
 function loadSelectedIcons(loadvars){
 	var n = loadvars.split(',');
 	
-	for (i=0;i<n.length-1;i+=2){
+	for (i=0;i<n.length-1;i+=3){
 		var imgurl = $('#'+n[i]).find('img').attr('src');
 		$('#icon-cats ul').append('<li id="'+n[i]+'"><img src="'+ imgurl + '"/><input type="text" name="" id="icons_'+n[i]+'" value="'+n[i+1]+'"/><span class="remove">X</span></li>');
 		var selIcon = '#diph_icon_cont #'+n[i];
@@ -238,7 +238,7 @@ function doneTyping () {
     //do something
 	var icon_settings = '';
 	$('#icon-cats ul li').each(function() {
-		icon_settings += $(this).attr('id')+','+$(this).find('input').val()+',';
+		icon_settings += $(this).attr('id')+','+$(this).find('input').val()+','+$(this).find('img').attr('src')+',';
 	});
 	$('#project_icons').val(icon_settings);
 	//alert('done typing');
