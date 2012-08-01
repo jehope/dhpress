@@ -8,6 +8,8 @@ include_once( dirname(__FILE__) . '/diph-project-functions.php' );
 
 include_once( dirname(__FILE__) . '/diph-marker-functions.php' );
 
+require_once( dirname(__FILE__) . '/diph-map-library.php' );
+
 // action function for above hook
 function diph_add_pages() {
     // Add a new submenu under Settings:
@@ -40,14 +42,7 @@ function diph_toplevel_page() {
 	 echo "<p>" . __( 'Add map ids with descriptions here', 'diph-menu' ) . "</p>";
 }
 
-// mt_sublevel_page() displays the page content for the first submenu
-// of the custom Test Toplevel menu
-function diph_sublevel_page() {
-    echo "<h2>" . __( 'Map Layer Library', 'diph-menu' ) . "</h2>";
-	 echo "<p>" . __( 'Add map ids with descriptions here', 'diph-menu' ) . "</p>";
-	 echo "<p>" . __( 'Map ids should show up in dropdown on edit project pages', 'diph-menu' ) . "</p>";
-	 echo "<p>" . __( 'Projects should show up in dropdown on edit marker pages', 'diph-menu' ) . "</p>";
-}
+
 
 // mt_sublevel_page2() displays the page content for the second submenu
 // of the custom Test Toplevel menu
