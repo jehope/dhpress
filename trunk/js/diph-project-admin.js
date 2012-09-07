@@ -1,6 +1,6 @@
 // JavaScript Document
 
-//alert('here');
+//jQuery noconfilct wrapper fires when page has loaded
 jQuery(document).ready(function($) {
 var style = {
     fillColor: '#000',
@@ -8,6 +8,7 @@ var style = {
     strokeWidth: 0
 };
 
+//Build map and layers
 var map = new OpenLayers.Map('map-div');
 var layer = new OpenLayers.Layer.OSM( "Simple OSM Map");
 var vector = new OpenLayers.Layer.Vector('vector');
@@ -37,6 +38,7 @@ map.setCenter(
         map.getProjectionObject()
     ), 8
 );
+//click event listener--using this to test for variables need to set initial map view
 OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {                
                 defaultHandlerOptions: {
                     'single': true,
@@ -97,7 +99,9 @@ dragcontrol = new OpenLayers.Control.DragPan({'map':this.map, 'panMapDone':funct
     }});
     dragcontrol.draw();
     map.addControl(dragcontrol);
-    dragcontrol.activate();			
+    dragcontrol.activate();	
+	
+//Geolocation point and control		
 var pulsate = function(feature) {
     var point = feature.geometry.getCentroid(),
         bounds = feature.geometry.getBounds(),
@@ -189,6 +193,7 @@ var click = new OpenLayers.Control.Click();
 });
 //geolocate.activate();
 
+//Assign listener to icons loaded by php
 $('.diph_icon').click(function() {
 	
 		
@@ -201,6 +206,7 @@ $('.diph_icon').click(function() {
 		
 });
 loadSelectedIcons($('#project_icons').val());
+//Load icons that are stored in custom field
 function loadSelectedIcons(loadvars){
 	var n = loadvars.split(',');
 	
