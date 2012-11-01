@@ -19,7 +19,7 @@ function diph_add_pages() {
     add_menu_page(__('diPH Toolkit','diph-menu'), __('diPH Toolkit','diph-menu'), 'manage_options', 'diph-top-level-handle', 'diph_toplevel_page' );
 
     // Add a submenu to the custom top-level menu:
-    add_submenu_page('diph-top-level-handle', __('Map Library','diph-menu'), __('Map Library','diph-menu'), 'manage_options', 'map-library', 'diph_sublevel_page');
+    //add_submenu_page('diph-top-level-handle', __('Map Library','diph-menu'), __('Map Library','diph-menu'), 'manage_options', 'map-library', 'diph_sublevel_page');
 
     // Add a second submenu to the custom top-level menu:
     add_submenu_page('diph-top-level-handle', __('Icon Library','diph-menu'), __('Icon Library','diph-menu'), 'manage_options', 'icon-library', 'diph_sublevel_page2');

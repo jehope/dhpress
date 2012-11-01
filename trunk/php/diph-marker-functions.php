@@ -36,7 +36,7 @@ function diph_marker_init() {
     'has_archive' => true, 
     'hierarchical' => true,
     'menu_position' => null,
-    'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions' )
+    'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions','custom-fields' )
   ); 
   register_post_type('diph-markers',$args);
 }
@@ -55,6 +55,17 @@ function add_diph_marker_admin_scripts( $hook ) {
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 			 wp_enqueue_script(  'diph-marker-script', plugins_url('/js/diph-marker-admin.js', dirname(__FILE__) ));
 			 
+        }
+    }
+	if ( $hook == 'edit.php'  ) {
+        if ( 'diph-markers' === $post->post_type ) {     
+			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			wp_enqueue_script(  'jquery' );
+             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+			 wp_enqueue_script(  'diph-marker-script2', plugins_url('/js/diph-marker-admin2.js', dirname(__FILE__) ));
+			 wp_enqueue_style('thickbox');
+wp_enqueue_script('thickbox');
         }
     }
 }
@@ -224,7 +235,7 @@ global $diph_marker_settings_fields, $post;
 echo '<input type="hidden" name="diph_marker_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
 
 	// Begin the field table and loop
-	echo '<table class="form-table">';
+	echo '<table class="form-table" id="'.$post->ID.'">';
 	foreach ($diph_marker_settings_fields as $field) {
 		// get value of this field if it exists for this post
 		$meta = get_post_meta($post->ID, $field['id'], true);
@@ -261,6 +272,13 @@ echo '<input type="hidden" name="diph_marker_settings_box_nonce" value="'.wp_cre
 		echo '</td></tr>';
 	} // end foreach
 	echo '</table>'; // end table
+
+	//display selected project settings
+	$selected_project = get_post_meta($post->ID, 'marker_project', true);
+	if($selected_project) {
+		$project_settings = get_post_meta($selected_project, 'project_settings', true);
+		echo $project_settings;
+	}
 }
 
 // Save the Data
@@ -335,3 +353,99 @@ function get_project_icons( $project_id ){
         echo  '</ul></div>';
 		 
 	}
+function diphAddUpdateMetaField(){
+
+    //get data from our ajax() call
+    //$greeting = $_POST['greeting'];
+    $post_id = $_POST['post_id'];
+    $field = $_POST['motes'];
+
+    $motes = explode(',', $field);
+
+
+    $meta_key = 'test2';//.$field[''];
+    $meta_value = $motes[0];
+    $unique = 'false';
+	$parent_id = wp_is_post_revision( $post_id );
+
+    update_post_meta($post_id, $meta_key, $meta_value);
+
+    // Return String
+    //die($results);
+}
+
+// create custom Ajax call for WordPress
+//add_action( 'wp_ajax_nopriv_diphAddUpdateMetaField', 'diphAddUpdateMetaField' );
+add_action( 'wp_ajax_diphAddUpdateMetaField', 'diphAddUpdateMetaField' );
+
+function diphGetProjectSettings(){
+
+	$diph_project = $_POST['project'];
+
+	$project_settings = get_post_meta($diph_project, 'project_settings', true);
+	die($project_settings);
+}
+add_action( 'wp_ajax_diphGetProjectSettings', 'diphGetProjectSettings' );
+
+function diph_project_filters() {
+	global $typenow;
+ 
+	// an array of all the taxonomyies you want to display. Use the taxonomy name or slug
+	$diph_projects =  diph_get_projects();
+ 
+	// must set this to the post type you want the filter(s) displayed on
+	if( $typenow == 'diph-markers' ){
+ 
+			$terms = $diph_projects;
+			if(count($terms) > 0) {
+				echo "<select name='marker_project' id='marker_project' class='postform'>";
+				echo "<option value=''>Show All Projects</option>";
+				foreach ($terms as $term) { 
+					echo '<option value="'. $term['value'].'">' . $term['label'] .' </option>'; 
+				}
+				echo "</select>";
+			}
+		
+	}
+}
+add_action( 'restrict_manage_posts', 'diph_project_filters' );
+function ba_admin_posts_filter( $query )
+{
+    global $pagenow;
+    if ( is_admin() && $pagenow=='edit.php' && isset($_GET['marker_project']) && $_GET['marker_project'] != '') {
+        $query->query_vars['meta_key'] = $_GET['marker_project'];
+    if (isset($_GET['marker_project']) && $_GET['marker_project'] != '')
+        $query->query_vars['meta_value'] = $_GET['marker_project'];
+    }
+}
+add_filter( 'parse_query', 'ba_admin_posts_filter' );
+
+function add_new_columns($defaults) {
+	$new = array();
+  foreach($defaults as $key => $title) {
+
+    if ($key=='author') // Put the Thumbnail column before the Author column
+      $new['projects'] =  __('Project');
+    $new[$key] = $title;
+  }
+  return $new;
+   
+}
+function add_column_data( $column_name, $post_id ) {
+	
+	if( $column_name == 'projects' ) {
+		$_posttype 	= 'diph-markers';
+		$_taxonomy 	= 'region';
+		$terms 		= diph_get_projects();
+		$proj = get_post_meta($post_id, 'marker_project', true);
+		$projName = '';
+		if($proj) { 
+			$projName = get_the_title($proj);
+		}
+		
+		echo $projName;
+	}
+}
+add_filter( 'manage_diph-markers_posts_columns', 'add_new_columns' );
+
+add_action( 'manage_diph-markers_posts_custom_column', 'add_column_data', 10, 2 );

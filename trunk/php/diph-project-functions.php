@@ -78,9 +78,21 @@ function add_diph_project_admin_scripts( $hook ) {
         if ( 'project' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'diph-style', plugins_url('/css/diph-style.css',  dirname(__FILE__) ));
 			wp_enqueue_script(  'jquery' );
-             wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 			 wp_enqueue_script(  'diph-project-script', plugins_url('/js/diph-project-admin.js', dirname(__FILE__) ));
+			 wp_enqueue_style('thickbox');
+wp_enqueue_script('thickbox');
+        }
+    }
+	if ( $hook == 'edit.php'  ) {
+        if ( 'project' === $post->post_type ) {     
+			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			wp_enqueue_script(  'jquery' );
+             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+			 wp_enqueue_script(  'diph-project-script2', plugins_url('/js/diph-project-admin2.js', dirname(__FILE__) ));
 			 
         }
     }
@@ -90,7 +102,7 @@ add_action( 'admin_enqueue_scripts', 'add_diph_project_admin_scripts', 10, 1 );
 // Add the Meta Box
 function add_diph_project_settings_box() {
     add_meta_box(
-		'custom_meta_box', // $id
+		'diph_settings_box', // $id
 		'Project Details', // $title
 		'show_diph_project_settings_box', // $callback
 		'project', // $page
@@ -105,7 +117,7 @@ function add_diph_project_icons_box() {
 		'Marker Icons', // $title
 		'show_diph_project_icons_box', // $callback
 		'project', // $page
-		'side', // $context
+		'side', // $context 
 		'default'); // $priority
 }
 add_action('add_meta_boxes', 'add_diph_project_icons_box');
@@ -113,33 +125,15 @@ add_action('add_meta_boxes', 'add_diph_project_icons_box');
 $prefix = 'project_';
 $diph_project_settings_fields = array(
 	array(
-		'label'=> 'Project Date',
-		'desc'	=> 'Date of project.',
-		'id'	=> $prefix.'date',
-		'type'	=> 'text'
-	),
-	array(
-		'label'=> 'Project Type',
-		'desc'	=> 'Type of project.',
-		'id'	=> $prefix.'type',
-		'type'	=> 'text'
-	),
-	array(
-		'label'=> 'Profile Image',
-		'desc'	=> 'Put url of image here. No html code required.',
-		'id'	=> $prefix.'profile',
-		'type'	=> 'text'
-	),
-	array(
-		'label'=> 'Project Description',
-		'desc'	=> 'A description of the project.',
-		'id'	=> $prefix.'desc',
+		'label'=> 'Project Settings',
+		'desc'	=> 'Stores the project setup as json.',
+		'id'	=> $prefix.'settings',
 		'type'	=> 'textarea'
 	),array(
 		'label'=> 'Icons',
 		'desc'	=> 'Icons for categories.',
 		'id'	=> $prefix.'icons',
-		'type'	=> 'icons'
+		'type'	=> 'hidden'
 	)
 );
 // The Callback
@@ -148,10 +142,11 @@ function show_diph_project_icons_box() {
 }
 // The Callback
 function show_diph_project_settings_box() {
+
 global $diph_project_settings_fields, $post;
 // Use nonce for verification
 echo '<input type="hidden" name="diph_project_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
-	echo '<div id="map-div"></div><button id="locate">Locate me!</button>';
+	//echo '<div id="map-divs"></div><button id="locate">Locate me!</button>';
 
 	// Begin the field table and loop
 	echo '<table class="form-table">';
@@ -202,7 +197,7 @@ echo '<input type="hidden" name="diph_project_settings_box_nonce" value="'.wp_cr
 						echo '</td></tr>';
 					break;
 					// textarea
-					case 'icons':
+					case 'hidden':
 					
 						echo '<input type="hidden" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" />';
 		

@@ -1,0 +1,41 @@
+@charset "UTF-8";
+/* CSS Document */
+
+
+.entry-point {
+	min-height:200px;
+}
+.primary-entry, .secondary-entry {
+	width:300px;
+	margin-right:50px;
+	float:left;
+}
+.primary-entry li, .secondary-entry li {
+	padding:5px;
+	border:1px solid #000;
+	cursor:pointer;
+}
+#diph_attrs li { }
+#diph_attrs li span {
+	padding-right: 20px; }
+#diph_attrs li .col1 {
+	float: left;
+	width:120px;
+}
+#diph_attrs li input {
+	margin-left:5px;
+	margin-right: 20px;
+}
+#diph_attrs li input[type="checkbox"] {
+	margin-top:2px;
+}
+#diph_attrs li.sep {
+	padding-bottom: 4px;
+	border-bottom: 1px solid #333;
+}
+#diph_attrs::after { 
+   content: "";
+   display: block; 
+   visibility: hidden; 
+   clear: both;
+}

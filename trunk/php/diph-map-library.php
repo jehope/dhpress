@@ -2,10 +2,45 @@
 // Add new taxonomy for mapsets
 function diph_mapset_init() {
   $labels = array(
+    'name' => _x( 'Maps', 'taxonomy general name' ),
+    'singular_name' => _x( 'Map', 'taxonomy singular name' ),
+    'add_new' => __('Add New', 'diph-maps'),
+    'add_new_item' => __('Add New Map'),
+    'edit_item' => __('Edit Map'),
+    'new_item' => __('New Map'),
+    'all_items' => __('Map Library'),
+    'view_item' => __('View Map'),
+     'search_items' => __('Search Maps'),
+    'not_found' =>  __('No maps found'),
+    'not_found_in_trash' => __('No maps found in Trash'), 
+    'parent_item_colon' => '',
+    'menu_name' => __('Map Library')
+  ); 
+
+  $args = array(
+    'labels' => $labels,
+    'public' => true,
+    'publicly_queryable' => true,
+    'show_ui' => true, 
+    'show_in_menu' => 'diph-top-level-handle', 
+    'query_var' => true,
+    'rewrite' => false,
+    'capability_type' => 'post',
+    'has_archive' => true, 
+    'hierarchical' => true,
+    'menu_position' => null,
+    'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions','custom-fields' )
+  ); 
+  register_post_type('diph-maps',$args);
+}
+add_action( 'init', 'diph_mapset_init' );
+
+
+function mapset_init() {
+	// Add new taxonomy, NOT hierarchical (like tags)
+  $labels = array(
     'name' => _x( 'Mapsets', 'taxonomy general name' ),
     'singular_name' => _x( 'Mapset', 'taxonomy singular name' ),
-    'search_items' =>  __( 'Search Mapsets' ),
-    'popular_items' => __( 'Popular Mapsets' ),
     'all_items' => __( 'All Mapsets' ),
     'parent_item' => null,
     'parent_item_colon' => null,
@@ -13,129 +48,51 @@ function diph_mapset_init() {
     'update_item' => __( 'Update Mapset' ),
     'add_new_item' => __( 'Add New Mapset' ),
     'new_item_name' => __( 'New Mapset Name' ),
-    'separate_items_with_commas' => __( 'Separate mapsets with commas' ),
     'add_or_remove_items' => __( 'Add or remove mapsets' ),
-    'choose_from_most_used' => __( 'Choose from the most used mapsets' ),
     'menu_name' => __( 'Mapsets' ),
   ); 
 
-  register_taxonomy(
-	'mapset',	// name of new taxonomy
-	'post',	// post_type to register it with (NEED TO CHANGE THIS!!!!!!!!!!!)
-	array(
-    'hierarchical' => false,
+  register_taxonomy('mapset','diph-maps',array(
+    'hierarchical' => true,
     'labels' => $labels,
-    'public' => true,
-	'show_in_nav_menus' => false,
-	'show_ui' => false,
-	/*If you want to ensure that your custom taxonomy behaves like a tag, 
-	you must add the option 'update_count_callback' => '_update_post_term_count'. 
-	Not doing so will result in multiple comma-separated items added at once being 
-	saved as a single value, not as separate values. This can cause undue stress 
-	when using get_the_term_list and other term display functions. */
-    'update_count_callback' => '_update_post_term_count', 
+    'show_ui' => true,
+    'update_count_callback' => '_update_post_term_count',
     'query_var' => true,
-    'rewrite' => array( 'slug' => 'mapset' ),
+    'rewrite' => array( 'slug' => 'mapsets' ),
   ));
-}
-add_action( 'init', 'diph_mapset_init' );
-
-// Get id, name, description, and url of maps in table wp_diph_maps
-function diph_get_maps() {
-	global $wpdb;
-
-	$maps_array = $wpdb->get_results( $wpdb->prepare( "
-		SELECT id, map_name, map_desc, map_url 
-		FROM $wpdb->diph_maps
-		")
-		);
-		
-	return $maps_array;
-}
-
-// This is what displays on the map library page under the diPH Toolkit 
-function diph_sublevel_page( $active_tab ) {
-	//if user has clicked on a tab
-	if( isset( $_GET[ 'tab' ] ) ) {
-			$active_tab = $_GET[ 'tab' ];
-		}
-	//if user has not clicked on a tab, take them to map library tab
-	else {
-		$active_tab = 'map_lib';
-	}
 	
-	echo '<div class = "wrap">';
-	echo '<div id = "icon-themes" class = "icon32"></div>';
-	echo "<h2>" . __( 'Map Layer Library', 'diph-menu' ) . "</h2>";
-/*	echo "<p>" . __( 'Add map IDs with descriptions here', 'diph-menu' ) . "</p>";
-	echo "<p>" . __( 'Map ids should show up in dropdown on edit project pages', 'diph-menu' ) . "</p>";
-	echo "<p>" . __( 'Projects should show up in dropdown on edit marker pages', 'diph-menu' ) . "</p>";
-*/	
-	settings_errors();
-	?>
+}
+add_action( 'init', 'mapset_init' );
+
+
+// Custom scripts to be run on Project new/edit pages only
+function add_diph_map_library_scripts( $hook ) {
+
+    global $post;
+
+    if ( $hook == 'edit.php'|| $hook == 'post-new.php' || $hook == 'post.php' ) {
+        if ( 'diph-maps' === $post->post_type ) {     
+			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			wp_enqueue_script(  'jquery' );
+             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+			 wp_enqueue_script(  'diph-map-library-script', plugins_url('/js/diph-map-library-admin.js', dirname(__FILE__) ));
+			 wp_enqueue_style('thickbox');
+			wp_enqueue_script('thickbox');
+        }
+    }
+}
+add_action( 'admin_enqueue_scripts', 'add_diph_map_library_scripts', 10, 1 );
+
+// Set template to be used for Project type
+function diph_map_page_template( $page_template )
+{
 	
-	<!-- DISPLAY "MAP LIBRARY" AND "MANAGE MAPSETS" TABS -->
-	<h2 class = "nav-tab-wrapper">
-		<a href = "admin.php?page=map-library&tab=map_lib" class = "nav-tab <?php echo $active_tab == 'map_lib' ? 'nav-tab-active' : ''; ?>" >Map Library</a>
-		<a href = "edit-tags.php?taxonomy=mapset&tab=mapset" class = "nav-tab <?php echo $active_tab == 'mapset' ? 'nav-tab-active' : ''; ?>" >Manage Mapsets</a>
-	</h2>
-	<form method = "post" action = "options.php">
-		<?php 
-			if ( $active_tab == 'map_lib' ) {   
-				$maps_array = diph_get_maps();
-			
-				echo '<br />
-					<table border="1">
-						<tr>
-							<th>Map ID</th>
-							<th>Map Name</th>
-							<th>Map Description</th>
-							<th>Map URL</th>
-						</tr>';
-							
-				foreach( $maps_array as $map ) {
-					echo '
-						<tr>
-							<td>' . $map->id . '</td>
-							<td>' . $map->map_name . '</td>
-							<td>' . $map->map_desc . '</td>
-							<td>' . $map->map_url . '</td>
-						</tr>';
-					}
-					
-				echo '</table>';
-			} //end if active_tab == map_lib
-			
-			elseif ( $active_tab == 'mapset' ) {
-				echo 'this is the mapset admin tab';
-			}
-		?>
-	</form>
-	</div> <!-- wrap -->
-	<?php
-} // end diph_sublevel_page
-
-// make sure correct TL menu is highlighted (this highlights and expands the diPH Toolkit TL menu.  It does not actually highlight the map library <li>.)
-function diph_mapset_menu_correction( $top_level_menu ) {
-	global $current_screen;
-	$taxonomy = $current_screen->taxonomy;
-	if ( $taxonomy == 'mapset' )
-		$top_level_menu = 'diph-top-level-handle';
-	return $top_level_menu;
+	$post_type = get_query_var('post_type');
+    if ( $post_type == 'diph-maps' ) {
+        $page_template = dirname( __FILE__ ) . '/diph-map-template.php';
+    }
+    return $page_template;
 }
-add_action( 'parent_file', 'diph_mapset_menu_correction' );
-
-function diph_admin_menu_scripts() {
-	$screen = get_current_screen();
-	// This should only apply to edit-tags.php?taxonomy=mapset
-	if ( $screen->taxonomy == 'mapset' ) { 
-		wp_deregister_script( 'jquery' );
-		wp_register_script('jquery', "http://code.jquery.com/jquery-1.7.2.min.js");
-		wp_enqueue_script('jquery');
-		// diph_menu_highlighting is a jQuery script to replicate the look of the Map Library tab (/wp-admin/admin.php?page=map-library) on edit-tags.php?taxonomy=mapset
-		wp_register_script('diph_menu_highlighting', plugins_url( 'js/diph-menu-highlighting.js', dirname( __FILE__ )));
-		wp_enqueue_script('diph_menu_highlighting');
-	}
-}
-add_action( 'wp_print_scripts', 'diph_admin_menu_scripts'); 
+add_filter( 'single_template', 'diph_map_page_template' );
 ?>

@@ -32,9 +32,9 @@ define( 'DIPH_REQUIRED_WP_VERSION', '3.1' );
 define( 'DIPH_PLUGIN_DIR', WP_PLUGIN_DIR."/".dirname(plugin_basename(__FILE__)) );
 define( 'DIPH_PLUGIN_URL', plugins_url('', __FILE__ ) );
 define( 'DIPH_MAPS_TABLE_VERSION', '0.1' );
-
+define('SCRIPT_DEBUG', true);
 // Creates a new db table for diPH
-register_activation_hook( __FILE__, 'diph_db_install' );
+//register_activation_hook( __FILE__, 'diph_db_install' );
 
 /**
  * Checks if the system requirements are met
