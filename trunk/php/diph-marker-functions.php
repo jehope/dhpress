@@ -51,6 +51,7 @@ function add_diph_marker_admin_scripts( $hook ) {
         if ( 'diph-markers' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'diph-style', plugins_url('/css/diph-style.css',  dirname(__FILE__) ));
 			wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 			 wp_enqueue_script(  'diph-marker-script', plugins_url('/js/diph-marker-admin.js', dirname(__FILE__) ));
@@ -61,6 +62,7 @@ function add_diph_marker_admin_scripts( $hook ) {
         if ( 'diph-markers' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'diph-style', plugins_url('/css/diph-style.css',  dirname(__FILE__) ));
 			wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 			 wp_enqueue_script(  'diph-marker-script2', plugins_url('/js/diph-marker-admin2.js', dirname(__FILE__) ));
@@ -277,10 +279,44 @@ echo '<input type="hidden" name="diph_marker_settings_box_nonce" value="'.wp_cre
 	$selected_project = get_post_meta($post->ID, 'marker_project', true);
 	if($selected_project) {
 		$project_settings = get_post_meta($selected_project, 'project_settings', true);
-		echo $project_settings;
+		//echo $project_settings;
 	}
+	$markerMeta = get_post_meta( $post->ID );
+	//print_r($markerMeta);
+	echo buildMarkerMetaFields($markerMeta);
 }
-
+function buildMarkerMetaFields($theMeta) {
+	$markerHtml ='<ul class="marker-fields">';
+	foreach ($theMeta as $key => $value) {
+		if( (strrpos(createIDfromName($key),'location')!==false) && (strrpos(createIDfromName($key),'location')<1) ) {
+			$markerHtml .='<li id="'.createIDfromName($key).'" class="location"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
+		}
+		elseif($key=="marker_project") {
+			$markerHtml .='<li id="'.createIDfromName($key).'" class="project"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
+		}
+		elseif(createIDfromName($key)=="audio_url") {
+			$markerHtml .='<li id="'.createIDfromName($key).'" class="audio"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
+		}
+		elseif(createIDfromName($key)=="date_range") {
+			$markerHtml .='<li id="'.createIDfromName($key).'" class="date"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
+		}
+		elseif($key=="_edit_lock"||$key=="_edit_last") {
+			
+		}
+		else {
+			$markerHtml .='<li id="'.createIDfromName($key).'" class="motes"><label>'.$key.' </label><input class="mote-value" value="'.$value[0].'"/><a class="delete-mote">X</a></li>';			
+		}
+		
+	}
+	$markerHtml .='</ul>';
+	return $markerHtml;
+}
+//create id for traversal
+function createIDfromName($theName){
+	$moteID = strtolower($theName);
+    $moteID = str_replace(" ","_",$moteID);
+    return $moteID;
+}
 // Save the Data
 function save_diph_marker_settings($post_id) {
     global $diph_marker_settings_fields;
@@ -358,25 +394,40 @@ function diphAddUpdateMetaField(){
     //get data from our ajax() call
     //$greeting = $_POST['greeting'];
     $post_id = $_POST['post_id'];
-    $field = $_POST['motes'];
+    $field = str_replace('\\', '', $_POST['motes']);
+    
+    $motes = json_decode($field,true);
 
-    $motes = explode(',', $field);
-
-
-    $meta_key = 'test2';//.$field[''];
-    $meta_value = $motes[0];
-    $unique = 'false';
-	$parent_id = wp_is_post_revision( $post_id );
-
-    update_post_meta($post_id, $meta_key, $meta_value);
-
-    // Return String
-    //die($results);
+//var_dump(json_decode($field, true));
+    foreach ($motes as $key => $value){
+  		//echo  $value['id'] . ':' . $value['value'];
+  		update_post_meta($post_id, $value['id'], $value['value']);
+	}
 }
 
-// create custom Ajax call for WordPress
-//add_action( 'wp_ajax_nopriv_diphAddUpdateMetaField', 'diphAddUpdateMetaField' );
+
 add_action( 'wp_ajax_diphAddUpdateMetaField', 'diphAddUpdateMetaField' );
+
+function diphDeleteMoteMeta(){
+
+	$diph_post = $_POST['post_id'];
+	$diph_mote = $_POST['mote_id'];
+
+	delete_post_meta($diph_post, $diph_mote);
+	//die($project_settings);
+}
+add_action( 'wp_ajax_diphDeleteMoteMeta', 'diphDeleteMoteMeta' );
+
+function diphUpdateProjectSettings(){
+
+	$diph_project = $_POST['project'];
+	$diph_project_settings = $_POST['project_settings'];
+
+	update_post_meta($diph_project, 'project_settings', $diph_project_settings);
+	//die($project_settings);
+
+}
+add_action( 'wp_ajax_diphUpdateProjectSettings', 'diphUpdateProjectSettings' );
 
 function diphGetProjectSettings(){
 
@@ -386,6 +437,16 @@ function diphGetProjectSettings(){
 	die($project_settings);
 }
 add_action( 'wp_ajax_diphGetProjectSettings', 'diphGetProjectSettings' );
+
+
+function diphGetTranscript(){
+
+	$diph_project = $_POST['project'];
+	$diph_transcript = $_POST['transcript'];
+	$transcript = get_post_meta($diph_project, $diph_transcript, true);
+	die($transcript);
+}
+add_action( 'wp_ajax_diphGetTranscript', 'diphGetTranscript' );
 
 function diph_project_filters() {
 	global $typenow;

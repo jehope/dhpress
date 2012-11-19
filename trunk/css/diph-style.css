@@ -39,3 +39,7 @@
    visibility: hidden; 
    clear: both;
 }
+.marker-fields li label {
+	float: left;
+	width: 150px;
+}

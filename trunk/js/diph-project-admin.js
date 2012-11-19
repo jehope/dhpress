@@ -37,34 +37,29 @@ entryHtml += '<div class="secondary-entry">Choose Secondary(s)'+
     '<li><input type="checkbox" name="secondary" value="topic" /> Topic Cards</li>'+
     '<li><input type="checkbox" name="secondary" value="transcript" /> A/V Transcript</li></ul></div>';
     
-entryHtml += '<div class="setup-entry"></div><div class="setup-sentry"></div>'+
-    '<div class="marker-layers"><h4>Marker Layers</h4>'+
-    '<ul><li class="project-marker-layer">Define Marker Attributes:<input id="data-name" type="text" />'+
-    '<select name="select" id="marker-data-type">'+
-    '<option value="Choose Data Type" selected>Choose Data Type</option>'+
-    '<option value="Theme">Theme</option>'+
-    '<option value="Mote">Mote</option></select><span class="add-layer">Add</span></li></ul></div>';
+entryHtml += '<div class="setup-entry"></div><div class="setup-sentry"></div>';
 
 var defaultMarkerAttributes = '<h4>Define Marker Attributes:</h4><ul id="diph_attrs">'+
 	'<li><span class="col1">Marker Layer Name: </span><input id="layer-name" type="text" /></li>'+
-	'<li><span class="col1">Attributes</span><span class="col2">Use</span><span class="col3">Primary</span></li>'+	
-	'<li><span class="col1">Lng/Lng</span><input id="use-latlng" class="col2" type="checkbox" name="use" value="lat-lng" /><input class="col3" type="radio" name="use-first" value="lat-lng" selected="selected"/></li>'+
-	'<li class="sep"><span class="col1">Address</span><input id="use-address" class="col2" type="checkbox" name="use" value="address" /><input class="col3" type="radio" name="use-first" value="address" /></li>'+
+	'<li class="locations" id="location0"><span class="col1">Location 1: </span><input type="text" />'+locationTypeOptions()+'</li>'+
+	'<li class="sep locations" id="location1"><span class="col1">Location 2: </span><input type="text"/>'+locationTypeOptions('address','alternate')+'</li>'+
+	
 	'<li class="sep"><span class="col1">Date/Time</span><input id="use-datetime" class="col2" type="checkbox" name="use" value="datetime" /></li>'+
-	'<li ><span class="col1">Audio/Video</span><input id="media-url" type="text" /> (media url)</li>'+
-	'<li><span class="col1">Transcript</span><input id="transcript-url" type="text" /> (transcript url)</li>'+
-	'<li class="sep"><span class="col1">Timecodes</span><input id="timecodes-true" class="col2" type="checkbox" name="use" value="timecodes" /></li>'+
+	'<li ><span class="col1">Audio/Video</span><input id="media-url" class="col2" type="checkbox"  /> (media url)</li>'+
+	'<li><span class="col1">Transcript</span><input id="transcript-url" class="col2" type="checkbox"  /> (transcript url)</li>'+
+	'<li class="sep"><span class="col1">Timecodes</span><input id="timecodes" class="col2" type="checkbox" /></li>'+
 	'<li class="extra-motes"><span class="add-layer">Add</span></li>'+
 	'</ul>';
 
 $('.entry-point').append(entryHtml);
 $('.marker-attrs').append(defaultMarkerAttributes);
 
+
 loadProjectSettings($('#project_settings').val());
 
 $('#layer-name').val($('#title').val());
 projectObj.layertitle = $('#title').val();
-projectObj.geotemporal = new Object();
+projectObj.locations = new Object();
 projectObj.media = new Object();
 projectObj.motes = new Object();
 
@@ -95,9 +90,10 @@ function popupIcons(){
 }
 //load the json that is stored in the #project_settings custom field
 function loadProjectSettings(projectObject) {
+	console.log(projectObject);
     if(projectObject) {
-        var myObject = eval(projectObject);
-        if(myObject.settings.primary) {
+        var myObject = JSON.parse(projectObject);
+        if(myObject.settings&&myObject.settings.primary) {
             $(".primary-entry input[value='"+myObject.settings.primary+"']").attr("checked", "true");
             $(".secondary-entry input[value='"+ myObject.settings.primary +"']").attr({"checked": "true","disabled":"true"}).parent().append('<span class="indy"> <strong>Primary entry</strong></span>');
         
@@ -108,17 +104,82 @@ function loadProjectSettings(projectObject) {
         }
         else {
             $('.entry-point .secondary-entry input').attr('disabled', 'true');
-            window.console.log(myObject.settings.primary);
-        }   
+        } 
+
+        if(myObject.locations) {  
+        	
+        	var count = Object.keys(myObject.locations).length; 
+			
+			for (var ik = 0; ik < count; ik++)  {
+				console.log(count+' '+ik+' '+myObject.locations[ik].label);
+				$('#'+myObject.locations[ik].id).find('input').val(myObject.locations[ik].label);
+				$('#'+myObject.locations[ik].id+' #location-type').val(myObject.locations[ik].type);
+				$('#'+myObject.locations[ik].id+' #location-display').val(myObject.locations[ik].display);
+				
+			}	
+			
+        }
+        if(myObject.motes) {  
+        	
+        	var moteCount = Object.keys(myObject.motes).length; 
+			
+			for (var i = 0; i < moteCount; i++)  {
+				addMoteLine(myObject.motes[i].id,myObject.motes[i].name);				
+			}	
+			
+        }
+        if(myObject.date) {  
+        	console.log('date');
+     		$('#use-datetime').attr('checked','checked');
+			
+        }
+        if(myObject.media) {  
+        	
+     		if(myObject.media.av) {
+     			$('#media-url').prop('checked','checked');
+    	//projectObj.media.av = true;
+   			 }
+    		if(myObject.media.transcript) {
+    			
+    			$('#transcript-url').prop('checked','checked');
+   			}
+   			if(myObject.media.timecodes) {
+    			$('#timecodes').prop('checked','checked');
+    		}
+			
+        }
     }
 }
+//locations:0:{label:"text",type:"latLng,address,region", display:"primary,alternate,text"}
+function locationTypeOptions(selType,selDisplay){
+	var locHtml = '<select id="location-type">';
+	var locType = {latLng:"Lat,Lng",address:"Address",region:"Region"};
+	var disType = {primary:"Primary",alternate:"Alternate",text:"Text"};
+	$.each(locType, function(t,n){
+		locHtml += '<option value="'+t+'"';
+		if(t==selType) { locHtml += 'selected'; }
+		locHtml += '>'+n+'</option>';
 
+	})
+	locHtml += '</select>';
+
+	locHtml += '<select id="location-display">';
+	$.each(disType, function(d,l){
+		locHtml += '<option value="'+d+'"';
+		if(d==selDisplay) { locHtml += 'selected'; }
+		locHtml += '>'+l+'</option>';
+
+	})
+	locHtml += '</select>';
+	return locHtml;
+
+}
 //Applies typing listeners to the new mote fields
 function diphAssignMoteListeners(theobj) {
 	var mote_id = '#'+$(theobj).attr('id');
-	var remove_span = '#'+$(theobj).attr('id')+' .remove';
+	var remove_span = '#'+$(theobj).attr('id')+' .delete-mote';
 	var remove_li = mote_id;
-	
+	console.log(mote_id);
 	//setup before functions
     var typingTimerMote;                //timer identifier
     var moteTypingInterval = 3000;  //time in ms, 5 second for example
@@ -135,13 +196,25 @@ function diphAssignMoteListeners(theobj) {
         clearTimeout(typingTimerMote);
     });
 	
-    $(remove_span).click(function() {
-        $(mote_id).toggleClass('selected');				
-		$(remove_li).remove();
-		doneTyping();
+	$('.delete-mote').unbind('click');
+    $('.delete-mote').click(function() {
+    	console.log('remove');
+        //$(mote_id).toggleClass('selected');	
+        deleteMoteLine($(this).closest('li').attr('id'));
+		$(this).closest('li').remove();
+
+		doneTypingMote();
+    });
+    $('.legend').unbind('click');
+    $('.legend').click(function() {
+    	var moteName = jQuery(this).parent('li').find('input').val();
+    	var projectID = jQuery('#post_ID').val();
+    	diphGetMoteValues(moteName,projectID);
+    	
     });
             
 }
+
 function assignListeners(theobj) {
 	var remove_id = '#'+$(theobj).attr('id');
 	var remove_span = '#'+$(theobj).attr('id')+' .remove';
@@ -177,7 +250,8 @@ function doneTyping() {
 	    icon_settings += $(this).attr('id')+','+$(this).find('input').val()+','+$(this).find('img').attr('src')+',';
     });
     $('#project_icons').val(icon_settings);
-    $('#project_settings').val('('+JSON.stringify(projectObj)+')');
+    saveProjectSettings();
+    
     //alert('done typing');
 }
 
@@ -189,77 +263,74 @@ function doneTypingMote() {
     	var moteOID = $(this).attr('id');
     	var moteName = $(this).find('input').val();
     	var moteID = moteName.toLowerCase();
+    	moteID = moteID.trim();
+    	console.log(moteID+'done');
     	moteID = moteID.replace(" ","_");
     	projectObj.motes[moteOID] = {"id": moteID,"name": moteName};
-	    //console.log();
+
+    	
     });
+    saveProjectEntry();
+    createMarkerSettings();
+    saveProjectSettings();
     //console.log(metaID);
 }
 
 
 $('.add-layer').click(function(){
-    
-  
-    //addThemes(moteID,moteName,moteType,moteDate);
     addMoteLine();
-
     createMarkerSettings();
+	saveProjectSettings();
 
- 	//popupIcons($('#diph_icons_box'));
 });
 //latlng, 
 function createMarkerSettings(){
  
-    if($('#use-latlng').prop('checked')) {
-    	projectObj.geotemporal.latlng = "primary";
-    }
-    else { delete projectObj.geotemporal.latlng; }
-	if($('#use-address').prop('checked')) {
-		if( $('#use-latlng').prop('checked') ) {
-    		projectObj.geotemporal.address = "secondary";
-    	}
-    	else { projectObj.geotemporal.address = "primary"; }
-    }
-    else { delete projectObj.geotemporal.address; }
+ 	$('#diph_attrs .locations').each(function(index){
+ 		projectObj.locations[index] = new Object();
+ 		projectObj.locations[index].id = $(this).attr('id');
+ 		projectObj.locations[index].label = $(this).find('input').val();
+ 		projectObj.locations[index].type = $(this).find('#location-type option:selected').val();
+ 		projectObj.locations[index].display = $(this).find('#location-display option:selected').val();
+ 		console.log($(this).attr('id'));
+ 		//console.log($(this).find('location-type').val());
+ 	});
     
     if($('#use-datetime').prop('checked')) {
-    	 projectObj.geotemporal.date = "true";
+    	 projectObj.date = "true";
     }
 
-    if($('#media-url').val()!='') {
-    	projectObj.media.url = $('#media-url').val();
+    if($('#media-url').prop('checked')) {
+    	projectObj.media.av = true;
     }
-    if($('#transcript-url').val()!='') {
-    	projectObj.media.transcript = $('#transcript-url').val();
+    if($('#transcript-url').prop('checked')) {
+    	projectObj.media.transcript = true;
     }
-    if($('#timecodes-true').prop('checked')) {
-    	projectObj.media.timecodes = "true";
+    if($('#timecodes').prop('checked')) {
+    	projectObj.media.timecodes = true;
     }
-    //projectObj.media
 
-    //projectObj.geotemporal.address.street = "310 Meredith St";
-    //projectObj.geotemporal.address.city = "Raliegh";
-    //projectObj.geotemporal.address.zipcode = "27606";
-    //projectObj.geotemporal.address.state = "NC";
 }
 function addThemes(themeID,themeName,themeType,tDate){
    projectObj.themes[themeID] = {"name": themeName,"type":themeType, "date":tDate};
 }
 
 //Add new mote for project with options
-function addMoteLine(){
-	var moteCount = projectObj.motes.length;
+function addMoteLine(moteID,moteName){
 	var tempMoteCount = $('.motes').length;
-	alert(tempMoteCount);
-	if( !moteCount ){ moteCount = tempMoteCount; }
-	else { moteCount = moteCount + tempMoteCount; }
-	var moteHtml = '<li id="'+moteCount+'" class="motes">Mote Name<br/><input id="layer-name" type="text" /></li>';
+	
+	if(!moteName) { moteName = '';}
+	var moteHtml = '<li id="'+tempMoteCount+'" class="motes">Mote Name<br/><input id="" type="text" value="'+moteName+'" /><a class="delete-mote">X</a><input type="checkbox" name="'+moteName+'" >Use in filter <a class="legend">Create Legend</a></li>';
 	
 	$('.extra-motes').before(moteHtml);
 	diphAssignMoteListeners($('.motes'));
 }
 function saveMoteLine(moteID, moteName) {
 	projectObj.motes.moteID = moteName;
+}
+function deleteMoteLine(delMote){
+	console.log(delMote);
+	delete projectObj.motes[delMote];
 }
 $('.entry-point .primary-entry li').click(function() {
 	//alert($(this).find('input').val());
@@ -269,7 +340,6 @@ $('.entry-point .primary-entry li').click(function() {
 });
 	
 $('.entry-point li').click(function(e) {
-    
 	var selArr ="";
 	//alert($('.entry-point input').find(":selected").val());
 	if($(e.target).closest('input[type="checkbox"]').length > 0){
@@ -287,18 +357,28 @@ $('.entry-point li').click(function(e) {
 		
 	var primaryE = $('.primary-entry input:checked').val();
 	loadPrimaryEntry(primaryE);
-	loadSecondaryEntry(selArr);
-	loadProjectObject(primaryE,selArr);
+	//loadProjectObject(primaryE,selArr);
+	createMarkerSettings();
+	doneTypingMote();
+} );
 
+function saveProjectEntry(){
+	var secondaryE ='';
+	$('.secondary-entry input:checked').not(':disabled').each(function () {
+		if(secondaryE=='') { secondaryE += this.value; }
+		else { secondaryE += ','+this.value; }	
+	});
+		
+	var primaryE = $('.primary-entry input:checked').val();
 	//alert('show '+ selArr);	
-});
-
+	loadProjectObject(primaryE,secondaryE);
+}
 
 function loadProjectObject(prim,second) {
     projectObj.settings = new Object();
     projectObj.settings.primary = prim;
     projectObj.settings.secondary = second;
-    $('.setup-entry').append(JSON.stringify(projectObj));
+    //$('.setup-entry').append(JSON.stringify(projectObj));
 }
 
 function loadPrimaryEntry(pEntry) {
@@ -324,11 +404,7 @@ function loadPrimaryEntry(pEntry) {
 	}
 	//$('.setup-entry').append(pEntry);
 }
-function loadSecondaryEntry(sEntry) {
-    //$('.setup-sentry').empty();
-   // $('.setup-entry').append(sEntry);
-	//$('.setup-entry').append(pEntry);
-}
+
 function disableJustSelected(token) {
 	//alert(token);
 	$('.entry-point .secondary-entry input').each(function(index) {		
@@ -350,6 +426,31 @@ function disableJustSelected(token) {
 		}
 	});
 }
-	
-	
+
+function saveProjectSettings()	{
+	$('#project_settings').val(JSON.stringify(projectObj));
+}
+
+//AJAX functions
+function diphGetMoteValues(moteName,projectID) {
+
+	jQuery.ajax({
+        type: 'POST',
+        url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+        data: {
+            action: 'diphGetMoteValues',
+            project: projectID,
+            mote_name: moteName
+        },
+        success: function(data, textStatus, XMLHttpRequest){
+            console.log(textStatus);
+            console.log(JSON.parse(data));
+            //
+
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown){
+           alert(errorThrown);
+        }
+    });
+}	
 });

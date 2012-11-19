@@ -8,6 +8,13 @@
 #map-div {
         border : 0;
         height : 250px;
+		width:300px;
+    }
+#map-div2 {
+        border : 0;
+        height : 250px;
+		width:300px;
+	
     }
 #diph_icon_cont {
 	min-height:50px;

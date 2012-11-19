@@ -74,37 +74,13 @@ function diph_requirements_not_met()
 	);
 }
 
-// Create new db table to store map info
-function diph_db_install() {
-	add_option( "diph_maps_table_version", DIPH_MAPS_TABLE_VERSION );
-	
-	global $wpdb;
-	$prefix = $wpdb->prefix;
-	$table_name = $prefix . 'diph_maps';
-	
-	// Make this table accessible via $wpdb->diph_maps
-	if ( !isset( $wpdb->diph_maps )) {
-		$wpdb->diph_maps = $table_name;
-	}
-	
-	$sql = "CREATE TABLE $table_name (
-	  id smallint NOT NULL AUTO_INCREMENT,
-	  map_name VARCHAR(255) NOT NULL,
-	  map_desc TEXT NOT NULL,
-	  map_url VARCHAR(100) NOT NULL,
-	  UNIQUE KEY id (id)
-	);";
 
-	// The dbDelta function (in upgrade.php) examines the current table structure, compares it to the desired table structure, and either adds or modifies the table as necessary.
-	require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-	dbDelta($sql);
-}
 
 // Check requirements and instantiate
 if( diph_requirements_met() )
 {
-	diph_db_install();
 	include_once( dirname(__FILE__) . '/php/diph-core.php' );
+	include_once( dirname(__FILE__) . '/lib/metabox/init.php' );
 }
 else
 	add_action( 'admin_notices', 'diph_requirements_not_met' );

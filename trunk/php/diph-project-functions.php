@@ -136,7 +136,7 @@ $diph_project_settings_fields = array(
 		'type'	=> 'hidden'
 	)
 );
-// The Callback
+// The Callback 
 function show_diph_project_icons_box() {
 	diph_deploy_icons();
 }
@@ -207,7 +207,8 @@ echo '<input type="hidden" name="diph_project_settings_box_nonce" value="'.wp_cr
 	} // end foreach
 	echo '</table>'; // end table
 	
-	
+	$motes = createMoteValueArrays('Concepts','4233');
+	print_r(array_count_values($motes));
 }
 
 // Save the Data
@@ -256,6 +257,45 @@ function save_diph_project_settings($post_id) {
 	}
 }
 add_action('save_post', 'save_diph_project_settings');  
+
+//create arrays of custom field values associated with a project
+function createMoteValueArrays($mote_name,$project_id){
+
+	//loop through all markers in project -add to array
+	$moteArray = array();
+	
+	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'marker_project','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	$loop = new WP_Query( $args );
+	while ( $loop->have_posts() ) : $loop->the_post();
+
+		$marker_id = get_the_ID();
+		$tempMoteValue = get_post_meta($marker_id,$mote_name);
+		$tempMoteArray = split(';',$tempMoteValue[0]);
+
+		//array_push($moteArray,$tempMoteValue[0]); 
+		//array_push($moteArray,$tempMoteArray.length); 
+		for($i=0;$i<count($tempMoteArray);$i++) {
+			array_push($moteArray, trim($tempMoteArray[$i]));
+		}
+		
+		
+	endwhile;
+
+	 //$result = array_unique($array)
+	return $moteArray;
+}
+function diphGetMoteValues(){
+$mote_values = array();
+	$mote_name = $_POST['mote_name'];
+	$diph_project = $_POST['project'];
+	$mArray = createMoteValueArrays($mote_name,$diph_project);
+	$counts = array_count_values($mArray);
+	$result = array_unique($mArray);
+	array_push($mote_values, $counts);
+	array_push($mote_values, $result);
+	die(json_encode($mote_values));
+}
+add_action( 'wp_ajax_diphGetMoteValues', 'diphGetMoteValues' );
 
 // Restore revision
 function diph_project_restore_revision( $post_id, $revision_id ) {
