@@ -10,6 +10,10 @@ include_once( dirname(__FILE__) . '/diph-marker-functions.php' );
 
 require_once( dirname(__FILE__) . '/diph-map-library.php' );
 
+
+//plugins used
+require_once( dirname(__FILE__) . '/../lib/category-checklist-tree/category-checklist-tree.php' );
+
 // action function for above hook
 function diph_add_pages() {
     // Add a new submenu under Settings:
@@ -23,6 +27,8 @@ function diph_add_pages() {
 
     // Add a second submenu to the custom top-level menu:
     add_submenu_page('diph-top-level-handle', __('Icon Library','diph-menu'), __('Icon Library','diph-menu'), 'manage_options', 'icon-library', 'diph_sublevel_page2');
+  
+    add_submenu_page('diph-top-level-handle', __('Category Manager','diph-menu'), __('Category Manager','diph-menu'), 'manage_options', 'category-manager', 'diph_sublevel_page3');
   
 }
 
@@ -50,6 +56,14 @@ function diph_sublevel_page2() {
     echo "<h2>" . __( 'Icon Library', 'diph-menu' ) . "</h2>";
 	echo "<p>" . __( 'Display icons and add upload ability to add new icons', 'diph-menu' ) . "</p>";
 }
+
+function diph_sublevel_page3() {
+    echo "<h2>" . __( 'Category Manager', 'diph-menu' ) . "</h2>";
+    echo "<p>" . __( 'Manage custom taxonomies', 'diph-menu' ) . "</p>";
+    echo '<p><a href="http://msc.renci.org/dev/wp-admin/edit-tags.php?taxonomy=diph_tax_long-womens-movement" >Long Womens Movement</a></p>';
+
+}
+
 
 // Add project and marker to queryable types
 function my_get_posts( $query ) {

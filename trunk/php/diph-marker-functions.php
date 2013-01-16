@@ -194,7 +194,7 @@ function add_diph_marker_icon_box() {
 		'side',								// $context
 		'default'); 								// $priority
 }
-add_action('add_meta_boxes', 'add_diph_marker_icon_box');
+//add_action('add_meta_boxes', 'add_diph_marker_icon_box');
 //Get the project id and it's marker icons
 function get_selected_project() {
 	global $diph_marker_settings_fields, $post;
@@ -221,7 +221,7 @@ $diph_marker_settings_fields = array(
 	array(
 		'label'=> 'Associated Project',
 		'desc'	=> 'Select which project this marker should belong to.',
-		'id'	=> $prefix .'project',
+		'id'	=> $prefix .'project_id',
 		'type'	=> 'select',
 		'options' => $projects
 		)
@@ -299,6 +299,9 @@ function buildMarkerMetaFields($theMeta) {
 		}
 		elseif(createIDfromName($key)=="date_range") {
 			$markerHtml .='<li id="'.createIDfromName($key).'" class="date"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
+		}
+		elseif(createIDfromName($key)=="time_stamp") {
+			$markerHtml .='<li id="'.createIDfromName($key).'" class="time-stamp"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
 		}
 		elseif($key=="_edit_lock"||$key=="_edit_last") {
 			

@@ -43,3 +43,131 @@
 	float: left;
 	width: 150px;
 }
+.diph-icon-upload {
+text-align: right;
+float: right;
+line-height: 23px;
+}
+#filter_legend_builder {
+	display:none;
+}
+.legend {
+	display:none;
+}
+.term-icon {
+	float: right;
+	cursor: pointer;
+}
+.cat-list {
+	width: 400px;
+	float: left;
+}
+.save-array {
+	float: right;
+	margin-top: 10px;
+}
+#TB_ajaxContent .icons {
+	width:225px;
+	float: right;
+	margin-top: 10px;
+
+	
+}
+#TB_window {
+	overflow: hidden;
+}
+#diph_icons_box .misc-pub-section, #TB_ajaxContent .misc-pub-section {
+	padding: 0px;
+	min-height: 34px;
+}
+#diph_icons_box .misc-pub-section span {
+	padding-top: 10px;
+	float: left;
+}
+#diph_icons_box .diph-icon-upload {
+	margin-top: 5px;
+}
+input, textarea { 
+	padding: 5px;
+	border: solid 1px #E5E5E5;
+	outline: 0;
+	font: normal 13px/100% Verdana, Tahoma, sans-serif;
+	width: 200px;
+	background: #FFFFFF url('bg_form.png') left top repeat-x;
+	background: -webkit-gradient(linear, left top, left 25, from(#FFFFFF), color-stop(4%, #EEEEEE), to(#FFFFFF));
+	background: -moz-linear-gradient(top, #FFFFFF, #EEEEEE 1px, #FFFFFF 25px);
+	box-shadow: rgba(0,0,0, 0.1) 0px 0px 8px;
+	-moz-box-shadow: rgba(0,0,0, 0.1) 0px 0px 8px;
+	-webkit-box-shadow: rgba(0,0,0, 0.1) 0px 0px 8px;
+	}
+
+textarea { 
+	width: 400px;
+	
+	height: 150px;
+	line-height: 150%;
+	}
+
+input:hover, textarea:hover,
+input:focus, textarea:focus { 
+	border-color: #C9C9C9; 
+	-webkit-box-shadow: rgba(0, 0, 0, 0.15) 0px 0px 8px;
+	}
+.cords input {
+	width: 50px;
+}
+.locate {
+	text-indent: 100%;
+	width:20px;
+	white-space: nowrap;
+	display: inline-block;
+	overflow: hidden;
+	background: url('geolocation_icon.png') no-repeat center;
+	cursor: pointer;
+
+}
+.locate a {
+	padding: 10px;
+	display: block;
+
+}
+.form label { 
+	margin-left: 10px; 
+	color: #999999; 
+}
+#titlediv input[type="text"] {
+	height: 40px;
+}
+#submitdiv label {
+display: inline-block;
+}
+#diph_settings_box {
+	background: #fff;
+}
+.tab-content {
+	min-height: 150px;
+}
+.nav-tabs {
+	text-transform: capitalize;
+}
+.project-form-table {
+	display: none;
+}
+.checkbox.inline {
+	padding: 5px;
+	margin-left: 20px;
+	line-height: 1.3;
+}
+.help-inline {
+	line-height: 1.3;
+}
+#poststuff .modal h3 {
+	border: none;
+	background: none;
+}
+#entry-point .close {
+	position: absolute;
+	right:10px;
+	top: 85px;
+}
+

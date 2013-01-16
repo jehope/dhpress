@@ -4,6 +4,15 @@ Template Name: Project Template
 */
 ?>
 <?php get_header(); ?>
+<style>
+ #TB_window {
+ 	z-index: 2000;
+ 	opacity: .8;
+ }
+ #TB_overlay {
+ 	z-index: 1999;
+ 	opacity: .5;
+ }</style>
 <div id="content" class="widecolumn">
  <?php if (have_posts()) : while (have_posts()) : the_post();?>
  <div class="post">
@@ -12,6 +21,11 @@ Template Name: Project Template
   <?php the_content('<p class="serif">Read the rest of this page &raquo;</p>'); ?>
 
  </div>
+ 
+ <div id="map_div"></div>
+ <div id="map_div2"></div>
+ <div id="map_marker"></div>
+ <div id="timeline"></div><a class="launch-timeline">Timeline</a>
  </div>
  <?php endwhile; endif; ?>
  <ul>
@@ -20,14 +34,12 @@ Template Name: Project Template
 	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'marker_project','meta_value'=>$postid, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post(); ?>
-<li>
+<!-- <li>
 		<?php the_title(); ?>	
-</li>		
+</li>		 -->
 	<?php endwhile; ?>
 </ul>
  <?php edit_post_link('Edit this entry.', '<p>', '</p>'); ?>
 </div>
-<div id="main">
 
-</div>
 <?php get_footer(); ?>
