@@ -144,7 +144,7 @@ function add_diph_project_admin_scripts( $hook ) {
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( 'project' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
-			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			//wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			
 			wp_enqueue_style( 'diph-sortable-style', plugins_url('/css/sortable.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'diph-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
@@ -159,6 +159,8 @@ function add_diph_project_admin_scripts( $hook ) {
 			
            	
 			wp_enqueue_script(  'diph-touch-punch', plugins_url('/lib/jquery.ui.touch-punch.js', dirname(__FILE__) ));
+            wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+        
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 			wp_enqueue_script(  'diph-nested-sortable', plugins_url('/lib/jquery.mjs.nestedSortable.js', dirname(__FILE__) ));
 			wp_enqueue_script(  'diph-project-script', plugins_url('/js/diph-project-admin.js', dirname(__FILE__) ));
@@ -344,7 +346,7 @@ function save_diph_project_settings($post_id) {
 add_action('save_post', 'save_diph_project_settings');  
 
 //create arrays of custom field values associated with a project
-function createMoteValueArrays($mote_name,$project_id){
+function createMoteValueArrays($custom_name,$project_id){
 
 	//loop through all markers in project -add to array
 	$moteArray = array();
@@ -358,7 +360,7 @@ function createMoteValueArrays($mote_name,$project_id){
 
 		$marker_id = get_the_ID();
 		$temp_post = get_post($marker_id);
-		$tempMoteValue = get_post_meta($marker_id,$mote_name);
+		$tempMoteValue = get_post_meta($marker_id,$custom_name);
 		$tempMoteArray = split(';',$tempMoteValue[0]);
 
 		//array_push($moteArray,$tempMoteValue[0]); 
@@ -446,14 +448,23 @@ function createMarkerArray($project_id) {
 
 	//LOAD PROJECT SETTINGS
 	//-get primary category parent
+	$project_settingsA = get_post_meta($project_id,'project_settings');
+	$project_settings = json_decode(str_replace('\\','',$project_settingsA[0]),true);
 
-	$parent = get_term_by('name', "Primary Concept", $project_tax);
+	foreach( $project_settings['entry-points'] as $eps) {
+		if($eps['type']=="map") {
+			$filter_parent = $eps['settings']['filter-data'];
+		}
+	}
+
+	$parent = get_term_by('name', $filter_parent, $project_tax);
 	//$parent = get_terms($project_tax, array('parent=0&hierarchical=0&number=1'));
 	//print_r($parent);
 	$parent_term_id = $parent->term_id;
 	$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group' ) );
 
-	$term_icons = getIconsForTerms($parent_terms, $project_tax);
+	 $term_icons = getIconsForTerms($parent_terms, $project_tax);
+	//$term_icons = json_encode($filter_parent);
 
 	$json_string = '['.$term_icons.',{"type": "FeatureCollection","features": [';
 	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'marker_project','meta_value'=>$project_id, 'posts_per_page' => -1 );
@@ -467,7 +478,7 @@ function createMarkerArray($project_id) {
 		$latlon = get_post_meta($marker_id,'Location0');
 		$lonlat = invertLatLon($latlon[0]);
 		$title = get_the_title();
-		$categories = get_post_meta($marker_id,'Concepts');
+		//$categories = get_post_meta($marker_id,'Concepts');
 		$args = array("fields" => "names");
 		$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
 		$p_terms;
@@ -671,6 +682,7 @@ function print_new_bootstrap_html(){
   </div>
   <div class="modal-body">
     <p>Zoom and drag to set your map\'s initial position.</p>
+    <div id="map_canvas"></div>
   </div>
   <div class="modal-footer">
     <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
@@ -716,6 +728,7 @@ add_action( 'wp_ajax_diphSaveProjectSettings', 'diphSaveProjectSettings' );
 function diphGetMoteValues(){
 	$mote_values = array();
 	$mote_name = $_POST['mote_name'];
+	$custom_name = $_POST['custom_name'];
 	$diph_projectID = $_POST['project'];
 
 	$diph_project = get_post($diph_projectID);
@@ -723,7 +736,8 @@ function diphGetMoteValues(){
 	$diph_tax_name = 'diph_tax_'.$diph_project_slug;
 	createParentTerm($mote_name,$diph_tax_name);
 	//get fresh terms from meta feild 
-	$mArray = createMoteValueArrays($mote_name,$diph_projectID);
+
+	$mArray = createMoteValueArrays($custom_name,$diph_projectID);
 
 	$term_counts = array_count_values($mArray);	
 
@@ -743,9 +757,20 @@ function diphGetMoteValues(){
 			//wp_update_term( $term_id, $diph_tax_name );
 			//clean_term_cache($parent_term->term_id, $diph_tax_name,true,true);
 		}
-		else {			
-			wp_insert_term( $term_name, $diph_tax_name, $args );
-			//clean_term_cache($parent_term->term_id, $diph_tax_name,true,true);
+		else {	
+			//create a unique id by changing the name from an existing term. Error in WP causes terms with same name to share ID
+			if(term_exists($term_name)) {
+				$temp_term_name = $term_name . '_dup';
+				wp_insert_term( $temp_term_name, $diph_tax_name, $args );
+				//change name back
+				$new_term_id = term_exists($temp_term_name);
+				$temp_args = array('name'=>$term_name, 'slug'=>($term_name.' '.$diph_projectID));
+				wp_update_term( $new_term_id, $diph_tax_name, $temp_args );
+			}
+			else {
+				wp_insert_term( $term_name, $diph_tax_name, $args );
+				//clean_term_cache($parent_term->term_id, $diph_tax_name,true,true);
+			}
 		}
 		
 	}	
@@ -770,6 +795,7 @@ function diphGetMoteValues(){
 	}
 
 	die(json_encode($terms_loaded));
+	//die(json_encode($terms_counts));
 }
 add_action( 'wp_ajax_diphGetMoteValues', 'diphGetMoteValues' );
 

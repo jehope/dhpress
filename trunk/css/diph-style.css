@@ -58,6 +58,10 @@ line-height: 23px;
 	float: right;
 	cursor: pointer;
 }
+.term-icon img {
+	height: 20px;
+	width: auto;
+}
 .cat-list {
 	width: 400px;
 	float: left;
@@ -92,7 +96,6 @@ input, textarea {
 	border: solid 1px #E5E5E5;
 	outline: 0;
 	font: normal 13px/100% Verdana, Tahoma, sans-serif;
-	width: 200px;
 	background: #FFFFFF url('bg_form.png') left top repeat-x;
 	background: -webkit-gradient(linear, left top, left 25, from(#FFFFFF), color-stop(4%, #EEEEEE), to(#FFFFFF));
 	background: -moz-linear-gradient(top, #FFFFFF, #EEEEEE 1px, #FFFFFF 25px);
@@ -170,4 +173,10 @@ display: inline-block;
 	right:10px;
 	top: 85px;
 }
-
+#map_canvas {
+	width: 100%;
+	height: 100%;
+	min-height: 300px;
+}
+		
+#map_canvas img { max-width:none; }

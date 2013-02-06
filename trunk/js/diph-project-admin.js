@@ -4,6 +4,26 @@ jQuery(document).ready(function($) {
 var projectObj = new Object();
 var postID = $('input#post_ID').val();
 
+
+function pickCenterZoom(){
+//setup map to pick center and zoom
+
+var gg = new OpenLayers.Projection("EPSG:4326");
+var sm = new OpenLayers.Projection("EPSG:900913");
+var osm = new OpenLayers.Layer.OSM();      
+//var map = new OpenLayers.Map('set_map');
+var map = new OpenLayers.Map({
+    div: "map_canvas",
+    projection: sm,
+    displayProjection: gg,
+    layers: [osm]
+});
+var lonlat = new OpenLayers.LonLat(-88.52349,38.03501);
+lonlat.transform(gg, map.getProjectionObject());
+map.addLayers([osm]);
+map.setCenter(lonlat, 5);
+
+}
 //Assign listener to icons loaded by php
 $('.diph_icon').click(function() {
 	if($(this).hasClass('selected')==false){
@@ -21,6 +41,7 @@ loadSelectedIcons();
 
 
 $('#add-map').click(function(){
+
             var mapCount  = countEntries('map') +1;
             if(mapCount==3) {
               var options = { animation: true, 
@@ -151,12 +172,14 @@ $('#add-map').click(function(){
 
           function loadSettings(data) {
           	//if new project
-          	
-
+          	projectObj['project-details'] = new Object();
+          	projectObj['project-details']['id'] = data['project-details']['id'];
+			projectObj['project-details']['name'] = data['project-details']['name'];
 
             //create handelers to load data in order. Entry points and shared motes are dependent on motes.
             $('body').bind('load-motes', function(e) {
             	if(data['motes']) {
+            		projectObj['motes'] = new Object();
               		buildMotes(data['motes'])
               	}
               return;
@@ -265,7 +288,7 @@ $('#add-map').click(function(){
                         <div class="input-prepend input-append">\
                           <input class="span2" type="text" name="lat" id="lat" placeholder="Lat" value="'+createIfEmpty(settings['lat'])+'" />\
                           <input class="span2" type="text" name="lon" id="lon" placeholder="Lon" value="'+createIfEmpty(settings['lon'])+'" />\
-                          <a href="#myModal" role="button" class="btn" data-toggle="modal">\
+                          <a href="#myModal" role="button" class="load-map btn" data-toggle="modal">\
                             <i class="icon-screenshot"></i>\
                           </a>\
                         </div>\
@@ -280,12 +303,21 @@ $('#add-map').click(function(){
                         <select name="overlay" id="overlay">\
                          <option>No overlays available</option>\
                         </select>\
-                        <label>Marker Layer</label>\
+                    </div>\
+                </div>\
+                <div class="row-fluid vars">\
+                    <div class="span6">\
+                    	<label>Marker Layer</label>\
                         <select name="marker-layer" id="marker-layer">'+getLoadedMotes(settings['marker-layer'])+'\
+                        </select>\
+                    </div>\
+                    <div class="span6">\
+                    	<label>Icon Data</label>\
+                        <select name="filter-mote" id="filter-mote">'+getLoadedMotes(settings['filter-data'])+'\
                         </select>\
                         <button class="btn btn-inverse load-legend" type="button">Create Legend</button>\
                     </div>\
-                  </div>';
+                </div>';
             }
 
             $('#entryTabContent').append('<div class="tab-pane fade in ep" id="'+type+'-'+epCount+'"><button type="button" class="close" >&times;</button>\<p>'+entryTabContent+'</p></div>');
@@ -306,12 +338,24 @@ $('#add-map').click(function(){
                     $(this).find('.close').html('&times;')
                 }
             })
+            $('.load-map ').click(function() {
+  console.log("fire load map");
+    pickCenterZoom();
+  });
             $('.load-legend').click(function() {
-    			var moteName = $(this).closest('#marker-layer option:selected').val();
-    			//var projectID = projectObj['project-details']['id'];
-    			//diphGetMoteValues(moteName,projectID,true);
+    			var moteName = $(this).parent().find('#filter-mote option:selected').val();
+    			var customName = getMoteCustomField(moteName);
+    			var projectID = projectObj['project-details']['id'];
+    			diphGetMoteValues(customName,moteName,projectID,true);
     		});
 
+          }
+          function getMoteCustomField(findMote) {
+          	for (var i =0; i < Object.keys(projectObj['motes']).length; i++) {
+          		if(projectObj['motes'][i]['name']==findMote) {
+          			return projectObj['motes'][i]['custom-fields']
+          		}
+          	}
           }
           function getLoadedMotes(selected) {
             var moteOptions = ''
@@ -339,11 +383,17 @@ $('#add-map').click(function(){
           //builds the html for the motes and preloads the data
           function buildMotes(moteObject){
             var moteCount = countMotes()
+
             for (var i =0; i < Object.keys(moteObject).length; i++) {
               console.log('html for '+moteObject[i]['name'])
-              //
-              
-              moteContent = '<div class="accordion-group" id="group'+(moteCount+i)+'">\
+            console.log((moteCount+i))
+            projectObj['motes'][(moteCount+i)] = new Object();
+            projectObj['motes'][(moteCount+i)]['name'] = moteObject[i]['name']
+			projectObj['motes'][(moteCount+i)]['custom-fields'] = moteObject[i]['custom-fields']
+			projectObj['motes'][(moteCount+i)]['type'] = moteObject[i]['type']
+			projectObj['motes'][(moteCount+i)]['delim'] = moteObject[i]['delim']
+
+            moteContent = '<div class="accordion-group" id="group'+(moteCount+i)+'">\
                   <div class="accordion-heading">\
                     <a class="accordion-toggle" data-toggle="collapse" data-parent="#mote-list" href="#collapseMote'+(moteCount+i)+'">\
                       <button type="button" class="close" >&times;</button>\
@@ -354,7 +404,7 @@ $('#add-map').click(function(){
                     <div class="accordion-inner">\
                      <div class="row-fluid vars">\
                     	<div class="span4">\
-                     	<input class="mote-name" type="text" placeholder="Mote Name" value="'+moteObject[i]['name']+'" />\
+                     	<input class="mote-name span12" type="text" placeholder="Mote Name" value="'+moteObject[i]['name']+'" />\
                      	</div>\
                      	<div class="span8 layers">\
                         '+customFieldOption(moteObject[i]['custom-fields'])+'\
@@ -452,7 +502,7 @@ $('#add-map').click(function(){
 function loadSelectedIcons(){
 
 	$('#diph_icons_box .inside').append('<div class="misc-pub-section"><span >Add more icons</span><a class="diph-icon-upload button-primary">Upload</a></div>');
-	$('.icon-upload').click(function(){
+	$('.diph-icon-upload').click(function(){
 		tb_show('','media-upload.php?post_id='+ postID +'&type=image&TB_iframe=1&width=640&height=520');
 	});
 }
@@ -583,6 +633,7 @@ function saveProjectSettings()	{
         	projectObj['entry-points'][index]["settings"]['zoom'] = $(this).find('#zoom').val()
         	projectObj['entry-points'][index]["settings"]['base-layer'] = $(this).find('#base-layer').val()
         	projectObj['entry-points'][index]["settings"]['marker-layer'] = $(this).find('#marker-layer').val()
+        	projectObj['entry-points'][index]["settings"]['filter-data'] = $(this).find('#filter-mote').val()
         }
         if(type[0]=='timeline') {
 			projectObj['entry-points'][index] = new Object();
@@ -780,14 +831,14 @@ function updateProjectSettings(){
         }
     });
 }
-function createTaxTerms(treeParent,projectID,taxTerms) {
+function createTaxTerms(treeParentID,projectID,taxTerms) {
 	var termData = taxTerms;
 	jQuery.ajax({
         type: 'POST',
         url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
         data: {
             action: 'diphCreateTaxTerms',
-            mote_name: treeParent,
+            mote_name: treeParentID,
             project: projectID,
             terms: termData
         },
@@ -803,21 +854,22 @@ function createTaxTerms(treeParent,projectID,taxTerms) {
         }
     });
 }	
-function diphGetMoteValues(moteName,projectID,loadLegend) {
-
+function diphGetMoteValues(customName,moteName,projectID,loadLegend) {
+	console.log(moteName);
 	jQuery.ajax({
         type: 'POST',
         url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
         data: {
             action: 'diphGetMoteValues',
             project: projectID,
+            custom_name: customName,
             mote_name: moteName
         },
         success: function(data, textStatus, XMLHttpRequest){
             console.log(textStatus);
             //console.log(JSON.parse(data));
             moteTerms(moteName);
-            if(loadLegend) { createLegend(data); }
+            if(loadLegend && data) { createLegend(data); }
             //
 
         },

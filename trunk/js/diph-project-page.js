@@ -4,33 +4,7 @@ var map, map2, projectID, mObject, lookupParents,markerObject,catFilter;
 //jQuery noconfilct wrapper fires when page has loaded
 jQuery(document).ready(function($) {
 
-// (function($){
-//   var ListView = Backbone.View.extend({
-//     el: $('body'), // el attaches to existing element
-//     // `events`: Where DOM events are bound to View methods. Backbone doesn't have a separate controller to handle such bindings; it all happens in a View.
-//     events: {
-//       'click button#add': 'addItem'
-//     },
-//     initialize: function(){
-//       _.bindAll(this, 'render', 'addItem'); // every function that uses 'this' as the current object should be in here
-      
-//       this.counter = 0; // total number of items added thus far
-//       this.render();
-//     },
-//     // `render()` now introduces a button to add a new list item.
-//     render: function(){
-//       $('#map_div2').append("<button id='add'>Add list item</button>");
-//       $('#map_div2').append("<ul></ul>");
-//     },
-//     // `addItem()`: Custom function called via `click` event above.
-//     addItem: function(){
-//       this.counter++;
-//       $('ul', '#map_div2').append("<li>hello world"+this.counter+"</li>");
-//     }
-//   });
-
-//   var listView = new ListView();      
-// })(jQuery);
+var projectID = $('.post').attr('id')
 
 
 var gg = new OpenLayers.Projection("EPSG:4326");
@@ -126,7 +100,7 @@ selectControl = new OpenLayers.Control.SelectFeature(mObject,
 hoverControl = new OpenLayers.Control.SelectFeature(mObject, 
     { hover: true, highlightOnly: true, renderIntent: "temporary" });
 
-loadMarkers('4233',mObject);   
+loadMarkers(projectID,mObject);   
 
 mObject.id = "Markers";       
 map.addLayer(mObject);
