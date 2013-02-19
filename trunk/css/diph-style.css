@@ -1,7 +1,6 @@
 @charset "UTF-8";
 /* CSS Document */
 
-
 .entry-point {
 	min-height:200px;
 }
@@ -180,3 +179,16 @@ display: inline-block;
 }
 		
 #map_canvas img { max-width:none; }
+
+.jPicker {
+	float: right;
+}
+ul.legend-list {
+	margin-left: 0px;
+}
+.legend-list .btn {
+	margin-bottom: 10px;
+}
+#TB_ajaxContent p.default-marker {
+	padding-right: 10px;
+}

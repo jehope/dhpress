@@ -442,14 +442,14 @@ function diphGetProjectSettings(){
 add_action( 'wp_ajax_diphGetProjectSettings', 'diphGetProjectSettings' );
 
 
-function diphGetTranscript(){
+// function diphGetTranscript(){
 
-	$diph_project = $_POST['project'];
-	$diph_transcript = $_POST['transcript'];
-	$transcript = get_post_meta($diph_project, $diph_transcript, true);
-	die($transcript);
-}
-add_action( 'wp_ajax_diphGetTranscript', 'diphGetTranscript' );
+// 	$diph_project = $_POST['project'];
+// 	$diph_transcript = $_POST['transcript'];
+// 	$transcript = get_post_meta($diph_project, $diph_transcript, true);
+// 	die($transcript);
+// }
+// add_action( 'wp_ajax_diphGetTranscript', 'diphGetTranscript' );
 
 function diph_project_filters() {
 	global $typenow;

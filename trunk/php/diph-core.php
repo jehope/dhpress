@@ -26,9 +26,9 @@ function diph_add_pages() {
     //add_submenu_page('diph-top-level-handle', __('Map Library','diph-menu'), __('Map Library','diph-menu'), 'manage_options', 'map-library', 'diph_sublevel_page');
 
     // Add a second submenu to the custom top-level menu:
-    add_submenu_page('diph-top-level-handle', __('Icon Library','diph-menu'), __('Icon Library','diph-menu'), 'manage_options', 'icon-library', 'diph_sublevel_page2');
+    //add_submenu_page('diph-top-level-handle', __('Icon Library','diph-menu'), __('Icon Library','diph-menu'), 'manage_options', 'icon-library', 'diph_sublevel_page2');
   
-    add_submenu_page('diph-top-level-handle', __('Category Manager','diph-menu'), __('Category Manager','diph-menu'), 'manage_options', 'category-manager', 'diph_sublevel_page3');
+    //add_submenu_page('diph-top-level-handle', __('Category Manager','diph-menu'), __('Category Manager','diph-menu'), 'manage_options', 'category-manager', 'diph_sublevel_page3');
   
 }
 
