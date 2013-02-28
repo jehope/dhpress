@@ -1,13 +1,21 @@
 //jQuery noconfilct wrapper fires when page has loaded
 jQuery(document).ready(function($) {
 
-var prefixUrl = window.location.pathname.split('wp-admin');
-console.log(prefixUrl[0])
+var ajax_url = diphDataLib.ajax_url;
 var projectObj = new Object();
 var postID = $('input#post_ID').val();
+
 $('#screen-meta-links a').click(function(){
   $('#screen-options-wrap').removeClass('hidden');
 });
+//console.log(diphDataLib.ajax_url);
+
+//$('#hidden-layers').show();
+var BASE_LAYERS = $('#hidden-layers .base-layer').map(function(){
+  return $(this);
+});
+var OVERLAYS = $('#hidden-layers option').clone();
+console.log(BASE_LAYERS);
 
 function pickCenterZoom(){
   //setup map to pick center and zoom
@@ -19,8 +27,7 @@ function pickCenterZoom(){
   var map = new OpenLayers.Map({
       div: "map_canvas",
       projection: sm,
-      displayProjection: gg,
-      layers: [osm]
+      displayProjection: gg
   });
   var lonlat = new OpenLayers.LonLat(-88.52349,38.03501);
   lonlat.transform(gg, map.getProjectionObject());
@@ -123,15 +130,30 @@ $('#add-transcript').click(function(){
 });
 
 //add
-$('#create-custom-field').click(function(e){
+
+$('#create-new-custom').click(function(){
+  $('#newCustomField').empty();
+  $('#newCustomField').append('<div class="modal-header">\
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+    <h3 id="myModalLabel">New Custom Field</h3>\
+  </div>\
+  <div class="modal-body">\
+    <p>Enter custom field name and default value.</p>\
+    <input class="span4 new-custom-field-name" type="text" name="new-custom-field-name" placeholder="Name" />\
+    <input class="span4 new-custom-field-value" type="text" name="new-custom-field-value" placeholder="Value" />\
+  </div>\
+  <div class="modal-footer">\
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\
+    <button class="btn btn-primary" id="create-custom-field" aria-hidden="true">Create</button>\
+  </div>');
+  $('#create-custom-field').click(function(e){
   e.preventDefault();
   var tempNewCFname = $('#newCustomField .new-custom-field-name').val();
   var tempNewCFvalue = $('#newCustomField .new-custom-field-value').val();
   if(tempNewCFname&&tempNewCFvalue) {
     console.log('name and value exist.')
+    $('#create-custom-field').text('creating...');
     createCustomField(postID,tempNewCFname,tempNewCFvalue);
-
-    $('#newCustomField').modal('hide');
   }
   else {
     $('#newCustomField .modal-body .alert-error').remove();
@@ -139,8 +161,79 @@ $('#create-custom-field').click(function(e){
   }
   
 });
-$('#create-new-custom').click(function(){
-  $('#newCustomField .modal-body .alert-error').remove();
+  //$('#newCustomField .modal-body .alert-error').remove();
+});
+$('#search-replace-btn').click(function(){
+  $('#newCustomField').empty();
+  $('#newCustomField').append('<div class="modal-header">\
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+    <h3 id="myModalLabel">Find and Replace</h3>\
+  </div>\
+  <div class="modal-body">\
+    <p>Find and replace a value in all custom fields.</p>\
+    <select name="custom-fields" class="custom-fields"></select>\
+    <input class="span4 find-custom-field-value" type="text" name="new-custom-field-name" placeholder="Find" />\
+    <input class="span4 replace-custom-field-value" type="text" name="new-custom-field-value" placeholder="Replace" />\
+  </div>\
+  <div class="modal-footer">\
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\
+    <button class="btn btn-primary" id="find-custom-field" aria-hidden="true">Find & Replace</button>\
+  </div>');
+  $('#newCustomField .custom-fields').append($('#create-mote select.custom-fields').clone().html());
+
+  $('.find-custom-field-value').on('focus',function(e){
+    $('#newCustomField .modal-body').append('<div class="alert alert-error"><p>Warning! This action can not be undone.</p></div>');
+  });
+ 
+  $('#find-custom-field').click(function(e){
+  e.preventDefault();
+  var tempFindCFvalue = $('#newCustomField .find-custom-field-value').val();
+  var tempReplaceCFvalue = $('#newCustomField .replace-custom-field-value').val();
+  var tempCFName = $('#newCustomField .custom-fields option:selected').val();
+  if(tempFindCFvalue) {
+    console.log(tempFindCFvalue)
+    console.log($('#newCustomField .custom-fields option:selected').val())
+  
+    findReplaceCustomField(postID,tempCFName,tempFindCFvalue,tempReplaceCFvalue);
+
+    //$('#newCustomField').modal('hide');
+  }
+  else {
+    $('#newCustomField .modal-body .alert-error').remove();
+    $('#newCustomField .modal-body').append('<div class="alert alert-error"><p>Need a value to search for.</p></div>');
+  }
+  
+});
+  //$('#newCustomField .modal-body .alert-error').remove();
+});
+$('#delete-cf-btn').click(function(){
+  $('#newCustomField').empty();
+  $('#newCustomField').append('<div class="modal-header">\
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+    <h3 id="myModalLabel">Delete Custom Field</h3>\
+  </div>\
+  <div class="modal-body">\
+    <p>Delete custom fields in all associated markers.</p>\
+    <select name="custom-fields" class="custom-fields"></select>\
+  </div>\
+  <div class="modal-footer">\
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
+    <button class="btn btn-primary" id="delete-custom-field" aria-hidden="true">Delete</button>\
+  </div>');
+  $('#newCustomField .custom-fields').append($('#create-mote select.custom-fields').clone().html());
+  $('#newCustomField .custom-fields').on('change',function(){
+    //console.log($('#newCustomField .custom-fields option:selected').val())
+    $('#newCustomField .modal-body').append('<div class="alert alert-error"><p>Warning! Can not undo this action.</p></div>');
+  });
+  
+  $('#delete-custom-field').click(function(e){
+    e.preventDefault();
+    console.log($('#newCustomField .custom-fields option:selected').val());
+    var tempNewCFname = $('#newCustomField .custom-fields option:selected').val();
+     $('#delete-custom-field').text('deleting...');
+    deleteCustomField(postID,tempNewCFname);
+  });
+
 });
  
 
@@ -291,8 +384,8 @@ function buildEntryHtml(type,settings){
                     <div class="cords span5">\
                         <label>Map Center (Lat/Lon)</label>\
                         <div class="input-prepend input-append">\
-                          <input class="span2" type="text" name="lat" id="lat" placeholder="Lat" value="'+createIfEmpty(settings['lat'])+'" />\
-                          <input class="span2" type="text" name="lon" id="lon" placeholder="Lon" value="'+createIfEmpty(settings['lon'])+'" />\
+                          <input class="span5" type="text" name="lat" id="lat" placeholder="Lat" value="'+createIfEmpty(settings['lat'])+'" />\
+                          <input class="span5" type="text" name="lon" id="lon" placeholder="Lon" value="'+createIfEmpty(settings['lon'])+'" />\
                           <a href="#myModal" role="button" class="load-map btn" data-toggle="modal">\
                             <i class="icon-screenshot"></i>\
                           </a>\
@@ -301,13 +394,10 @@ function buildEntryHtml(type,settings){
                         <input type="text" name="zoom" id="zoom" placeholder="Zoom" value="'+createIfEmpty(settings['zoom'])+'" />\
                     </div>\
                     <div class="span7 layers">\
-                        <label>Base Layer</label>\
-                        <select name="base-layer" id="base-layer">\
-                         <option>Default Base Layer</option>\
-                        </select>\
-                        <select name="overlay" id="overlay">\
-                         <option>No overlays available</option>\
-                        </select>\
+                      <ul class="layer-list">\
+                        '+loadLayers(settings['layers'])+'\
+                        </ul>\
+                    <button class="btn btn-success add-layer" type="button">Add</button>\
                     </div>\
                 </div>\
                 <div class="row-fluid vars">\
@@ -342,6 +432,11 @@ function buildEntryHtml(type,settings){
       $(this).find('.close').html('&times;');
     }
   });
+  $('.delete-layer').click(function(){   
+    console.log('delete')
+    $(this).closest('li').remove();
+    //assignLegendListeners();
+  });
   //$('.load-map ').click(function() {
   //  console.log("fire load map");
   //  pickCenterZoom();
@@ -349,28 +444,69 @@ function buildEntryHtml(type,settings){
   
 assignLegendListeners();
   $('.add-legend').unbind('click');
-  $('.add-legend').click(function(){
-    
+  $('.add-legend').click(function(){   
     $('.legend-list').append(addLegend());
     assignLegendListeners();
-    
-
-
+  });
+  $('.add-layer').unbind('click');
+  $('.add-layer').click(function(){   
+    $('.layer-list').append(addNewLayer());
+    //assignLegendListeners();
   });
   
+}
+function loadLayers(layerObject){
+  var layerHtml = $('<ul><li><label>Base Layer</label><select name="base-layer" id="base-layer"></select><label>Additional Layers</label></li></ul>');
+  $('select', layerHtml).append($('#hidden-layers .base-layer').clone());
+
+  if(layerObject != null && typeof layerObject === 'object') {
+    console.log('layers'+Object.keys(layerObject).length);
+    //"layers": {"0":{"id":"5675","name":"OpenStreetMap"},"1":{"id":"5672","name":"Test Map 2"}}
+    for (var i =0; i < Object.keys(layerObject).length; i++) {
+      if(i==0) {
+        $('select option#'+layerObject[i]['id'], layerHtml).attr('selected','selected');
+      }
+      else{
+        console.log('second layer')
+        $(layerHtml).append(addNewLayer());
+        $('li',layerHtml).eq(i).find('select option#'+layerObject[i]['id']).attr('selected','selected');
+
+      }
+        
+    }
+  }
+      
+  return $(layerHtml).html();
+}
+function addNewLayer(selected){
+  var layerLine = $('<li><select name="overlay" ></select> <button class="btn btn-danger delete-layer" type="button">-</button><input type="text" class="span2 opacity" value="" data-slider-min="0" data-slider-max="1" data-slider-step=".1" data-slider-value="1" data-slider-orientation="horizontal" data-slider-selection="after" data-slider-tooltip="hide"></li>');
+  $('select',layerLine).append($('#hidden-layers option').clone());
+  //$('.opacity',layerLine).slider();
+  //$('.delete-layer',layerLine).unbind('click');
+  $('.delete-layer',layerLine).click(function(){   
+    console.log('delete')
+    $(this).closest('li').remove();
+    //assignLegendListeners();
+  });
+
+  return layerLine;
+}
+function getAvailableLayers(){
+  var layersA = $('#hidden-layers').clone();
+  return layersA;
 }
 function assignLegendListeners(){
 $('.load-legend').unbind('click');
   $('.load-legend').click(function() {
       var moteName = $(this).parent().find('#filter-mote option:selected').val();
-      var customName = getMoteCustomField(moteName);
+      var mote = getMote(moteName);
       var projectID = projectObj['project-details']['id'];
-      diphGetMoteValues(customName,moteName,projectID,true);
+      console.log(projectObj['motes'])
+      diphGetMoteValues(mote,projectID,true);
   });
   $('.delete-legend').unbind('click');
   $('.delete-legend').click(function() {
     var moteName = $(this).parent().find('#filter-mote option:selected').val();
-    var customName = getMoteCustomField(moteName);
     var lineID = $(this).closest('li').attr('id');
     $('body').append('<!-- Modal -->\
 <div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
@@ -417,7 +553,7 @@ function addLegend(selected, count){
   if(selected=='') {
     selected = '';
   }
-  if(!count) {
+  if(!count && $('.legend-list li').last().attr('id')) {
     tempcount = $('.legend-list li').last().attr('id').split('-');
     count = parseInt(tempcount[1])+1;
     console.log('3legend count '+tempcount[1]);
@@ -429,10 +565,10 @@ function addLegend(selected, count){
                        
   return legendLine;
 }
-function getMoteCustomField(findMote) {
+function getMote(findMote) {
   for (var i =0; i < Object.keys(projectObj['motes']).length; i++) {
     if(projectObj['motes'][i]['name']==findMote) {
-      return projectObj['motes'][i]['custom-fields'];
+      return projectObj['motes'][i];
     }
   }
 }
@@ -686,12 +822,12 @@ function doneTypingMote() {
 }
 
 
-$('.add-layer').click(function(){
-    addMoteLine();
-   createMarkerSettings();
-	saveProjectSettings();
+// $('.add-layer').click(function(){
+//     addMoteLine();
+//    createMarkerSettings();
+// 	saveProjectSettings();
 
-});
+// });
 $('#save-btn').on('click', function(){
 
 	saveProjectSettings()
@@ -727,14 +863,24 @@ function saveProjectSettings()	{
 			projectObj['entry-points'][index]["settings"]['lat'] = $(this).find('#lat').val();
      	projectObj['entry-points'][index]["settings"]['lon'] = $(this).find('#lon').val();
      	projectObj['entry-points'][index]["settings"]['zoom'] = $(this).find('#zoom').val();
-     	projectObj['entry-points'][index]["settings"]['base-layer'] = $(this).find('#base-layer').val();
+      //layers
+      projectObj['entry-points'][index]["settings"]['layers'] = new Object();
+      $('.layer-list li option:selected').map(function(ind2) {
+        projectObj['entry-points'][index]["settings"]['layers'][ind2] = new Object();
+        projectObj['entry-points'][index]["settings"]['layers'][ind2]['id'] = $(this).attr('id'); 
+        projectObj['entry-points'][index]["settings"]['layers'][ind2]['name'] = $(this).val(); 
+        projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapType'] = $(this).attr('data-mapType'); 
+
+        //console.log($(this).attr('data-mapType'));
+          //$("div[class^='apple-']")
+      
+      }).get().join();
+
      	projectObj['entry-points'][index]["settings"]['marker-layer'] = $(this).find('#marker-layer').val();
+      //legends
       projectObj['entry-points'][index]["settings"]['filter-data'] = new Object();
-      var tempLegends = $('.legend-list li option:selected').map(function(index2) {
-        console.log(index2);
-        //projectObj['entry-points'][index]["settings"]['filter-data'] = new Object();
+      $('.legend-list li option:selected').map(function(index2) {
         projectObj['entry-points'][index]["settings"]['filter-data'][index2] = $(this).val(); 
-        //return $(this).val();
       }).get().join();
      	
     }
@@ -949,7 +1095,7 @@ function show_props(obj) {
 			$('li#'+obj[i].term_id+' div', result).append('<span class="term-name">'+ obj[i].name + '</span>');		
 			$('li#'+obj[i].term_id+' div', result).append('<span class="term-count"> ' + obj[i].count + '</span>');
 			if(obj[i].icon_url!='undefined'&&obj[i].icon_url!='') {
-				console.log('before:'+obj[i].icon_url+'after');
+				//console.log('before:'+obj[i].icon_url+'after');
         if(obj[i].icon_url.substring(0,1)=='#') {
           $('li#'+obj[i].term_id+' div', result).append('<span class="term-icon">'+obj[i].icon_url+'</span>');
         }
@@ -967,16 +1113,14 @@ function show_props(obj) {
     
     return result;
 }
-function moteTerms(moteName) {
 
-} 
 //AJAX functions
 function updateProjectSettings(){
 	projectID = postID;
 	var settingsData = $('#project_settings').val();
 	jQuery.ajax({
         type: 'POST',
-        url: prefixUrl[0]+'wp-admin/admin-ajax.php',
+        url: ajax_url,
         data: {
             action: 'diphSaveProjectSettings',          
             project: projectID,
@@ -984,7 +1128,7 @@ function updateProjectSettings(){
         },
         success: function(data, textStatus, XMLHttpRequest){
             console.log(textStatus);
-            console.log(data);
+            //console.log(data);
         
         },
         error: function(XMLHttpRequest, textStatus, errorThrown){
@@ -996,7 +1140,7 @@ function createTaxTerms(treeParentID,projectID,taxTerms) {
 	var termData = taxTerms;
 	jQuery.ajax({
         type: 'POST',
-        url: prefixUrl[0]+'wp-admin/admin-ajax.php',
+        url: ajax_url,
         data: {
             action: 'diphCreateTaxTerms',
             mote_name: treeParentID,
@@ -1005,7 +1149,7 @@ function createTaxTerms(treeParentID,projectID,taxTerms) {
         },
         success: function(data, textStatus, XMLHttpRequest){
             console.log(textStatus);
-            console.log(JSON.parse(data));
+            //console.log(JSON.parse(data));
             
             //
 
@@ -1018,7 +1162,7 @@ function createTaxTerms(treeParentID,projectID,taxTerms) {
 function createCustomField(projectID,fieldName,fieldValue) { 
   jQuery.ajax({
         type: 'POST',
-        url: prefixUrl[0]+'wp-admin/admin-ajax.php',
+        url: ajax_url,
         data: {
             action: 'diphAddCustomField',
             project: projectID,
@@ -1026,17 +1170,57 @@ function createCustomField(projectID,fieldName,fieldValue) {
             field_value: fieldValue
         },
         success: function(data, textStatus, XMLHttpRequest){
-            console.log(textStatus);            
+            console.log(textStatus); 
+            $('#newCustomField').modal('hide');           
         },
         error: function(XMLHttpRequest, textStatus, errorThrown){
            alert(errorThrown);
         }
     });
-} 
+}
+function findReplaceCustomField(projectID,tempFindCF,tempFindCFvalue,tempReplaceCFvalue){
+  jQuery.ajax({
+        type: 'POST',
+        url: ajax_url,
+        data: {
+            action: 'diphFindReplaceCustomField',
+            project: projectID,
+            field_name: tempFindCF,
+            find_value: tempFindCFvalue,
+            replace_value: tempReplaceCFvalue
+        },
+        success: function(data, textStatus, XMLHttpRequest){
+            console.log(textStatus); 
+            $('#newCustomField').modal('hide');           
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown){
+           alert(errorThrown);
+        }
+    });
+}
+function deleteCustomField(projectID,deleteField) { 
+  jQuery.ajax({
+        type: 'POST',
+        url: ajax_url,
+        data: {
+            action: 'diphDeleteCustomField',
+            project: projectID,
+            field_name: deleteField
+        },
+        success: function(data, textStatus, XMLHttpRequest){
+            console.log(textStatus); 
+            $('#newCustomField').modal('hide');           
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown){
+           alert(errorThrown);
+        }
+    });
+}
+ 
 function deleteTerms(projectID,termName) { 
   jQuery.ajax({
         type: 'POST',
-        url: prefixUrl[0]+'wp-admin/admin-ajax.php',
+        url: ajax_url,
         data: {
             action: 'diphDeleteTerms',
             project: projectID,
@@ -1051,23 +1235,23 @@ function deleteTerms(projectID,termName) {
         }
     });
 } 
-function diphGetMoteValues(customName,moteName,projectID,loadLegend) {
-	console.log(moteName);
+function diphGetMoteValues(mote,projectID,loadLegend) {
+	//console.log(moteName);
+
 	jQuery.ajax({
         type: 'POST',
-        url: prefixUrl[0]+'wp-admin/admin-ajax.php',
+        url: ajax_url,
         data: {
             action: 'diphGetMoteValues',
             project: projectID,
-            custom_name: customName,
-            mote_name: moteName
+            mote_name: mote
         },
         success: function(data, textStatus, XMLHttpRequest){
             console.log(textStatus);
             //console.log(JSON.parse(data));
-            moteTerms(moteName);
+            
             if(loadLegend && data) { 
-              createLegend(moteName,data); 
+              createLegend(mote['name'],data); 
             }
             //
 

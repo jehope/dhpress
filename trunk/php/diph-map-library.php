@@ -1,5 +1,14 @@
 <?php
+/**
+     * Registers and handles diPH Map Library functions
+     *
+     * @package diPH Toolkit
+     * @author diPH Team
+     * @link http://diph.org/download/
+     */
+     
 // Add new taxonomy for mapsets
+global $cdlamapid;
 function diph_mapset_init() {
   $labels = array(
     'name' => _x( 'Maps', 'taxonomy general name' ),
@@ -29,7 +38,8 @@ function diph_mapset_init() {
     'has_archive' => true, 
     'hierarchical' => true,
     'menu_position' => null,
-    'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions','custom-fields' )
+    'supports' => array( 'title', 'author', 'excerpt', 'comments', 'revisions' )
+//'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions','custom-fields' )
   ); 
   register_post_type('diph-maps',$args);
 }
@@ -37,7 +47,7 @@ add_action( 'init', 'diph_mapset_init' );
 
 
 function mapset_init() {
-	// Add new taxonomy, NOT hierarchical (like tags)
+    // Add new taxonomy, NOT hierarchical (like tags)
   $labels = array(
     'name' => _x( 'Mapsets', 'taxonomy general name' ),
     'singular_name' => _x( 'Mapset', 'taxonomy singular name' ),
@@ -60,9 +70,9 @@ function mapset_init() {
     'query_var' => true,
     'rewrite' => array( 'slug' => 'mapsets' ),
   ));
-	
+    
 }
-add_action( 'init', 'mapset_init' );
+//add_action( 'init', 'mapset_init' );
 
 
 // Custom scripts to be run on Project new/edit pages only
@@ -72,25 +82,128 @@ function add_diph_map_library_scripts( $hook ) {
 
     if ( $hook == 'edit.php'|| $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( 'diph-maps' === $post->post_type ) {     
-			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
-			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
-			wp_enqueue_script(  'jquery' );
+            //wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
+            wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+            wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-			 wp_enqueue_script(  'diph-map-library-script', plugins_url('/js/diph-map-library-admin.js', dirname(__FILE__) ));
-			 wp_enqueue_style('thickbox');
-			wp_enqueue_script('thickbox');
+             wp_enqueue_script(  'diph-map-library-script', plugins_url('/js/diph-map-library-admin.js', dirname(__FILE__) ));
+             wp_enqueue_style('thickbox');
+            wp_enqueue_script('thickbox');
         }
     }
 }
 add_action( 'admin_enqueue_scripts', 'add_diph_map_library_scripts', 10, 1 );
 
-// Set template to be used for Project type
+// Add the Meta Box for map attributes
+function add_diph_map_settings_box() {
+    add_meta_box(
+        'diph_map_settings_meta_box',       // $id
+        'Map Attributes',                       // $title
+        'show_diph_map_settings_box',       // $callback
+        'diph-maps',                        // $page
+        'normal',                               // $context
+        'high');                                // $priority
+}
+add_action('add_meta_boxes', 'add_diph_map_settings_box');
+
+// Callback function for diph_map_settings_box
+function show_diph_map_settings_box() {
+    global $post;
+    
+    // Setup nonce
+    echo '<input type="hidden" name="diph_map_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
+    $diph_map_desc = get_post_meta($post->ID, 'diph_map_desc',true);
+    $diph_map_cdlaid = get_post_meta($post->ID, 'diph_map_cdlaid',true);
+    
+    $diph_map_url = get_post_meta($post->ID, 'diph_map_url',true);  
+    $diph_map_type = get_post_meta($post->ID, 'diph_map_type',true);
+    if($diph_map_type == 'WMS'){
+        $selectWMS = 'selected';
+    }else if($diph_map_type == 'KML'){
+        $selectKML = 'selected';
+    }else if($diph_map_type == 'CDLA'){
+        $selectCDLA = 'selected';
+    }else{
+        $selectType = 'selected';
+    }
+    $diph_map_category = get_post_meta($post->ID, 'diph_map_category',true);
+    if($diph_map_category == 'base layer'){
+        $selectBaseLayer = 'selected';
+    }else if($diph_map_category == 'overlay'){
+        $selectOverlay = 'selected';
+    }else{
+        $selectCategory = 'selected';
+    }
+    
+    $diph_map_source = get_post_meta($post->ID, 'diph_map_source',true);
+    $diph_map_creator = get_post_meta($post->ID, 'diph_map_creator',true);
+    
+    echo '<table>';
+    echo '<tr><td colspan=2><label>Please enter the map information below:</label></td></tr>';
+    echo '<tr><td colspan=2><label>* means required attribute for CDLA Maps</label></td></tr>';
+    echo '<tr><td align=right>Description:</td><td><input name="diph_map_desc" id="diph_map_desc" type="text" size="60" value="'.$diph_map_desc.'"/></td></tr>';
+    echo '<tr><td align=right>*CDLA Map ID:</td><td><input name="diph_map_cdlaid" id="diph_map_cdlaid" type="text" size="60" value="'.$diph_map_cdlaid.'"/></td></tr>';
+    echo '<tr><td align=right>URL:</td><td><input name="diph_map_url" id="diph_map_url" type="text" size="30" value="'.$diph_map_url.'"/></td></tr>';
+    echo '<tr><td align=right>*Type:</td><td><select name="diph_map_type" id="diph_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML"  '.$selectKML.' disabled>KML</option><option value="CDLA"  '.$selectCDLA.'>CDLA</option></select></td></tr>';
+    echo '<tr><td align=right>*Category:</td><td><select name="diph_map_category" id="diph_map_category"><option value="" '.$selectCategory.'>Please select a category</option><option value="base layer" '.$selectBaseLayer.'>Base Layer</option><option value="overlay" '.$selectOverlay.' >Overlay</option></select></td></tr>';
+    echo '<tr><td align=right>Source:</td><td><input name="diph_map_source" id="diph_map_source" type="text" size="30" value="'.$diph_map_source.'"/></td></tr>';
+    echo '<tr><td align=right>Creator:</td><td><input name="diph_map_creator" id="diph_map_creator" type="text" size="30" value="'.$diph_map_creator.'"/></td></tr>';
+    echo '</table>';
+}
+
+// Save the Data
+function save_diph_map_settings($post_id) {
+    
+    // verify nonce
+    if (!wp_verify_nonce($_POST['diph_map_settings_box_nonce'], basename(__FILE__)))
+        return $post_id;
+    // check autosave
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)
+        return $post_id;
+    // check permissions
+    if ('page' == $_POST['post_type']) {
+        if (!current_user_can('edit_page', $post_id))
+            return $post_id;
+        } elseif (!current_user_can('edit_post', $post_id)) {
+            return $post_id;
+    }
+    
+    update_post_meta($post_id, 'diph_map_desc',$_POST['diph_map_desc']);
+    update_post_meta($post_id, 'diph_map_cdlaid',$_POST['diph_map_cdlaid']);
+    update_post_meta($post_id, 'diph_map_url',$_POST['diph_map_url']);
+    update_post_meta($post_id, 'diph_map_type',$_POST['diph_map_type']);
+    update_post_meta($post_id, 'diph_map_category',$_POST['diph_map_category']);
+    update_post_meta($post_id, 'diph_map_source',$_POST['diph_map_source']);
+    update_post_meta($post_id, 'diph_map_creator',$_POST['diph_map_creator']);
+    
+}
+add_action('save_post', 'save_diph_map_settings');  
+
+// Set template to be used for Map type
 function diph_map_page_template( $page_template )
 {
-	
-	$post_type = get_query_var('post_type');
+    global $post;
+    
+    $cdlamapid = get_post_meta($post->ID, 'diph_map_cdlaid',true);
+    $post_type = get_query_var('post_type');
     if ( $post_type == 'diph-maps' ) {
         $page_template = dirname( __FILE__ ) . '/diph-map-template.php';
+        wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+            
+        wp_enqueue_script('jquery');
+        wp_enqueue_script('backbone');
+        wp_enqueue_script('underscore');
+
+        wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+        //wp_enqueue_script( 'diph-public-map-script', plugins_url('/js/diph-map-page.js', dirname(__FILE__) ));
+        wp_enqueue_script( 'diph-public-map-script', plugins_url('/js/diph-map-page.js', dirname(__FILE__) ));
+        wp_enqueue_script( 'diph-cdla-kevin-script', plugins_url('/js/keven-cdla.js', dirname(__FILE__) ));
+        wp_enqueue_script( 'diph-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
+        $diph_map_cdlaid = get_post_meta($post->ID, 'diph_map_cdlaid',true);
+
+        wp_enqueue_script( 'cdla-map-script', 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$cdlamapid);
+        wp_enqueue_style('thickbox');
+        wp_enqueue_script('thickbox');
     }
     return $page_template;
 }

@@ -1,6 +1,6 @@
 // JavaScript Document
 
-var map, map2, projectID, mObject, lookupParents,markerObject,catFilter,player,clipPosition,dataObject;
+var map, map2,diph_layers,diphSettings, projectID, mObject,lookupData, lookupParents,markerObject,catFilter,player,clipPosition,dataObject;
 //jQuery noconfilct wrapper fires when page has loaded
 jQuery(document).ready(function($) {
 
@@ -10,7 +10,35 @@ $('#map_marker').append('<div class="info"></div><div class="av-transcript"></di
 //$('#map_marker .av-transcript').append('<audio id="av-player" src="http://msc.renci.org/dev/wp-content/uploads/2013/02/03-Submarines.mp3" type="audio/mp3" controls="controls"></audio>');
 //player = new MediaElementPlayer('#av-player', {enablePluginDebug: true, mode:'shim',features: ['playpause','progress','current','duration','volume']});
 var videoHasPlayed = false;
+var ajax_url = diphData.ajax_url;
 
+diphSettings = JSON.parse(diphData.settings);
+diphMap = diphData.map;
+console.log('map ')
+console.log(diphMap)
+console.log('entry points ')
+console.log(diphSettings['entry-points'])
+
+console.log('layers ')
+console.log(diphData.layers)
+
+var layerCount = Object.keys(diphData.layers).length; 
+  diph_layers = [];
+    for(i=0;i<layerCount;i++) {
+        console.log(diphData.layers[i].name)
+        if(diphData.layers[i]['mapType']=='type-') {
+            diph_layers[i] = new OpenLayers.Layer.OSM(); 
+        }
+        if(diphData.layers[i]['mapType']=='type-CDLA') {
+            cdla.maps.defaultAPI(cdla.maps.API_OPENLAYERS);
+            // create the cdla.maps.Map object
+            var cdlaObj = new cdla.maps.Map(diphData.layers[i].name);
+        
+            // add the map layer
+            //map.addLayers([hwymap.layer()]);
+            diph_layers[i] = cdlaObj.layer(); 
+        }
+    }
 
 var gg = new OpenLayers.Projection("EPSG:4326");
 var sm = new OpenLayers.Projection("EPSG:900913");
@@ -18,35 +46,28 @@ var sm = new OpenLayers.Projection("EPSG:900913");
 markerObject = new Object();
 lookupParents = new Object();
 catFilter = new Object();
-//projectID $()
-var streets = new OpenLayers.Layer.XYZ(
-    "MapBox Streets",
-    [
-        "http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets/${z}/${x}/${y}.png",
-        "http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/${z}/${x}/${y}.png",
-        "http://c.tiles.mapbox.com/v3/mapbox.mapbox-streets/${z}/${x}/${y}.png",
-        "http://d.tiles.mapbox.com/v3/mapbox.mapbox-streets/${z}/${x}/${y}.png"
-    ], {
-        attribution: "Tiles &copy; <a href='http://mapbox.com/'>MapBox</a> | " + 
-            "Data &copy; <a href='http://www.openstreetmap.org/'>OpenStreetMap</a> " +
-            "and contributors, CC-BY-SA",
-        sphericalMercator: true,
-        wrapDateLine: true,
-        transitionEffect: "resize",
-        buffer: 1,
-        numZoomLevels: 17
-    }
-);
-     var osm = new OpenLayers.Layer.OSM();      
+
+//var osm = new OpenLayers.Layer.OSM(); 
+     
 map = new OpenLayers.Map({
     div: "map_div",
     projection: sm,
-	displayProjection: gg,
-    layers: [osm],
+	displayProjection: gg
     
-    center: [],
-    zoom: 6
 });
+map.addLayers(diph_layers);
+//load layers here
+map.addControl(new OpenLayers.Control.LayerSwitcher());
+var lonlat_default = new OpenLayers.LonLat(0,0);
+lonlat_default.transform(gg, map.getProjectionObject());
+map.setCenter(lonlat_default, 3);
+
+
+
+var lonlat = new OpenLayers.LonLat(diphMap['lon'],diphMap['lat']);
+lonlat.transform(gg, map.getProjectionObject());
+
+map.setCenter(lonlat, diphMap['zoom']);
 
 var context = {
                 
@@ -60,9 +81,14 @@ var context = {
         }
         var highParentI ='';
         if(cats) {
-            highParentI = getHighestParentIcon(cats);
+            highParentI = getHighestParentIcon(cats);           
         }
-        return highParentI;
+        if(!highParentI){
+            return '';
+        }
+        else {
+            return highParentI;
+        }
     },
     getColor: function(feature) {
         var cats;
@@ -74,7 +100,7 @@ var context = {
         }
         var highParentI ='';
         if(cats) {
-            highParentI = getHighestParentColor(cats);
+            highParentI = getHighestParentColor(cats);            
         }
 
         return highParentI;
@@ -91,7 +117,7 @@ var context = {
 
 var template = {
     fillColor: "${getColor}",
-    strokeColor: "#32a8a9",
+    strokeColor: "#333333",
     pointRadius: 10, // using context.getSize(feature)
     width:20,
     externalGraphic: "${getIcon}", //context.getIcon(feature)
@@ -103,16 +129,14 @@ var template = {
 var style = new OpenLayers.Style(template, {context: context});
 strategy = new OpenLayers.Strategy.Cluster();
 strategy.distance = 1;
+
 mObject = new OpenLayers.Layer.Vector('Markers',{
     strategies: [strategy],
     rendererOptions: { zIndexing: true }, 
     styleMap: new OpenLayers.StyleMap(style)
 });    
 
-var lonlat = new OpenLayers.LonLat(-88.52349,38.03501);
-lonlat.transform(gg, map.getProjectionObject());
 
-map.setCenter(lonlat, 5);
            
 selectControl = new OpenLayers.Control.SelectFeature(mObject,
     { onSelect: onFeatureSelect, onUnselect: onFeatureUnselect, hover: false });
@@ -153,7 +177,7 @@ function createLookup(filter){
  */
 function getHighestParentIcon(categories) {
 
-    var lookupData = findSelectedCats();
+    
     var countTerms = Object.keys(lookupData).length; 
     var countCats = categories.length;
     for(i=0;i<countTerms;i++) {
@@ -163,6 +187,7 @@ function getHighestParentIcon(categories) {
             var tempName = lookupData[i].name;
             if (tempName==categories[j]) {
                 if(lookupData[i].icon_url.substring(0,1) == 'h') {
+                    
                     return lookupData[i].icon_url;
                 }
                 else {
@@ -191,16 +216,18 @@ function getHighestParentIcon(categories) {
 }
 function getHighestParentColor(categories) {
 
-    var lookupData = findSelectedCats();
 
     var countTerms = Object.keys(lookupData).length; 
-    var countCats = categories.length;
+    //console.log(categories)
+    var tempCats = categories;
+    var countCats =  Object.keys(tempCats).length; 
+
     for(i=0;i<countTerms;i++) {
-
         for(j=0;j<countCats;j++) {
-
+            
             var tempName = lookupData[i].name;
-            if (tempName==categories[j]) {
+            //console.log('here '+tempName)
+            if (tempName==tempCats[j]) {
                 if(lookupData[i].icon_url.substring(0,1) == '#') {
                     return lookupData[i].icon_url;
                 }
@@ -210,18 +237,21 @@ function getHighestParentColor(categories) {
             }
             else {
                 //for each child cat
-                var tempChildren = lookupData[i].children;
-                var tempChildCount = tempChildren.length;
-                for (k=0;k<tempChildCount;k++) {
-                    if(tempChildren[k]==categories[j]) {
-                       if(lookupData[i].icon_url.substring(0,1) == '#') {
-                            return lookupData[i].icon_url;
-                        }
-                        else {
-                            return '';
+                if(lookupData[i].children.length>0) {
+                    //console.log(lookupData[i].children)
+                    var tempChildren = lookupData[i].children;
+                    var tempChildCount = Object.keys(lookupData[i].children).length;
+                    
+                    for (k=0;k<tempChildCount;k++) {
+                        if(tempChildren[k]==tempCats[j]) {
+                           if(lookupData[i].icon_url.substring(0,1) == '#') {
+                                return lookupData[i].icon_url;
+                            }
+                            else {
+                                return '';
+                            }
                         }
                     }
-                    //alert( categories[j] );
                 }
             }
        }
@@ -269,7 +299,15 @@ var mapPosition = $('#map_div').position();
     var rightDiv = mapPosition.left + 50;
     var topDiv = mapPosition.top + 40;
     
-    $('#main').prepend('<div id="legends"><div class="nav"></div></div>');
+    $('#main').prepend('<div id="legends"><ul class="nav nav-pills">\
+  <li class="dropdown">\
+    <a class="dropdown-toggle" data-toggle="dropdown"href="#"><i class="icon-list"></i>  Legends<b class="caret"></b></a>\
+    <ul class="dropdown-menu">\
+          <!-- links -->\
+    </ul>\
+  </li>\
+  <li><a href="#"><i class="icon-tasks"></i> Layers </a></li>\
+</ul></div>');
 
     for (j=0;j<Object.keys(object).length;j++) {
        
@@ -280,11 +318,16 @@ var mapPosition = $('#map_div').position();
         legendHtml = $('<div class="'+legendName+' legend-div" id="term-legend-'+j+'"><ul class="terms"></ul></div>');
         for(i=0;i<countTerms;i++) {
             if(legendName!=filterTerms[i].name) {
+                var firstIconChar = filterTerms[i].icon_url.substring(0,1);
+                var icon;
+                if(firstIconChar=='#') { icon = 'background:'+filterTerms[i].icon_url; }
+                else { icon = 'background: url(\''+filterTerms[i].icon_url+'\') no-repeat center;'; }
+
                 if(i>14) {
-                $('ul', legendHtml).append('<li><input type="checkbox" ><img src="'+filterTerms[i].icon_url+'" /> <a class="value">'+filterTerms[i].name+'</a></li>');
+                $('ul', legendHtml).append('<li><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value">'+filterTerms[i].name+'</a></li>');
                 }
                 else {
-                  $('ul', legendHtml).append('<li><input type="checkbox" checked="checked"><img src="'+filterTerms[i].icon_url+'" /> <a class="value">'+filterTerms[i].name+'</a></li>');
+                  $('ul', legendHtml).append('<li><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value">'+filterTerms[i].name+'</a></li>');
                   
                 }
             }
@@ -293,29 +336,31 @@ var mapPosition = $('#map_div').position();
        
 
         $('#legends').append(legendHtml);
-        $('#legends .nav').append('<a href="#term-legend-'+j+'">'+legendName+'</a>');
+        $('#legends .dropdown-menu').append('<li><a href="#term-legend-'+j+'">'+legendName+'</a></li>');
+    }
+        $('#legends').css({'left':rightDiv, 'top':topDiv,'z-index':19,'padding':'10px'});
 
-        $('#legends').css({'left':rightDiv, 'top':topDiv,'z-index':1998,'padding':'10px'});
-
-        $('#term-legend-'+j+'').mousemove(function(e){
+        $('.active-legend').mousemove(function(e){
             var xpos = e.pageX - 250;
             var ypos = e.pageY + 15;
-            $('#child_legend-'+j+'').css({'left':xpos,'top':ypos});
+            //$('#child_legend-'+j+'').css({'left':xpos,'top':ypos});
         });
-        var childrenLegendHtml = $('<div id="child_legend-'+j+'"><h3>Children Terms</h3><ul></ul></div>');
+        //var childrenLegendHtml = $('<div id="child_legend-'+j+'"><h3>Children Terms</h3><ul></ul></div>');
         //$('body').append(childrenLegendHtml);
-        $('#child_legend-'+j+'').css({'width':'200px','margin-left':'200px','top':'40px','position':'absolute','z-index': '2001' });
-        $('#term-legend-'+j+' ul.terms li a').click(function(event){
+        //$('#child_legend-'+j+'').css({'width':'200px','margin-left':'200px','top':'40px','position':'absolute','z-index': '2001' });
+        
+        $('#legends ul.terms li a').click(function(event){
             var spanName = $(this).text();
-            console.log(spanName);
-            $('#term-legend-'+j+' ul input').removeAttr('checked');
-            $('#term-legend-'+j+' ul.terms li.selected').removeClass('selected');
+            //console.log(spanName);
+            $('.active-legend ul input').removeAttr('checked');
+            $('.active-legend ul.terms li.selected').removeClass('selected');
             $(this).closest('li').addClass('selected');
             $(this).closest('li').find('input').attr('checked',true);
-            var tempO = findSelectedCats(spanName); 
+            //console.log(spanName)
+            lookupData = findSelectedCats(spanName); 
             //console.log('single object '+tempO)
-            console.log(tempO)
-            updateLayerFeatures(tempO);
+            //console.log(lookupData)
+            updateLayerFeatures(lookupData);
         });
         // $('#term-legend-'+j+' ul.terms li').hover(function(){
         //     $('#child_legend-'+j+'').show();
@@ -329,44 +374,53 @@ var mapPosition = $('#map_div').position();
         //     $('#child_legend-'+j+' ul li').remove();
         //     $('#child_legend-'+j+'').hide();
         // });
-        $('#term-legend-'+j+' ul.terms input').click(function(){
-            var tempO = findSelectedCats(); 
-            console.log(tempO)       
-            updateLayerFeatures(tempO);
+        $('#legends ul.terms input').click(function(){
+            lookupData = findSelectedCats(); 
+            //console.log(tempO)       
+            updateLayerFeatures(lookupData);
         });
-        $('#term-legend-'+j+' ul.controls li').click(function(){
-            $('#term-legend-'+j+' ul input').attr('checked',true);
-            $('#term-legend-'+j+' ul.terms li').css({'background': 'none'});
-            var tempO = findSelectedCats(); 
-            console.log(tempO)       
-            updateLayerFeatures(tempO);
+        $('ul.controls li').click(function(){
+            $('.active-legend ul input').attr('checked',true);
+            //$('.active-legend ul.terms li').css({'background': 'none'});
+           lookupData = findSelectedCats(); 
+            //console.log(tempO)       
+            updateLayerFeatures(lookupData);
             
         });
-    }
+    
     $('.legend-div').hide();
     $('#term-legend-0').show();
-    $('.nav a').click(function(){
+    $('#term-legend-0').addClass('active-legend');
+    $('#legends .dropdown-menu a').click(function(){
         var action = $(this).attr('href');
         var filter = $(this).text();
         $('.legend-div').hide();
-        switchFilter(filter);
+        $('.legend-div').removeClass('active-legend');
+        $(action).addClass('active-legend');
+        
         $(action).show();
+        switchFilter(filter);
     });
     $('.launch-timeline').click(function(){
         loadTimeline('4233');  
     });
+    lookupData = findSelectedCats();
+
+    //$('.layersDiv').remove();
 }
 function switchFilter(filterName) {
     console.log(filterName);
     for(i=0;i<Object.keys(dataObject).length;i++) {
         if(dataObject[i].type =='filter'&&dataObject[i].name ==filterName) {
-            catFilter= dataObject[i];
+            catFilter = dataObject[i];
+            lookupData = findSelectedCats(); 
+            updateLayerFeatures(lookupData);
         }
         
     }
+    
 }
 function updateLayerFeatures(catObject){
-
     //find all features with cat
     //var feats = _.where(markerObject, function(){ return _.contains(list, value)});
     var countTerms = Object.keys(catObject).length; 
@@ -374,17 +428,23 @@ function updateLayerFeatures(catObject){
     var childCatObject = [];
     for (var i = 0, len = countTerms; i < len; i++) {
         childCatObject.push(catObject[i].name);
-        for (var j = 0, len2 = catObject[i].children.length; j < len2; j++) {
-            childCatObject.push(catObject[i].children[j]);
+
+        if(catObject[i].children.length>0){
+            var tempChildren = catObject[i].children;
+
+            for (var j = 0, len2 = tempChildren.length; j < len2; j++) {
+                childCatObject.push(tempChildren[j]);
+            }
         }
     }
         
     newFeatures.features = _(markerObject.features).select(function(feature){ 
-        if(_.intersection(feature.properties.categories,childCatObject).length > 0) {
+        //var tempFeat = feature.properties.categories.split(',');
+        if(_.intersection(feature.properties.categories,childCatObject).length > 0) {         
            return feature;
         }
     });
-
+    //console.log(newFeatures.features.length)
     var reader = new OpenLayers.Format.GeoJSON({
         'externalProjection': gg,
         'internalProjection': sm
@@ -398,15 +458,20 @@ function updateLayerFeatures(catObject){
 }
 
 function findSelectedCats(single) {
-
+    //console.log(catFilter.terms);
     var selCatFilter = new Object();
     var countTerms = Object.keys(catFilter.terms).length; 
+
     if(!single) {
-        $('#legends ul.terms input:checked').each(function(index){
+
+        $('#legends .active-legend input:checked').each(function(index){
             var tempSelCat = $(this).parent().find('.value').text();
+            //console.log(tempSelCat)
             for(i=0;i<countTerms;i++) {
-                if(catFilter.terms[i].name==tempSelCat) {
+                var tempFilter = catFilter.terms[i].name;
+                if(tempFilter==tempSelCat) {
                     selCatFilter[index] = catFilter.terms[i];
+                    
                 }
             }
         });
@@ -414,7 +479,8 @@ function findSelectedCats(single) {
     else {
         var tempSelCat = single;
         for(i=0;i<countTerms;i++) {
-            if(catFilter.terms[i].name==tempSelCat) {
+            var tempFilter = catFilter.terms[i].name;
+            if(tempFilter==tempSelCat) {
                 selCatFilter[0] = catFilter.terms[i];
             }
         }
@@ -558,8 +624,12 @@ function onFeatureSelect(feature) {
         //player.setCurrentTime(time_codes[0]);
         //player.play();
 
-        tb_show(titleAtt, '#TB_inline?height=480&width=400&inlineId=map_marker' );
-
+        //tb_show(titleAtt, '#TB_inline?height=480&width=400&inlineId=map_marker' );
+        $('#markerModal #markerModalLabel').empty().append(titleAtt);
+        //$('#markerModal .modal-body').empty();
+        $('#markerModal .modal-body').append($('#map_marker'));
+       
+        $('#markerModal').modal('show');
         //build function to load transcript clip and load media player
         
 
@@ -647,6 +717,16 @@ function createMarkers(data,mLayer) {
     for(i=0;i<Object.keys(dataObject).length;i++) {
         if(dataObject[i].type =='filter') {
             legends[i] = (dataObject[i]);
+            var countTerms = Object.keys(legends[i].terms).length; 
+            for(k=0;k<countTerms;k++) {
+                legends[i].terms[k].name = _.unescape(legends[i].terms[k].name);
+                var tempChildCount = Object.keys(legends[i].terms[k].children).length
+                for(j=0;j<tempChildCount;j++) {
+                    legends[i].terms[k].children[j] = _.unescape(legends[i].terms[k].children[j]);
+                }
+            }
+            
+
         }
         if(dataObject[i].type =='FeatureCollection') {
             featureObject = dataObject[i];
@@ -654,7 +734,16 @@ function createMarkers(data,mLayer) {
         }
     }
     catFilter  = legends[0];//dataObject[0];
+    
+    var countFeatures = Object.keys(featureObject.features).length; 
+    for(i=0;i<countFeatures;i++) {
+        var countCategories = Object.keys(featureObject.features[i].properties.categories).length; 
+        for(j=0;j<countCategories;j++) {
+            featureObject.features[i].properties.categories[j] = _.unescape(featureObject.features[i].properties.categories[j]);
+        }
+    }
     console.log(markerObject);
+    console.log(catFilter);
     createLegend(legends);
     //markerObject = dataObject[2];
     //var featureObject = dataObject[2];
@@ -688,7 +777,7 @@ function createTimeline(data) {
 function loadMarkers(projectID,mLayer){
 	jQuery.ajax({
         type: 'POST',
-        url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+        url: ajax_url,
         data: {
             action: 'diphGetMarkers',
             project: projectID
@@ -708,7 +797,7 @@ function loadMarkers(projectID,mLayer){
 function loadTimeline(projectID){
     jQuery.ajax({
         type: 'POST',
-        url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+        url: ajax_url,
         data: {
             action: 'diphGetTimeline',
             project: projectID
@@ -727,7 +816,7 @@ function loadTimeline(projectID){
 function loadTranscriptClip(projectID,transcriptName,clip){
     jQuery.ajax({
         type: 'POST',
-        url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+        url: ajax_url,
         data: {
             action: 'diphGetTranscript',
             project: projectID,

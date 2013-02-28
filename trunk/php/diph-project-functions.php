@@ -45,6 +45,46 @@ function diph_project_init() {
 }
 add_action( 'init', 'diph_project_init' );
 
+function getLayerList(){
+	$layers = array();
+	$args = array( 'post_type' => 'diph-maps', 'posts_per_page' => -1 );
+	$loop = new WP_Query( $args );
+	$layerCount=0;
+	while ( $loop->have_posts() ) : $loop->the_post();
+	//var $tempLayers = array();
+		$layer_id = get_the_ID();
+		$layer_name = get_the_title();
+		$layer_use = get_post_meta($layer_id, 'diph_map_category');
+		$layer_type = get_post_meta($layer_id, 'diph_map_type');
+		$layer_cdlaid = get_post_meta($layer_id, 'diph_map_cdlaid');
+		$layerCount++;
+		
+		array_push($layers,array( 'layerID'=>$layer_id,
+		 'layerName'=>$layer_name,
+		 'layerCat'=>$layer_use[0],
+		 'layerType'=>$layer_type[0]
+		 ));
+				
+	endwhile;
+	wp_reset_query();
+
+	return $layers;
+}
+function diph_create_option_list($layerArray){
+	$optionHtml ='';
+	foreach ($layerArray as $layer) {
+		$tempCat = str_replace(' ','-',$layer['layerCat']);
+		$tempType = 'type-'.$layer['layerType'];
+		//$optionHtml .= '{ "id" : "'.$layer['layerID'].'", "name" : "'.$layer['layerName'].'", "usetype" : "'.$layer['layerCat'].'"},';
+		$optionHtml .= '<option id="'.$layer['layerID'].'" class="'.$tempCat.'" data-mapType="'.$tempType.'" value="'.$layer['layerName'].'" >'.$layer['layerName'].'</option>';
+	}
+	return $optionHtml;
+}
+function init_layer_list() {
+	$layers_global = getLayerList();
+}
+add_action('admin_init', 'init_layer_list');  
+
 //add filter to ensure the text Project, or project, is displayed when user updates a project 
 function diph_project_updated_messages( $messages ) {
   global $post, $post_ID;
@@ -118,7 +158,7 @@ function diph_create_tax($taxID,$taxName){
 
 function show_tax_on_project_markers() {
 	global $post;
-	$projectID = get_post_meta($post->ID,'marker_project');
+	$projectID = get_post_meta($post->ID,'project_id');
 	$project = get_post($projectID[0]);
 	$projectTaxSlug = 'diph_tax_'.$project->post_name;
 	$diphTaxs = get_taxonomies();
@@ -134,57 +174,6 @@ function show_tax_on_project_markers() {
 add_action( 'admin_head' , 'show_tax_on_project_markers' );
 
 
-
-
-// Custom scripts to be run on Project new/edit pages only
-function add_diph_project_admin_scripts( $hook ) {
-
-    global $post;
-
-    if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
-        if ( 'project' === $post->post_type ) {     
-			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
-			//wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
-			
-			wp_enqueue_style( 'diph-sortable-style', plugins_url('/css/sortable.css',  dirname(__FILE__) ));
-			wp_enqueue_style( 'diph-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
-			wp_enqueue_style( 'diph-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
-			wp_enqueue_style( 'diph-style', plugins_url('/css/diph-style.css',  dirname(__FILE__) ));
-			
-			wp_enqueue_script( 'jquery' );
-			wp_enqueue_script(  'diph-jquery-ui', plugins_url('/lib/jquery-ui-1.9.2.custom.min.js', dirname(__FILE__) ));
-
-			wp_enqueue_script(  'diph-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
-			//wp_enqueue_script(  'bootstrap-button-fix', plugins_url('/lib/bootstrap/js/bootstrap-button-fix.js', dirname(__FILE__) ),'diph-bootstrap');
-			
-           	
-			wp_enqueue_script(  'diph-touch-punch', plugins_url('/lib/jquery.ui.touch-punch.js', dirname(__FILE__) ));
-            wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-        
-             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-			wp_enqueue_script(  'diph-nested-sortable', plugins_url('/lib/jquery.mjs.nestedSortable.js', dirname(__FILE__) ));
-			wp_enqueue_style( 'diph-jPicker-style1', plugins_url('/js/jpicker/css/jPicker-1.1.6.min.css',  dirname(__FILE__) ));
-			wp_enqueue_style( 'diph-jPicker-style2', plugins_url('/js/jpicker/jPicker.css',  dirname(__FILE__) ));
-			wp_enqueue_script(  'diph-jPicker', plugins_url('/js/jpicker/jpicker-1.1.6.js', dirname(__FILE__) ));
-
-			wp_enqueue_script(  'diph-project-script', plugins_url('/js/diph-project-admin.js', dirname(__FILE__) ));
-			wp_enqueue_style('thickbox');
-			wp_enqueue_script('thickbox');
-
-        }
-    }
-	if ( $hook == 'edit.php'  ) {
-        if ( 'project' === $post->post_type ) {     
-			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
-			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
-			wp_enqueue_script(  'jquery' );
-             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-			 wp_enqueue_script(  'diph-project-script2', plugins_url('/js/diph-project-admin2.js', dirname(__FILE__) ));
-			 
-        }
-    }
-}
-add_action( 'admin_enqueue_scripts', 'add_diph_project_admin_scripts', 10, 1 );
 if ( function_exists( 'add_theme_support' ) ) {
 	add_theme_support( 'post-thumbnails' );
         set_post_thumbnail_size( 32, 37 ); // default Post Thumbnail dimensions
@@ -299,7 +288,8 @@ echo '<input type="hidden" name="diph_project_settings_box_nonce" value="'.wp_cr
 				} //end switch
 		
 	} // end foreach
-	echo '</table>'; // end table	
+	echo '</table>'; // end table
+	
 	print_new_bootstrap_html();
 }
 
@@ -351,7 +341,7 @@ function save_diph_project_settings($post_id) {
 add_action('save_post', 'save_diph_project_settings');  
 
 //create arrays of custom field values associated with a project
-function createMoteValueArrays($custom_name,$project_id){
+function createMoteValueArrays($custom_name,$delim,$project_id){
 
 	//loop through all markers in project -add to array
 	$moteArray = array();
@@ -359,23 +349,36 @@ function createMoteValueArrays($custom_name,$project_id){
 	$diph_tax_name = 'diph_tax_'.$projectObj->post_name;
 
 
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'marker_project','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
 
 		$marker_id = get_the_ID();
-		$temp_post = get_post($marker_id);
+		//$temp_post = get_post($marker_id);
 		$tempMoteValue = get_post_meta($marker_id,$custom_name);
-		$tempMoteArray = split(';',$tempMoteValue[0]);
-
+		$tempMoteArray = array();
+		if($delim) {
+			if (strpos($tempMoteValue[0],$delim) !== false) {
+				$tempMoteArray = split($delim,$tempMoteValue[0]);
+			}
+			else {
+			//array_push($moteArray,$tempMoteValue[0]);
+			$tempMoteArray[0] = $tempMoteValue[0];
+			}
+		}
+		else {
+			//array_push($moteArray,$tempMoteValue[0]);
+			$tempMoteArray[0] = $tempMoteValue[0];
+		}
 		//array_push($moteArray,$tempMoteValue[0]); 
-		//array_push($moteArray,$tempMoteArray.length); 
+		//array_push($moteArray,$tempMoteValue[0]); 
 		$termsArray = array();
 		for($i=0;$i<count($tempMoteArray);$i++) {
 			$term_name = trim($tempMoteArray[$i]);
 
 			if(term_exists( $term_name, $diph_tax_name )) {
-				$ttermid = get_term_by('name', $term_name, $diph_tax_name);
+				$clean_termName = htmlspecialchars($term_name);
+				$ttermid = get_term_by('name', $clean_termName, $diph_tax_name);
 				array_push($termsArray, $ttermid->term_id);
 			}
 			array_push($moteArray, $term_name);
@@ -394,13 +397,14 @@ function createUniqueProjectCustomFieldArray(){
 	$project_custom_field_array = array();
 	$temp_project_custom_field_keys = get_post_custom_keys($project_id);
 
+	if($temp_project_custom_field_keys) {
 		foreach($temp_project_custom_field_keys as $key => $value) {
 			$valuet = trim($value);
      		if ( '_' == $valuet{0} || 'project_settings' == $valuet)
       		continue;
 			array_push($project_custom_field_array, $value);
 		}
-
+	}
 	$unique_custom_fields = array_unique($project_custom_field_array);
 
 	return $unique_custom_fields;
@@ -412,7 +416,7 @@ function createUniqueCustomFieldArray(){
 	//loop through all markers in project -add to array
 	$custom_field_array = array();
 
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'marker_project','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
 
@@ -434,11 +438,14 @@ function createUniqueCustomFieldArray(){
 
 
 function invertLatLon($latlon){
-	if($latlon) {
-	$tempLonLat = split(',',$latlon);
-	
-	return $tempLonLat[1].','.$tempLonLat[0];
+	if($lonlat==','){
+		return '';
 	}
+	if($latlon&&$latlon!=',') {
+		$tempLonLat = split(',',$latlon);	
+		return $tempLonLat[1].','.$tempLonLat[0];
+	}
+
 }
 function getIconsForTerms($parent_terms, $taxonomy){
 
@@ -473,17 +480,13 @@ function getIconsForTerms($parent_terms, $taxonomy){
 function getMoteFromName($settings,$moteName){ 
 	//$moteCount=0;
 	foreach( $settings['motes'] as $mote) {
+
+				
 		if($mote['name']==$moteName){
+			
 			return $mote;
 		}
 		//$moteCount++;
-	}
-
-}
-function getMoteData($mote){
-	if($mote['data-type']=='Dynamic Data Type') {
-
-	
 	}
 
 }
@@ -504,7 +507,13 @@ function createMarkerArray($project_id) {
 			$filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
 			$filter = $eps['settings']['filter-data'];
 			$map_pointsMote = getMoteFromName( $project_settings, $eps['settings']['marker-layer'] );
-			$map_points = $map_pointsMote['custom-fields'];
+			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
+				if(!$map_pointsMote['delim']) {$map_pointsMote['delim']=',';}
+				$cordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
+				//array of custom fields
+				//$cordMote = $map_pointsMote['custom-fields'];
+			}
+			
 		}
 		if($eps['type']=="transcript") {
 			$audio = getMoteFromName( $project_settings, $eps['settings']['audio'] );
@@ -530,7 +539,7 @@ function createMarkerArray($project_id) {
 	//$term_icons = json_encode($term_icons);
 
 	$json_string = '['.$term_icons.'{"type": "FeatureCollection","features": [';
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'marker_project','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	$i = 0;
 	$audio_val;
@@ -541,8 +550,21 @@ function createMarkerArray($project_id) {
 		$marker_id = get_the_ID();
 		$tempMarkerValue = get_post_meta($marker_id,$mote_name);
 		$tempMoteArray = split(';',$tempMoteValue[0]);
-		$latlon = get_post_meta($marker_id,$map_points);
-		$lonlat = invertLatLon($latlon[0]);
+		//map points. if cordMote.length is 2 create latlon
+		if(count($cordMote)==2) {
+			$temp_lat = get_post_meta($marker_id,$cordMote[0]);
+			$temp_lon = get_post_meta($marker_id,$cordMote[1]);
+
+			$temp_latlon = $temp_lat[0].','.$temp_lon[0];
+
+			$lonlat = invertLatLon($temp_latlon);
+		}
+		if(count($cordMote)==1) {
+			$temp_latlon = get_post_meta($marker_id,$cordMote[0]);
+			$lonlat = invertLatLon($temp_latlon[0]);
+		}
+		//$json_string .= $cordMote;
+		//$lonlat = invertLatLon($latlon[0]);
 		$title = get_the_title();
 		$audio_val = get_post_meta($marker_id,$audio['custom-fields']);
 		
@@ -555,10 +577,10 @@ function createMarkerArray($project_id) {
 		$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
 		$p_terms;
 		foreach ($post_terms as $term ) {
-			$p_terms .= $term.',';
+			//$term->name = htmlspecialchars($term->name);
 		}
 		
-
+		
 		if($lonlat) {
 			if($i>0) {
 				$json_string .= ',';
@@ -614,7 +636,7 @@ function createTimelineArray($project_id) {
 	$term_icons = getIconsForTerms($parent_terms, $project_tax);
 
 	$json_string = '{"timeline":{"headline":"Long Womens Movement","type":"default","text":"A journey","date":[';
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'marker_project','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	$i = 0;
 	while ( $loop->have_posts() ) : $loop->the_post();
@@ -692,7 +714,6 @@ function print_new_bootstrap_html(){
                   </ul>
                 </li>
               </ul>
-
               <div id="entryTabContent" class="tab-content">
                 <div class="tab-pane fade in active" id="home">
                 	<p>Project ID: '._PROJECT_ID_.'</p>
@@ -701,7 +722,6 @@ function print_new_bootstrap_html(){
                 </div>               
               </div>
             </div>
-
             <div id="motes" class="tab-pane fade in">
               <h4>Motes</h4>
               <p>Create relational containers for the data in the custom fields</p>
@@ -715,8 +735,11 @@ function print_new_bootstrap_html(){
                   </select><span class="help-inline">Choose a data object (custom field)</span>
                   <label class="checkbox inline">
                     <input type="checkbox" id="pickMultiple" value="multiple"> Multiple
-                  </label>
-                  <a class="btn btn-success" id="create-new-custom" data-toggle="modal" href="#newCustomField">+</a>
+                  </label><div class="btn-group drag-right">
+              	<a class="btn btn-info" id="search-replace-btn" data-toggle="modal" href="#newCustomField"><i class="icon-edit"></i></a>
+              	<a class="btn btn-info" id="delete-cf-btn" data-toggle="modal" href="#newCustomField"><i class="icon-trash"></i></a>
+              	<a class="btn btn-info" id="create-new-custom" data-toggle="modal" href="#newCustomField"><i class="icon-plus"></i></a> 
+              </div>                
                 </p>
                 <p>
                   <select name="cf-type" class="cf-type">                          
@@ -731,8 +754,7 @@ function print_new_bootstrap_html(){
                   </select><span class="help-inline">Choose a data type</span>
                 </p>
                 <p><input class="delim" type="text" name="delim" placeholder="Delimiter" /> If multiple text indicate the delimiter</p>
-              </div>
-              
+              </div>           
               <div class="accordion" id="mote-list">                
               </div>              
             </div>
@@ -766,10 +788,8 @@ function print_new_bootstrap_html(){
                 </p>
                 <p><input class="delim" type="text" name="delim" placeholder="Delimiter" /> If multiple text indicate the delimiter</p>
               </div>
-              
               <div class="accordion" id="mote-list">                
               </div>             
-
             </div>
             <div id="views" class="tab-pane fade in">
               <h4>Views</h4>
@@ -784,22 +804,11 @@ function print_new_bootstrap_html(){
         </div>
       </div>  
     </div>
-</div>
+</div>'.
+'<select style="display:none;"id="hidden-layers" >'.diph_create_option_list(getLayerList()).'</select>'.'
 <!--New Custom Field Modal -->
 <div id="newCustomField" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <h3 id="myModalLabel">New Custom Field</h3>
-  </div>
-  <div class="modal-body">
-    <p>Enter custom field name and default value.</p>
-    <input class="span4 new-custom-field-name" type="text" name="new-custom-field-name" placeholder="Name" />
-    <input class="span4 new-custom-field-value" type="text" name="new-custom-field-value" placeholder="Value" />
-  </div>
-  <div class="modal-footer">
-    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-    <button class="btn btn-primary" id="create-custom-field" aria-hidden="true">Create</button>
-  </div>
+  
 </div>
 <!-- Modal -->
 <div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -854,21 +863,24 @@ function diphSaveProjectSettings(){
 add_action( 'wp_ajax_diphSaveProjectSettings', 'diphSaveProjectSettings' );
 function diphGetMoteValues(){
 	$mote_values = array();
-	$mote_name = $_POST['mote_name'];
-	$custom_name = $_POST['custom_name'];
+	$mote = $_POST['mote_name'];
+	$mote_type = $mote['type'];
+	$mote_delim = $mote['delim'];
+	
+	$custom_field = $mote['custom-fields'];
 	$diph_projectID = $_POST['project'];
 
 	$diph_project = get_post($diph_projectID);
 	$diph_project_slug = $diph_project->post_name;
 	$diph_tax_name = 'diph_tax_'.$diph_project_slug;
-	createParentTerm($mote_name,$diph_tax_name);
+	createParentTerm($mote['name'],$diph_tax_name);
 	//get fresh terms from meta feild 
 
-	$mArray = createMoteValueArrays($custom_name,$diph_projectID);
+	$mArray = createMoteValueArrays($custom_field,$mote_delim,$diph_projectID);
 
 	$term_counts = array_count_values($mArray);	
 
-	$parent_term = get_term_by('name', $mote_name, $diph_tax_name);
+	$parent_term = get_term_by('name', $mote['name'], $diph_tax_name);
 	$parent_id = $parent_term->term_id;
 	$args = array('parent' => $parent_id);
 	//loop through terms and add to taxonomy
@@ -997,7 +1009,7 @@ function diphAddCustomField(){
 	$diph_custom_field_name = $_POST['field_name'];
 	$diph_custom_field_value = $_POST['field_value'];
 
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'marker_project','meta_value'=>$diph_project, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$diph_project, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
 
@@ -1009,6 +1021,47 @@ function diphAddCustomField(){
 	die();
 }
 add_action( 'wp_ajax_diphAddCustomField', 'diphAddCustomField' );
+function diphFindReplaceCustomField(){
+	$diph_project = $_POST['project'];
+	$diph_custom_field_name = $_POST['field_name'];
+	$diph_custom_find_value = $_POST['find_value'];
+	$diph_custom_replace_value = $_POST['replace_value'];
+
+	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$diph_project, 'posts_per_page' => -1 );
+	$loop = new WP_Query( $args );
+	$diph_count=0;
+	while ( $loop->have_posts() ) : $loop->the_post();
+		$diph_count++;
+		$marker_id = get_the_ID();
+		$temp_value = get_post_meta($marker_id,$diph_custom_field_name);
+		$new_value = str_replace($diph_custom_find_value,$diph_custom_replace_value,$temp_value[0]);
+		update_post_meta($marker_id, $diph_custom_field_name, $new_value);
+		//add_post_meta($marker_id, $diph_custom_field_name, $diph_custom_field_value, true);
+				
+	endwhile;
+	
+	die($diph_count);
+}
+add_action( 'wp_ajax_diphFindReplaceCustomField', 'diphFindReplaceCustomField' );
+
+function diphDeleteCustomField(){
+	$diph_project = $_POST['project'];
+	$diph_custom_field_name = $_POST['field_name'];
+	
+	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$diph_project, 'posts_per_page' => -1 );
+	$loop = new WP_Query( $args );
+	while ( $loop->have_posts() ) : $loop->the_post();
+
+		$marker_id = get_the_ID();
+		delete_post_meta($marker_id, $diph_custom_field_name);
+		//add_post_meta($marker_id, $diph_custom_field_name, $diph_custom_field_value, true);
+				
+	endwhile;
+	
+	die();
+}
+add_action( 'wp_ajax_diphDeleteCustomField', 'diphDeleteCustomField' );
+
 
 function diphCreateTaxTerms(){
 	$mote_parent = $_POST['mote_name'];
@@ -1044,10 +1097,12 @@ function diphCreateTaxTerms(){
 		if(term_exists( $term_name, $diph_tax_name )) {
 					
 			wp_update_term( $term_id, $diph_tax_name, $args );
+			//add_term_meta($term_id, $meta_key, $meta_value)
 			update_term_meta($term_id, $meta_key, $meta_value);
 		}
 		else {
 			wp_insert_term( $term_name, $diph_tax_name, $args );
+			add_term_meta($term_id, $meta_key, $meta_value, true);
 			update_term_meta($term_id, $meta_key, $meta_value);
 		}
 		array_push($testArray, $meta_value);
@@ -1111,17 +1166,127 @@ function my_plugin_revision_field( $value, $field ) {
 
 }
 //add_filter( '_wp_post_revision_field_my_meta', 'my_plugin_revision_field', 10, 2 );
+function diph_get_type_settings($type,$object) {
+	foreach($object as $eps) {
+		//var $ec = $eps.type;
+		if($eps['type'] == $type){
+			return $eps['settings'];
+		}
+		//return $ec;
+	}
+}
+function diph_get_map_type($type,$object) {
+	foreach($object as $layer) {
+		//var $ec = $eps.type;
+		//return $layer['id'];
+		if($layer['mapType'] == $type){
+			$map_id = get_post_meta($layer['id'],'diph_map_cdlaid');
+			return $map_id[0];
+		}
+		//return $ec;
+	}
+}
+
+// Custom scripts to be run on Project new/edit pages only
+function add_diph_project_admin_scripts( $hook ) {
+
+    global $post;
+    global $layers_global;
+    $blog_id = get_current_blog_id();
+	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
+
+    if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
+        if ( 'project' === $post->post_type ) {    
+        $tempLayers = 'layers '.$layers_global; 
+			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
+			//wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			
+			wp_enqueue_style( 'diph-sortable-style', plugins_url('/css/sortable.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'diph-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'diph-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
+			//wp_enqueue_style( 'diph-bootstrap-slider-style', plugins_url('/lib/bootstrap/css/slider.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'diph-style', plugins_url('/css/diph-style.css',  dirname(__FILE__) ));
+			
+			wp_enqueue_script( 'jquery' );
+			wp_enqueue_script(  'diph-jquery-ui', plugins_url('/lib/jquery-ui-1.9.2.custom.min.js', dirname(__FILE__) ));
+
+			wp_enqueue_script(  'diph-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
+			//wp_enqueue_script(  'bootstrap-button-fix', plugins_url('/lib/bootstrap/js/bootstrap-button-fix.js', dirname(__FILE__) ),'diph-bootstrap');
+			//wp_enqueue_script(  'diph-bootstrap-slider', plugins_url('/lib/bootstrap/js/bootstrap-slider.js', dirname(__FILE__) ),'diph-bootstrap');
+           	
+			wp_enqueue_script(  'diph-touch-punch', plugins_url('/lib/jquery.ui.touch-punch.js', dirname(__FILE__) ));
+            wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+        
+             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+			wp_enqueue_script(  'diph-nested-sortable', plugins_url('/lib/jquery.mjs.nestedSortable.js', dirname(__FILE__) ));
+			wp_enqueue_style( 'diph-jPicker-style1', plugins_url('/js/jpicker/css/jPicker-1.1.6.min.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'diph-jPicker-style2', plugins_url('/js/jpicker/jPicker.css',  dirname(__FILE__) ));
+			wp_enqueue_script(  'diph-jPicker', plugins_url('/js/jpicker/jpicker-1.1.6.js', dirname(__FILE__) ));
+
+			wp_enqueue_script(  'diph-project-script', plugins_url('/js/diph-project-admin.js', dirname(__FILE__) ));
+			wp_localize_script( 'diph-project-script', 'diphDataLib', array(
+				'ajax_url' => __($dev_url, 'diph'),
+				'layers' => __($tempLayers, 'diph')
+			) );
+			wp_enqueue_style('thickbox');
+			wp_enqueue_script('thickbox');
+
+        }
+    }
+	if ( $hook == 'edit.php'  ) {
+        if ( 'project' === $post->post_type ) {     
+			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			wp_enqueue_script(  'jquery' );
+             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+			 wp_enqueue_script(  'diph-project-script2', plugins_url('/js/diph-project-admin2.js', dirname(__FILE__) ));
+			 
+        }
+    }
+}
+add_action( 'admin_enqueue_scripts', 'add_diph_project_admin_scripts', 10, 1 );
 
 // Set template to be used for Project type
 function diph_page_template( $page_template )
 {
-	
+	global $post;
+	$blog_id = get_current_blog_id();
+	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 	$post_type = get_query_var('post_type');
     if ( $post_type == 'project' ) {
+    	$projectSettings_get = get_post_meta($post->ID, 'project_settings');
+    	$projectSettings = json_decode($projectSettings_get[0],true);
+    	$projectSettings_map = diph_get_type_settings('map',$projectSettings['entry-points']);
+
+    	//if map type is cdla get id
+    	$projectSettings_map_cdla = diph_get_map_type('type-CDLA',$projectSettings_map['layers']);
+
+
+    	wp_register_script(
+				'cdlaMaps',
+				'http://docsouth.unc.edu/cdlamaps/api/OASIS',
+				array( 'open-layers' ),
+				false,
+				true
+			);	
+    	$cdla_layer_url = 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$projectSettings_map_cdla;	
+		wp_register_script(
+				'cdla-layer-data',
+				$cdla_layer_url,
+				array( 'cdlaMaps' ),
+				false,
+				true
+		);
         $page_template = dirname( __FILE__ ) . '/diph-project-template.php';
+
+		wp_enqueue_style( 'diph-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
+		wp_enqueue_style( 'diph-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
         wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			
 		wp_enqueue_script('jquery');
+
+		wp_enqueue_script(  'diph-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
+			
 		wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
 		wp_enqueue_script( 'jwplayer', plugins_url('/js/jwplayer/jwplayer.js', dirname(__FILE__),array('jquery') ));
 		//wp_enqueue_script( 'audiojs', plugins_url('/js/audiojs/audio.min.js', dirname(__FILE__) ));
@@ -1130,12 +1295,26 @@ function diph_page_template( $page_template )
 		wp_enqueue_script('underscore');
 		//wp_enqueue_script( 'open-layers', 'http://dev.openlayers.org/releases/OpenLayers-2.12/lib/OpenLayers.js' );
     	wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+    	
+    	wp_enqueue_script( 'cdlaMaps' );
+
+    	if($projectSettings_map_cdla) {
+    		wp_enqueue_script( 'cdla-layer-data' );
+    	}
+
         wp_enqueue_script( 'timeline-js', plugins_url('/js/storyjs-embed.js', dirname(__FILE__) ));
        
 		wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
 		wp_enqueue_style('thickbox');
 		wp_enqueue_script('thickbox');
-		 wp_enqueue_script( 'diph-public-project-script', plugins_url('/js/diph-project-page.js', dirname(__FILE__) ),'mediaelement');
+		wp_enqueue_script( 'diph-public-project-script', plugins_url('/js/diph-project-page.js', dirname(__FILE__) ),'mediaelement');
+		 
+		wp_localize_script( 'diph-public-project-script', 'diphData', array(
+			'ajax_url' => __($dev_url, 'diph'),
+			'settings' => __($projectSettings_get[0], 'diph'),
+			'map' => __($projectSettings_map, 'diph'),
+			'layers' => __($projectSettings_map['layers'], 'diph')
+		) );
     }
     return $page_template;
 }

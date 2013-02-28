@@ -12,25 +12,22 @@
 	background: #fff;
     }
 #legends {
-	position: fixed;
+	position: absolute;
 	height: 90%;
 	overflow: auto;
 	background: #fff;
-	min-width: 250px;
+	min-width: 200px;
 	background-color: rgba(255, 255, 255, .7);
 
 }  
 #legends .nav {
 	width: 300px;
-position: fixed;
-left: 400px;
 background: #fff;
 padding: 10px; 
 }
 #legends .nav a {
-	border-right: 1px solid #c1c1c1;
-	padding-right: 5px;
-	padding-left: 5px;
+	
+
 	} 
 #map_div div.olControlZoom {
 	top:38px;
@@ -58,32 +55,38 @@ padding: 10px;
 #term-legend {
 	position:absolute;	
 }
-#term-legend ul {
+.legend-div ul {
 list-style: none;
 width: 350px;
 }
-#term-legend ul li {
+.legend-div ul li {
 	width:100%;
 	display: inline-block;
 	cursor: pointer;
 }
-#term-legend ul li:hover {
+.legend-div ul li:hover {
 	background: #e8f2e6;
 }
-#term-legend ul li.selected {
+.legend-div ul li.selected {
 	background: #e8f2e6;
 }
-#term-legend ul img {
+.legend-div ul img {
 	float: left;
 }
-#term-legend ul a {
+.legend-div ul a {
 	padding: 10px;
 	float: left;
 	width:212px;
 }
-#term-legend input[type='checkbox'] {
+.legend-div input[type='checkbox'] {
 	float: left;
 	margin: 12px;
+}
+.legend-div p {
+	width: 15px;
+	height: 15px;
+	margin-top: 10px;
+	float: left;
 }
 /*
  #map_div2 {
@@ -120,9 +123,13 @@ width: 350px;
   }
   #timeline {
   	position: absolute;
-  	top: 320px;
-  	
+  	top: 320px;	
   	width: 60%;
   	z-index: 2200;
-  }
-  }
+}
+.olImageLoadError {
+ 	display: none;
+}
+img {
+	max-width: none;
+}

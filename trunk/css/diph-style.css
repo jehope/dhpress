@@ -183,10 +183,10 @@ display: inline-block;
 .jPicker {
 	float: right;
 }
-ul.legend-list {
+ul.legend-list, ul.layer-list {
 	margin-left: 0px;
 }
-.legend-list .btn {
+.legend-list .btn, .layer-list .btn {
 	margin-bottom: 10px;
 }
 #TB_ajaxContent p.default-marker {

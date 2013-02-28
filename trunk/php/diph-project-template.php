@@ -27,6 +27,19 @@ Template Name: Project Template
  <div id="map_marker"></div>
  <div id="timeline"></div><a class="launch-timeline">Timeline</a>
  </div>
+ <!-- Modal -->
+<div id="markerModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="markerModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="markerModalLabel">Map Setup</h3>
+  </div>
+  <div class="modal-body">
+    
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+  </div>
+</div>
  <?php endwhile; endif; ?>
  <ul>
 <?php
