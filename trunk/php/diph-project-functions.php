@@ -33,7 +33,7 @@ function diph_project_init() {
     'show_ui' => true, 
     'show_in_menu' => 'diph-top-level-handle', 
     'query_var' => true,
-    'rewrite' => array('slug' => 'projects','with_front' => FALSE),
+    'rewrite' => array('slug' => 'dhp-projects','with_front' => FALSE),
     'capability_type' => 'page',
     'has_archive' => true, 
     'hierarchical' => true,
@@ -120,30 +120,31 @@ function create_tax_for_projects() {
 		foreach ( $projects as $project ) {
 			$projectTax = 'diph_tax_'.$project->post_name;
 			$projectName = $project->post_title;
+			$projectSlug = $project->post_name;
 			$taxonomy_exist = taxonomy_exists($projectTax);
 			//returns true
 			if(!$taxonomy_exist) {
-				diph_create_tax($projectTax,$projectName);
+				diph_create_tax($projectTax,$projectName,$projectSlug);
 			}
 		}
 	}
 }
 
-function diph_create_tax($taxID,$taxName){
+function diph_create_tax($taxID,$taxName,$taxSlug){
 
 	// Add new taxonomy, make it hierarchical (like categories)
   $labels = array(
     'name' => _x( $taxName, 'taxonomy general name' ),
-    'singular_name' => _x( 'Genre', 'taxonomy singular name' ),
-    'search_items' =>  __( 'Search Genres' ),
-    'all_items' => __( 'All Genres' ),
-    'parent_item' => __( 'Parent Genre' ),
-    'parent_item_colon' => __( 'Parent Genre:' ),
-    'edit_item' => __( 'Edit Genre' ), 
-    'update_item' => __( 'Update Genre' ),
-    'add_new_item' => __( 'Add New Genre' ),
-    'new_item_name' => __( 'New Genre Name' ),
-    'menu_name' => __( 'Genre' ),
+    'singular_name' => _x( $taxName, 'taxonomy singular name' ),
+    'search_items' =>  __( 'Search Terms' ),
+    'all_items' => __( 'All Terms' ),
+    'parent_item' => __( 'Parent Term' ),
+    'parent_item_colon' => __( 'Parent Term:' ),
+    'edit_item' => __( 'Edit Term' ), 
+    'update_item' => __( 'Update Term' ),
+    'add_new_item' => __( 'Add New Term' ),
+    'new_item_name' => __( 'New Term Name' ),
+    'menu_name' => __( 'Term' ),
   ); 	
 
   register_taxonomy($taxID,array('diph-markers'), array(
@@ -152,7 +153,8 @@ function diph_create_tax($taxID,$taxName){
     'labels' => $labels,
     'show_ui' => true,
     'show_in_nav_menus' => false,
-    'query_var' => true
+    'query_var' => true,
+    'rewrite' => array('hierarchical' => true, 'slug' => 'dhp-projects/'.$taxSlug, 'with_front' => false)
   ));
 }
 
@@ -490,7 +492,102 @@ function getMoteFromName($settings,$moteName){
 	}
 
 }
+function dhp_get_term_by_parent($link_terms, $terms, $tax) {
+	
+	//$term_id = get_term_by('name', $terms[0], $tax);
+	foreach( $terms as $term ) {
+		$real_term = get_term_by('name', $term, $tax);
+		//$termtest .= $term->term_id;
+		$intersect = array_intersect(array($real_term->term_id), $link_terms);
+		if ($intersect) {
+			//return $intersect[0];
+			 $term_link = get_term_link($real_term);
+			 return $term_link;
+		}
+	}
+	//return print_r($real_term);
+	//return $real_term->term_id;
+	//return get_term_link($term_id, $tax);
+	//return print_r($intersect);
+}
+function diph_get_group_feed($tax_name,$term_name){
+//return feed for map, icon color, audio file
+	$pieces = explode("diph_tax_", $tax_name);
+    $projectID = get_page_by_path($pieces[1],OBJECT,'project');
+    $project_settings = get_post_meta($projectID->ID,'project_settings',true);
 
+	foreach( $project_settings['entry-points'] as $eps) {
+		if($eps['type']=="map") {
+			$filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
+			$filter = $eps['settings']['filter-data'];
+			$map_pointsMote = getMoteFromName( $project_settings, $eps['settings']['marker-layer'] );
+			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
+				if(!$map_pointsMote['delim']) {$map_pointsMote['delim']=',';}
+				$cordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
+				//array of custom fields
+				//$cordMote = $map_pointsMote['custom-fields'];
+			}
+			
+		}
+		if($eps['type']=="transcript") {
+			$audio = getMoteFromName( $project_settings, $eps['settings']['audio'] );
+			$transcript = getMoteFromName( $project_settings, $eps['settings']['transcript'] );
+			$timecode = getMoteFromName( $project_settings, $eps['settings']['timecode'] );
+
+		}
+	}
+
+	$json_string = '[{"type": "FeatureCollection","features": [';
+	$args = array(
+    'post_type'=> 'diph-markers',
+    $tax_name    => $term_name,
+    'order'    => 'ASC'
+    );   
+	$loop = new WP_Query( $args );
+
+	while ( $loop->have_posts() ) : $loop->the_post();
+		$marker_id = get_the_ID();
+		$args1 = array("fields" => "names");
+		$post_terms = wp_get_post_terms( $marker_id, $tax_name, $args1 );
+		$title = get_the_title();
+		$audio_val = get_post_meta($marker_id,$audio['custom-fields']);
+
+		if(count($cordMote)==2) {
+			$temp_lat = get_post_meta($marker_id,$cordMote[0]);
+			$temp_lon = get_post_meta($marker_id,$cordMote[1]);
+
+			$temp_latlon = $temp_lat[0].','.$temp_lon[0];
+
+			$lonlat = invertLatLon($temp_latlon);
+		}
+		if(count($cordMote)==1) {
+			$temp_latlon = get_post_meta($marker_id,$cordMote[0]);
+			$lonlat = invertLatLon($temp_latlon[0]);
+		}
+
+		if($lonlat) {
+			if($i>0) {
+				$json_string .= ',';
+			}
+			else {$i++;}
+
+			$json_string .= '{"type": "Feature","geometry": { "type": "Point","coordinates": [ '.$lonlat. '] },';
+			//properties
+			$json_string .= '"properties": {"title": "'.$title.'","categories": '.json_encode($post_terms);
+			$json_string .= ',"audio":"'.$audio_val[0].'","timecode":"'.$timecode_val[0].'"';
+			$json_string .= '}}';
+
+		//array_push($markerArray,$json_string); 
+		}
+
+	endwhile;
+	
+	$json_string .= ']}]';	
+	 //$result = array_unique($array)
+	return $json_string;
+}
+add_action( 'wp_ajax_diph_get_group_feed', 'diph_get_group_feed' );
+add_action( 'wp_ajax_nopriv_diph_get_group_feed', 'diph_get_group_feed' );
 function createMarkerArray($project_id) {
 	//loop through all markers in project -add to array
 	$markerArray = array();
@@ -545,6 +642,10 @@ function createMarkerArray($project_id) {
 	$audio_val;
 	$transcript_val;
 	$timecode_val;
+	$link_parent = 'Interviewee';
+	$parent_id = get_term_by('name', $link_parent, $project_tax);
+	$child_terms = get_term_children($parent_id->term_id, $project_tax);
+
 	while ( $loop->have_posts() ) : $loop->the_post();
 
 		$marker_id = get_the_ID();
@@ -576,6 +677,14 @@ function createMarkerArray($project_id) {
 		$args = array("fields" => "names");
 		$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
 		$p_terms;
+		$viewsContent = $project_settings['views']['content'];
+		$content_att = '';
+		foreach( $viewsContent as $contentMote ) {
+			$content_mote = getMoteFromName( $project_settings, $contentMote );
+			$content_val = get_post_meta($marker_id,$content_mote['custom-fields'],true);
+			$content_att .= ',"'.$contentMote. '":"' .htmlentities($content_val).'"';
+		}
+		$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $project_tax);
 		foreach ($post_terms as $term ) {
 			//$term->name = htmlspecialchars($term->name);
 		}
@@ -589,7 +698,7 @@ function createMarkerArray($project_id) {
 		$json_string .= '{"type": "Feature","geometry": { "type": "Point","coordinates": [ '.$lonlat. '] },';
 		//properties
 		$json_string .= '"properties": {"title": "'.$title.'","categories": '.json_encode($post_terms);
-		$json_string .= ',"audio":"'.$audio_val[0].'","transcript":"'.$transcript_val.'","timecode":"'.$timecode_val[0].'"';
+		$json_string .= ',"audio":"'.$audio_val[0].'"'.$content_att.',"transcript":"'.$transcript_val.'","timecode":"'.$timecode_val[0].'","link":"'.$term_links.'#'.$timecode_val[0].'"';
 		$json_string .= '}}';
 
 		//array_push($markerArray,$json_string); 
@@ -597,9 +706,10 @@ function createMarkerArray($project_id) {
 	
 		
 	endwhile;
-$json_string .= ']}]';	
+	$json_string .= ']}]';	
 	 //$result = array_unique($array)
 	return $json_string;
+	//return $content_att;
 }
 function dateFormatSplit($date_range){
 	$posA = strpos($date_range, "~");
@@ -695,9 +805,9 @@ function print_new_bootstrap_html(){
           <ul class="nav nav-tabs">
            <li class="active"><a href="#entry-point" data-toggle="tab">Entry Points</a></li>
            <li><a href="#motes" data-toggle="tab">Motes</a></li>
-           <li><a href="#shared" data-toggle="tab">Shared</a></li>
+           
            <li><a href="#views" data-toggle="tab">Views</a></li>
-            <a id="save-btn" type="button" class="btn btn-danger" data-loading-text="Saving...">Save</a>
+            <a id="save-btn" type="button" class="btn" data-loading-text="Saving...">Save</a>
           </ul>
           <div class="tab-content">
             <div id="entry-point" class="tab-pane fade in active">
@@ -726,7 +836,6 @@ function print_new_bootstrap_html(){
               <h4>Motes</h4>
               <p>Create relational containers for the data in the custom fields</p>
               <div id="create-mote">
-                <p><a class="btn btn-success" id="create-btn">Create mote</a></p>
                 <p>
                   <input class="span4 mote-name" type="text" name="mote-name" placeholder="Mote Name" />
                 </p>
@@ -736,9 +845,9 @@ function print_new_bootstrap_html(){
                   <label class="checkbox inline">
                     <input type="checkbox" id="pickMultiple" value="multiple"> Multiple
                   </label><div class="btn-group drag-right">
-              	<a class="btn btn-info" id="search-replace-btn" data-toggle="modal" href="#newCustomField"><i class="icon-edit"></i></a>
-              	<a class="btn btn-info" id="delete-cf-btn" data-toggle="modal" href="#newCustomField"><i class="icon-trash"></i></a>
-              	<a class="btn btn-info" id="create-new-custom" data-toggle="modal" href="#newCustomField"><i class="icon-plus"></i></a> 
+              	<a class="btn btn-info" id="search-replace-btn" data-toggle="modal" href="#projectModal"><i class="icon-edit"></i></a>
+              	<a class="btn btn-info" id="delete-cf-btn" data-toggle="modal" href="#projectModal"><i class="icon-trash"></i></a>
+              	<a class="btn btn-info" id="create-new-custom" data-toggle="modal" href="#projectModal"><i class="icon-plus"></i></a> 
               </div>                
                 </p>
                 <p>
@@ -754,51 +863,69 @@ function print_new_bootstrap_html(){
                   </select><span class="help-inline">Choose a data type</span>
                 </p>
                 <p><input class="delim" type="text" name="delim" placeholder="Delimiter" /> If multiple text indicate the delimiter</p>
+                <p><a class="btn btn-success" id="create-btn">Create mote</a></p>
               </div>           
               <div class="accordion" id="mote-list">                
               </div>              
             </div>
-            <div id="shared" class="tab-pane fade in">
-              <h4>Shared resources</h4>
-              <p>Create motes to use that are stored in the project and not markers</p>
-              <p>ex. Transcripts that are shared across markers. Saved in the project custom field. </p>
-              <div id="create-mote">
-                <p><a class="btn btn-success" id="create-btn">Create mote</a></p>
-                <p>
-                  <input class="span4 mote-name" type="text" name="mote-name" placeholder="Mote Name" />
-                </p>
-                <p>
-                  <select name="custom-fields" class="custom-fields">'.create_custom_field_option_list(createUniqueProjectCustomFieldArray()).'
-                  </select><span class="help-inline">Choose a data object (custom field)</span>
-                  <label class="checkbox inline">
-                    <input type="checkbox" id="pickMultiple" value="multiple"> Multiple
-                  </label>
-                </p>
-                <p>
-                  <select name="cf-type" class="cf-type">                          
-                    <option>Text</option>
-                    <option>Multiple Text</option>
-                    <option>HTML</option>
-                    <option>Exact Date</option>
-                    <option>Date Range</option>
-                    <option>Lat/Lon Coordinates</option>
-                    <option>File</option>
-                    <option>Dynamic Data Field</option>
-                  </select><span class="help-inline">Choose a data type</span>
-                </p>
-                <p><input class="delim" type="text" name="delim" placeholder="Delimiter" /> If multiple text indicate the delimiter</p>
-              </div>
-              <div class="accordion" id="mote-list">                
-              </div>             
-            </div>
             <div id="views" class="tab-pane fade in">
               <h4>Views</h4>
-              Create and arrange a layout for the entry points
-              <div class="btn-group" data-toggle="buttons-radio">
-                <button type="button" class="btn btn-primary">Left</button>
-                <button type="button" class="btn btn-primary">Middle</button>
-                <button type="button" class="btn btn-primary">Right</button>
-              </div>
+              
+              <div class="accordion" id="viewList">
+				  <div class="accordion-group">
+				    <div class="accordion-heading">
+				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#mapView">
+				        Main View
+				      </a>
+				    </div>
+				    <div id="mapView" class="accordion-body collapse in">
+				      <div class="accordion-inner">
+				       <p>
+				       <label class="checkbox">
+                    	<input class="save-view map-fullscreen" type="checkbox" name="map-fullscreen" value="fullscreen"> Map Fullscreen
+                  		</label>
+                  		</p>
+                  		<p>
+				       <input class="span3 save-view map-width" name="map-width" type="text" placeholder="Width" />             
+				       <input class="span3 save-view map-height" name="map-height" type="text" placeholder="Height" />
+				       </p>
+				       <p>
+				       <select name="legend-pos" class="legend-pos save-view">                          
+                	    <option>Left</option>
+              		    <option>Right</option>
+               		   </select><span class="help-inline">Legend Location</span>
+               		   </p>
+				      </div>
+				    </div>
+				  </div>
+				  <div class="accordion-group">
+				    <div class="accordion-heading">
+				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#modalView">
+				        Modal View
+				      </a>
+				    </div>
+				    <div id="modalView" class="accordion-body collapse">
+				      <div class="accordion-inner">
+				      	<a href="#projectModal" role="button" class="setup-modal-view btn" data-toggle="modal">
+                        	<i class="icon-wrench"></i> Setup Modal
+                        </a>
+				        Title, Mote values to include, Terms, Link to Legend term. 
+				      </div>
+				    </div>
+				  </div>
+				  <div class="accordion-group">
+				    <div class="accordion-heading">
+				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#linkView">
+				        Link View
+				      </a>
+				    </div>
+				    <div id="linkView" class="accordion-body collapse">
+				      <div class="accordion-inner">
+				        Title, Mote values to include, Terms, Link to Legend term. 
+				      </div>
+				    </div>
+				  </div>
+				</div>
             </div>
           </div>
         </div>
@@ -807,23 +934,7 @@ function print_new_bootstrap_html(){
 </div>'.
 '<select style="display:none;"id="hidden-layers" >'.diph_create_option_list(getLayerList()).'</select>'.'
 <!--New Custom Field Modal -->
-<div id="newCustomField" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  
-</div>
-<!-- Modal -->
-<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <h3 id="myModalLabel">Map Setup</h3>
-  </div>
-  <div class="modal-body">
-    <p>Zoom and drag to set your map\'s initial position.</p>
-    <div id="map_canvas"></div>
-  </div>
-  <div class="modal-footer">
-    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-    <button class="btn btn-primary">Save changes</button>
-  </div>
+<div id="projectModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 </div>';
 }
 function categoryString($cats){
@@ -994,11 +1105,17 @@ function diphGetTranscript(){
 	$diph_project_field = $_POST['transcript'];
 	$diph_clip = $_POST['timecode'];
 
-	$diph_transcript = get_post_meta( $diph_project, $diph_project_field );
+	$diph_transcript = get_post_meta( $diph_project, $diph_project_field, true);
 	
-	$diph_transcript_clip = getTranscriptClip($diph_transcript[0],$diph_clip);
+	if($diph_clip) {
+		$diph_transcript_clip = getTranscriptClip($diph_transcript,$diph_clip);
+		die(json_encode($diph_transcript_clip));
+	}
+	else {
+		die(json_encode($diph_transcript));
+	}
+
 	
-	die(json_encode($diph_transcript_clip));
 }
 //show on both front and backend
 add_action( 'wp_ajax_diphGetTranscript', 'diphGetTranscript' );
@@ -1233,6 +1350,7 @@ function add_diph_project_admin_scripts( $hook ) {
 
         }
     }
+    //Bulk display of all projects
 	if ( $hook == 'edit.php'  ) {
         if ( 'project' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
@@ -1321,6 +1439,55 @@ function diph_page_template( $page_template )
 add_filter( 'single_template', 'diph_page_template' );
 
 
+
+// Set template to be used for top level custom taxonomy term
+function diph_tax_template( $page_template )
+{
+	$blog_id = get_current_blog_id();
+	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
+	if( is_tax() ) {
+    global $wp_query;
+    $term = $wp_query->get_queried_object();
+    $title = $term->taxonomy;
+    $term_parent = get_term($term->parent, $title);
+    $term->parent_name = $term_parent->name;
+    //get mp3 url from first term marker
+    //get transcript url
+    $pieces = explode("diph_tax_", $title);
+    $projectID = get_page_by_path($pieces[1],OBJECT,'project');
+    $project_settings = get_post_meta($projectID->ID,'project_settings',true);
+	
+	wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
+	wp_enqueue_style( 'diph-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
+	wp_enqueue_style( 'diph-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
+    wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+	//map reqs	
+    wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+    wp_enqueue_script( 'cdlaMaps' );
+	if($projectSettings_map_cdla) {
+    	wp_enqueue_script( 'cdla-layer-data' );
+    }
+	//$projectSettings_get = get_post_meta($post->ID, 'project_settings');
+	
+	wp_enqueue_script( 'jquery' );
+	wp_enqueue_script( 'diph-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');		
+	wp_enqueue_script( 'backbone' );
+	wp_enqueue_script( 'underscore' );
+	wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
+		
+	wp_enqueue_script( 'diph-tax-script', plugins_url('/js/diph-tax-template.js', dirname(__FILE__) ),'mediaelement');
+			
+	wp_localize_script( 'diph-tax-script', 'diphData', array(
+			'project_id' => __($projectID->ID,'diph'),
+			'ajax_url' => __($dev_url, 'diph'),
+			'tax' => __($term,'diph'),
+			'project' => __($project_settings)
+			
+		) );
+	}
+	return $page_template;
+}
+add_filter( 'archive_template', 'diph_tax_template' );
 /**
  * Deploy the icons list to select one
  */

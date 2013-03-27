@@ -12,12 +12,15 @@ $('#map_marker').append('<div class="info"></div><div class="av-transcript"></di
 var videoHasPlayed = false;
 var ajax_url = diphData.ajax_url;
 
+
+
+
 diphSettings = JSON.parse(diphData.settings);
 diphMap = diphData.map;
 console.log('map ')
 console.log(diphMap)
-console.log('entry points ')
-console.log(diphSettings['entry-points'])
+console.log('setttings ')
+console.log(diphSettings)
 
 console.log('layers ')
 console.log(diphData.layers)
@@ -226,9 +229,10 @@ function getHighestParentColor(categories) {
         for(j=0;j<countCats;j++) {
             
             var tempName = lookupData[i].name;
-            //console.log('here '+tempName)
+            
             if (tempName==tempCats[j]) {
                 if(lookupData[i].icon_url.substring(0,1) == '#') {
+                    //console.log(tempName)
                     return lookupData[i].icon_url;
                 }
                 else {
@@ -245,6 +249,8 @@ function getHighestParentColor(categories) {
                     for (k=0;k<tempChildCount;k++) {
                         if(tempChildren[k]==tempCats[j]) {
                            if(lookupData[i].icon_url.substring(0,1) == '#') {
+                                //console.log(lookupData[i].children)
+                                //console.log(tempCats[j])
                                 return lookupData[i].icon_url;
                             }
                             else {
@@ -288,6 +294,9 @@ function getHighestParentDisplay(categories) {
  *
  */
 function createLegend(object) {
+    $(document).bind('order.findSelectedCats',function(){ lookupData= findSelectedCats();});
+$(document).bind('order.updateLayerFeatures',function(){ updateLayerFeatures(lookupData);});
+
     //console.log('here'+_.size(object));
 var legendHtml;
 var mapPosition = $('#map_div').position();
@@ -359,7 +368,7 @@ var mapPosition = $('#map_div').position();
             //console.log(spanName)
             lookupData = findSelectedCats(spanName); 
             //console.log('single object '+tempO)
-            //console.log(lookupData)
+            console.log('fires how many times')
             updateLayerFeatures(lookupData);
         });
         // $('#term-legend-'+j+' ul.terms li').hover(function(){
@@ -407,14 +416,19 @@ var mapPosition = $('#map_div').position();
     lookupData = findSelectedCats();
 
     //$('.layersDiv').remove();
+    
 }
 function switchFilter(filterName) {
-    console.log(filterName);
+    //console.log(filterName);
+    //console.log(dataObject)
     for(i=0;i<Object.keys(dataObject).length;i++) {
         if(dataObject[i].type =='filter'&&dataObject[i].name ==filterName) {
             catFilter = dataObject[i];
-            lookupData = findSelectedCats(); 
-            updateLayerFeatures(lookupData);
+            $(document).trigger('order.findSelectedCats').trigger('order.updateLayerFeatures');
+
+            //lookupData = findSelectedCats(); 
+            //console.log(lookupData)
+            //updateLayerFeatures(lookupData);
         }
         
     }
@@ -423,9 +437,13 @@ function switchFilter(filterName) {
 function updateLayerFeatures(catObject){
     //find all features with cat
     //var feats = _.where(markerObject, function(){ return _.contains(list, value)});
+    lookupData = findSelectedCats(); 
+    catObject = lookupData;
     var countTerms = Object.keys(catObject).length; 
     var newFeatures = {type: "FeatureCollection", features: []};
     var childCatObject = [];
+    console.log('it fireds')
+    //console.log(catObject)
     for (var i = 0, len = countTerms; i < len; i++) {
         childCatObject.push(catObject[i].name);
 
@@ -466,7 +484,7 @@ function findSelectedCats(single) {
 
         $('#legends .active-legend input:checked').each(function(index){
             var tempSelCat = $(this).parent().find('.value').text();
-            //console.log(tempSelCat)
+            console.log(tempSelCat)
             for(i=0;i<countTerms;i++) {
                 var tempFilter = catFilter.terms[i].name;
                 if(tempFilter==tempSelCat) {
@@ -522,11 +540,26 @@ function onFeatureSelect(feature) {
 
 	//if(!feature.cluster||(feature.attributes.count==1)) {
         
-        if(feature.cluster){selectedFeature = feature.cluster[0]}
+        if(feature.cluster){selectedFeature = feature.cluster[0];}
         else {selectedFeature = feature;}
 
 		 var pageLink = selectedFeature.attributes.link;
-		 var titleAtt =  selectedFeature.attributes.title;
+		 var titleAtt;
+
+         if(diphSettings['views']['title']) {
+            var titleAtt =  selectedFeature.attributes['title'];
+         }
+         if(diphSettings['views']['content']) {
+            //var titleAtt =  selectedFeature.attributes['title'];
+            var contentAtt ='';
+            _.map(diphSettings['views']['content'],function(val,key) {
+                console.log('map: '+val+key);
+                contentAtt += '<li>'+val+': '+selectedFeature.attributes[val]+'</li>';
+              });
+         }
+         if(diphSettings['views']['content']) {
+
+         }
 		 var tagAtt =  selectedFeature.attributes.categories;
          var audio =  selectedFeature.attributes.audio;
          var transcript =  selectedFeature.attributes.transcript;
@@ -548,10 +581,10 @@ function onFeatureSelect(feature) {
 			li+= thumbHtml;
 		}
 		
-		li += tagAtt+' '+audio+' '+transcript+' '+timecode+'</p><a href="'+pageLink+'" class="thickbox" target="_blank">More Info</a>';
+		li += tagAtt+' '+audio+' '+transcript+' '+timecode+'</p><a href="'+pageLink+'" target="_blank">More Info</a>';
 		 //alert("clicked "+description+" "+thesecats);
 		$('#map_marker .info').empty();
-		$('#map_marker .info').append('<div style="font-size:.8em"><ul>'+li+'</ul></div>');
+		$('#map_marker .info').append('<div><ul>'+contentAtt+'</ul></div>');
         //$('#av-transcript').get(0).setSrc(audio);
         //player.pause();
 		
@@ -559,9 +592,9 @@ function onFeatureSelect(feature) {
         if(timecode) { 
             var startTime = convertToSeconds(time_codes[0]);
             var endTime = convertToSeconds(time_codes[1]);
-            loadTranscriptClip(projectID,transcript,timecode);
+            //loadTranscriptClip(projectID,transcript,timecode);
 
-             $('#map_marker .av-transcript').append('File sizes are too large to load on page. Link to page to listen to audio.');
+             //$('#map_marker .av-transcript').append('File sizes are too large to load on page. Link to page to listen to audio.');
 
         }
         //var player = new MediaElementPlayer('#av-player', {enablePluginDebug: true, mode:'shim',features: ['playpause','progress','current','duration','volume']});
@@ -628,7 +661,8 @@ function onFeatureSelect(feature) {
         $('#markerModal #markerModalLabel').empty().append(titleAtt);
         //$('#markerModal .modal-body').empty();
         $('#markerModal .modal-body').append($('#map_marker'));
-       
+        $('#markerModal .modal-footer .btn-success').remove();
+        $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+pageLink+'"><i class="icon-volume-down icon-white"></i> <i class="icon-indent-left icon-white"></i> Audio Transcript</a>')
         $('#markerModal').modal('show');
         //build function to load transcript clip and load media player
         
@@ -743,7 +777,7 @@ function createMarkers(data,mLayer) {
         }
     }
     console.log(markerObject);
-    console.log(catFilter);
+    console.log(legends);
     createLegend(legends);
     //markerObject = dataObject[2];
     //var featureObject = dataObject[2];

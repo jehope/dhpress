@@ -186,9 +186,10 @@ display: inline-block;
 ul.legend-list, ul.layer-list {
 	margin-left: 0px;
 }
-.legend-list .btn, .layer-list .btn {
+.legend-list .btn, .layer-list .btn, .modal-body .btn {
 	margin-bottom: 10px;
 }
 #TB_ajaxContent p.default-marker {
 	padding-right: 10px;
 }
+

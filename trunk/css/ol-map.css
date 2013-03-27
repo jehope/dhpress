@@ -133,3 +133,14 @@ width: 350px;
 img {
 	max-width: none;
 }
+.modal-header h3 {
+	clear: none;
+}
+.type-timecode {
+	width: 20%;
+	float: left;
+}
+.type-text {
+	width: 80%;
+	display: inline-block;
+}
