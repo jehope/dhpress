@@ -48,7 +48,7 @@ $(window).resize(function() {
  });
 $('#publish').popover({
     title:'Project requires save',
-    content:'Don\'t forget to save your project(red button on the left)',
+    content:'Don\'t forget to save your project(red button on the left).',
     placement:'left',
     trigger: 'manual'
   });
@@ -668,6 +668,7 @@ function addNewLayer(selected){
   return layerLine;
 }
 function getAvailableLayers(){
+  console.log($('#hidden-layers'));
   var layersA = $('#hidden-layers').clone();
   return layersA;
 }
@@ -1078,8 +1079,9 @@ function saveProjectSettings()	{
       $('.layer-list li option:selected').map(function(ind2) {
         projectObj['entry-points'][index]["settings"]['layers'][ind2] = new Object();
         projectObj['entry-points'][index]["settings"]['layers'][ind2]['id'] = $(this).attr('id'); 
-        projectObj['entry-points'][index]["settings"]['layers'][ind2]['name'] = $(this).val(); 
+        projectObj['entry-points'][index]["settings"]['layers'][ind2]['name'] = $(this).text(); 
         projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapType'] = $(this).attr('data-mapType'); 
+        projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapTypeId'] = $(this).val(); 
 
         //console.log($(this).attr('data-mapType'));
           //$("div[class^='apple-']")

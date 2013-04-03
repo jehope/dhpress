@@ -54,15 +54,16 @@ function getLayerList(){
 	//var $tempLayers = array();
 		$layer_id = get_the_ID();
 		$layer_name = get_the_title();
-		$layer_use = get_post_meta($layer_id, 'diph_map_category');
-		$layer_type = get_post_meta($layer_id, 'diph_map_type');
-		$layer_cdlaid = get_post_meta($layer_id, 'diph_map_cdlaid');
+		$layer_use = get_post_meta($layer_id, 'diph_map_category',true);
+		$layer_type = get_post_meta($layer_id, 'diph_map_type',true);
+		$layer_typeid = get_post_meta($layer_id, 'diph_map_typeid',true);
 		$layerCount++;
 		
 		array_push($layers,array( 'layerID'=>$layer_id,
 		 'layerName'=>$layer_name,
-		 'layerCat'=>$layer_use[0],
-		 'layerType'=>$layer_type[0]
+		 'layerCat'=>$layer_use,
+		 'layerType'=>$layer_type,
+		 'layerTypeId'=>$layer_typeid
 		 ));
 				
 	endwhile;
@@ -76,7 +77,9 @@ function diph_create_option_list($layerArray){
 		$tempCat = str_replace(' ','-',$layer['layerCat']);
 		$tempType = 'type-'.$layer['layerType'];
 		//$optionHtml .= '{ "id" : "'.$layer['layerID'].'", "name" : "'.$layer['layerName'].'", "usetype" : "'.$layer['layerCat'].'"},';
-		$optionHtml .= '<option id="'.$layer['layerID'].'" class="'.$tempCat.'" data-mapType="'.$tempType.'" value="'.$layer['layerName'].'" >'.$layer['layerName'].'</option>';
+		$optionHtml .= '<option id="'.$layer['layerID'].
+		'" class="'.$tempCat.'" data-mapType="'.$tempType.
+		'" value="'.$layer['layerTypeId'].'" >'.$layer['layerName'].'</option>';
 	}
 	return $optionHtml;
 }
@@ -1297,7 +1300,7 @@ function diph_get_map_type($type,$object) {
 		//var $ec = $eps.type;
 		//return $layer['id'];
 		if($layer['mapType'] == $type){
-			$map_id = get_post_meta($layer['id'],'diph_map_cdlaid');
+			$map_id = get_post_meta($layer['id'],'diph_map_typeid');
 			return $map_id[0];
 		}
 		//return $ec;
@@ -1413,7 +1416,8 @@ function diph_page_template( $page_template )
 		wp_enqueue_script('underscore');
 		//wp_enqueue_script( 'open-layers', 'http://dev.openlayers.org/releases/OpenLayers-2.12/lib/OpenLayers.js' );
     	wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-    	
+    	wp_enqueue_script( 'diph-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
+        
     	wp_enqueue_script( 'cdlaMaps' );
 
     	if($projectSettings_map_cdla) {

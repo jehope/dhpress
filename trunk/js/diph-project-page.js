@@ -29,13 +29,18 @@ var layerCount = Object.keys(diphData.layers).length;
   diph_layers = [];
     for(i=0;i<layerCount;i++) {
         console.log(diphData.layers[i].name)
-        if(diphData.layers[i]['mapType']=='type-') {
+        if(diphData.layers[i]['mapType']=='type-OSM') {
             diph_layers[i] = new OpenLayers.Layer.OSM(); 
+        }
+        if(diphData.layers[i]['mapType']=='type-Google') {
+            diph_layers[i] = new OpenLayers.Layer.Google(diphData.layers[i]['name'], // the default
+            {   type:diphData.layers[i]['mapTypeId'], numZoomLevels: 20}); 
+            console.log(diphData.layers[i]['mapTypeId'])
         }
         if(diphData.layers[i]['mapType']=='type-CDLA') {
             cdla.maps.defaultAPI(cdla.maps.API_OPENLAYERS);
             // create the cdla.maps.Map object
-            var cdlaObj = new cdla.maps.Map(diphData.layers[i].name);
+            var cdlaObj = new cdla.maps.Map(diphData.layers[i].mapTypeId);
         
             // add the map layer
             //map.addLayers([hwymap.layer()]);

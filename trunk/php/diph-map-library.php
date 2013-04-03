@@ -36,7 +36,7 @@ function diph_mapset_init() {
     'rewrite' => false,
     'capability_type' => 'post',
     'has_archive' => true, 
-    'hierarchical' => true,
+    'hierarchical' => false,
     'menu_position' => null,
     'supports' => array( 'title', 'author', 'excerpt', 'comments', 'revisions' )
 //'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions','custom-fields' )
@@ -113,7 +113,7 @@ function show_diph_map_settings_box() {
     // Setup nonce
     echo '<input type="hidden" name="diph_map_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
     $diph_map_desc = get_post_meta($post->ID, 'diph_map_desc',true);
-    $diph_map_cdlaid = get_post_meta($post->ID, 'diph_map_cdlaid',true);
+    $diph_map_typeid = get_post_meta($post->ID, 'diph_map_typeid',true);
     
     $diph_map_url = get_post_meta($post->ID, 'diph_map_url',true);  
     $diph_map_type = get_post_meta($post->ID, 'diph_map_type',true);
@@ -123,6 +123,10 @@ function show_diph_map_settings_box() {
         $selectKML = 'selected';
     }else if($diph_map_type == 'CDLA'){
         $selectCDLA = 'selected';
+    }else if($diph_map_type == 'Google'){
+        $selectGoogle = 'selected';
+    }else if($diph_map_type == 'OSM'){
+        $selectOSM = 'selected';
     }else{
         $selectType = 'selected';
     }
@@ -137,15 +141,25 @@ function show_diph_map_settings_box() {
     
     $diph_map_source = get_post_meta($post->ID, 'diph_map_source',true);
     $diph_map_creator = get_post_meta($post->ID, 'diph_map_creator',true);
+    $diph_map_classification = get_post_meta( $post->ID, 'diph_map_classification', true );
+    $diph_map_state = get_post_meta( $post->ID, 'diph_map_state', true );
+    $diph_map_county = get_post_meta( $post->ID, 'diph_map_county', true );
+    $diph_map_city = get_post_meta( $post->ID, 'diph_map_city', true );
+    $diph_map_year = get_post_meta( $post->ID, 'diph_map_year', true );
     
     echo '<table>';
     echo '<tr><td colspan=2><label>Please enter the map information below:</label></td></tr>';
     echo '<tr><td colspan=2><label>* means required attribute for CDLA Maps</label></td></tr>';
     echo '<tr><td align=right>Description:</td><td><input name="diph_map_desc" id="diph_map_desc" type="text" size="60" value="'.$diph_map_desc.'"/></td></tr>';
-    echo '<tr><td align=right>*CDLA Map ID:</td><td><input name="diph_map_cdlaid" id="diph_map_cdlaid" type="text" size="60" value="'.$diph_map_cdlaid.'"/></td></tr>';
+    echo '<tr><td align=right>*Map TypeID:</td><td><input name="diph_map_typeid" id="diph_map_typeid" type="text" size="60" value="'.$diph_map_typeid.'"/></td></tr>';
     echo '<tr><td align=right>URL:</td><td><input name="diph_map_url" id="diph_map_url" type="text" size="30" value="'.$diph_map_url.'"/></td></tr>';
-    echo '<tr><td align=right>*Type:</td><td><select name="diph_map_type" id="diph_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML"  '.$selectKML.' disabled>KML</option><option value="CDLA"  '.$selectCDLA.'>CDLA</option></select></td></tr>';
+    echo '<tr><td align=right>*Type:</td><td><select name="diph_map_type" id="diph_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML"  '.$selectKML.' >KML</option><option value="CDLA"  '.$selectCDLA.'>CDLA</option><option value="OSM"  '.$selectOSM.'>OSM</option><option value="Google"  '.$selectGoogle.'>Google</option></select></td></tr>';
     echo '<tr><td align=right>*Category:</td><td><select name="diph_map_category" id="diph_map_category"><option value="" '.$selectCategory.'>Please select a category</option><option value="base layer" '.$selectBaseLayer.'>Base Layer</option><option value="overlay" '.$selectOverlay.' >Overlay</option></select></td></tr>';
+    echo '<tr><td align=right>Classification:</td><td><input name="diph_map_classification" id="diph_map_classification" type="text" size="30" value="'.$diph_map_classification.'"/></td></tr>';
+    echo '<tr><td align=right>State:</td><td><input name="diph_map_state" id="diph_map_state" type="text" size="30" value="'.$diph_map_state.'"/></td></tr>';
+    echo '<tr><td align=right>County:</td><td><input name="diph_map_county" id="diph_map_county" type="text" size="30" value="'.$diph_map_county.'"/></td></tr>';
+    echo '<tr><td align=right>City:</td><td><input name="diph_map_city" id="diph_map_city" type="text" size="30" value="'.$diph_map_city.'"/></td></tr>';
+    echo '<tr><td align=right>Year:</td><td><input name="diph_map_year" id="diph_map_year" type="text" size="30" value="'.$diph_map_year.'"/></td></tr>';
     echo '<tr><td align=right>Source:</td><td><input name="diph_map_source" id="diph_map_source" type="text" size="30" value="'.$diph_map_source.'"/></td></tr>';
     echo '<tr><td align=right>Creator:</td><td><input name="diph_map_creator" id="diph_map_creator" type="text" size="30" value="'.$diph_map_creator.'"/></td></tr>';
     echo '</table>';
@@ -169,7 +183,7 @@ function save_diph_map_settings($post_id) {
     }
     
     update_post_meta($post_id, 'diph_map_desc',$_POST['diph_map_desc']);
-    update_post_meta($post_id, 'diph_map_cdlaid',$_POST['diph_map_cdlaid']);
+    update_post_meta($post_id, 'diph_map_typeid',$_POST['diph_map_typeid']);
     update_post_meta($post_id, 'diph_map_url',$_POST['diph_map_url']);
     update_post_meta($post_id, 'diph_map_type',$_POST['diph_map_type']);
     update_post_meta($post_id, 'diph_map_category',$_POST['diph_map_category']);
@@ -184,7 +198,7 @@ function diph_map_page_template( $page_template )
 {
     global $post;
     
-    $cdlamapid = get_post_meta($post->ID, 'diph_map_cdlaid',true);
+    $cdlamapid = get_post_meta($post->ID, 'diph_map_typeid',true);
     $post_type = get_query_var('post_type');
     if ( $post_type == 'diph-maps' ) {
         $page_template = dirname( __FILE__ ) . '/diph-map-template.php';
@@ -199,7 +213,7 @@ function diph_map_page_template( $page_template )
         wp_enqueue_script( 'diph-public-map-script', plugins_url('/js/diph-map-page.js', dirname(__FILE__) ));
         wp_enqueue_script( 'diph-cdla-kevin-script', plugins_url('/js/keven-cdla.js', dirname(__FILE__) ));
         wp_enqueue_script( 'diph-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-        $diph_map_cdlaid = get_post_meta($post->ID, 'diph_map_cdlaid',true);
+        $diph_map_typeid = get_post_meta($post->ID, 'diph_map_typeid',true);
 
         wp_enqueue_script( 'cdla-map-script', 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$cdlamapid);
         wp_enqueue_style('thickbox');
@@ -208,4 +222,87 @@ function diph_map_page_template( $page_template )
     return $page_template;
 }
 add_filter( 'single_template', 'diph_map_page_template' );
+
+
+//code for managing diph-maps admin panel
+
+function diph_map_filters() {
+    global $typenow;
+    global $wp_query;
+    
+    // must set this to the post type you want the filter(s) displayed on
+    if( $typenow == 'diph-maps' ){
+            echo "<select name='diph_map_type' id='diph_map_type' class='postform'>";
+            echo "<option value=''>Show All Map Types</option>";
+            echo '<option value="CDLA">CDLA</option>';
+            echo '<option value="KML">KML</option>';
+            echo '<option value="OSM">OSM</option>';
+            echo '<option value="WMS" disabled>WMS</option>';
+            echo '<option value="Google">Google</option>';
+            echo "</select>";
+    }
+}
+add_action( 'restrict_manage_posts', 'diph_map_filters' );
+
+
+add_filter('manage_posts_columns', 'add_diph_maps_columns');
+function add_diph_maps_columns($defaults) {
+    global $post;
+    $post_type = get_query_var('post_type');
+    if ( $post_type != 'diph-maps' )
+        return $defaults;
+    unset($defaults['author']);
+    unset($defaults['comments']);
+    unset($defaults['date']);
+    
+    $defaults['types'] = __('Type');
+    $defaults['category'] = __('Category');
+    $defaults['classification'] = __('Classification');
+    $defaults['state'] = __('State');
+    $defaults['county'] = __('County');
+    $defaults['city'] = __('City');
+    $defaults['year'] = __('Year');
+    $defaults['date'] = __('Date');
+    
+    return $defaults;
+}
+add_action('manage_posts_custom_column', 'diph_maps_custom_column', 10, 2);
+function diph_maps_custom_column($name, $post_id) {
+    global $post;
+    $post_type = get_query_var('post_type');
+    if ( $post_type == 'diph-maps' ){
+        $meta_type = get_post_meta( $post_id, 'diph_map_type', true );
+        $meta_category = get_post_meta( $post_id, 'diph_map_category', true );
+        $meta_classification = get_post_meta( $post_id, 'diph_map_classification', true );
+        $meta_state = get_post_meta( $post_id, 'diph_map_state', true );
+        $meta_county = get_post_meta( $post_id, 'diph_map_county', true );
+        $meta_city = get_post_meta( $post_id, 'diph_map_city', true );
+        $meta_year = get_post_meta( $post_id, 'diph_map_year', true );
+        switch ($name)
+        {
+            case 'types':
+                echo $meta_type;
+            break;
+            case 'category':
+                echo $meta_category;
+            break;
+            case 'classification':
+                echo $meta_classification;
+            break;
+            case 'state':
+                echo $meta_state;
+            break;
+            case 'county':
+                echo $meta_county;
+            break;
+            case 'city':
+                echo $meta_city;
+            break;
+            case 'year':
+                echo $meta_year;
+            break;
+        }
+    }
+}
+
 ?>
