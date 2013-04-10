@@ -13,7 +13,8 @@ Template Name: Project Template
  	z-index: 1999;
  	opacity: .5;
  }</style>
-<div id="content" class="widecolumn">
+<div id="primary" class="site-content">
+  <div id="content" >
  <?php if (have_posts()) : while (have_posts()) : the_post();?>
  <div class="post" id="<?php the_ID(); ?>">
  <h2 id="post-<?php the_ID(); ?>"><?php the_title();?></h2>
@@ -54,5 +55,6 @@ Template Name: Project Template
 </ul>
  <?php edit_post_link('Edit this entry.', '<p>', '</p>'); ?>
 </div>
-
+</div>
+<?php get_sidebar(); ?>
 <?php get_footer(); ?>

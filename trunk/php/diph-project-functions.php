@@ -497,6 +497,8 @@ function getMoteFromName($settings,$moteName){
 }
 function dhp_get_term_by_parent($link_terms, $terms, $tax) {
 	
+
+
 	//$term_id = get_term_by('name', $terms[0], $tax);
 	foreach( $terms as $term ) {
 		$real_term = get_term_by('name', $term, $tax);
@@ -517,8 +519,8 @@ function diph_get_group_feed($tax_name,$term_name){
 //return feed for map, icon color, audio file
 	$pieces = explode("diph_tax_", $tax_name);
     $projectID = get_page_by_path($pieces[1],OBJECT,'project');
-    $project_settings = get_post_meta($projectID->ID,'project_settings',true);
-
+    $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
+    //$test_string =  $pieces;
 	foreach( $project_settings['entry-points'] as $eps) {
 		if($eps['type']=="map") {
 			$filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
@@ -588,6 +590,7 @@ function diph_get_group_feed($tax_name,$term_name){
 	$json_string .= ']}]';	
 	 //$result = array_unique($array)
 	return $json_string;
+	//return $test_string;
 }
 add_action( 'wp_ajax_diph_get_group_feed', 'diph_get_group_feed' );
 add_action( 'wp_ajax_nopriv_diph_get_group_feed', 'diph_get_group_feed' );
@@ -645,10 +648,17 @@ function createMarkerArray($project_id) {
 	$audio_val;
 	$transcript_val;
 	$timecode_val;
-	$link_parent = 'Interviewee';
-	$parent_id = get_term_by('name', $link_parent, $project_tax);
-	$child_terms = get_term_children($parent_id->term_id, $project_tax);
+	$link_parent = $project_settings['views']['link'];
 
+	if($link_parent=='marker') {
+		//$parent_id = get_term_by('name', $link_parent, $project_tax);
+		$child_terms = 'marker';
+	}
+	else {
+		$parent_id = get_term_by('name', $link_parent, $project_tax);
+		$child_terms = get_term_children($parent_id->term_id, $project_tax);
+	}
+	
 	while ( $loop->have_posts() ) : $loop->the_post();
 
 		$marker_id = get_the_ID();
@@ -687,7 +697,16 @@ function createMarkerArray($project_id) {
 			$content_val = get_post_meta($marker_id,$content_mote['custom-fields'],true);
 			$content_att .= ',"'.$contentMote. '":"' .htmlentities($content_val).'"';
 		}
-		$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $project_tax);
+
+		if($child_terms=='marker') {
+			$term_links = get_permalink();
+		}
+		else {
+			$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $project_tax);
+		}
+		
+		
+
 		foreach ($post_terms as $term ) {
 			//$term->name = htmlspecialchars($term->name);
 		}
@@ -1107,15 +1126,35 @@ function diphGetTranscript(){
 	$diph_project = $_POST['project'];
 	$diph_project_field = $_POST['transcript'];
 	$diph_clip = $_POST['timecode'];
+	$diph_tax_term = $_POST['tax_view'];
+	$projectObj = get_post($diph_project);
+	$diph_tax_name = 'diph_tax_'.$projectObj->post_name;
+
+	$diph_settings = json_decode(get_post_meta( $diph_project, 'project_settings', true),true);
+	foreach ($diph_settings['entry-points'] as $i => $ep) {
+ 	   if (array_key_exists('type', $ep) && $ep['type'] == 'transcript')
+        $diph_settings_ep = $diph_settings['entry-points'][$i];
+    	$diph_audio_mote = getMoteFromName($diph_settings,$diph_settings_ep['settings']['audio']);
+		
+	}
+
+
 
 	$diph_transcript = get_post_meta( $diph_project, $diph_project_field, true);
+
+	$diph_object;
+	$diph_object['feed'] = json_decode(diph_get_group_feed($diph_tax_name,$diph_tax_term));
+	$diph_object['settings'] = $diph_settings_ep;
+	$diph_object['audio'] = $diph_settings_ep['settings']['audio'];
+	$diph_object['transcript'] = $diph_transcript;
 	
 	if($diph_clip) {
 		$diph_transcript_clip = getTranscriptClip($diph_transcript,$diph_clip);
-		die(json_encode($diph_transcript_clip));
+		$diph_object['transcript'] = $diph_transcript_clip;
+		die(json_encode($diph_object));
 	}
 	else {
-		die(json_encode($diph_transcript));
+		die(json_encode($diph_object));
 	}
 
 	
@@ -1253,6 +1292,8 @@ function diphDeleteTerms(){
 }
 add_action( 'wp_ajax_diphDeleteTerms', 'diphDeleteTerms' );
 
+//getTaxObject()
+
 
 // Restore revision
 function diph_project_restore_revision( $post_id, $revision_id ) {
@@ -1324,12 +1365,15 @@ function add_diph_project_admin_scripts( $hook ) {
 			wp_enqueue_style( 'diph-sortable-style', plugins_url('/css/sortable.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'diph-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'diph-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
+			wp_enqueue_style( 'diph-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
+			wp_enqueue_style( 'diph-font-awesome', plugins_url('/lib/font-awesome/css/font-awesome.min.css',  dirname(__FILE__) ));
 			//wp_enqueue_style( 'diph-bootstrap-slider-style', plugins_url('/lib/bootstrap/css/slider.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'diph-style', plugins_url('/css/diph-style.css',  dirname(__FILE__) ));
 			
 			wp_enqueue_script( 'jquery' );
+			wp_enqueue_script( 'jquery-ui' );
 			wp_enqueue_script(  'diph-jquery-ui', plugins_url('/lib/jquery-ui-1.9.2.custom.min.js', dirname(__FILE__) ));
-
+	 		wp_enqueue_script( 'jquery-ui-slider' );
 			wp_enqueue_script(  'diph-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
 			//wp_enqueue_script(  'bootstrap-button-fix', plugins_url('/lib/bootstrap/js/bootstrap-button-fix.js', dirname(__FILE__) ),'diph-bootstrap');
 			//wp_enqueue_script(  'diph-bootstrap-slider', plugins_url('/lib/bootstrap/js/bootstrap-slider.js', dirname(__FILE__) ),'diph-bootstrap');
@@ -1367,6 +1411,39 @@ function add_diph_project_admin_scripts( $hook ) {
 }
 add_action( 'admin_enqueue_scripts', 'add_diph_project_admin_scripts', 10, 1 );
 
+
+function diph_register_maps($mapObject){
+	//if cdla, load api
+	wp_register_script(
+				'cdlaMaps',
+				'http://docsouth.unc.edu/cdlamaps/api/OASIS',
+				array( 'open-layers' ),
+				false,
+				true
+			);
+	//loop thru layers
+	$cdla_count = 0;
+	foreach($mapObject as $layer) {
+		//var $ec = $eps.type;
+		//return $layer['id'];
+		if($layer['mapType'] == 'type-CDLA'){
+			$map_id = get_post_meta($layer['id'],'diph_map_typeid',true);
+			$cdla_layer_url = 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$map_id;
+			
+			wp_register_script(
+				'cdla-layer-data'.$cdla_count,
+				$cdla_layer_url,
+				array( 'cdlaMaps' ),
+				false,
+				true
+			);
+			wp_enqueue_script( 'cdla-layer-data'.$cdla_count);
+			$cdla_count++;
+		}
+		//return $ec;
+	}	
+}
+
 // Set template to be used for Project type
 function diph_page_template( $page_template )
 {
@@ -1382,6 +1459,7 @@ function diph_page_template( $page_template )
     	//if map type is cdla get id
     	$projectSettings_map_cdla = diph_get_map_type('type-CDLA',$projectSettings_map['layers']);
 
+		diph_register_maps($projectSettings_map['layers']);
 
     	wp_register_script(
 				'cdlaMaps',
@@ -1390,23 +1468,21 @@ function diph_page_template( $page_template )
 				false,
 				true
 			);	
-    	$cdla_layer_url = 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$projectSettings_map_cdla;	
-		wp_register_script(
-				'cdla-layer-data',
-				$cdla_layer_url,
-				array( 'cdlaMaps' ),
-				false,
-				true
-		);
+    	
         $page_template = dirname( __FILE__ ) . '/diph-project-template.php';
 
 		wp_enqueue_style( 'diph-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 		wp_enqueue_style( 'diph-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
-        wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+        wp_enqueue_style( 'diph-font-awesome', plugins_url('/lib/font-awesome/css/font-awesome.min.css',  dirname(__FILE__) ));
+        wp_enqueue_style( 'diph-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
+		wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			
 		wp_enqueue_script('jquery');
-
-		wp_enqueue_script(  'diph-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
+		wp_enqueue_script( 'jquery-ui' );
+		wp_enqueue_script(  'diph-jquery-ui', plugins_url('/lib/jquery-ui-1.9.2.custom.min.js', dirname(__FILE__) ));
+ 		wp_enqueue_script( 'jquery-ui-slider' );
+			
+		wp_enqueue_script( 'diph-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
 			
 		wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
 		wp_enqueue_script( 'jwplayer', plugins_url('/js/jwplayer/jwplayer.js', dirname(__FILE__),array('jquery') ));
@@ -1421,7 +1497,7 @@ function diph_page_template( $page_template )
     	wp_enqueue_script( 'cdlaMaps' );
 
     	if($projectSettings_map_cdla) {
-    		wp_enqueue_script( 'cdla-layer-data' );
+    		//wp_enqueue_script( 'cdla-layer-data' );
     	}
 
         wp_enqueue_script( 'timeline-js', plugins_url('/js/storyjs-embed.js', dirname(__FILE__) ));
@@ -1464,6 +1540,7 @@ function diph_tax_template( $page_template )
 	wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
 	wp_enqueue_style( 'diph-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 	wp_enqueue_style( 'diph-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
+    wp_enqueue_style( 'diph-font-awesome', plugins_url('/lib/font-awesome/css/font-awesome.min.css',  dirname(__FILE__) ));
     wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 	//map reqs	
     wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
