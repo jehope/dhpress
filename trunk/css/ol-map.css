@@ -1,36 +1,63 @@
 @charset "UTF-8";
 /* CSS Document */
 
+
 #map_div {
-    position: absolute;
-    height : 100%;
-    min-height: 100%;
-	width:100%;
-	min-width: 300px;
-	left: 0px;
-	top: 0px;
+	width:600px;
+	height:400px;
 	background: #fff;
-    }
+}
+.fullscreen #map_div {
+	width:100%;
+	min-width: 100%;
+	height:100%;
+	position:absolute;
+	top: 0px;
+	left: 0px;
+}
+
+
 #legends {
-	position: absolute;
+	position:relative;
+	
+	margin-left:0;
 	height: 90%;
 	overflow: auto;
 	background: #fff;
-	min-width: 200px;
 	background-color: rgba(255, 255, 255, .7);
+}
+.fullscreen #legends {
+	position:absolute;
+	min-width:none;
+	top: 50px;
+	left: 20px;
 
-}  
-#legends .nav {
-	width: 300px;
-background: #fff;
-padding: 10px; 
+}
+.diph-nav {
+	z-index: 3000;
+	width: 100%;
+}
+.fullscreen .diph-nav {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+}
+.fullscreen aside {
+	display: none;
+}
+.legend-row {
+	max-width: 270px;
+}
+.fullscreen .legend-row {
+	max-width: none;
 }
 #legends .nav a {
 	
 
 	} 
 #map_div div.olControlZoom {
-	top:38px;
+	top:50px;
+	left: 96%;
 }
 #map-div2 {
     border : 0;
@@ -54,10 +81,14 @@ padding: 10px;
 }
 #term-legend {
 	position:absolute;	
+	margin-left: 0px;
+}
+.legend-row .legend-div {
+	margin-left: 0px;
 }
 .legend-div ul {
 list-style: none;
-width: 350px;
+
 }
 .legend-div ul li {
 	width:100%;
@@ -73,20 +104,23 @@ width: 350px;
 .legend-div ul img {
 	float: left;
 }
-.legend-div ul a {
+.legend-div ul.terms a {
 	padding: 10px;
-	float: left;
 	width:212px;
 }
 .legend-div input[type='checkbox'] {
-	float: left;
 	margin: 12px;
 }
 .legend-div p {
 	width: 15px;
 	height: 15px;
 	margin-top: 10px;
-	float: left;
+}
+#layers-panel {
+	margin-left:0px;
+}
+#layers-panel li a {
+
 }
 /*
  #map_div2 {
@@ -143,4 +177,17 @@ img {
 .type-text {
 	width: 80%;
 	display: inline-block;
+}
+.legend-resize {
+	padding: 2px 5px;
+	float: right;
+	position: absolute;
+	right: 0px;
+}
+
+
+@media (max-width: 767px) {
+[class*="span"], .uneditable-input[class*="span"], .row-fluid [class*="span"] {
+	width: 228px;
+}
 }

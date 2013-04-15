@@ -121,7 +121,7 @@ function create_tax_for_projects() {
 	$projects = get_posts($args);
 	if ($projects) {
 		foreach ( $projects as $project ) {
-			$projectTax = 'diph_tax_'.$project->post_name;
+			$projectTax = 'diph_tax_'.$project->ID;
 			$projectName = $project->post_title;
 			$projectSlug = $project->post_name;
 			$taxonomy_exist = taxonomy_exists($projectTax);
@@ -150,7 +150,7 @@ function diph_create_tax($taxID,$taxName,$taxSlug){
     'menu_name' => __( 'Term' ),
   ); 	
 
-  register_taxonomy($taxID,array('diph-markers'), array(
+  register_taxonomy($taxID,array('dhp-markers'), array(
     'hierarchical' => true,
     'public' => true,
     'labels' => $labels,
@@ -165,12 +165,12 @@ function show_tax_on_project_markers() {
 	global $post;
 	$projectID = get_post_meta($post->ID,'project_id');
 	$project = get_post($projectID[0]);
-	$projectTaxSlug = 'diph_tax_'.$project->post_name;
+	$projectTaxSlug = 'diph_tax_'.$project->ID;
 	$diphTaxs = get_taxonomies();
 		
 	foreach ($diphTaxs as $key => $value) {
 		if($value!=$projectTaxSlug) {
-			remove_meta_box( $value.'div', 'diph-markers', 'side' );
+			remove_meta_box( $value.'div', 'dhp-markers', 'side' );
 		}
 	}
 
@@ -296,6 +296,7 @@ echo '<input type="hidden" name="diph_project_settings_box_nonce" value="'.wp_cr
 	echo '</table>'; // end table
 	
 	print_new_bootstrap_html();
+
 }
 
 // Save the Data
@@ -351,10 +352,10 @@ function createMoteValueArrays($custom_name,$delim,$project_id){
 	//loop through all markers in project -add to array
 	$moteArray = array();
 	$projectObj = get_post($project_id);
-	$diph_tax_name = 'diph_tax_'.$projectObj->post_name;
+	$diph_tax_name = 'diph_tax_'.$projectObj->ID;
 
 
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
 
@@ -415,13 +416,14 @@ function createUniqueProjectCustomFieldArray(){
 	return $unique_custom_fields;
 }
 //create unique array of custom fields of posts associated with the project
-function createUniqueCustomFieldArray(){
+function createUniqueCustomFieldArray($the_id){
 
-	$project_id =  _PROJECT_ID_;
+	$project_id =  $the_id;
+	//if(!$project_id){$project_id = $the_id;}
 	//loop through all markers in project -add to array
 	$custom_field_array = array();
 
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
 
@@ -518,7 +520,7 @@ function dhp_get_term_by_parent($link_terms, $terms, $tax) {
 function diph_get_group_feed($tax_name,$term_name){
 //return feed for map, icon color, audio file
 	$pieces = explode("diph_tax_", $tax_name);
-    $projectID = get_page_by_path($pieces[1],OBJECT,'project');
+    $projectID = get_page_by_id($pieces[1],OBJECT,'project');
     $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
     //$test_string =  $pieces;
 	foreach( $project_settings['entry-points'] as $eps) {
@@ -544,7 +546,7 @@ function diph_get_group_feed($tax_name,$term_name){
 
 	$json_string = '[{"type": "FeatureCollection","features": [';
 	$args = array(
-    'post_type'=> 'diph-markers',
+    'post_type'=> 'dhp-markers',
     $tax_name    => $term_name,
     'order'    => 'ASC'
     );   
@@ -598,7 +600,7 @@ function createMarkerArray($project_id) {
 	//loop through all markers in project -add to array
 	$markerArray = array();
 	$project_object = get_post($project_id);
-	$project_tax = 'diph_tax_'.$project_object->post_name;
+	$project_tax = 'diph_tax_'.$project_object->ID;
 
 	//LOAD PROJECT SETTINGS
 	//-get primary category parent
@@ -642,7 +644,7 @@ function createMarkerArray($project_id) {
 	//$term_icons = json_encode($term_icons);
 
 	$json_string = '['.$term_icons.'{"type": "FeatureCollection","features": [';
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	$i = 0;
 	$audio_val;
@@ -754,7 +756,7 @@ function createTimelineArray($project_id) {
 	//loop through all markers in project -add to array
 	$timelineArray = array();
 	$project_object = get_post($project_id);
-	$project_tax = 'diph_tax_'.$project_object->post_name;
+	$project_tax = 'diph_tax_'.$project_object->ID;
 
 	//LOAD PROJECT SETTINGS
 	//-get primary category parent
@@ -768,7 +770,7 @@ function createTimelineArray($project_id) {
 	$term_icons = getIconsForTerms($parent_terms, $project_tax);
 
 	$json_string = '{"timeline":{"headline":"Long Womens Movement","type":"default","text":"A journey","date":[';
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	$i = 0;
 	while ( $loop->have_posts() ) : $loop->the_post();
@@ -819,7 +821,8 @@ function create_custom_field_option_list($cf_array){
 function print_new_bootstrap_html(){
 	$projectPage = get_page(_PROJECT_ID_);
 	$projectTax_slug = $projectPage->post_name;
-
+	global $dhp_custom_fields;
+	$dhp_custom_fields = createUniqueCustomFieldArray(_PROJECT_ID_);
 	echo '<div class="new-bootstrap">
     <div class="row-fluid"> 	
     	<div class="span12">
@@ -827,7 +830,6 @@ function print_new_bootstrap_html(){
           <ul class="nav nav-tabs">
            <li class="active"><a href="#entry-point" data-toggle="tab">Entry Points</a></li>
            <li><a href="#motes" data-toggle="tab">Motes</a></li>
-           
            <li><a href="#views" data-toggle="tab">Views</a></li>
             <a id="save-btn" type="button" class="btn" data-loading-text="Saving...">Save</a>
           </ul>
@@ -849,7 +851,7 @@ function print_new_bootstrap_html(){
               <div id="entryTabContent" class="tab-content">
                 <div class="tab-pane fade in active" id="home">
                 	<p>Project ID: '._PROJECT_ID_.'</p>
-                	<p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=diph_tax_'.$projectTax_slug.'" >Catagory Manager</a></p>
+                	<p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=diph_tax_'._PROJECT_ID_.'" >Catagory Manager</a></p>
                   <p>Create entry points to the project using the right most tab above. </p>
                 </div>               
               </div>
@@ -862,7 +864,7 @@ function print_new_bootstrap_html(){
                   <input class="span4 mote-name" type="text" name="mote-name" placeholder="Mote Name" />
                 </p>
                 <p>
-                  <select name="custom-fields" class="custom-fields">'.create_custom_field_option_list(createUniqueCustomFieldArray()).'
+                  <select name="custom-fields" class="custom-fields">'.create_custom_field_option_list($dhp_custom_fields).'
                   </select><span class="help-inline">Choose a data object (custom field)</span>
                   <label class="checkbox inline">
                     <input type="checkbox" id="pickMultiple" value="multiple"> Multiple
@@ -1005,7 +1007,7 @@ function diphGetMoteValues(){
 
 	$diph_project = get_post($diph_projectID);
 	$diph_project_slug = $diph_project->post_name;
-	$diph_tax_name = 'diph_tax_'.$diph_project_slug;
+	$diph_tax_name = 'diph_tax_'.$diph_project->ID;
 	createParentTerm($mote['name'],$diph_tax_name);
 	//get fresh terms from meta feild 
 
@@ -1128,7 +1130,7 @@ function diphGetTranscript(){
 	$diph_clip = $_POST['timecode'];
 	$diph_tax_term = $_POST['tax_view'];
 	$projectObj = get_post($diph_project);
-	$diph_tax_name = 'diph_tax_'.$projectObj->post_name;
+	$diph_tax_name = 'diph_tax_'.$projectObj->ID;
 
 	$diph_settings = json_decode(get_post_meta( $diph_project, 'project_settings', true),true);
 	foreach ($diph_settings['entry-points'] as $i => $ep) {
@@ -1168,7 +1170,7 @@ function diphAddCustomField(){
 	$diph_custom_field_name = $_POST['field_name'];
 	$diph_custom_field_value = $_POST['field_value'];
 
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$diph_project, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$diph_project, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
 
@@ -1186,7 +1188,7 @@ function diphFindReplaceCustomField(){
 	$diph_custom_find_value = $_POST['find_value'];
 	$diph_custom_replace_value = $_POST['replace_value'];
 
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$diph_project, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$diph_project, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	$diph_count=0;
 	while ( $loop->have_posts() ) : $loop->the_post();
@@ -1207,7 +1209,7 @@ function diphDeleteCustomField(){
 	$diph_project = $_POST['project'];
 	$diph_custom_field_name = $_POST['field_name'];
 	
-	$args = array( 'post_type' => 'diph-markers', 'meta_key' => 'project_id','meta_value'=>$diph_project, 'posts_per_page' => -1 );
+	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$diph_project, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
 
@@ -1230,7 +1232,7 @@ function diphCreateTaxTerms(){
 	
 	$diph_project = get_post($diph_projectID);
 	$diph_project_slug = $diph_project->post_name;
-	$diph_tax_name = 'diph_tax_'.$diph_project_slug;
+	$diph_tax_name = 'diph_tax_'.$diph_project->ID;
 
 	$mote_parent_id = term_exists( $mote_parent, $diph_tax_name );
 	$meta_key = 'icon_url';
@@ -1277,7 +1279,7 @@ function diphDeleteTerms(){
 	$diph_project = get_post($diph_projectID);
 	$diph_project_slug = $diph_project->post_name;
 	
-	$diph_tax = 'diph_tax_'.$diph_project_slug;
+	$diph_tax = 'diph_tax_'.$diph_projectID;
 	//get term id, get children term ids
 	$diph_delete_parent_term = get_term_by('name',$diph_term_name,$diph_tax);
 	$diph_delete_parent_id = $diph_delete_parent_term->term_id;
@@ -1291,6 +1293,14 @@ function diphDeleteTerms(){
 	die(json_encode($diph_delete_children));
 }
 add_action( 'wp_ajax_diphDeleteTerms', 'diphDeleteTerms' );
+function diphGetCustomFields(){
+	$diph_projectID = $_POST['project'];
+	
+	
+	$dhp_custom_fields = createUniqueCustomFieldArray($diph_projectID);
+	die(json_encode($dhp_custom_fields));
+}
+add_action( 'wp_ajax_diphGetCustomFields', 'diphGetCustomFields' );
 
 //getTaxObject()
 
@@ -1356,6 +1366,7 @@ function add_diph_project_admin_scripts( $hook ) {
     $blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
+    //$dhp_custom_fields = createUniqueCustomFieldArray($post->ID);
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( 'project' === $post->post_type ) {    
         $tempLayers = 'layers '.$layers_global; 
@@ -1390,6 +1401,7 @@ function add_diph_project_admin_scripts( $hook ) {
 			wp_enqueue_script(  'diph-project-script', plugins_url('/js/diph-project-admin.js', dirname(__FILE__) ));
 			wp_localize_script( 'diph-project-script', 'diphDataLib', array(
 				'ajax_url' => __($dev_url, 'diph'),
+				//'dhp_custom_fields' => __($dhp_custom_fields, 'diph'),
 				'layers' => __($tempLayers, 'diph')
 			) );
 			wp_enqueue_style('thickbox');
@@ -1534,7 +1546,7 @@ function diph_tax_template( $page_template )
     //get mp3 url from first term marker
     //get transcript url
     $pieces = explode("diph_tax_", $title);
-    $projectID = get_page_by_path($pieces[1],OBJECT,'project');
+    $projectID = get_page_by_id($pieces[1],OBJECT,'project');
     $project_settings = get_post_meta($projectID->ID,'project_settings',true);
 	
 	wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
@@ -1557,11 +1569,11 @@ function diph_tax_template( $page_template )
 	wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
 		
 	wp_enqueue_script( 'diph-tax-script', plugins_url('/js/diph-tax-template.js', dirname(__FILE__) ),'mediaelement');
-			
+	
 	wp_localize_script( 'diph-tax-script', 'diphData', array(
 			'project_id' => __($projectID->ID,'diph'),
 			'ajax_url' => __($dev_url, 'diph'),
-			'tax' => __($term,'diph'),
+			'tax' => __($term,'diph'), 
 			'project' => __($project_settings)
 			
 		) );

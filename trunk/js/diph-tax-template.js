@@ -18,6 +18,9 @@ console.log(tax_view);
 
 function init_interface() {
 
+	//getTaxObject
+
+
 	//$('#content').empty();
 	$('#content').prepend('<p> List Transcript and Audio</p><div id="transcript-div"></div>');
 	$('#content').prepend('<h1>'+diphData.tax['name']+'</h1>');
@@ -33,14 +36,26 @@ function init_interface() {
 	//if tax view has map
 	console.log("get markers for map: "+diphData.tax['name'])
 
-loadAudio();
+
 }
 
-function loadAudio() {
+function loadAudio(url) {
 $('#transcript-div').prepend('<div class="info"></div><div class="av-transcript"></div>');
-$('#transcript-div .av-transcript').append('<audio id="av-player" src="http://msc.renci.org/dev/wp-content/uploads/2013/02/03-Submarines.mp3" type="audio/mp3" controls="controls"></audio>');
+$('#transcript-div .av-transcript').append('<audio id="av-player" src="'+url+'" type="audio/mp3" controls="controls"></audio>');
 player = new MediaElementPlayer('#av-player', {enablePluginDebug: false, mode:'shim',features: ['playpause','progress','current','duration','volume']});
-
+//player.setSrc(url);
+//player.load();
+        player.media.addEventListener('loadeddata', function(){
+            
+            console.log('audio loaded ');
+            
+            player.play();   
+               //player.media.setCurrentTime(clipPosition);
+                //hasPlayed = true;
+                //player.media.setCurrentTime(startTime);
+                player.pause();   
+                
+        });
 	// var player = new MediaElementPlayer('#av-player', {enablePluginDebug: true, mode:'shim',features: ['playpause','progress','current','duration','volume']});
  //    $('#map_marker .av-transcript').append('<audio id="av-player" src="'+audio+'#t='+startTime+','+endTime+'" type="audio/mp3" controls="controls"></audio>');
        
@@ -59,12 +74,14 @@ _.each($('.type-timecode'), function(val,index) {
 }
 
 function buildTranscriptHtml(jsonData){
+	console.log(jsonData);
 	//build list
 	var re1='\n';	// Square Braces 1
-	var split_transcript = jsonData.split('\n',50);
+	var split_transcript = jsonData['transcript'].split('\n',50);
 	var sp1 = _.compact(split_transcript);
 	var removeTHatCrap = _.uniq(sp1);
-
+	var audioLink = jsonData['feed'][0]['features'][0]['properties']['audio'];
+	console.log(audioLink);
 	
 	var $transcript_html = $('<ul id="object1"/>');
 	//$html.append();
@@ -84,7 +101,7 @@ function buildTranscriptHtml(jsonData){
 	});
 	console.log(removeTHatCrap);
 	$('#transcript-div').append($transcript_html);
-	
+	loadAudio(audioLink);
 	categoryColors();
 }
 
@@ -96,7 +113,7 @@ function createMoteValue(moteName){
 	if(diphData.tax['parent_name']==moteFound[0]['custom-fields']) {
 		console.log(moteFound[0]['delim']+diphData.tax['name'])
 		var transcriptVal = moteFound[0]['delim']+diphData.tax['name'];
-		loadTranscript(project_id,transcriptVal);
+		loadTranscript(project_id,transcriptVal,diphData.tax['name']);
 	}
 
 
@@ -137,14 +154,15 @@ function loadTranscriptClip(projectID,transcriptName,clip){
         }
     });
 }
-function loadTranscript(projectID,transcriptName){
+function loadTranscript(projectID,transcriptName,tax){
     jQuery.ajax({
         type: 'POST',
         url: ajax_url,
         data: {
             action: 'diphGetTranscript',
             project: projectID,
-            transcript: transcriptName
+            transcript: transcriptName,
+            tax_view: tax
         },
         success: function(data, textStatus, XMLHttpRequest){
             //console.log(JSON.parse(data));

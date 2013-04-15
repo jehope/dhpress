@@ -17,10 +17,10 @@ require_once( dirname(__FILE__) . '/../lib/category-checklist-tree/category-chec
 // action function for above hook
 function diph_add_pages() {
     // Add a new submenu under Settings:
-    add_options_page(__('diPH Settings','diph-menu'), __('diPH Settings','diph-menu'), 'manage_options', 'diph_settings', 'diph_settings_page');
+    //add_options_page(__('DH Press Settings','diph-menu'), __('diPH Settings','diph-menu'), 'manage_options', 'diph_settings', 'diph_settings_page');
 
     // Add a new top-level menu (ill-advised):
-    add_menu_page(__('diPH Toolkit','diph-menu'), __('diPH Toolkit','diph-menu'), 'manage_options', 'diph-top-level-handle', 'diph_toplevel_page' );
+    add_menu_page(__('DH Press','diph-menu'), __('DH Press','diph-menu'), 'manage_options', 'diph-top-level-handle', 'diph_toplevel_page' );
 
     // Add a submenu to the custom top-level menu:
     //add_submenu_page('diph-top-level-handle', __('Map Library','diph-menu'), __('Map Library','diph-menu'), 'manage_options', 'map-library', 'diph_sublevel_page');

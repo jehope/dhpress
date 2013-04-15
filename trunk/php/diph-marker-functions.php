@@ -12,7 +12,7 @@ function diph_marker_init() {
   $labels = array(
     'name' => _x('Markers', 'post type general name'),
     'singular_name' => _x('Marker', 'post type singular name'),
-    'add_new' => _x('Add New', 'diph-markers'),
+    'add_new' => _x('Add New', 'dhp-markers'),
     'add_new_item' => __('Add New Marker'),
     'edit_item' => __('Edit Marker'),
     'new_item' => __('New Marker'),
@@ -38,7 +38,7 @@ function diph_marker_init() {
     'menu_position' => null,
     'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions','custom-fields' )
   ); 
-  register_post_type('diph-markers',$args);
+  register_post_type('dhp-markers',$args);
 }
 add_action( 'init', 'diph_marker_init' );
 
@@ -48,7 +48,7 @@ function add_diph_marker_admin_scripts( $hook ) {
     global $post;
 
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
-        if ( 'diph-markers' === $post->post_type ) {     
+        if ( 'dhp-markers' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'diph-style', plugins_url('/css/diph-style.css',  dirname(__FILE__) ));
@@ -59,7 +59,7 @@ function add_diph_marker_admin_scripts( $hook ) {
         }
     }
 	if ( $hook == 'edit.php'  ) {
-        if ( 'diph-markers' === $post->post_type ) {     
+        if ( 'dhp-markers' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'diph-style', plugins_url('/css/diph-style.css',  dirname(__FILE__) ));
@@ -76,7 +76,7 @@ add_action( 'admin_enqueue_scripts', 'add_diph_marker_admin_scripts', 10, 1 );
 function diph_marker_updated_messages( $messages ) {
   global $post, $post_ID;
 
-  $messages['diph-markers'] = array(
+  $messages['dhp-markers'] = array(
     0 => '', // Unused. Messages start at index 1.
     1 => sprintf( __('Marker updated. <a href="%s">View marker</a>'), esc_url( get_permalink($post_ID) ) ),
     2 => __('Custom field updated.'),
@@ -139,11 +139,11 @@ function diph_array_sort($array, $on, $order=SORT_ASC)
 function diph_get_projects() {
 
 	// I'm assuming that project titles will have already been trimmed, so I haven't included code to deal with that.  I can if you want.
-	global $wpdb;
+	//global $wpdb;
 
 	$args = array( 
 		'post_type' => 'project',
-		'post_status' => 'publish'
+		'post_status' => array('drafts', 'publish')
 	);
 	
 	// Get array of all projects (as post objects)
@@ -170,7 +170,7 @@ function diph_get_projects() {
 }
 
 // an array of arrays containing 'value' and 'label' for each project
-$projects = diph_get_projects();
+//$projects = diph_get_projects();
 
 // Add the Meta Box
 function add_diph_marker_settings_box() {
@@ -178,7 +178,7 @@ function add_diph_marker_settings_box() {
 		'diph_marker_settings_meta_box', 		// $id
 		'Marker Settings', 						// $title
 		'show_diph_marker_settings_box', 		// $callback
-		'diph-markers', 						// $page
+		'dhp-markers', 						// $page
 		'normal',								// $context
 		'high'); 								// $priority
 }
@@ -190,7 +190,7 @@ function add_diph_marker_icon_box() {
 		'diph_marker_icon_box', 		// $id
 		'Marker Settings', 						// $title
 		'show_diph_marker_icon_box', 		// $callback
-		'diph-markers', 						// $page
+		'dhp-markers', 						// $page
 		'side',								// $context
 		'default'); 								// $priority
 }
@@ -206,7 +206,7 @@ function get_selected_project() {
 				if($meta == $option['value']) {
 					if ($option['value']==0) {return 'Pick a project';}
 					else {
-						get_project_icons($option['value']);
+						//get_project_icons($option['value']);
 					return $option['label'];
 					}
 				}
@@ -215,6 +215,16 @@ function get_selected_project() {
 		}
 	}
 }
+
+//$projects = diph_get_projects();
+// The icon settings callback
+function show_diph_marker_icon_box() {
+	echo get_selected_project();
+}
+// The Callback
+function show_diph_marker_settings_box() {
+global $post,$diph_marker_settings_fields ;
+
 // Field Array
 $prefix = 'marker_';
 $diph_marker_settings_fields = array(
@@ -223,21 +233,20 @@ $diph_marker_settings_fields = array(
 		'desc'	=> 'Select which project this marker should belong to.',
 		'id'	=> $prefix .'project_id',
 		'type'	=> 'select',
-		'options' => $projects
+		'options' => diph_get_projects()
 		)
 );
-// The icon settings callback
-function show_diph_marker_icon_box() {
-	echo get_selected_project();
-}
-// The Callback
-function show_diph_marker_settings_box() {
-global $diph_marker_settings_fields, $post;
+	//display selected project settings
+	$selected_project = get_post_meta($post->ID, 'project_id', true);
+	if($selected_project) {
+		$project_settings = get_post_meta($selected_project, 'project_settings', true);
+		//echo $project_settings;
+	}
 // Use nonce for verification
 echo '<input type="hidden" name="diph_marker_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
 
 	// Begin the field table and loop
-	echo '<table class="form-table" id="'.$post->ID.'">';
+	echo '<table class="form-table dhp_marker_project" id="'.$selected_project.'">';
 	foreach ($diph_marker_settings_fields as $field) {
 		// get value of this field if it exists for this post
 		$meta = get_post_meta($post->ID, $field['id'], true);
@@ -275,12 +284,7 @@ echo '<input type="hidden" name="diph_marker_settings_box_nonce" value="'.wp_cre
 	} // end foreach
 	echo '</table>'; // end table
 
-	//display selected project settings
-	$selected_project = get_post_meta($post->ID, 'marker_project', true);
-	if($selected_project) {
-		$project_settings = get_post_meta($selected_project, 'project_settings', true);
-		//echo $project_settings;
-	}
+
 	$markerMeta = get_post_meta( $post->ID );
 	//print_r($markerMeta);
 	echo buildMarkerMetaFields($markerMeta);
@@ -288,31 +292,17 @@ echo '<input type="hidden" name="diph_marker_settings_box_nonce" value="'.wp_cre
 function buildMarkerMetaFields($theMeta) {
 	$markerHtml ='<ul class="marker-fields">';
 	foreach ($theMeta as $key => $value) {
-		if( (strrpos(createIDfromName($key),'location')!==false) && (strrpos(createIDfromName($key),'location')<1) ) {
-			$markerHtml .='<li id="'.createIDfromName($key).'" class="location"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
-		}
-		elseif($key=="marker_project") {
-			$markerHtml .='<li id="'.createIDfromName($key).'" class="project"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
-		}
-		elseif(createIDfromName($key)=="audio_url") {
-			$markerHtml .='<li id="'.createIDfromName($key).'" class="audio"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
-		}
-		elseif(createIDfromName($key)=="date_range") {
-			$markerHtml .='<li id="'.createIDfromName($key).'" class="date"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
-		}
-		elseif(createIDfromName($key)=="time_stamp") {
-			$markerHtml .='<li id="'.createIDfromName($key).'" class="time-stamp"><label>'.$key.' </label><input value="'.$value[0].'"/></li>';
-		}
-		elseif($key=="_edit_lock"||$key=="_edit_last") {
+
+		if($key=="_edit_lock"||$key=="_edit_last") {
 			
 		}
 		else {
-			$markerHtml .='<li id="'.createIDfromName($key).'" class="motes"><label>'.$key.' </label><input class="mote-value" value="'.$value[0].'"/><a class="delete-mote">X</a></li>';			
+			$markerHtml .='<li id="'.createIDfromName($key).'" class="motes"><label>'.$key.' </label><textarea class="mote-value">'.$value[0].'</textarea><a class="delete-mote">X</a></li>';			
 		}
 		
 	}
 	$markerHtml .='</ul>';
-	return $markerHtml;
+	//return $markerHtml;
 }
 //create id for traversal
 function createIDfromName($theName){
@@ -340,8 +330,7 @@ function save_diph_marker_settings($post_id) {
 	}
 	if ( $parent_id ) {
 		// loop through fields and save the data
-		$parent  = get_post( $parent_id );
-		
+		$parent  = get_post( $parent_id );		
 		foreach ($diph_marker_settings_fields as $field) {
 			$old = get_post_meta( $parent->ID, $field['id'], true);
 			$new = $_POST[$field['id']];
@@ -365,23 +354,9 @@ function save_diph_marker_settings($post_id) {
 		} // end foreach
 	}
 }
-add_action('save_post', 'save_diph_marker_settings');  
+//add_action('save_post', 'save_diph_marker_settings');  
 
-// Restore revision
-function diph_marker_restore_revision( $post_id, $revision_id ) {
-	global $diph_marker_settings_fields;
-	$post     = get_post( $post_id );
-	$revision = get_post( $revision_id );
-	foreach ($diph_marker_settings_fields as $field) {
-			$old = get_metadata( 'post', $revision->ID, $field['id'], true);
-			if ( false !== $old) {
-				update_post_meta($post_id, $field['id'], $old);
-			} else {
-				delete_post_meta($post_id, $field['id'] );
-			}
-		} // end foreach
-}
-add_action( 'wp_restore_post_revision', 'diph_marker_restore_revision', 10, 2 );
+
 function get_project_icons( $project_id ){
 		$icons = get_metadata( 'post', $project_id, 'project_icons', true);
 		$icon_array = explode(',',$icons);
@@ -397,15 +372,11 @@ function diphAddUpdateMetaField(){
     //get data from our ajax() call
     //$greeting = $_POST['greeting'];
     $post_id = $_POST['post_id'];
-    $field = str_replace('\\', '', $_POST['motes']);
-    
-    $motes = json_decode($field,true);
+	$field_name = $_POST['field_name'];
+    $field_value = $_POST['field_value'];
 
-//var_dump(json_decode($field, true));
-    foreach ($motes as $key => $value){
-  		//echo  $value['id'] . ':' . $value['value'];
-  		update_post_meta($post_id, $value['id'], $value['value']);
-	}
+	update_post_meta($post_id, $field_name, $field_value);
+
 }
 
 
@@ -442,74 +413,112 @@ function diphGetProjectSettings(){
 add_action( 'wp_ajax_diphGetProjectSettings', 'diphGetProjectSettings' );
 
 
-// function diphGetTranscript(){
+//code for managing diph-markers admin panel
 
-// 	$diph_project = $_POST['project'];
-// 	$diph_transcript = $_POST['transcript'];
-// 	$transcript = get_post_meta($diph_project, $diph_transcript, true);
-// 	die($transcript);
-// }
-// add_action( 'wp_ajax_diphGetTranscript', 'diphGetTranscript' );
-
-function diph_project_filters() {
-	global $typenow;
+function diph_markers_filter_restrict_manage_posts(){
+    $type = 'dhp-markers';
+    if (isset($_GET['post_type'])) {
+        $type = $_GET['post_type'];
+    }
  
-	// an array of all the taxonomyies you want to display. Use the taxonomy name or slug
-	$diph_projects =  diph_get_projects();
- 
-	// must set this to the post type you want the filter(s) displayed on
-	if( $typenow == 'diph-markers' ){
- 
-			$terms = $diph_projects;
-			if(count($terms) > 0) {
-				echo "<select name='marker_project' id='marker_project' class='postform'>";
-				echo "<option value=''>Show All Projects</option>";
-				foreach ($terms as $term) { 
-					echo '<option value="'. $term['value'].'">' . $term['label'] .' </option>'; 
-				}
-				echo "</select>";
-			}
-		
-	}
-}
-add_action( 'restrict_manage_posts', 'diph_project_filters' );
-function ba_admin_posts_filter( $query )
-{
-    global $pagenow;
-    if ( is_admin() && $pagenow=='edit.php' && isset($_GET['marker_project']) && $_GET['marker_project'] != '') {
-        $query->query_vars['meta_key'] = $_GET['marker_project'];
-    if (isset($_GET['marker_project']) && $_GET['marker_project'] != '')
-        $query->query_vars['meta_value'] = $_GET['marker_project'];
+    //only add filter to post type you want
+    if ('dhp-markers' == $type){
+        //change this to the list of values you want to show
+        //in 'label' => 'value' format
+        $values = diph_get_projects();
+        ?>
+        <select name="diph_project">
+        <option value=""><?php _e('Filter By Project', 'acs'); ?></option>
+        <?php
+            $current_v = isset($_GET['diph_project'])? $_GET['diph_project']:'';
+            foreach ($values as $label => $value) {
+                printf
+                    (
+                        '<option value="%s"%s>%s</option>',
+                        $value['value'],
+                        $value['label'] == $current_v? ' selected="selected"':'',
+                        $value['label']
+                    );
+                }
+        ?>
+        </select>
+        <?php
     }
 }
-add_filter( 'parse_query', 'ba_admin_posts_filter' );
+//add_action( 'restrict_manage_posts', 'diph_markers_filter_restrict_manage_posts' );
 
-function add_new_columns($defaults) {
-	$new = array();
-  foreach($defaults as $key => $title) {
-
-    if ($key=='author') // Put the Thumbnail column before the Author column
-      $new['projects'] =  __('Project');
-    $new[$key] = $title;
-  }
-  return $new;
-   
+function diph_markers_filter( $query ){
+    global $pagenow;
+    $type = 'dhp-markers';
+    if (isset($_GET['post_type'])) {
+        $type = $_GET['post_type'];
+    }
+    if ( 'dhp-markers' == $type && is_admin() && $pagenow=='edit.php' && isset($_GET['diph_project']) && $_GET['diph_project'] != '') {
+        $query->query_vars['meta_key'] = 'project_id';
+        $query->query_vars['meta_value'] = $_GET['project_id'];
+    }
 }
-function add_column_data( $column_name, $post_id ) {
-	
-	if( $column_name == 'projects' ) {
-		$_posttype 	= 'diph-markers';
-		$_taxonomy 	= 'region';
-		$terms 		= diph_get_projects();
-		$proj = get_post_meta($post_id, 'marker_project', true);
-		$projName = '';
-		if($proj) { 
-			$projName = get_the_title($proj);
-		}
-		
-		echo $projName;
-	}
-}
-add_filter( 'manage_diph-markers_posts_columns', 'add_new_columns' );
+//add_filter( 'parse_query', 'diph_markers_filter' );
 
-add_action( 'manage_diph-markers_posts_custom_column', 'add_column_data', 10, 2 );
+function add_diph_projects_columns($defaults) {
+    global $post;
+    $post_type = get_query_var('post_type');
+    if ( $post_type != 'dhp-markers' )
+        return $defaults;
+    unset($defaults['author']);
+    unset($defaults['comments']);
+    unset($defaults['date']);
+    
+    $defaults['types'] = __('Type');
+    $defaults['category'] = __('Category');
+    $defaults['classification'] = __('Classification');
+    $defaults['state'] = __('State');
+    $defaults['county'] = __('County');
+    $defaults['city'] = __('City');
+    $defaults['year'] = __('Year');
+    $defaults['date'] = __('Date');
+    
+    return $defaults;
+}
+//add_filter('manage_posts_columns', 'add_diph_maps_columns');
+
+function diph_projects_custom_column($name, $post_id) {
+    global $post;
+    $post_type = get_query_var('post_type');
+    if ( $post_type == 'dhp-markers' ){
+        $meta_type = get_post_meta( $post_id, 'diph_map_type', true );
+        $meta_category = get_post_meta( $post_id, 'diph_map_category', true );
+        $meta_classification = get_post_meta( $post_id, 'diph_map_classification', true );
+        $meta_state = get_post_meta( $post_id, 'diph_map_state', true );
+        $meta_county = get_post_meta( $post_id, 'diph_map_county', true );
+        $meta_city = get_post_meta( $post_id, 'diph_map_city', true );
+        $meta_year = get_post_meta( $post_id, 'diph_map_year', true );
+        switch ($name)
+        {
+            case 'types':
+                echo $meta_type;
+            break;
+            case 'category':
+                echo $meta_category;
+            break;
+            case 'classification':
+                echo $meta_classification;
+            break;
+            case 'state':
+                echo $meta_state;
+            break;
+            case 'county':
+                echo $meta_county;
+            break;
+            case 'city':
+                echo $meta_city;
+            break;
+            case 'year':
+                echo $meta_year;
+            break;
+        }
+    }
+}
+//add_action('manage_posts_custom_column', 'diph_maps_custom_column', 10, 2);
+
+?>

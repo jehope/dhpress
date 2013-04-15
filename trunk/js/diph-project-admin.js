@@ -4,7 +4,8 @@ jQuery(document).ready(function($) {
 var ajax_url = diphDataLib.ajax_url;
 var projectObj = new Object();
 var postID = $('input#post_ID').val();
-
+console.log(diphDataLib);
+var tempProjectObj;
 $('#screen-meta-links a').click(function(){
   $('#screen-options-wrap').removeClass('hidden');
 });
@@ -89,6 +90,7 @@ $('#add-map').click(function(){
     buildEntryHtml('map',epsettings);
     //show tab/content after loading
     $('#map'+mapCount+'-tab a').tab('show');
+
   }      
 });
 
@@ -274,7 +276,15 @@ else {
   loadSettings(projectObj);
   saveProjectSettings();
 }
-          
+function updateCustomFieldList(cfdata){
+  var cfarray = [];
+  _.map(JSON.parse(cfdata), function(cfname){
+    cfarray.push(cfname);
+    
+  });
+  console.log(cfarray);
+  projectObj['project-details']['marker-custom-fields'] = cfarray;
+}          
 function loadSettings(data) {
   $('#motes #create-mote .cf-type').change(function(){
       if($(this).find("option:selected").text()=='Dynamic Data Field'){
@@ -289,6 +299,7 @@ function loadSettings(data) {
   if(data.hasOwnProperty('project-details')) {
     projectObj['project-details']['id'] = data['project-details']['id'];
     projectObj['project-details']['name'] = data['project-details']['name'];
+    diphGetCustomFields(projectObj['project-details']['id']);
   }
   
   
@@ -447,7 +458,7 @@ function buildEntryHtml(type,settings){
                 </div>\
                 <div class="row-fluid vars">\
                     <div class="span5">\
-                    	<label>Marker Layer</label>\
+                    	<label>Marker Layer(Lat/Lon) <span class="badge badge-info"><i class="icon-question-sign icon-white"></i></span></label>\
                         <select class="span12" name="marker-layer" id="marker-layer">'+getLoadedMotes(settings['marker-layer'])+'\
                         </select>\
                     </div>\
@@ -460,7 +471,22 @@ function buildEntryHtml(type,settings){
                     </div>\
                 </div>';
   }
-  $('#entryTabContent').append('<div class="tab-pane fade in ep" id="'+type+'-'+epCount+'"><button type="button" class="close" >&times;</button>\<p>'+entryTabContent+'</p></div>');
+  $('#entryTabContent').append('<div class="tab-pane fade in ep map" id="'+type+'-'+epCount+'"><button type="button" class="close" >&times;</button>\<p>'+entryTabContent+'</p></div>');
+
+  $( '.layer-opacity' ).slider({
+    range: false,
+    min: 0,
+    max: 1,
+    step:.05,
+    values: [ 1 ],
+    slide: function( event, ui ) {            
+      
+      //$(this).parent('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
+      $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
+      $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
+    }
+  });
+
   $('#'+type+'-'+epCount+ ' .close').click(function(e){
     e.stopPropagation();
     e.preventDefault();
@@ -532,17 +558,15 @@ function buildViews(viewObject){
 
   //setup layout for main view
   var mapView,legendView;
-  if(viewObject['map-fullscreen']) {
-      mapView = viewObject;
-      _.map(mapView,function(val,key) {
+  mapView = viewObject;
+  
+_.map(mapView,function(val,key) {
         console.log('map: '+val+key);
         $('.'+key).val(val);
-        if(val=='fullscreen') {
+        if(viewObject['map-fullscreen']) {
           $('.'+key).attr('checked','checked');
         }
       });
-    }
-
     if(viewObject['title']) {
       legendView = viewObject['legend'];
     }
@@ -583,6 +607,11 @@ function buildViews(viewObject){
         console.log(val);
         $('#modal-body-content').append(addContentMotes(val));
       });
+      $('.delete-content-mote').unbind('click');
+      $('.delete-content-mote').on('click',function(){
+        $(this).parent('li').remove();
+      });
+
       //title = viewObject['title'];
     }
 
@@ -643,27 +672,28 @@ function loadLayers(layerObject){
       }
       else{
         console.log('second layer')
-        $(layerHtml).append(addNewLayer());
+        $(layerHtml).append(addNewLayer('',layerObject[i]['opacity']));
         $('li',layerHtml).eq(i).find('select option#'+layerObject[i]['id']).attr('selected','selected');
+        $('li',layerHtml).eq(i).find('select option#'+layerObject[i]['id']).attr('data-opacity',layerObject[i]['opacity']);
 
       }
         
     }
   }
+
       
   return $(layerHtml).html();
 }
-function addNewLayer(selected){
-  var layerLine = $('<li><select name="overlay" ></select> <button class="btn btn-danger delete-layer" type="button">-</button><input type="text" class="span2 opacity" value="" data-slider-min="0" data-slider-max="1" data-slider-step=".1" data-slider-value="1" data-slider-orientation="horizontal" data-slider-selection="after" data-slider-tooltip="hide"></li>');
+function addNewLayer(selected,layerOpacity){
+  var layerLine = $('<li><select name="overlay"></select> <button class="btn btn-danger delete-layer" type="button">-</button><div><div class="layer-opacity"></div><span class="slider-value">'+layerOpacity+'</span> Opacity</div></li>');
   $('select',layerLine).append($('#hidden-layers option').clone());
-  //$('.opacity',layerLine).slider();
-  //$('.delete-layer',layerLine).unbind('click');
   $('.delete-layer',layerLine).click(function(){   
-    console.log('delete')
     $(this).closest('li').remove();
     //assignLegendListeners();
     saveProjectAlert();
   });
+
+  
   
   return layerLine;
 }
@@ -1049,7 +1079,9 @@ $('#save-btn').on('click', function(){
 
 function saveProjectSettings()	{
 	console.log($('#diph-projectid').val())
-	projectObj['project-details'] = {"name": $('#titlediv #title').val(),"id":$('#diph-projectid').val()}
+	projectObj['project-details']['name'] = $('#titlediv #title').val();
+  projectObj['project-details']['id'] = $('#diph-projectid').val();
+  //console.log(projectObj['project-details']['marker-custom-fields'])
 	//MOTES - clear old values...add fresh
 	projectObj['motes'] = new Object();
 	$('#mote-list .accordion-group').each(function(index){
@@ -1079,6 +1111,8 @@ function saveProjectSettings()	{
       $('.layer-list li option:selected').map(function(ind2) {
         projectObj['entry-points'][index]["settings"]['layers'][ind2] = new Object();
         projectObj['entry-points'][index]["settings"]['layers'][ind2]['id'] = $(this).attr('id'); 
+        console.log($(this).find('.slider-value').text()); 
+        projectObj['entry-points'][index]["settings"]['layers'][ind2]['opacity'] = $(this).attr('data-opacity'); 
         projectObj['entry-points'][index]["settings"]['layers'][ind2]['name'] = $(this).text(); 
         projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapType'] = $(this).attr('data-mapType'); 
         projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapTypeId'] = $(this).val(); 
@@ -1119,9 +1153,13 @@ function saveProjectSettings()	{
   _.map($('.save-view'),function(val,index) {
     projectObj['views'][$(val).attr('name')] = val.value;
         // console.log(val.type);
+        if(val.type=="checkbox"&&val.checked) {
+        //   console.log(val); 
+           projectObj['views'][$(val).attr('name')] = true;
+        }
         if(val.type=="checkbox"&&!val.checked) {
         //   console.log(val); 
-           projectObj['views'][$(val).attr('name')] = 'false';
+           projectObj['views'][$(val).attr('name')] = false;
         }
         // if(val.type=="text"&&val.value) {
         //   projectObj['views'][$(val).attr('name')] = val.value;
@@ -1133,7 +1171,7 @@ function saveProjectSettings()	{
         //$('#modal-body-content').append(addContentMotes(val));
   });
 	
-
+  console.log(projectObj);
 	//save object for real
 	$('#project_settings').val(JSON.stringify(projectObj));
 	updateProjectSettings();
@@ -1464,6 +1502,24 @@ function deleteTerms(projectID,termName) {
         }
     });
 } 
+function diphGetCustomFields(projectID) {
+  jQuery.ajax({
+        type: 'POST',
+        url: ajax_url,
+        data: {
+            action: 'diphGetCustomFields',
+            project: projectID
+        },
+        success: function(data, textStatus, XMLHttpRequest){
+            console.log(data);
+            updateCustomFieldList(data);
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown){
+           alert(errorThrown);
+        }
+    });
+
+}
 function diphGetMoteValues(mote,projectID,loadLegend) {
 	//console.log(moteName);
 

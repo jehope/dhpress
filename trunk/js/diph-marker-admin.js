@@ -6,18 +6,31 @@ jQuery(document).ready(function($) {
 	var markerObject;
 	
 	//move marker settings above content box
-	$('#diph_marker_settings_meta_box').remove().insertBefore('#post-body-content #titlediv');
+	//$('#diph_marker_settings_meta_box').remove().insertBefore('#post-body-content #titlediv');
 	//assign listeners and execute functions after settings box is moved(remove also removes listeners)
-	if($('#marker_project_id option:selected').val()!=0){
-		console.log($('#marker_project_id option:selected').text());
-		getProjectSettings($('#marker_project_id option:selected').val());
+	
+	console.log($('#post_ID').val())
+	var marker_project = $('.dhp_marker_project').attr('id');
+	$('#diph_marker_settings_meta_box .inside').append('<div class="custom-field-editor">Choose the field from the dropdown to add/edit.<select></select><textarea class="edit-custom-field"></textarea><a class="add-update-meta">Add/Update</a></div>');
+	
+	if(marker_project) {
+		getProjectSettings(marker_project);
+		_.map($('#marker_project_id option'), function(option){
+			if(marker_project == option.value)
+			$(option).prop('selected','selected');
+		});
 	}
-
 	$('select#marker_project_id').bind('change',function(){
 		console.log('here'+$('#marker_project_id option:selected').val());
 		getProjectSettings($('#marker_project_id option:selected').val());
 	});
-	
+	$('.add-update-meta').on('click',function() {
+		console.log('click')
+		var fieldName = $('.custom-field-editor option:selected').val();
+		var fieldValue = $('.edit-custom-field').val()
+
+		diphAddUpdateMetaField(fieldName,fieldValue);
+	});
 
 function displayTranscript(diphData) {
 	
@@ -65,102 +78,50 @@ function generateClipHtml(clip){
 	return clipHtml;
 }
 function buildMarkerSettings(diphData){
+	$('.custom-field-editor select').empty();
 	if(diphData) {
-	markerObject = JSON.parse(diphData);
-	console.log('data is loaded');
-	var moteHtml = '';
-	var countMotes = Object.keys(markerObject.motes).length; 
-
-	for(var i =0; i < countMotes; i++) {
-		var found = false;
-		$('ul.marker-fields li.motes').each(function(index){
-			if($(this).attr('id')==markerObject.motes[i].id) {
-				//console.log('found: '+markerObject.motes[i].id);
-				found = true;
-			}
-			//$(this).after('<a class="delete-mote">X</a>');
+		markerObject = JSON.parse(diphData);
+		console.log('data is loaded');
+		console.log(markerObject);
+		
+		var custom_fields ='';
+		if(markerObject['project-details']['marker-custom-fields']) {
+			custom_fields = markerObject['project-details']['marker-custom-fields'];
+		}
+		var optionHtml;
+		//list out all the custom fields in the project
+		_.map(custom_fields, function(option){
+			console.log(option)
+			optionHtml += '<option value="'+option+'">'+option+'</option>';
 		});
-		if(found) { 
-			//console.log('found');
-			//$(this).after('<a class="delete-mote">X</a>');
-			//$('ul.marker-fields li.motes input').after('<a class="delete-mote">X</a>');
+		$('.custom-field-editor select').append(optionHtml);
+		//update the project_id field or create it if it is a new marker
+		diphAddUpdateMetaField('project_id',markerObject['project-details']['id']);
+		$('.edit-custom-field').append(markerObject['project-details']['id']);
 
-		}
-		else {
-			//console.log('new mote');
-			moteHtml += '<li id="'+markerObject.motes[i].id+'" class="motes" ><label>'+markerObject.motes[i].name+'</label> <input class="mote-value" value=""><a class="delete-mote">X</a></li>';	
-		}
-		
+		$('.custom-field-editor select').bind('change',function(){
+			//console.log($('.custom-field-editor select option:selected').val());
+			displayMetaValue($('.custom-field-editor select option:selected').val())
+		});
 	}
-
-	
-	var count2 = 0;
-	for (var k in markerObject.locations) {
-		var exists = $('.marker-fields li#'+markerObject.locations[count2].id);  
-		//console.log('e: '+exists.length+' '+markerObject.locations[count2].id);
-		if(exists.length==0) {
-		moteHtml += '<li id="'+markerObject.locations[count2].id+'"><label>'+markerObject.locations[count2].label+'</label> <input type="text" value=""></li>';
-		}
-		else {
-			$(exists).append('<span>'+markerObject.locations[count2].type+'</span> <span>'+markerObject.locations[count2].display+'</span>');
-		}
-		
-		++count2; 
+	else {
+		$('#diph_marker_settings_meta_box .inside').append('<div>Project has no settings. Please setup on project page.</div>');
 	}
-	if(markerObject.date && markerObject.date=='true') {
-
-		var dateModel = $('.marker-fields li#date_range input').val();
-		//console.log(dateModel);
-		var approx = '';
-		if(dateModel&&dateModel.indexOf('-')>-1){
-			var dateArray = dateModel.split('-');
-			var dateStart = startDate(dateArray[0]);
-			var dateEnd = endDate(dateArray[1]);
-
-		}
-		if(dateModel&&dateModel.indexOf('~')>-1){
-			var dateArray = dateModel.split('~');
-			var dateStart = startDate(dateArray[0]);
-			var dateEnd = endDate(dateArray[1]);
-			approx = 'Approximate';
-		}
-
-
-		$('.marker-fields li#date_range').append(dateStart+' '+dateEnd+' '+approx);
-	}
-	if(markerObject.media) {
-		if(markerObject.media.av){
-			var exists = $('.marker-fields li#audio_url');
-		}
-	}
-
-	$('#diph_marker_settings_meta_box .marker-fields').append(moteHtml);
-	$('#diph_marker_settings_meta_box .inside').append('<a class="add-mote button-primary">Add Mote</a>');
-	$('#diph_marker_settings_meta_box .inside').append('<a class="save-motes button-primary">Save</a>');
-	$('.add-mote').click(function(){
-		addMoteLine();
-	});
-	$('.save-motes').click(function(){
-		saveMoteFields($('#diph_marker_settings_meta_box .form-table').attr('id'));
-		syncProjectMarkerFields(markerObject);
-	});
-		
-	$('.delete-mote').click(function(){
-		console.log('this'+$(this).find('label').text());
-		var dID = $(this).closest('li').attr('id');
-		console.log('that'+$('#'+dID).find('label').text());
-		deleteMoteMeta($('#'+dID).find('label').text());
-		findMoteToDelete(dID);
-		$(this).closest('li').remove();
-		
-
-	});
-	var interviewee = 'transcript_'+createIDFromName($('.marker-fields li#interviewee input').val());
-	getTranscript('4233',interviewee);
 }
-else {
-	$('#diph_marker_settings_meta_box .inside').append('<div>Project has no settings. Please setup on project page.</div>');
-}
+function displayMetaValue(optionName){
+	$('.edit-custom-field').empty();
+	_.map($('#the-list .left input:text'),function(option){
+		
+		if(optionName==option.value) {
+			
+			//console.log($(option).parents().find('textarea').html())
+			$('.edit-custom-field').append($(option).parents().find('textarea').html());
+			//$(option).closest('textarea').html();
+		}
+		
+			
+		
+	});
 }
 function findMoteToDelete(moteID){
 	console.log('delete: '+moteID);
@@ -291,6 +252,28 @@ function deleteMoteMeta(moteID){
                 action: 'diphDeleteMoteMeta',
                 post_id: postID,
                 mote_id: moteID
+            },
+            success: function(data, textStatus, XMLHttpRequest){
+                console.log(textStatus);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown){
+                alert(errorThrown);
+            }
+        });
+}
+function diphAddUpdateMetaField(fieldName,fieldValue){
+	var postID = $('#post_ID').val();
+	console.log(fieldName)
+	console.log(fieldValue)
+	$.ajax({
+            type: 'POST',
+            url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+            dataType: 'json',
+            data: {
+                action: 'diphAddUpdateMetaField',
+                post_id: postID,
+                field_name: fieldName,
+                field_value: fieldValue
             },
             success: function(data, textStatus, XMLHttpRequest){
                 console.log(textStatus);

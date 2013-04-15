@@ -24,7 +24,10 @@ console.log(diphSettings)
 
 console.log('layers ')
 console.log(diphData.layers)
-
+if(diphSettings['views']['map-fullscreen']==true){
+    $('body').addClass('fullscreen');
+    $('.diph-nav .fullscreen').addClass('active');
+}
 var layerCount = Object.keys(diphData.layers).length; 
   diph_layers = [];
     for(i=0;i<layerCount;i++) {
@@ -46,8 +49,19 @@ var layerCount = Object.keys(diphData.layers).length;
             //map.addLayers([hwymap.layer()]);
             diph_layers[i] = cdlaObj.layer(); 
         }
-    }
 
+    }
+ $('#secondary').prepend('<div id="legends" class="span4"><div class="legend-row row-fluid"></div></div>');
+$('#main').prepend('<div class="diph-nav nav-fixed-top navbar"><div class="navbar-inner"><ul class="nav nav-pills ">\
+      <li class="dropdown">\
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-list"></i>  Legends<b class="caret"></b></a>\
+        <ul class="dropdown-menu">\
+              <!-- links -->\
+        </ul>\
+      </li>\
+      <li class="layers"><a href="#layers-panel"><i class="icon-tasks"></i> Layers </a></li>\
+      <li class="fullscreen" ><a href="#"><i class="icon-fullscreen"></i> Fullscreen map </a></li>\
+    </ul></div>');
 var gg = new OpenLayers.Projection("EPSG:4326");
 var sm = new OpenLayers.Projection("EPSG:900913");
 
@@ -65,7 +79,8 @@ map = new OpenLayers.Map({
 });
 map.addLayers(diph_layers);
 //load layers here
-map.addControl(new OpenLayers.Control.LayerSwitcher());
+
+//map.addControl(new OpenLayers.Control.LayerSwitcher());
 var lonlat_default = new OpenLayers.LonLat(0,0);
 lonlat_default.transform(gg, map.getProjectionObject());
 map.setCenter(lonlat_default, 3);
@@ -138,7 +153,7 @@ var style = new OpenLayers.Style(template, {context: context});
 strategy = new OpenLayers.Strategy.Cluster();
 strategy.distance = 1;
 
-mObject = new OpenLayers.Layer.Vector('Markers',{
+mObject = new OpenLayers.Layer.Vector(diphMap['marker-layer'],{
     strategies: [strategy],
     rendererOptions: { zIndexing: true }, 
     styleMap: new OpenLayers.StyleMap(style)
@@ -154,14 +169,26 @@ hoverControl = new OpenLayers.Control.SelectFeature(mObject,
 
 loadMarkers(projectID,mObject);   
 
-mObject.id = "Markers";       
+//mObject.id = "Markers";       
 map.addLayer(mObject);
 map.addControl(hoverControl);
 map.addControl(selectControl);
  
 hoverControl.activate();  
 selectControl.activate(); 
+$('.diph-nav .fullscreen').click(function(){
+    if($('body').hasClass('fullscreen')) {
+        $('body').removeClass('fullscreen');
+        $('.diph-nav .fullscreen').removeClass('active');
+        map.updateSize();
+    }
+    else {
 
+        $('body').addClass('fullscreen');
+        $('.diph-nav .fullscreen').addClass('active');
+        map.updateSize();
+    }
+});
 
 //geocodeAddress('310 Meredith St');
 function createLookup(filter){
@@ -299,12 +326,14 @@ function getHighestParentDisplay(categories) {
  *
  */
 function createLegend(object) {
+    //sets the order
     $(document).bind('order.findSelectedCats',function(){ lookupData= findSelectedCats();});
-$(document).bind('order.updateLayerFeatures',function(){ updateLayerFeatures(lookupData);});
+    $(document).bind('order.updateLayerFeatures',function(){ updateLayerFeatures(lookupData);});
 
     //console.log('here'+_.size(object));
-var legendHtml;
-var mapPosition = $('#map_div').position();
+    var legendHtml;
+    var legendWidth;
+    var mapPosition = $('#map_div').position();
     var mapWidth = $('#map_div').width();
     var pageWidth = $('body').width();
     var pageHeight = $('body').height();
@@ -313,23 +342,13 @@ var mapPosition = $('#map_div').position();
     var rightDiv = mapPosition.left + 50;
     var topDiv = mapPosition.top + 40;
     
-    $('#main').prepend('<div id="legends"><ul class="nav nav-pills">\
-  <li class="dropdown">\
-    <a class="dropdown-toggle" data-toggle="dropdown"href="#"><i class="icon-list"></i>  Legends<b class="caret"></b></a>\
-    <ul class="dropdown-menu">\
-          <!-- links -->\
-    </ul>\
-  </li>\
-  <li><a href="#"><i class="icon-tasks"></i> Layers </a></li>\
-</ul></div>');
-
     for (j=0;j<Object.keys(object).length;j++) {
        
         var filterTerms = object[j].terms;
         var legendName = object[j].name;
         var countTerms = Object.keys(filterTerms).length; 
         
-        legendHtml = $('<div class="'+legendName+' legend-div" id="term-legend-'+j+'"><ul class="terms"></ul></div>');
+        legendHtml = $('<div class="'+legendName+' legend-div span12 row" id="term-legend-'+j+'"><ul class="terms"></ul></div>');
         for(i=0;i<countTerms;i++) {
             if(legendName!=filterTerms[i].name) {
                 var firstIconChar = filterTerms[i].icon_url.substring(0,1);
@@ -346,14 +365,38 @@ var mapPosition = $('#map_div').position();
                 }
             }
         }
-        $(legendHtml).append('<ul class="controls"><li><input type="checkbox" ><a class="value">All</a></li><ul>');
+        $('ul',legendHtml).prepend('<li><input type="checkbox" ><a class="value">All</a></li>');
        
 
-        $('#legends').append(legendHtml);
-        $('#legends .dropdown-menu').append('<li><a href="#term-legend-'+j+'">'+legendName+'</a></li>');
+        $('#legends .legend-row').append(legendHtml);
+        $('.diph-nav .dropdown-menu').append('<li><a href="#term-legend-'+j+'">'+legendName+'</a></li>');
     }
-        $('#legends').css({'left':rightDiv, 'top':topDiv,'z-index':19,'padding':'10px'});
+        //$('#legends').css({'left':0, 'top':50,'z-index':19});
+        $('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="icon-resize-small"></i></a>');
+        $('.legend-resize').hide();
+        $('#legends').hover(function(){
+            $('.legend-resize').fadeIn(100);
+        },
+        function() {
+            $('.legend-resize').fadeOut(100);
+        });
+        $('.legend-resize').click(function(){
 
+            if($('#legends').hasClass('mini')) {
+                $('.terms .value').show();
+            $('#legends').animate({width: legendWidth}, 500 );
+            $('#legends').removeClass('mini');
+            }
+            else {
+                console.log($('#legends').width())
+                legendWidth = $('#legends').width();
+                $('.terms .value').hide();
+                $('#legends').animate({width: 70}, 500 );
+                $('#legends').addClass('mini');
+            }
+
+        });
+        //$('#legends').css({
         $('.active-legend').mousemove(function(e){
             var xpos = e.pageX - 250;
             var ypos = e.pageY + 15;
@@ -365,7 +408,7 @@ var mapPosition = $('#map_div').position();
         
         $('#legends ul.terms li a').click(function(event){
             var spanName = $(this).text();
-            //console.log(spanName);
+            console.log(spanName);
             $('.active-legend ul input').removeAttr('checked');
             $('.active-legend ul.terms li.selected').removeClass('selected');
             $(this).closest('li').addClass('selected');
@@ -396,16 +439,17 @@ var mapPosition = $('#map_div').position();
         $('ul.controls li').click(function(){
             $('.active-legend ul input').attr('checked',true);
             //$('.active-legend ul.terms li').css({'background': 'none'});
-           lookupData = findSelectedCats(); 
+           //lookupData = findSelectedCats(); 
             //console.log(tempO)       
-            updateLayerFeatures(lookupData);
+            //updateLayerFeatures(lookupData);
             
         });
-    
+    $('#legends .legend-row').append('<div class="legend-div span12" id="layers-panel"><ul></ul></div>');
     $('.legend-div').hide();
     $('#term-legend-0').show();
     $('#term-legend-0').addClass('active-legend');
-    $('#legends .dropdown-menu a').click(function(){
+    $('.diph-nav .dropdown-menu a').click(function(evt){
+        evt.preventDefault();
         var action = $(this).attr('href');
         var filter = $(this).text();
         $('.legend-div').hide();
@@ -415,73 +459,107 @@ var mapPosition = $('#map_div').position();
         $(action).show();
         switchFilter(filter);
     });
+    $('.diph-nav .layers a').click(function(evt){
+        evt.preventDefault();
+        var action = $(this).attr('href');
+        var filter = $(this).text();
+        $('.legend-div').hide();
+        $('.legend-div').removeClass('active-legend');
+        $(action).addClass('active-legend');
+        
+        $(action).show();
+        
+    });
+
     $('.launch-timeline').click(function(){
         loadTimeline('4233');  
     });
     lookupData = findSelectedCats();
 
-    //$('.layersDiv').remove();
-    
+    buildLayerControls(map.layers);
 }
-function switchFilter(filterName) {
-    //console.log(filterName);
-    //console.log(dataObject)
-    for(i=0;i<Object.keys(dataObject).length;i++) {
-        if(dataObject[i].type =='filter'&&dataObject[i].name ==filterName) {
-            catFilter = dataObject[i];
-            $(document).trigger('order.findSelectedCats').trigger('order.updateLayerFeatures');
+function buildLayerControls(layerObject) {
+    console.log(map.layers);
+    _.map(layerObject,function(layer,index){
+        console.log(layer.name)
+        if(index>=0) {
+            $('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+layer.id+'">'+layer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
+            //slider for layer opacity
+            $( '.layer'+index+' .layer-opacity').slider({
+                range: false,
+                min: 0,
+                max: 1,
+                step:.05,
+                values: [ 1 ],
+                slide: function( event, ui ) {  
+                console.log(index)          
+                  map.layers[index].setOpacity(ui.values[ 0 ]);                
+                }
+            });
+            //click
+            //
+            $( '.layer'+index+' input').click(function(){
+               if($(this).attr('checked')) {
+                console.log('check')
+                layerObject[index].setVisibility(true);
 
-            //lookupData = findSelectedCats(); 
-            //console.log(lookupData)
-            //updateLayerFeatures(lookupData);
+               }
+               else {
+                console.log('uncheck')
+                layerObject[index].setVisibility(false);
+               }
+            })
+            //$(layerObject[index]).setVisibility(false);
         }
         
+    });
     }
-    
+function switchFilter(filterName) {
+    var filterObj = _.where(dataObject, {type: "filter", name: filterName});
+    catFilter = filterObj[0];
+    $(document).trigger('order.findSelectedCats').trigger('order.updateLayerFeatures');
 }
 function updateLayerFeatures(catObject){
     //find all features with cat
-    //var feats = _.where(markerObject, function(){ return _.contains(list, value)});
-    lookupData = findSelectedCats(); 
-    catObject = lookupData;
-    var countTerms = Object.keys(catObject).length; 
+    //lookupData = findSelectedCats(); 
+    //catObject = lookupData;
     var newFeatures = {type: "FeatureCollection", features: []};
     var childCatObject = [];
-    console.log('it fireds')
-    //console.log(catObject)
-    for (var i = 0, len = countTerms; i < len; i++) {
-        childCatObject.push(catObject[i].name);
+ 
+    _.map(catObject,function(cat,i){
+        childCatObject.push(cat.name);
 
-        if(catObject[i].children.length>0){
-            var tempChildren = catObject[i].children;
-
-            for (var j = 0, len2 = tempChildren.length; j < len2; j++) {
-                childCatObject.push(tempChildren[j]);
-            }
+        if(cat.children.length>0){
+            var tempChildren = cat.children;
+            _.map(tempChildren, function(catChild,i) {
+                childCatObject.push(catChild);
+            });
         }
-    }
-        
+    });
+
     newFeatures.features = _(markerObject.features).select(function(feature){ 
-        //var tempFeat = feature.properties.categories.split(',');
         if(_.intersection(feature.properties.categories,childCatObject).length > 0) {         
            return feature;
         }
     });
-    //console.log(newFeatures.features.length)
     var reader = new OpenLayers.Format.GeoJSON({
         'externalProjection': gg,
         'internalProjection': sm
     });
 
     var featureData = reader.read(newFeatures);
-    var  myLayer = map.getLayer('Markers');
+    var myLayer = map.layers[diphMap['layers'].length];
     
     myLayer.removeAllFeatures();
     myLayer.addFeatures(featureData);
 }
 
+
+
+//rewrite this to eliminate loop
 function findSelectedCats(single) {
-    //console.log(catFilter.terms);
+    console.log(single);
+
     var selCatFilter = new Object();
     var countTerms = Object.keys(catFilter.terms).length; 
 
@@ -489,7 +567,7 @@ function findSelectedCats(single) {
 
         $('#legends .active-legend input:checked').each(function(index){
             var tempSelCat = $(this).parent().find('.value').text();
-            console.log(tempSelCat)
+            console.log(tempSelCat+' :'+index)
             for(i=0;i<countTerms;i++) {
                 var tempFilter = catFilter.terms[i].name;
                 if(tempFilter==tempSelCat) {
@@ -667,7 +745,7 @@ function onFeatureSelect(feature) {
         //$('#markerModal .modal-body').empty();
         $('#markerModal .modal-body').append($('#map_marker'));
         $('#markerModal .modal-footer .btn-success').remove();
-        $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+pageLink+'"><i class="icon-volume-down icon-white"></i> <i class="icon-indent-left icon-white"></i> Audio Transcript</a>')
+        $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+pageLink+'"><i class="icon-volume-down icon-white"></i> <i class="icon-indent-left icon-white"></i> Link</a>');
         $('#markerModal').modal('show');
         //build function to load transcript clip and load media player
         
@@ -814,6 +892,17 @@ function createTimeline(data) {
 }
 
 function loadMarkers(projectID,mLayer){
+    console.log('loading');
+    //$('#markerModal').
+    $('body').append('<div id="loading" class="modal hide fade">\
+        <div class="modal-body">\
+        <div class="loading-content" style="font-size:56px; ">\
+        <i class="icon-spinner icon-spin"> </i> loading </div>\
+        </div>\
+        </div>');   
+    $('#loading').modal({backdrop:false});
+    $('#loading').modal('show');
+    //$('.modal-backdrop').css({'opacity':0.1});
 	jQuery.ajax({
         type: 'POST',
         url: ajax_url,
@@ -824,6 +913,12 @@ function loadMarkers(projectID,mLayer){
         success: function(data, textStatus, XMLHttpRequest){
             //console.log(textStatus);
             createMarkers(JSON.parse(data),mLayer);
+            console.log('done');
+            //$('#markerModal').modal({backdrop:true}); 
+            $('#loading').modal('hide');
+
+            //$('#markerModal .loading-content').remove();   
+
             //
 
         },

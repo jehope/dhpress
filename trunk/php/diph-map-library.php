@@ -113,7 +113,7 @@ function show_diph_map_settings_box() {
     // Setup nonce
     echo '<input type="hidden" name="diph_map_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
     $diph_map_desc = get_post_meta($post->ID, 'diph_map_desc',true);
-    $diph_map_typeid = get_post_meta($post->ID, 'diph_map_typeid',true);
+    $diph_map_cdlaid = get_post_meta($post->ID, 'diph_map_cdlaid',true);
     
     $diph_map_url = get_post_meta($post->ID, 'diph_map_url',true);  
     $diph_map_type = get_post_meta($post->ID, 'diph_map_type',true);
@@ -125,8 +125,6 @@ function show_diph_map_settings_box() {
         $selectCDLA = 'selected';
     }else if($diph_map_type == 'Google'){
         $selectGoogle = 'selected';
-    }else if($diph_map_type == 'OSM'){
-        $selectOSM = 'selected';
     }else{
         $selectType = 'selected';
     }
@@ -151,9 +149,9 @@ function show_diph_map_settings_box() {
     echo '<tr><td colspan=2><label>Please enter the map information below:</label></td></tr>';
     echo '<tr><td colspan=2><label>* means required attribute for CDLA Maps</label></td></tr>';
     echo '<tr><td align=right>Description:</td><td><input name="diph_map_desc" id="diph_map_desc" type="text" size="60" value="'.$diph_map_desc.'"/></td></tr>';
-    echo '<tr><td align=right>*Map TypeID:</td><td><input name="diph_map_typeid" id="diph_map_typeid" type="text" size="60" value="'.$diph_map_typeid.'"/></td></tr>';
+    echo '<tr><td align=right>*CDLA Map ID:</td><td><input name="diph_map_cdlaid" id="diph_map_cdlaid" type="text" size="60" value="'.$diph_map_cdlaid.'"/></td></tr>';
     echo '<tr><td align=right>URL:</td><td><input name="diph_map_url" id="diph_map_url" type="text" size="30" value="'.$diph_map_url.'"/></td></tr>';
-    echo '<tr><td align=right>*Type:</td><td><select name="diph_map_type" id="diph_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML"  '.$selectKML.' >KML</option><option value="CDLA"  '.$selectCDLA.'>CDLA</option><option value="OSM"  '.$selectOSM.'>OSM</option><option value="Google"  '.$selectGoogle.'>Google</option></select></td></tr>';
+    echo '<tr><td align=right>*Type:</td><td><select name="diph_map_type" id="diph_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML"  '.$selectKML.' >KML</option><option value="CDLA"  '.$selectCDLA.'>CDLA</option><option value="Google"  '.$selectGoogle.'>Google</option></select></td></tr>';
     echo '<tr><td align=right>*Category:</td><td><select name="diph_map_category" id="diph_map_category"><option value="" '.$selectCategory.'>Please select a category</option><option value="base layer" '.$selectBaseLayer.'>Base Layer</option><option value="overlay" '.$selectOverlay.' >Overlay</option></select></td></tr>';
     echo '<tr><td align=right>Classification:</td><td><input name="diph_map_classification" id="diph_map_classification" type="text" size="30" value="'.$diph_map_classification.'"/></td></tr>';
     echo '<tr><td align=right>State:</td><td><input name="diph_map_state" id="diph_map_state" type="text" size="30" value="'.$diph_map_state.'"/></td></tr>';
@@ -183,7 +181,7 @@ function save_diph_map_settings($post_id) {
     }
     
     update_post_meta($post_id, 'diph_map_desc',$_POST['diph_map_desc']);
-    update_post_meta($post_id, 'diph_map_typeid',$_POST['diph_map_typeid']);
+    update_post_meta($post_id, 'diph_map_cdlaid',$_POST['diph_map_cdlaid']);
     update_post_meta($post_id, 'diph_map_url',$_POST['diph_map_url']);
     update_post_meta($post_id, 'diph_map_type',$_POST['diph_map_type']);
     update_post_meta($post_id, 'diph_map_category',$_POST['diph_map_category']);
@@ -198,7 +196,7 @@ function diph_map_page_template( $page_template )
 {
     global $post;
     
-    $cdlamapid = get_post_meta($post->ID, 'diph_map_typeid',true);
+    $cdlamapid = get_post_meta($post->ID, 'diph_map_cdlaid',true);
     $post_type = get_query_var('post_type');
     if ( $post_type == 'diph-maps' ) {
         $page_template = dirname( __FILE__ ) . '/diph-map-template.php';
@@ -213,7 +211,7 @@ function diph_map_page_template( $page_template )
         wp_enqueue_script( 'diph-public-map-script', plugins_url('/js/diph-map-page.js', dirname(__FILE__) ));
         wp_enqueue_script( 'diph-cdla-kevin-script', plugins_url('/js/keven-cdla.js', dirname(__FILE__) ));
         wp_enqueue_script( 'diph-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-        $diph_map_typeid = get_post_meta($post->ID, 'diph_map_typeid',true);
+        $diph_map_cdlaid = get_post_meta($post->ID, 'diph_map_cdlaid',true);
 
         wp_enqueue_script( 'cdla-map-script', 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$cdlamapid);
         wp_enqueue_style('thickbox');
@@ -226,26 +224,55 @@ add_filter( 'single_template', 'diph_map_page_template' );
 
 //code for managing diph-maps admin panel
 
-function diph_map_filters() {
-    global $typenow;
-    global $wp_query;
-    
-    // must set this to the post type you want the filter(s) displayed on
-    if( $typenow == 'diph-maps' ){
-            echo "<select name='diph_map_type' id='diph_map_type' class='postform'>";
-            echo "<option value=''>Show All Map Types</option>";
-            echo '<option value="CDLA">CDLA</option>';
-            echo '<option value="KML">KML</option>';
-            echo '<option value="OSM">OSM</option>';
-            echo '<option value="WMS" disabled>WMS</option>';
-            echo '<option value="Google">Google</option>';
-            echo "</select>";
+function diph_maps_filter_restrict_manage_posts(){
+    $type = 'diph-maps';
+    if (isset($_GET['post_type'])) {
+        $type = $_GET['post_type'];
+    }
+ 
+    //only add filter to post type you want
+    if ('diph-maps' == $type){
+        //change this to the list of values you want to show
+        //in 'label' => 'value' format
+        $values = array(
+                        'CDLA' => 'CDLA',
+                        'KML' => 'KML',
+                        'Google' => 'Google'
+        );
+        ?>
+        <select name="diph_map_type">
+        <option value=""><?php _e('Filter By Map Type', 'acs'); ?></option>
+        <?php
+            $current_v = isset($_GET['diph_map_type'])? $_GET['diph_map_type']:'';
+            foreach ($values as $label => $value) {
+                printf
+                    (
+                        '<option value="%s"%s>%s</option>',
+                        $value,
+                        $value == $current_v? ' selected="selected"':'',
+                        $label
+                    );
+                }
+        ?>
+        </select>
+        <?php
     }
 }
-add_action( 'restrict_manage_posts', 'diph_map_filters' );
+add_action( 'restrict_manage_posts', 'diph_maps_filter_restrict_manage_posts' );
 
+function diph_maps_filter( $query ){
+    global $pagenow;
+    $type = 'diph-maps';
+    if (isset($_GET['post_type'])) {
+        $type = $_GET['post_type'];
+    }
+    if ( 'diph-maps' == $type && is_admin() && $pagenow=='edit.php' && isset($_GET['diph_map_type']) && $_GET['diph_map_type'] != '') {
+        $query->query_vars['meta_key'] = 'diph_map_type';
+        $query->query_vars['meta_value'] = $_GET['diph_map_type'];
+    }
+}
+add_filter( 'parse_query', 'diph_maps_filter' );
 
-add_filter('manage_posts_columns', 'add_diph_maps_columns');
 function add_diph_maps_columns($defaults) {
     global $post;
     $post_type = get_query_var('post_type');
@@ -266,7 +293,8 @@ function add_diph_maps_columns($defaults) {
     
     return $defaults;
 }
-add_action('manage_posts_custom_column', 'diph_maps_custom_column', 10, 2);
+add_filter('manage_posts_columns', 'add_diph_maps_columns');
+
 function diph_maps_custom_column($name, $post_id) {
     global $post;
     $post_type = get_query_var('post_type');
@@ -304,5 +332,6 @@ function diph_maps_custom_column($name, $post_id) {
         }
     }
 }
+add_action('manage_posts_custom_column', 'diph_maps_custom_column', 10, 2);
 
 ?>
