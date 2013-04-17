@@ -104,10 +104,7 @@ input, textarea {
 	}
 
 textarea { 
-	width: 400px;
-	
-	height: 150px;
-	line-height: 150%;
+width: 96%;
 	}
 
 input:hover, textarea:hover,
@@ -209,3 +206,19 @@ line-height: 16px;
 	display: inline-block;
 	margin-left: 10px;
 }
+.custom-field-editor .left {
+	width: 40%;
+	display: inline-block;
+}
+.custom-field-editor .right {
+	width: 60%;
+	display: inline-table;
+}
+.custom-field-editor select {
+	margin-top: 5px;
+}
+.custom-field-editor .add-update-meta {
+	margin-top: 5px;
+}
+
+

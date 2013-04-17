@@ -12,33 +12,33 @@ $('#map_marker').append('<div class="info"></div><div class="av-transcript"></di
 var videoHasPlayed = false;
 var ajax_url = diphData.ajax_url;
 
-
-
-
 diphSettings = JSON.parse(diphData.settings);
 diphMap = diphData.map;
-console.log('map ')
-console.log(diphMap)
-console.log('setttings ')
-console.log(diphSettings)
+// console.log('map ')
+// console.log(diphMap)
+// console.log('setttings ')
+// console.log(diphSettings)
 
-console.log('layers ')
-console.log(diphData.layers)
+// console.log('layers ')
+// console.log(diphData.layers)
 if(diphSettings['views']['map-fullscreen']==true){
     $('body').addClass('fullscreen');
     $('.diph-nav .fullscreen').addClass('active');
 }
+
+$('<style type="text/css"> #map_div{ width:'+diphSettings['views']['map-width']+'px; height:'+diphSettings['views']['map-height']+'px;} </style>').appendTo('head');
+
 var layerCount = Object.keys(diphData.layers).length; 
   diph_layers = [];
     for(i=0;i<layerCount;i++) {
-        console.log(diphData.layers[i].name)
+        //console.log(diphData.layers[i].name)
         if(diphData.layers[i]['mapType']=='type-OSM') {
             diph_layers[i] = new OpenLayers.Layer.OSM(); 
         }
         if(diphData.layers[i]['mapType']=='type-Google') {
             diph_layers[i] = new OpenLayers.Layer.Google(diphData.layers[i]['name'], // the default
             {   type:diphData.layers[i]['mapTypeId'], numZoomLevels: 20}); 
-            console.log(diphData.layers[i]['mapTypeId'])
+            //console.log(diphData.layers[i]['mapTypeId'])
         }
         if(diphData.layers[i]['mapType']=='type-CDLA') {
             cdla.maps.defaultAPI(cdla.maps.API_OPENLAYERS);
@@ -388,7 +388,7 @@ function createLegend(object) {
             $('#legends').removeClass('mini');
             }
             else {
-                console.log($('#legends').width())
+                //console.log($('#legends').width())
                 legendWidth = $('#legends').width();
                 $('.terms .value').hide();
                 $('#legends').animate({width: 70}, 500 );
@@ -408,7 +408,7 @@ function createLegend(object) {
         
         $('#legends ul.terms li a').click(function(event){
             var spanName = $(this).text();
-            console.log(spanName);
+            //console.log(spanName);
             $('.active-legend ul input').removeAttr('checked');
             $('.active-legend ul.terms li.selected').removeClass('selected');
             $(this).closest('li').addClass('selected');
@@ -416,7 +416,7 @@ function createLegend(object) {
             //console.log(spanName)
             lookupData = findSelectedCats(spanName); 
             //console.log('single object '+tempO)
-            console.log('fires how many times')
+            //console.log('fires how many times')
             updateLayerFeatures(lookupData);
         });
         // $('#term-legend-'+j+' ul.terms li').hover(function(){
@@ -479,9 +479,9 @@ function createLegend(object) {
     buildLayerControls(map.layers);
 }
 function buildLayerControls(layerObject) {
-    console.log(map.layers);
+    //console.log(map.layers);
     _.map(layerObject,function(layer,index){
-        console.log(layer.name)
+        //console.log(layer.name)
         if(index>=0) {
             $('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+layer.id+'">'+layer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
             //slider for layer opacity
@@ -492,7 +492,7 @@ function buildLayerControls(layerObject) {
                 step:.05,
                 values: [ 1 ],
                 slide: function( event, ui ) {  
-                console.log(index)          
+                //console.log(index)          
                   map.layers[index].setOpacity(ui.values[ 0 ]);                
                 }
             });
@@ -500,12 +500,12 @@ function buildLayerControls(layerObject) {
             //
             $( '.layer'+index+' input').click(function(){
                if($(this).attr('checked')) {
-                console.log('check')
+                //console.log('check')
                 layerObject[index].setVisibility(true);
 
                }
                else {
-                console.log('uncheck')
+                //console.log('uncheck')
                 layerObject[index].setVisibility(false);
                }
             })
@@ -558,7 +558,7 @@ function updateLayerFeatures(catObject){
 
 //rewrite this to eliminate loop
 function findSelectedCats(single) {
-    console.log(single);
+    //console.log(single);
 
     var selCatFilter = new Object();
     var countTerms = Object.keys(catFilter.terms).length; 
@@ -567,7 +567,7 @@ function findSelectedCats(single) {
 
         $('#legends .active-legend input:checked').each(function(index){
             var tempSelCat = $(this).parent().find('.value').text();
-            console.log(tempSelCat+' :'+index)
+            //console.log(tempSelCat+' :'+index)
             for(i=0;i<countTerms;i++) {
                 var tempFilter = catFilter.terms[i].name;
                 if(tempFilter==tempSelCat) {
@@ -636,7 +636,7 @@ function onFeatureSelect(feature) {
             //var titleAtt =  selectedFeature.attributes['title'];
             var contentAtt ='';
             _.map(diphSettings['views']['content'],function(val,key) {
-                console.log('map: '+val+key);
+                //console.log('map: '+val+key);
                 contentAtt += '<li>'+val+': '+selectedFeature.attributes[val]+'</li>';
               });
          }
@@ -671,7 +671,7 @@ function onFeatureSelect(feature) {
         //$('#av-transcript').get(0).setSrc(audio);
         //player.pause();
 		
-        console.log(timecode)
+        //console.log(timecode)
         if(timecode) { 
             var startTime = convertToSeconds(time_codes[0]);
             var endTime = convertToSeconds(time_codes[1]);
@@ -812,9 +812,9 @@ function zoomCluster(){
             displayedFeatures.push(featC);
         }
     }
-    console.log(displayedFeatures.length);
+    //console.log(displayedFeatures.length);
     if(displayedFeatures.length<2) {
-        console.log('only on left');
+        //console.log('only on left');
         return false;
     }
     else {
@@ -828,7 +828,7 @@ function createMarkers(data,mLayer) {
     //split the filter and feature object
     //Object.keys(lookupData).length; 
     dataObject = $.parseJSON(data);
-    console.log(Object.keys(dataObject).length);
+    //console.log(Object.keys(dataObject).length);
     var featureObject;
     var legends = new Object();
     for(i=0;i<Object.keys(dataObject).length;i++) {
@@ -859,8 +859,8 @@ function createMarkers(data,mLayer) {
             featureObject.features[i].properties.categories[j] = _.unescape(featureObject.features[i].properties.categories[j]);
         }
     }
-    console.log(markerObject);
-    console.log(legends);
+    //console.log(markerObject);
+    //console.log(legends);
     createLegend(legends);
     //markerObject = dataObject[2];
     //var featureObject = dataObject[2];
@@ -892,7 +892,7 @@ function createTimeline(data) {
 }
 
 function loadMarkers(projectID,mLayer){
-    console.log('loading');
+    //console.log('loading');
     //$('#markerModal').
     $('body').append('<div id="loading" class="modal hide fade">\
         <div class="modal-body">\
@@ -913,7 +913,7 @@ function loadMarkers(projectID,mLayer){
         success: function(data, textStatus, XMLHttpRequest){
             //console.log(textStatus);
             createMarkers(JSON.parse(data),mLayer);
-            console.log('done');
+            //console.log('done');
             //$('#markerModal').modal({backdrop:true}); 
             $('#loading').modal('hide');
 
@@ -958,7 +958,7 @@ function loadTranscriptClip(projectID,transcriptName,clip){
             timecode: clip
         },
         success: function(data, textStatus, XMLHttpRequest){
-            console.log(JSON.parse(data));
+            //console.log(JSON.parse(data));
             //createTimeline(JSON.parse(data));
             //
 

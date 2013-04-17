@@ -877,7 +877,6 @@ function print_new_bootstrap_html(){
                 <p>
                   <select name="cf-type" class="cf-type">                          
                     <option>Text</option>
-                    <option>Multiple Text</option>
                     <option>HTML</option>
                     <option>Exact Date</option>
                     <option>Date Range</option>
@@ -913,12 +912,12 @@ function print_new_bootstrap_html(){
 				       <input class="span3 save-view map-width" name="map-width" type="text" placeholder="Width" />             
 				       <input class="span3 save-view map-height" name="map-height" type="text" placeholder="Height" />
 				       </p>
-				       <p>
+				       <!--<p>
 				       <select name="legend-pos" class="legend-pos save-view">                          
                 	    <option>Left</option>
               		    <option>Right</option>
                		   </select><span class="help-inline">Legend Location</span>
-               		   </p>
+               		   </p>-->
 				      </div>
 				    </div>
 				  </div>
@@ -933,11 +932,10 @@ function print_new_bootstrap_html(){
 				      	<a href="#projectModal" role="button" class="setup-modal-view btn" data-toggle="modal">
                         	<i class="icon-wrench"></i> Setup Modal
                         </a>
-				        Title, Mote values to include, Terms, Link to Legend term. 
 				      </div>
 				    </div>
 				  </div>
-				  <div class="accordion-group">
+				  <!--<div class="accordion-group">
 				    <div class="accordion-heading">
 				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#linkView">
 				        Link View
@@ -948,7 +946,7 @@ function print_new_bootstrap_html(){
 				        Title, Mote values to include, Terms, Link to Legend term. 
 				      </div>
 				    </div>
-				  </div>
+				  </div>-->
 				</div>
             </div>
           </div>
@@ -1416,7 +1414,7 @@ function add_diph_project_admin_scripts( $hook ) {
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-			 wp_enqueue_script(  'diph-project-script2', plugins_url('/js/diph-project-admin2.js', dirname(__FILE__) ));
+			 //wp_enqueue_script(  'diph-project-script2', plugins_url('/js/diph-project-admin2.js', dirname(__FILE__) ));
 			 
         }
     }

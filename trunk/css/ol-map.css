@@ -16,10 +16,8 @@
 	left: 0px;
 }
 
-
 #legends {
-	position:relative;
-	
+	position:relative;	
 	margin-left:0;
 	height: 90%;
 	overflow: auto;
