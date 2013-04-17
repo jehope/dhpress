@@ -520,7 +520,7 @@ function dhp_get_term_by_parent($link_terms, $terms, $tax) {
 function diph_get_group_feed($tax_name,$term_name){
 //return feed for map, icon color, audio file
 	$pieces = explode("diph_tax_", $tax_name);
-    $projectID = get_page_by_id($pieces[1],OBJECT,'project');
+    $projectID = get_page($pieces[1],OBJECT,'project');
     $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
     //$test_string =  $pieces;
 	foreach( $project_settings['entry-points'] as $eps) {
@@ -1544,7 +1544,7 @@ function diph_tax_template( $page_template )
     //get mp3 url from first term marker
     //get transcript url
     $pieces = explode("diph_tax_", $title);
-    $projectID = get_page_by_id($pieces[1],OBJECT,'project');
+    $projectID = get_page($pieces[1],OBJECT,'project');
     $project_settings = get_post_meta($projectID->ID,'project_settings',true);
 	
 	wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
