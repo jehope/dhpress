@@ -4,14 +4,14 @@ jQuery(document).ready(function($) {
 	
 
 	var markerObject;
-	
+	var ajax_url = diphDataLib.ajax_url;
 	//move marker settings above content box
 	//$('#diph_marker_settings_meta_box').remove().insertBefore('#post-body-content #titlediv');
 	//assign listeners and execute functions after settings box is moved(remove also removes listeners)
 	
-	console.log($('#post_ID').val())
+	//console.log($('#post_ID').val())
 	var marker_project = $('.dhp_marker_project').attr('id');
-	$('#diph_marker_settings_meta_box .inside').append('<div class="custom-field-editor">Choose the field from the dropdown to add/edit.<select></select><textarea class="edit-custom-field"></textarea><a class="add-update-meta">Add/Update</a></div>');
+	$('#diph_marker_settings_meta_box .inside').append('<div class="custom-field-editor"><div class="left">Choose the field from the dropdown to add/edit.<select></select><br/><a class="add-update-meta button button-primary">Add/Update</a></div><div class="right"><textarea class="edit-custom-field"></textarea></div></div>');
 	
 	if(marker_project) {
 		getProjectSettings(marker_project);
@@ -21,11 +21,11 @@ jQuery(document).ready(function($) {
 		});
 	}
 	$('select#marker_project_id').bind('change',function(){
-		console.log('here'+$('#marker_project_id option:selected').val());
+		//console.log('here'+$('#marker_project_id option:selected').val());
 		getProjectSettings($('#marker_project_id option:selected').val());
 	});
 	$('.add-update-meta').on('click',function() {
-		console.log('click')
+		//console.log('click')
 		var fieldName = $('.custom-field-editor option:selected').val();
 		var fieldValue = $('.edit-custom-field').val()
 
@@ -81,8 +81,8 @@ function buildMarkerSettings(diphData){
 	$('.custom-field-editor select').empty();
 	if(diphData) {
 		markerObject = JSON.parse(diphData);
-		console.log('data is loaded');
-		console.log(markerObject);
+		//console.log('data is loaded');
+		//console.log(markerObject);
 		
 		var custom_fields ='';
 		if(markerObject['project-details']['marker-custom-fields']) {
@@ -91,7 +91,7 @@ function buildMarkerSettings(diphData){
 		var optionHtml;
 		//list out all the custom fields in the project
 		_.map(custom_fields, function(option){
-			console.log(option)
+			//console.log(option)
 			optionHtml += '<option value="'+option+'">'+option+'</option>';
 		});
 		$('.custom-field-editor select').append(optionHtml);
@@ -124,12 +124,12 @@ function displayMetaValue(optionName){
 	});
 }
 function findMoteToDelete(moteID){
-	console.log('delete: '+moteID);
+	//console.log('delete: '+moteID);
 	var countMotes = Object.keys(markerObject.motes).length; 
 	for(i=0;i<countMotes;i++) {
 		if(moteID==markerObject.motes[i].id) {
 			delete markerObject.motes[i];
-			console.log('delete: '+moteID);
+			//console.log('delete: '+moteID);
 		}
 	}
 	
@@ -185,7 +185,7 @@ function assignIdListener(obj) {
 		deleteMoteMeta($(this).closest('li').attr('id'));
 		findMoteToDelete($(this).closest('li').attr('id'));
 		$(this).closest('li').remove();
-		console.log($(this).closest('li').attr('id'));
+		//console.log($(this).closest('li').attr('id'));
 	});
 }
 function updateMoteID(){
@@ -246,7 +246,7 @@ function deleteMoteMeta(moteID){
 	var postID = $('.form-table').attr('id');
 	$.ajax({
             type: 'POST',
-            url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+            url: ajax_url,
             dataType: 'json',
             data: {
                 action: 'diphDeleteMoteMeta',
@@ -254,7 +254,7 @@ function deleteMoteMeta(moteID){
                 mote_id: moteID
             },
             success: function(data, textStatus, XMLHttpRequest){
-                console.log(textStatus);
+                //console.log(textStatus);
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
                 alert(errorThrown);
@@ -263,11 +263,11 @@ function deleteMoteMeta(moteID){
 }
 function diphAddUpdateMetaField(fieldName,fieldValue){
 	var postID = $('#post_ID').val();
-	console.log(fieldName)
-	console.log(fieldValue)
+	//console.log(fieldName)
+	//console.log(fieldValue)
 	$.ajax({
             type: 'POST',
-            url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+            url: ajax_url,
             dataType: 'json',
             data: {
                 action: 'diphAddUpdateMetaField',
@@ -276,7 +276,7 @@ function diphAddUpdateMetaField(fieldName,fieldValue){
                 field_value: fieldValue
             },
             success: function(data, textStatus, XMLHttpRequest){
-                console.log(textStatus);
+                //console.log(textStatus);
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
                 alert(errorThrown);
@@ -293,7 +293,7 @@ function saveProjectSettings(projectSettings){
 	//
 	$.ajax({
             type: 'POST',
-            url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+            url: ajax_url,
             dataType: 'json',
             data: {
                 action: 'diphUpdateProjectSettings',
@@ -328,7 +328,7 @@ function saveMoteFields(postID){
 	var moteData = $.param(sendMotes);
 	$.ajax({
             type: 'POST',
-            url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+            url: ajax_url,
             dataType: 'json',
             data: {
                 action: 'diphAddUpdateMetaField',
@@ -349,7 +349,7 @@ function saveMoteFields(postID){
 function getProjectSettings(projectID){
 	$.ajax({
             type: 'POST',
-            url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+            url: ajax_url,
             data: {
                 action: 'diphGetProjectSettings',
                 project: projectID,
@@ -367,7 +367,7 @@ function getProjectSettings(projectID){
 function getTranscript(projectID,transcriptID){
 	$.ajax({
             type: 'POST',
-            url: 'http://msc.renci.org/dev/wp-admin/admin-ajax.php',
+            url: ajax_url,
             data: {
                 action: 'diphGetTranscript',
                 project: projectID,

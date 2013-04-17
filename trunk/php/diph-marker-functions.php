@@ -46,6 +46,8 @@ add_action( 'init', 'diph_marker_init' );
 function add_diph_marker_admin_scripts( $hook ) {
 
     global $post;
+	$blog_id = get_current_blog_id();
+	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( 'dhp-markers' === $post->post_type ) {     
@@ -55,7 +57,10 @@ function add_diph_marker_admin_scripts( $hook ) {
 			wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 			 wp_enqueue_script(  'diph-marker-script', plugins_url('/js/diph-marker-admin.js', dirname(__FILE__) ));
-			 
+			 wp_localize_script( 'diph-marker-script', 'diphDataLib', array(
+				'ajax_url' => __($dev_url, 'diph')
+				//'dhp_custom_fields' => __($dhp_custom_fields, 'diph'),				
+			) );
         }
     }
 	if ( $hook == 'edit.php'  ) {
@@ -65,7 +70,7 @@ function add_diph_marker_admin_scripts( $hook ) {
 			wp_enqueue_style( 'diph-style', plugins_url('/css/diph-style.css',  dirname(__FILE__) ));
 			wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-			 wp_enqueue_script(  'diph-marker-script2', plugins_url('/js/diph-marker-admin2.js', dirname(__FILE__) ));
+			 //wp_enqueue_script(  'diph-marker-script2', plugins_url('/js/diph-marker-admin2.js', dirname(__FILE__) ));
 			 wp_enqueue_style('thickbox');
 wp_enqueue_script('thickbox');
         }
