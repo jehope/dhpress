@@ -53,7 +53,7 @@ Template Name: Map Template
             echo "<tr><td><b>Category</b></td><td><category>$meta_category</category></td></tr>";
             echo "<tr><td><b>Type</b></td><td><type>$meta_type</type></td></tr>";
             if($meta_type == "CDLA"){
-                $meta_cdlaid = get_post_meta( $post->ID, 'diph_map_cdlaid', true );
+                $meta_cdlaid = get_post_meta( $post->ID, 'diph_map_typeid', true );
                 echo "<tr><td><b>CDLA MAP ID</b></td><td><cdlaid>$meta_cdlaid</cdlaid></td></tr>";
             }
             if($meta_type == "KML"){
