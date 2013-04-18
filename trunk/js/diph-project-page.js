@@ -617,7 +617,9 @@ function geocodeAddress(addy){
         }
     });
 }
-
+function htmlEntities(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 function onFeatureSelect(feature) {
 	// if not cluster
 
@@ -625,6 +627,8 @@ function onFeatureSelect(feature) {
         
         if(feature.cluster){selectedFeature = feature.cluster[0];}
         else {selectedFeature = feature;}
+            $('#map_marker .info').empty();
+        $('#map_marker .info').append('<div><ul></ul></div>');
 
 		 var pageLink = selectedFeature.attributes.link;
 		 var titleAtt;
@@ -634,10 +638,13 @@ function onFeatureSelect(feature) {
          }
          if(diphSettings['views']['content']) {
             //var titleAtt =  selectedFeature.attributes['title'];
-            var contentAtt ='';
+            //var contentAtt;
+            //$('#map_marker .info ul').append($('<ul/>'));
             _.map(diphSettings['views']['content'],function(val,key) {
                 //console.log('map: '+val+key);
-                contentAtt += '<li>'+val+': '+selectedFeature.attributes[val]+'</li>';
+                //console.log(selectedFeature.attributes[val])
+                
+                $('#map_marker .info ul').append('<li>'+val+': '+$("<div/>").html(selectedFeature.attributes[val]).text()+'</li>');
               });
          }
          if(diphSettings['views']['content']) {
@@ -666,8 +673,7 @@ function onFeatureSelect(feature) {
 		
 		li += tagAtt+' '+audio+' '+transcript+' '+timecode+'</p><a href="'+pageLink+'" target="_blank">More Info</a>';
 		 //alert("clicked "+description+" "+thesecats);
-		$('#map_marker .info').empty();
-		$('#map_marker .info').append('<div><ul>'+contentAtt+'</ul></div>');
+		
         //$('#av-transcript').get(0).setSrc(audio);
         //player.pause();
 		

@@ -847,6 +847,9 @@ function buildMotes(moteObject){
                       </select><span class="help-inline">data type</span>\
                         '+customFieldOption(moteObject[i]['custom-fields'])+'\
                       <span class="help-inline">custom field</span>\
+                      <label class="checkbox inline">\
+                        <input type="checkbox" id="pickMultiple" value="multiple"> Multiple\
+                      </label>\
                       <p>\
                       <input class="span4 delim" type="text" name="delim" placeholder="Delimiter" value="'+moteObject[i]['delim']+'"/>\
                       <span class="help-inline">If multiple text indicate the delimiter</span>\
@@ -875,6 +878,15 @@ function buildMotes(moteObject){
         $(this).find('.close').html('&times;');
       }
     });
+    $('#mote-list #pickMultiple').unbind('click');
+    $('#mote-list #pickMultiple').click(function(){
+    if($('#mote-list #pickMultiple').is(':checked')) { 
+      $('#mote-list .custom-fields').attr('multiple','multiple');
+    }
+    else {
+      $('#mote-list .custom-fields').removeAttr('multiple');
+    } 
+  });
   }
 }
 /**
@@ -900,7 +912,7 @@ function buildSharedMotes(sharedMoteObject){
   }
 }
 function dataTypeOption(selected){
-  dataTypes = ['Text','Multiple Text','HTML','Exact Date','Date Range','Lat/Lon Coordinates','File','Dynamic Data Field'];
+  dataTypes = ['Text','HTML','Exact Date','Date Range','Lat/Lon Coordinates','File','Image','Dynamic Data Field'];
   dataTypeHTML ='';
   for (var i =0; i < Object.keys(dataTypes).length; i++) {
     //console.log(selected);

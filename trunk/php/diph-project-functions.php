@@ -696,7 +696,11 @@ function createMarkerArray($project_id) {
 		$content_att = '';
 		foreach( $viewsContent as $contentMote ) {
 			$content_mote = getMoteFromName( $project_settings, $contentMote );
+			$content_type = $content_mote['type'];
 			$content_val = get_post_meta($marker_id,$content_mote['custom-fields'],true);
+			if($content_type=='Image'){
+				$content_val = '<img src="'.$content_val.'" />';
+			}
 			$content_att .= ',"'.$contentMote. '":"' .htmlentities($content_val).'"';
 		}
 
@@ -882,6 +886,7 @@ function print_new_bootstrap_html(){
                     <option>Date Range</option>
                     <option>Lat/Lon Coordinates</option>
                     <option>File</option>
+                    <option>Image</option>
                     <option>Dynamic Data Field</option>
                   </select><span class="help-inline">Choose a data type</span>
                 </p>
