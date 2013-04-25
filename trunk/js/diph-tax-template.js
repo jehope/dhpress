@@ -8,12 +8,8 @@ var project_id = diphData.project_id;
 console.log(diphData.project['motes']);
 var projectObject = JSON.parse(diphData.project);
 
-//Load views for tax page
-var tax_view = {"title":"motename","content":{ "0" : { "mote":"motename"} },"sidebar":{ "0" : { "mote":"motename"} },"footer":"motename"};
 
 init_interface();
-
-console.log(tax_view);
 
 
 function init_interface() {
@@ -75,34 +71,42 @@ _.each($('.type-timecode'), function(val,index) {
 
 function buildTranscriptHtml(jsonData){
 	console.log(jsonData);
-	//build list
-	var re1='\n';	// Square Braces 1
-	var split_transcript = jsonData['transcript'].split('\n',50);
-	var sp1 = _.compact(split_transcript);
-	var removeTHatCrap = _.uniq(sp1);
-	var audioLink = jsonData['feed'][0]['features'][0]['properties']['audio'];
+
+	//formatTranscript
+	var beautiful_transcript = formatTranscript(jsonData['transcript']);
+
+	var audioLink = jsonData['feed']['features'][0]['properties']['audio'];
 	console.log(audioLink);
-	
-	var $transcript_html = $('<ul id="object1"/>');
-	//$html.append();
-	
-	if(removeTHatCrap[2].length<=1) {
-		removeTHatCrap.splice(2,1);//removes the "" that underscore compact should remove.
-	}
-	_.map(removeTHatCrap, function(val){ 
-		//console.log(val.length); 
-		if(val[0]=='['){
-			$transcript_html.append('<li class="type-timecode">'+val+'</li>'); 
-		}
-		else {
-			$transcript_html.append('<li class="type-text">'+val+'</li>'); 
-		}
-		
-	});
-	console.log(removeTHatCrap);
-	$('#transcript-div').append($transcript_html);
+	$('#transcript-div').append(beautiful_transcript);
 	loadAudio(audioLink);
 	categoryColors();
+}
+
+/**
+ * [formatTranscript: cleans up quicktime text format transcript and puts it in a list]
+ * @author  joeehope
+ * @version version
+ * @param   {string} dirty_transcript [quicktime text format]
+ * @return  {html}  $transcript_html  [html unordered list]
+ */
+function formatTranscript(dirty_transcript) {
+	// split into array by line
+	var split_transcript = dirty_transcript.split('\n');
+	if(split_transcript) {
+		var $transcript_html = $('<ul class="transcript-list"/>');
+		_.map(split_transcript, function(val){ 
+			//skip values with line breaks...basically empty items
+			if(val.length>1) {
+				if(val[0]=='['){
+					$transcript_html.append('<li class="type-timecode">'+val.trim()+'</li>'); 
+				}
+				else {
+					$transcript_html.append('<li class="type-text">'+val+'</li>'); 
+				}
+			}		
+		});
+	}	
+	return $transcript_html;
 }
 
 function createMoteValue(moteName){
