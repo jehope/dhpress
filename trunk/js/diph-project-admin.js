@@ -777,7 +777,7 @@ function legendOptions(selected){
   var mapObject = getChildObjectByType(projectObj['entry-points'], 'map');
   //console.log(mapObject);
 
-  var optionHtml = '<option name="marker" value="marker" selected="selected">Marker Post</option>';
+  var optionHtml = '<option name="no-link" value="no-link" selected="selected">No Link</option><option name="marker" value="marker" >Marker Post</option>';
   for (var i =0; i < Object.keys(mapObject['settings']['filter-data']).length; i++) {
     if(mapObject['settings']['filter-data'][i]==selected){
       optionHtml += '<option name="'+mapObject['settings']['filter-data'][i]+'" value="'+mapObject['settings']['filter-data'][i]+'" selected="selected" >'+mapObject['settings']['filter-data'][i]+'</option>';

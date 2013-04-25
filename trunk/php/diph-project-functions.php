@@ -522,6 +522,7 @@ function diph_get_group_feed($tax_name,$term_name){
 	$pieces = explode("diph_tax_", $tax_name);
     $projectID = get_page($pieces[1],OBJECT,'project');
     $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
+    $the_term = get_term_by('name', $term_name, $tax_name);
     //$test_string =  $pieces;
 	foreach( $project_settings['entry-points'] as $eps) {
 		if($eps['type']=="map") {
@@ -543,22 +544,29 @@ function diph_get_group_feed($tax_name,$term_name){
 
 		}
 	}
-
-	$json_string = '[{"type": "FeatureCollection","features": [';
+	$feature_collection['type'] = "FeatureCollection";
+	$feature_collection['features'] = array();
 	$args = array(
     'post_type'=> 'dhp-markers',
-    $tax_name    => $term_name,
-    'order'    => 'ASC'
+    'posts_per_page' => '-1',
+    'tax_query' => array(
+		array(
+			'taxonomy' => $tax_name,
+			'field' => 'slug',
+			'terms' => $the_term->slug
+		)
+	)
     );   
 	$loop = new WP_Query( $args );
 
 	while ( $loop->have_posts() ) : $loop->the_post();
+	
 		$marker_id = get_the_ID();
 		$args1 = array("fields" => "names");
 		$post_terms = wp_get_post_terms( $marker_id, $tax_name, $args1 );
 		$title = get_the_title();
 		$audio_val = get_post_meta($marker_id,$audio['custom-fields']);
-
+		$timecode_val = get_post_meta($marker_id,$timecode['custom-fields'],true);
 		if(count($cordMote)==2) {
 			$temp_lat = get_post_meta($marker_id,$cordMote[0]);
 			$temp_lon = get_post_meta($marker_id,$cordMote[1]);
@@ -573,26 +581,28 @@ function diph_get_group_feed($tax_name,$term_name){
 		}
 
 		if($lonlat) {
-			if($i>0) {
-				$json_string .= ',';
-			}
-			else {$i++;}
+			$this_feature = array();
+			$this_feature['type'] = 'Feature';
+			$this_feature['geometry'] = array();
+			$this_feature['properties']= array();
 
-			$json_string .= '{"type": "Feature","geometry": { "type": "Point","coordinates": [ '.$lonlat. '] },';
+			$this_feature['geometry']['type'] = 'Point';
+			$this_feature['geometry']['coordinates'] = $lonlat;
+			
 			//properties
-			$json_string .= '"properties": {"title": "'.$title.'","categories": '.json_encode($post_terms);
-			$json_string .= ',"audio":"'.$audio_val[0].'","timecode":"'.$timecode_val[0].'"';
-			$json_string .= '}}';
-
+			$this_feature['properties']['title'] = $title;
+			$this_feature['properties']['categories'] = json_encode($post_terms);
+			$this_feature['properties']['audio'] = $audio_val[0];
+			$this_feature['properties']['timecode'] = $timecode_val;
+			
 		//array_push($markerArray,$json_string); 
+		array_push($feature_collection['features'],$this_feature);
 		}
 
 	endwhile;
 	
-	$json_string .= ']}]';	
-	 //$result = array_unique($array)
-	return $json_string;
-	//return $test_string;
+	return $feature_collection;
+
 }
 add_action( 'wp_ajax_diph_get_group_feed', 'diph_get_group_feed' );
 add_action( 'wp_ajax_nopriv_diph_get_group_feed', 'diph_get_group_feed' );
@@ -656,6 +666,10 @@ function createMarkerArray($project_id) {
 		//$parent_id = get_term_by('name', $link_parent, $project_tax);
 		$child_terms = 'marker';
 	}
+	elseif($link_parent=='no-link') {
+		$term_links = 'no-link';
+		$child_terms = 'no-link';
+	}
 	else {
 		$parent_id = get_term_by('name', $link_parent, $project_tax);
 		$child_terms = get_term_children($parent_id->term_id, $project_tax);
@@ -681,7 +695,13 @@ function createMarkerArray($project_id) {
 		}
 		//$json_string .= $cordMote;
 		//$lonlat = invertLatLon($latlon[0]);
-		$title = get_the_title();
+		if($project_settings['views']['title']=='the_title') {
+			$title = get_the_title();
+		}
+		else {
+			$title_mote = getMoteFromName( $project_settings, $project_settings['views']['title'] );
+			$title = get_post_meta($marker_id,$title_mote['custom-fields'],true);
+		}
 		$audio_val = get_post_meta($marker_id,$audio['custom-fields']);
 		
 			$transcript_val1 = get_post_meta($marker_id, $transcript['custom-fields']);
@@ -697,7 +717,13 @@ function createMarkerArray($project_id) {
 		foreach( $viewsContent as $contentMote ) {
 			$content_mote = getMoteFromName( $project_settings, $contentMote );
 			$content_type = $content_mote['type'];
-			$content_val = get_post_meta($marker_id,$content_mote['custom-fields'],true);
+			if($content_mote['custom-fields']=='the_content') {
+				$content_val = apply_filters('the_content', get_post_field('post_content', $marker_id));
+				$content_val = json_encode($content_val);
+			}
+			else {
+				$content_val = get_post_meta($marker_id,$content_mote['custom-fields'],true);
+			}
 			if($content_type=='Image'){
 				$content_val = '<img src="'.$content_val.'" />';
 			}
@@ -706,6 +732,9 @@ function createMarkerArray($project_id) {
 
 		if($child_terms=='marker') {
 			$term_links = get_permalink();
+		}
+		elseif ($child_terms=='no-link') {
+			
 		}
 		else {
 			$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $project_tax);
@@ -726,7 +755,7 @@ function createMarkerArray($project_id) {
 		$json_string .= '{"type": "Feature","geometry": { "type": "Point","coordinates": [ '.$lonlat. '] },';
 		//properties
 		$json_string .= '"properties": {"title": "'.$title.'","categories": '.json_encode($post_terms);
-		$json_string .= ',"audio":"'.$audio_val[0].'"'.$content_att.',"transcript":"'.$transcript_val.'","timecode":"'.$timecode_val[0].'","link":"'.$term_links.'#'.$timecode_val[0].'"';
+		$json_string .= ',"audio":"'.$audio_val[0].'"'.$content_att.',"transcript":"'.$transcript_val.'","timecode":"'.$timecode_val[0].'","link":"'.$term_links.'"';
 		$json_string .= '}}';
 
 		//array_push($markerArray,$json_string); 
@@ -815,7 +844,7 @@ $json_string .= ']}}';
 }
 //used in print_new_bootstrap_html()
 function create_custom_field_option_list($cf_array){
-	$optionHtml .='<option value="">--</option>';
+	$optionHtml .='<option value="">--</option><option value="the_content">Post Content</option>';
 	foreach ($cf_array as $key => &$value) {
 		$optionHtml .='<option value="'.$value.'">'.$value.'</option>';
 	}
@@ -1148,7 +1177,8 @@ function diphGetTranscript(){
 	$diph_transcript = get_post_meta( $diph_project, $diph_project_field, true);
 
 	$diph_object;
-	$diph_object['feed'] = json_decode(diph_get_group_feed($diph_tax_name,$diph_tax_term));
+	//'"'.$diph_tax_name.','.$diph_tax_term.'"';//
+	$diph_object['feed'] = diph_get_group_feed($diph_tax_name,$diph_tax_term);
 	$diph_object['settings'] = $diph_settings_ep;
 	$diph_object['audio'] = $diph_settings_ep['settings']['audio'];
 	$diph_object['transcript'] = $diph_transcript;

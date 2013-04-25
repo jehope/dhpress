@@ -26,7 +26,7 @@ if(diphSettings['views']['map-fullscreen']==true){
     $('.diph-nav .fullscreen').addClass('active');
 }
 
-$('<style type="text/css"> #map_div{ width:'+diphSettings['views']['map-width']+'px; height:'+diphSettings['views']['map-height']+'px;} </style>').appendTo('head');
+$('<style type="text/css"> @media screen and (min-width: 600px) { #map_div{ width:'+diphSettings['views']['map-width']+'px; height:'+diphSettings['views']['map-height']+'px;}} </style>').appendTo('head');
 
 var layerCount = Object.keys(diphData.layers).length; 
   diph_layers = [];
@@ -617,9 +617,6 @@ function geocodeAddress(addy){
         }
     });
 }
-function htmlEntities(str) {
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
 function onFeatureSelect(feature) {
 	// if not cluster
 
@@ -671,7 +668,10 @@ function onFeatureSelect(feature) {
 			li+= thumbHtml;
 		}
 		
-		li += tagAtt+' '+audio+' '+transcript+' '+timecode+'</p><a href="'+pageLink+'" target="_blank">More Info</a>';
+		li += tagAtt+' '+audio+' '+transcript+' '+timecode+'</p>';
+        if(pageLink!='no-link') {
+            li += '<a href="'+pageLink+'" target="_blank">More Info</a>';
+        }
 		 //alert("clicked "+description+" "+thesecats);
 		
         //$('#av-transcript').get(0).setSrc(audio);
@@ -751,7 +751,9 @@ function onFeatureSelect(feature) {
         //$('#markerModal .modal-body').empty();
         $('#markerModal .modal-body').append($('#map_marker'));
         $('#markerModal .modal-footer .btn-success').remove();
-        $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+pageLink+'"><i class="icon-volume-down icon-white"></i> <i class="icon-indent-left icon-white"></i> Link</a>');
+        if(pageLink!='no-link') {
+            $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+pageLink+'"><i class="icon-volume-down icon-white"></i> <i class="icon-indent-left icon-white"></i> Link</a>');
+        }
         $('#markerModal').modal('show');
         //build function to load transcript clip and load media player
         
