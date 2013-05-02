@@ -389,7 +389,7 @@ function createMoteValueArrays($custom_name,$delim,$project_id){
 			}
 			array_push($moteArray, $term_name);
 		}
-		wp_set_post_terms( $marker_id, $termsArray, &$diph_tax_name, true );
+		wp_set_post_terms( $marker_id, $termsArray, $diph_tax_name, true );
 		
 	endwhile;
 
@@ -845,7 +845,7 @@ $json_string .= ']}}';
 //used in print_new_bootstrap_html()
 function create_custom_field_option_list($cf_array){
 	$optionHtml .='<option value="">--</option><option value="the_content">Post Content</option>';
-	foreach ($cf_array as $key => &$value) {
+	foreach ($cf_array as $key => $value) {
 		$optionHtml .='<option value="'.$value.'">'.$value.'</option>';
 	}
 	return $optionHtml;
@@ -1663,7 +1663,7 @@ function bdw_get_images() {
     $iPostID = $post->ID;
  
     // Get images for this post
-    $arrImages =& get_children('post_type=attachment&post_mime_type=image&numberpost=-1&post_parent=' . $iPostID );
+    $arrImages = get_children('post_type=attachment&post_mime_type=image&numberpost=-1&post_parent=' . $iPostID );
  
     // If images exist for this page
     if($arrImages) {
