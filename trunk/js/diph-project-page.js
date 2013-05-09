@@ -17,7 +17,7 @@ diphMap = diphData.map;
 // console.log('map ')
 // console.log(diphMap)
 // console.log('setttings ')
-// console.log(diphSettings)
+//console.log(diphSettings)
 
 // console.log('layers ')
 // console.log(diphData.layers)
@@ -356,7 +356,7 @@ function createLegend(object) {
                 if(firstIconChar=='#') { icon = 'background:'+filterTerms[i].icon_url; }
                 else { icon = 'background: url(\''+filterTerms[i].icon_url+'\') no-repeat center;'; }
 
-                if(i>14) {
+                if(i>50) {
                 $('ul', legendHtml).append('<li><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value">'+filterTerms[i].name+'</a></li>');
                 }
                 else {
@@ -365,7 +365,7 @@ function createLegend(object) {
                 }
             }
         }
-        $('ul',legendHtml).prepend('<li><input type="checkbox" ><a class="value">All</a></li>');
+        //$('ul',legendHtml).prepend('<li><input type="checkbox" ><a class="value">All</a></li>');
        
 
         $('#legends .legend-row').append(legendHtml);
@@ -621,11 +621,11 @@ function onFeatureSelect(feature) {
 	// if not cluster
 
 	//if(!feature.cluster||(feature.attributes.count==1)) {
-        
+        var tempModalHtml;
         if(feature.cluster){selectedFeature = feature.cluster[0];}
         else {selectedFeature = feature;}
-            $('#map_marker .info').empty();
-        $('#map_marker .info').append('<div><ul></ul></div>');
+            
+        tempModalHtml = $('<div><ul/></div>');
 
 		 var pageLink = selectedFeature.attributes.link;
 		 var titleAtt;
@@ -640,8 +640,15 @@ function onFeatureSelect(feature) {
             _.map(diphSettings['views']['content'],function(val,key) {
                 //console.log('map: '+val+key);
                 //console.log(selectedFeature.attributes[val])
-                
-                $('#map_marker .info ul').append('<li>'+val+': '+$("<div/>").html(selectedFeature.attributes[val]).text()+'</li>');
+                if(val=='Thumbnail Right') {
+                    $('ul', tempModalHtml).append('<li class="thumb-right">'+$("<div/>").html(selectedFeature.attributes[val]).text()+'</li>');
+                }
+                else if(val=='Thumbnail Left') {
+                    $('ul', tempModalHtml).append('<li class="thumb-left">'+$("<div/>").html(selectedFeature.attributes[val]).text()+'</li>');
+                }
+                else {
+                    $('ul', tempModalHtml).append('<li>'+val+': '+$("<div/>").html(selectedFeature.attributes[val]).text()+'</li>');
+                }
               });
          }
          if(diphSettings['views']['content']) {
@@ -686,70 +693,12 @@ function onFeatureSelect(feature) {
              //$('#map_marker .av-transcript').append('File sizes are too large to load on page. Link to page to listen to audio.');
 
         }
-        //var player = new MediaElementPlayer('#av-player', {enablePluginDebug: true, mode:'shim',features: ['playpause','progress','current','duration','volume']});
-        //$('#map_marker .av-transcript').append('<audio id="av-player" src="'+audio+'#t='+startTime+','+endTime+'" type="audio/mp3" controls="controls"></audio>');
-       
-        // player.setSrc(audio+'#t=50,100');
-        // player.load();
-        // player.media.addEventListener('loadeddata', function(){
-            
-        //     console.log('audio loaded '+player.src);
-            
-        //     player.play();   
-        //        //player.media.setCurrentTime(clipPosition);
-        //         //hasPlayed = true;
-        //         //player.media.setCurrentTime(startTime);
-        //         player.pause();   
-                
-        // });
-        // player.media.addEventListener('play', function(){
-
-        //     //player.pause();
-        //     //console.log('play');
-        //     //console.log(player.media.currentTime);
-        //     //player.media.setCurrentTime(startTime);
-        //     //player.media.currentTime = 200;
-        //     //player.media.setCurrentTime(200);
-        // }, false);
-        // player.media.addEventListener('progress', function(){
-
-        //     //player.pause();
-        //     //console.log('playing');
-        //     //console.log(player.media.currentTime);
-
-        //     if(player.media.currentTime > endTime) {
-        //         player.pause();
-
-                
-        //     }
-        //     //player.media.setCurrentTime(startTime);
-        //     //player.media.currentTime = 200;
-        //     //player.media.setCurrentTime(200);
-        // }, false);
-
-
-        //player.pause();
-        //console.log(time_codes[0]);
-        //player.setCurrentTime(clipPosition);
-        //player.play();
-        //player.setCurrentTime(time_codes[0]);
-        //player.media.currentTime = time_codes[0];
         
-        // player.media.addEventListener('playing', function(){
-        //     console.log('playing');
-        //     this.pause();
-        //     this.currentTime = 10;
-        //     this.setCurrentTime(time_codes[0]);
-        //     this.play();
-                
-        // });
-        //player.setCurrentTime(time_codes[0]);
-        //player.play();
 
         //tb_show(titleAtt, '#TB_inline?height=480&width=400&inlineId=map_marker' );
         $('#markerModal #markerModalLabel').empty().append(titleAtt);
-        //$('#markerModal .modal-body').empty();
-        $('#markerModal .modal-body').append($('#map_marker'));
+
+        $('#markerModal .modal-body').empty().append(tempModalHtml);
         $('#markerModal .modal-footer .btn-success').remove();
         if(pageLink!='no-link') {
             $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+pageLink+'"><i class="icon-volume-down icon-white"></i> <i class="icon-indent-left icon-white"></i> Link</a>');
@@ -764,48 +713,7 @@ function onFeatureSelect(feature) {
             //player.setSrc('');
             //player.remove();
 		});
-		 
-	//	}
-		// else
-  //   {
-  //      // fetch the cluster's latlon and set the map center to it and call zoomin function
-  //      // which takes you to a one level zoom in and I hope this solves your purpose :) 
-  //      if(zoomCluster()) {
-  //           map.setCenter(feature.geometry.getBounds().getCenterLonLat());
-  //           map.zoomIn();
-  //       }
-  //       else {
-  //           selectedFeature = feature.cluster[0];
-        
-  //        var pageLink = selectedFeature.attributes.link;
-  //        var titleAtt =  selectedFeature.attributes.title;
-  //        var tagAtt =  selectedFeature.attributes.categories;
-  //        var thumb;
-  //        if(selectedFeature.attributes.thumb){
-  //            thumb = selectedFeature.attributes.thumb;
-  //            var thumbHtml = '<img src="'+thumb+'"/><br/>';
-  //            }
-  //        var li = '<b>'+titleAtt+'</b>';
-  //        //for(var attr in selectedFeature.attributes){
-  //        //   li += "<li><div style='width:25%;float:left'>" + attr + "</div><div style='width:75%;float:right'>" 
-  //        //   + selectedFeature.attributes[attr] + "</div></li>";
-  //       //  }
-  //       li += '<p>';
-  //       if(thumbHtml){
-  //           li+= thumbHtml;
-  //       }
-        
-  //       li += tagAtt+'</p><a href="'+pageLink+'" class="thickbox" target="_blank">More Info</a>';
-  //        //alert("clicked "+description+" "+thesecats);
-  //       $('#map_marker .info').empty();
-  //       $('#map_marker .info').append('<div style="font-size:.8em"><ul>'+li+'</ul></div>');
-  //       $('#map_marker .info').append('<audio id="player2" src="'++'" type="audio/mp3" controls="controls"></audio>';
-  //       tb_show(titleAtt, '#TB_inline?height=280&width=400&inlineId=map_marker' );
-  //       $("#TB_closeWindowButton, #TB_overlay").click(function() {
-  //           selectControl.unselect(feature);
-  //       });
-  //       }
-  //   }
+	
 }    
 function onFeatureUnselect(feature) {
 	feature.attributes.poppedup = false;

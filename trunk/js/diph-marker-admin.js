@@ -1,8 +1,6 @@
 // JavaScript Document
-
 jQuery(document).ready(function($) {
 	
-
 	var markerObject;
 	var ajax_url = diphDataLib.ajax_url;
 	//move marker settings above content box
