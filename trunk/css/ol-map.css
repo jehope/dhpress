@@ -40,6 +40,24 @@
 	left: 0px;
 	top: 0px;
 }
+.fullscreen #map_div div.olControlZoom {
+	top:50px;
+	left: 95%;
+}
+#map_div div.olControlZoom {
+	top:10px;
+}
+.logged-in.fullscreen #map_div div.olControlZoom {
+	
+top:80px;
+}
+.logged-in.fullscreen .diph-nav {
+top: 30px; 
+}
+.logged-in.fullscreen #legends {
+	top:80px;
+}
+
 .fullscreen aside {
 	display: none;
 }
@@ -53,10 +71,10 @@
 	
 
 	} 
-#map_div div.olControlZoom {
-	top:50px;
-	left: 96%;
+.post-title {
+	font-size: 24px;
 }
+
 #map-div2 {
     border : 0;
     height : 250px;
@@ -174,6 +192,33 @@ img {
 .modal-header h3 {
 	clear: none;
 }
+.modal-body li.thumb-right img {
+	float: right;
+	padding-left: 5px;
+	padding-bottom: 5px; 
+}
+.modal-body li.thumb-left img {
+	float: left;
+	padding-right: 5px;
+	padding-bottom: 5px;
+}
+.new-content h3 {
+	clear: none;
+}
+.new-content p.thumb-right {
+	float: right;
+	padding-left: 5px;
+	padding-bottom: 5px; 	
+}
+.new-content p.thumb-left {
+	float: left;
+	padding-right: 5px;
+	padding-bottom: 5px;
+}
+.new-content p {
+	line-height: 1.7;
+}
+
 .type-timecode {
 	width: 20%;
 	float: left;
@@ -188,8 +233,12 @@ img {
 	position: absolute;
 	right: 0px;
 }
-
-
+input[type="submit"] {
+	margin-bottom: 10px;
+}
+.single-project .main-navigation li ul {
+	z-index: 750;
+}
 @media (max-width: 767px) {
 [class*="span"], .uneditable-input[class*="span"], .row-fluid [class*="span"] {
 	width: 228px;
