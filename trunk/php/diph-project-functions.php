@@ -898,7 +898,7 @@ function print_new_bootstrap_html(){
                 </p>
                 <p>
                   <select name="custom-fields" class="custom-fields">'.create_custom_field_option_list($dhp_custom_fields).'
-                  </select><span class="help-inline">Choose a data object (custom field)</span>
+                  </select><span class="help-inline">Choose a custom field</span>
                   <label class="checkbox inline">
                     <input type="checkbox" id="pickMultiple" value="multiple"> Multiple
                   </label><div class="btn-group drag-right">
@@ -969,18 +969,18 @@ function print_new_bootstrap_html(){
 				      </div>
 				    </div>
 				  </div>
-				  <!--<div class="accordion-group">
+				  <div class="accordion-group">
 				    <div class="accordion-heading">
 				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#linkView">
-				        Link View
+				        Post View
 				      </a>
 				    </div>
 				    <div id="linkView" class="accordion-body collapse">
-				      <div class="accordion-inner">
-				        Title, Mote values to include, Terms, Link to Legend term. 
+				      <div class="accordion-inner marker-view">
+				      	
 				      </div>
 				    </div>
-				  </div>-->
+				  </div>
 				</div>
             </div>
           </div>
@@ -993,6 +993,7 @@ function print_new_bootstrap_html(){
 <div id="projectModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 </div>';
 }
+
 function categoryString($cats){
 	$catString;
 
@@ -1143,6 +1144,17 @@ function diphGetTimeline(){
 //show on both front and backend
 add_action( 'wp_ajax_diphGetTimeline', 'diphGetTimeline' );
 add_action('wp_ajax_nopriv_diphGetTimeline', 'diphGetTimeline');
+
+function diphGetMoteContent(){
+	$diph_post_id = $_POST['post'];
+	$diph_post_field = $_POST['field_names'];
+
+	$post_meta_content = get_post_meta($diph_post_id,$diph_post_field,true);
+	die(json_encode($post_meta_content));
+}
+add_action( 'wp_ajax_diphGetMoteContent', 'diphGetMoteContent' );
+add_action('wp_ajax_nopriv_diphGetMoteContent', 'diphGetMoteContent');
+
 
 function getTranscriptClip($tran,$clip){
 
@@ -1551,6 +1563,57 @@ function diph_page_template( $page_template )
 		wp_enqueue_style('thickbox');
 		wp_enqueue_script('thickbox');
 		wp_enqueue_script( 'diph-public-project-script', plugins_url('/js/diph-project-page.js', dirname(__FILE__) ),'mediaelement');
+		 
+		wp_localize_script( 'diph-public-project-script', 'diphData', array(
+			'ajax_url' => __($dev_url, 'diph'),
+			'settings' => __($projectSettings_get[0], 'diph'),
+			'map' => __($projectSettings_map, 'diph'),
+			'layers' => __($projectSettings_map['layers'], 'diph')
+		) );
+    }
+    if ( $post_type == 'dhp-markers' ) {
+		$projectSettings_id = get_post_meta($post->ID, 'project_id',true);
+		$projectSettings_get = get_post_meta($projectSettings_id, 'project_settings');
+    	$projectSettings = json_decode($projectSettings_get[0],true);
+    	$projectSettings_map = diph_get_type_settings('map',$projectSettings['entry-points']);
+
+    	//if map type is cdla get id
+    	$projectSettings_map_cdla = diph_get_map_type('type-CDLA',$projectSettings_map['layers']);
+
+		diph_register_maps($projectSettings_map['layers']);
+
+    	wp_register_script(
+				'cdlaMaps',
+				'http://docsouth.unc.edu/cdlamaps/api/OASIS',
+				array( 'open-layers' ),
+				false,
+				true
+			);	
+    	
+        $page_template = dirname( __FILE__ ) . '/diph-project-template.php';
+
+		wp_enqueue_style( 'diph-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
+		wp_enqueue_style( 'diph-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
+        wp_enqueue_style( 'diph-font-awesome', plugins_url('/lib/font-awesome/css/font-awesome.min.css',  dirname(__FILE__) ));
+
+		wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			
+		wp_enqueue_script('jquery');
+
+			
+		wp_enqueue_script( 'diph-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
+			
+		wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
+		wp_enqueue_script('backbone');
+		wp_enqueue_script('underscore');
+		//wp_enqueue_script( 'open-layers', 'http://dev.openlayers.org/releases/OpenLayers-2.12/lib/OpenLayers.js' );
+    	wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+    	wp_enqueue_script( 'diph-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
+        
+    	wp_enqueue_script( 'cdlaMaps' );
+        //wp_enqueue_script( 'timeline-js', plugins_url('/js/storyjs-embed.js', dirname(__FILE__) ));
+
+		wp_enqueue_script( 'diph-public-project-script', plugins_url('/js/diph-marker-page.js', dirname(__FILE__) ),'jquery');
 		 
 		wp_localize_script( 'diph-public-project-script', 'diphData', array(
 			'ajax_url' => __($dev_url, 'diph'),
