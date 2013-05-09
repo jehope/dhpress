@@ -550,6 +550,38 @@ function getChildObjectByType(parentObj,objType) {
         
     }
 }
+function addMarkerView(viewObject) {
+  var markerTitle = '';
+  var markerContent ='';
+  if(viewObject['post-view-title']) {
+    markerTitle = viewObject['post-view-title'];
+  }
+  
+  $('.marker-view').append('<select name="post-view-title" class="title-custom-fields save-view"><option selected="selected" value="the_title" >Marker Title</option>'+getLoadedMotes(markerTitle)+'</select>');
+  $('.marker-view').append('<p>Pick the motes to display in single page view.</p><ul id="post-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add</button>');
+
+  if(viewObject['post-view-content']){
+    var tempVar = $('<div/>');
+    _.map(viewObject['post-view-content'],function(val,key){
+      $(tempVar).append(addContentMotes(val));
+    });
+    $('#post-content-view').append(tempVar);
+  }
+  $('.delete-content-mote').unbind('click');
+      $('.delete-content-mote').on('click',function(){
+        $(this).parent('li').remove();
+         saveProjectAlert();
+      });
+  $('.add-mote-content').click(function(e){
+      //console.log($('#projectModal .custom-fields option:selected').val());
+      $('#post-content-view').append(addContentMotes());
+      saveProjectAlert();
+      $('.delete-content-mote').unbind('click');
+      $('.delete-content-mote').on('click',function(){
+        $(this).parent('li').remove();
+      });
+    });
+}
 function buildViews(viewObject){
   if(!viewObject) {
     viewObject = new Object();
@@ -560,16 +592,17 @@ function buildViews(viewObject){
   var mapView,legendView;
   mapView = viewObject;
   
-_.map(mapView,function(val,key) {
-        //console.log('map: '+val+key);
-        $('.'+key).val(val);
-        if(viewObject['map-fullscreen']) {
-          $('.'+key).attr('checked','checked');
-        }
-      });
-    if(viewObject['title']) {
-      legendView = viewObject['legend'];
+  _.map(mapView,function(val,key) {
+    $('.'+key).val(val);
+    if(viewObject['map-fullscreen']) {
+      $('.'+key).attr('checked','checked');
     }
+  });
+  if(viewObject['title']) {
+    legendView = viewObject['legend'];
+  }
+
+  addMarkerView(viewObject);
 
   //Setup layout for frontend modals
   $('.setup-modal-view').click(function(){
@@ -580,8 +613,7 @@ _.map(mapView,function(val,key) {
     if(viewObject['title']) {
       title = viewObject['title'];
     }
-
-    if(viewObject['title']) {
+    if(viewObject['link']) {
       linkTarget = viewObject['link'];
     }
     $('#projectModal').empty();
@@ -657,6 +689,7 @@ _.map(mapView,function(val,key) {
 function addContentMotes(selected) {
   var contentMote = '<li><select name="content-motes" class="content-motes">\
   '+getLoadedMotes(selected)+'</select> <button class="btn btn-danger delete-content-mote" type="button">-</button></li>';
+
   return contentMote;
 }
 function loadLayers(layerObject){
@@ -675,13 +708,9 @@ function loadLayers(layerObject){
         $(layerHtml).append(addNewLayer('',layerObject[i]['opacity']));
         $('li',layerHtml).eq(i).find('select option#'+layerObject[i]['id']).attr('selected','selected');
         $('li',layerHtml).eq(i).find('select option#'+layerObject[i]['id']).attr('data-opacity',layerObject[i]['opacity']);
-
-      }
-        
+      }        
     }
-  }
-
-      
+  }      
   return $(layerHtml).html();
 }
 function addNewLayer(selected,layerOpacity){
@@ -692,9 +721,6 @@ function addNewLayer(selected,layerOpacity){
     //assignLegendListeners();
     saveProjectAlert();
   });
-
-  
-  
   return layerLine;
 }
 function getAvailableLayers(){
@@ -716,19 +742,19 @@ $('.load-legend').unbind('click');
     var moteName = $(this).parent().find('#filter-mote option:selected').val();
     var lineID = $(this).closest('li').attr('id');
     $('body').append('<!-- Modal -->\
-<div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
-  <div class="modal-header">\
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
-    <h3 id="myModalLabel">Delete Legend</h3>\
-  </div>\
-  <div class="modal-body">\
-    <p>This will delete all terms and icons associated with the '+moteName+' legend.</p>\
-  </div>\
-  <div class="modal-footer">\
-    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
-    <button class="btn btn-primary delete-confirm">Delete Legend</button>\
-  </div>\
-</div>');
+        <div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
+          <div class="modal-header">\
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+            <h3 id="myModalLabel">Delete Legend</h3>\
+          </div>\
+          <div class="modal-body">\
+            <p>This will delete all terms and icons associated with the '+moteName+' legend.</p>\
+          </div>\
+          <div class="modal-footer">\
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
+            <button class="btn btn-primary delete-confirm">Delete Legend</button>\
+          </div>\
+        </div>');
     $('#deleteModal').modal('show');
     $('.delete-confirm').click(function(){
       //console.log('delete '+moteName+' now delete terms and children');
@@ -747,9 +773,7 @@ function loadLegendList(legendObject) {
   
     var listHtml ='';
     if(legendObject) {
-    //console.log(legendObject);
       for (var i =0; i < Object.keys(legendObject).length; i++) {
-
         listHtml += addLegend(legendObject[i],i+1);
        }
      }
@@ -777,7 +801,13 @@ function legendOptions(selected){
   var mapObject = getChildObjectByType(projectObj['entry-points'], 'map');
   //console.log(mapObject);
 
-  var optionHtml = '<option name="no-link" value="no-link" selected="selected">No Link</option><option name="marker" value="marker" >Marker Post</option>';
+  var optionHtml = '';
+  if(selected=="no-link") {
+    optionHtml = '<option name="no-link" value="no-link" selected="selected">No Link</option><option name="marker" value="marker" >Marker Post</option>';
+  }
+  else if (selected=="marker") {
+    optionHtml = '<option name="no-link" value="no-link" >No Link</option><option name="marker" value="marker" selected="selected" >Marker Post</option>';
+  }
   for (var i =0; i < Object.keys(mapObject['settings']['filter-data']).length; i++) {
     if(mapObject['settings']['filter-data'][i]==selected){
       optionHtml += '<option name="'+mapObject['settings']['filter-data'][i]+'" value="'+mapObject['settings']['filter-data'][i]+'" selected="selected" >'+mapObject['settings']['filter-data'][i]+'</option>';
@@ -1162,9 +1192,15 @@ function saveProjectSettings()	{
     if(!projectObj['views']) {
       projectObj['views'] = new Object();
     }
+   var tempMarkerContent = [];
+    _.map($('#post-content-view li'), function(val,key){
+      tempMarkerContent.push($(val).find('option:selected').val());
+    });
+    projectObj['views']['post-view-content'] = tempMarkerContent;
   _.map($('.save-view'),function(val,index) {
     projectObj['views'][$(val).attr('name')] = val.value;
-        // console.log(val.type);
+        console.log(val);
+        //if(val.type=='')
         if(val.type=="checkbox"&&val.checked) {
         //   console.log(val); 
            projectObj['views'][$(val).attr('name')] = true;
