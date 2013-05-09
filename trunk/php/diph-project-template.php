@@ -8,7 +8,7 @@ Template Name: Project Template
   <div id="content" >
  <?php if (have_posts()) : while (have_posts()) : the_post();?>
  <div class="post" id="<?php the_ID(); ?>">
- <h2 id="post-<?php the_ID(); ?>"><?php the_title();?></h2>
+ <h2 id="post-<?php the_ID(); ?>" class="post-title"><?php the_title();?></h2>
  <div class="entrytext">
   <?php the_content('<p class="serif">Read the rest of this page &raquo;</p>'); ?>
 
@@ -16,8 +16,6 @@ Template Name: Project Template
  
  <div id="map_div"></div>
  <div id="map_div2"></div>
- <div id="map_marker"></div>
- <div id="timeline"></div><a class="launch-timeline">Timeline</a>
  </div>
  <!-- Modal -->
 <div id="markerModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="markerModalLabel" aria-hidden="true">
