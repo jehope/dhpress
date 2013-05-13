@@ -215,8 +215,9 @@ img {
 	padding-right: 5px;
 	padding-bottom: 5px;
 }
-.new-content p {
+.entrytext p {
 	line-height: 1.7;
+	margin-bottom: 10px;
 }
 
 .type-timecode {
