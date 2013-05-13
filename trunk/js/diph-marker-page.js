@@ -11,6 +11,7 @@ getContent(diphSettings['views']['post-view-content']);
 
 function getContent(content) {
 	var post_id = $('.post').attr('id');
+	loadMeta(post_id);
 
 	if(diphSettings['views']['post-view-title']) {
 		save_entry_content['the_title'] = $('.post-title').html();
@@ -18,9 +19,12 @@ function getContent(content) {
 	}
 
 	if(diphSettings['views']['post-view-content']) {
-		save_entry_content['the_content'] = $('.entrytext').html();
-		$('.entrytext').empty();
-		loadMeta(post_id);
+		if(diphSettings['views']['post-view-content'].length>0) {
+			$('.entrytext').wrapInner('<div class="post-content" />');
+			//save_entry_content['the_content'] = $('.post-content');
+			$('.post-content').hide();
+		}
+		
 	}
 }
 
@@ -38,26 +42,33 @@ function addContentToPage(response) {
 		$('.post-title').append(response[titleCF]);
 	}
 	
-	_.map(tempContent, function(val,key){
-		var tempCF = getCField(val);
-		var tempResponse = response[tempCF];
 
-		if (tempCF=='the_content') {
-			tempResponse = save_entry_content['the_content'];
-		}
+	if(tempContent) {
+		_.map(tempContent, function(val,key){
+			var tempCF = getCField(val);
+			var tempResponse = $("<div/>").html(response[tempCF]).text();
 
-		if (val=='Thumbnail Right') {
-			$(entry_html).append('<p class="thumb-right"><img src="'+tempResponse+'" /></p>');
-		}
-		else if (val=='Thumbnail Left') {
-			$(entry_html).append('<p class="thumb-left"><img src="'+tempResponse+'" /></p>');
-		}	
-		else {
-			$(entry_html).append('<h3>'+val+'</h3>');
-			$(entry_html).append('<p>'+$("<div/>").html(tempResponse).text()+'</p>');
-		}
 
-	});
+			if (tempCF=='the_content') {
+				$('.post-content').show();
+				tempResponse = $('.post-content').remove();
+				
+			}
+
+			if (val=='Thumbnail Right') {
+				$(entry_html).append('<p class="thumb-right"><img src="'+tempResponse+'" /></p>');
+			}
+			else if (val=='Thumbnail Left') {
+				$(entry_html).append('<p class="thumb-left"><img src="'+tempResponse+'" /></p>');
+			}	
+			else {
+				$(entry_html).append('<h3>'+val+'</h3>');
+				$(entry_html).append(tempResponse);
+			}
+
+		});		
+	}
+
 }
 
 function getCField(moteName) {
@@ -65,7 +76,7 @@ function getCField(moteName) {
 	var tempCF ='';
 
 	_.map(tempSettings, function(val,key){
-		if(val['name']==moteName.trim()) {
+		if(val['name']==moteName) {
 			tempCF = val['custom-fields'];
 		}
 	});
