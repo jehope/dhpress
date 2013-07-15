@@ -38,7 +38,7 @@ function diph_project_init() {
     'has_archive' => true, 
     'hierarchical' => true,
     'menu_position' => null,
-    'supports' => array( 'title', 'author', 'thumbnail', 'excerpt', 'comments','revisions', 'custom-fields' )
+    'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments','revisions', 'custom-fields' )
   ); 
   register_post_type('project',$args);
   
@@ -376,8 +376,7 @@ function createMoteValueArrays($custom_name,$delim,$project_id){
 			//array_push($moteArray,$tempMoteValue[0]);
 			$tempMoteArray[0] = $tempMoteValue[0];
 		}
-		//array_push($moteArray,$tempMoteValue[0]); 
-		//array_push($moteArray,$tempMoteValue[0]); 
+
 		$termsArray = array();
 		for($i=0;$i<count($tempMoteArray);$i++) {
 			$term_name = trim($tempMoteArray[$i]);
@@ -396,6 +395,32 @@ function createMoteValueArrays($custom_name,$delim,$project_id){
 	 //$result = array_unique($array)
 	return $moteArray;
 }
+//create array of custom field values associated with a project
+function createMetaValueArray($custom_name,$project_id){
+
+	//loop through all markers in project -add to array
+	$moteArray = array();
+	$projectObj = get_post($project_id);
+	$diph_tax_name = 'diph_tax_'.$projectObj->ID;
+
+
+	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	$tempMetaArray = array();
+	$loop = new WP_Query( $args );
+	while ( $loop->have_posts() ) : $loop->the_post();
+
+		$marker_id = get_the_ID();
+		//$temp_post = get_post($marker_id);
+		$tempMetaValue = get_post_meta($marker_id, $custom_name, true);
+		
+		array_push($tempMetaArray, $tempMetaValue);
+		
+	endwhile;
+
+	$result = array_unique($tempMetaArray);
+	return $result;
+}
+
 //create unique array of custom fields from the project
 function createUniqueProjectCustomFieldArray(){
 
@@ -450,39 +475,48 @@ function invertLatLon($latlon){
 	}
 	if($latlon&&$latlon!=',') {
 		$tempLonLat = split(',',$latlon);	
-		return $tempLonLat[1].','.$tempLonLat[0];
+		return array($tempLonLat[1],$tempLonLat[0]);
 	}
 
 }
 function getIconsForTerms($parent_terms, $taxonomy){
 
-	$json_filter = '{ "type":"filter", "name":"'.$parent_terms->name.'", "terms" :[';
-	//$json_filter .= 'here'.$parent_terms->name;	
-	$myargs = array( 'orderby'       => 'term_group',
-					'parent'         => $parent_terms->term_id, );
+	$filter_object['type'] = "filter";
+	$filter_object['name'] = $parent_terms->name;
+	$filter_object['terms'] = array();
 
-	//$children_terms = get_term_children( $parent_terms->term_id, $taxonomy );
+	$myargs = array( 'orderby'       => 'term_group',
+		 			 'hide_empty'    => false, 
+					 'parent'        => $parent_terms->term_id );
+
 	$children_terms = get_terms( $taxonomy, $myargs );
 	$children_names = array();
-	foreach ($children_terms as $child) {
-		//$child_name = get_term_by('id', $child, $taxonomy);
-		array_push($children_names, $child->name);
+	$filter_children = array();
 
-		$children_terms2 = get_term_children( $child->term_id, $taxonomy );
+	$icon_url = get_term_meta($parent_terms->term_id,'icon_url',true);
+	$filter_parent['name'] = $parent_terms->name;
+	$filter_parent['icon_url'] = $icon_url;
+	array_push($filter_object['terms'], $filter_parent);
+
+	foreach ($children_terms as $child) {
+		array_push($children_names, $child->name);
+		$childArgs = array( 'orderby' 		=> 'term_group',
+		 					'hide_empty'    => false, 
+							'parent'        => $child->term_id );
+		$children_terms2 = get_terms( $taxonomy, $childArgs );
 		$children_names2 = array();
 		foreach ($children_terms2 as $child2) {
-		$child_name2 = get_term_by('id', $child2, $taxonomy);
-		array_push($children_names2, $child_name2->name);
+			array_push($children_names2, $child2->name);
 		}
 		$icon_url = get_term_meta($child->term_id,'icon_url',true);
-		$json_filter_children .= ',{ "name":"'.$child->name.'","icon_url" :"'.$icon_url.'", "children" : '.json_encode($children_names2).'}';
-	}
-	$icon_url = get_term_meta($parent_terms->term_id,'icon_url',true);
-	$json_filter .= '{ "name":"'.$parent_terms->name.'","icon_url" :"'.$icon_url.'", "children" : '.json_encode($children_names).'}';
-	$json_filter .= $json_filter_children;
-	
-	$json_filter .= ']}';
-	return $json_filter;
+		$temp_child_filter['name'] = $child->name;
+		$temp_child_filter['icon_url'] = $icon_url;
+		$temp_child_filter['children'] = $children_names2;
+		array_push($filter_object['terms'], $temp_child_filter);
+	}	
+	$filter_parent['children'] = $children_names;
+
+	return $filter_object;
 }
 function getMoteFromName($settings,$moteName){ 
 	//$moteCount=0;
@@ -609,6 +643,7 @@ add_action( 'wp_ajax_nopriv_diph_get_group_feed', 'diph_get_group_feed' );
 function createMarkerArray($project_id) {
 	//loop through all markers in project -add to array
 	$markerArray = array();
+	$json_Object = array();
 	$project_object = get_post($project_id);
 	$project_tax = 'diph_tax_'.$project_object->ID;
 
@@ -638,22 +673,27 @@ function createMarkerArray($project_id) {
 		}
 	}
 	//CREATE loop to generate tabs for filters
-	$term_icons;
+	$term_icons=array();
 	foreach( $filter as $legend ) {
 		
 		$parent = get_term_by('name', $legend, $project_tax);
 		$parent_term_id = $parent->term_id;
-		$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group' ) );
+		$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty'    => false ) );
 		//$term_icons .= $parent_term_id;
-	 $term_icons .= getIconsForTerms($parent, $project_tax) . ',';
+	 array_push($term_icons, getIconsForTerms($parent, $project_tax));
+	 array_push($json_Object, getIconsForTerms($parent, $project_tax));
 	}
 	
 	//$parent = get_terms($project_tax, array('parent=0&hierarchical=0&number=1'));
 	//print_r($parent);
 	
-	//$term_icons = json_encode($term_icons);
-
-	$json_string = '['.$term_icons.'{"type": "FeatureCollection","features": [';
+	$term_icons = json_encode($term_icons);
+	//$json_string = $term_icons;
+	//$json_string = '{"type": "FeatureCollection","features": [';
+	$json_string['type'] = 'FeatureCollection';
+	$feature_array = array();
+	//$feature_collection['type'] = "FeatureCollection";
+	//$feature_collection['features'] = array();
 	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
 	$i = 0;
@@ -702,24 +742,24 @@ function createMarkerArray($project_id) {
 			$title_mote = getMoteFromName( $project_settings, $project_settings['views']['title'] );
 			$title = get_post_meta($marker_id,$title_mote['custom-fields'],true);
 		}
-		$audio_val = get_post_meta($marker_id,$audio['custom-fields']);
+		$audio_val = get_post_meta($marker_id,$audio['custom-fields'],true);
 		
 			$transcript_val1 = get_post_meta($marker_id, $transcript['custom-fields']);
 			$transcript_val = $transcript['delim'].$transcript_val1[0];
 		
-		$timecode_val = get_post_meta($marker_id,$timecode['custom-fields']);
+		$timecode_val = get_post_meta($marker_id,$timecode['custom-fields'],true);
 		//$categories = get_post_meta($marker_id,'Concepts');
 		$args = array("fields" => "names");
 		$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
 		$p_terms;
 		$viewsContent = $project_settings['views']['content'];
-		$content_att = '';
+		$content_att = array();
 		foreach( $viewsContent as $contentMote ) {
 			$content_mote = getMoteFromName( $project_settings, $contentMote );
 			$content_type = $content_mote['type'];
 			if($content_mote['custom-fields']=='the_content') {
 				$content_val = apply_filters('the_content', get_post_field('post_content', $marker_id));
-				$content_val = json_encode($content_val);
+				$content_val = $content_val;
 			}
 			else {
 				$content_val = get_post_meta($marker_id,$content_mote['custom-fields'],true);
@@ -727,7 +767,7 @@ function createMarkerArray($project_id) {
 			if($content_type=='Image'){
 				$content_val = '<img src="'.$content_val.'" />';
 			}
-			$content_att .= ',"'.$contentMote. '":"' .htmlentities($content_val).'"';
+			array_push($content_att, array($contentMote => $content_val));
 		}
 
 		if($child_terms=='marker') {
@@ -749,24 +789,31 @@ function createMarkerArray($project_id) {
 		
 		if($lonlat) {
 			if($i>0) {
-				$json_string .= ',';
+				//$json_string .= ',';
 			}
 			else {$i++;}
-		$json_string .= '{"type": "Feature","geometry": { "type": "Point","coordinates": [ '.$lonlat. '] },';
-		//properties
-		$json_string .= '"properties": {"title": "'.$title.'","categories": '.json_encode($post_terms);
-		$json_string .= ',"audio":"'.$audio_val[0].'"'.$content_att.',"transcript":"'.$transcript_val.'","timecode":"'.$timecode_val[0].'","link":"'.$term_links.'"';
-		$json_string .= '}}';
+		$temp_feature['type'] = 'Feature';
+		$temp_feature['geometry'] = array("type"=>"Point","coordinates"=> $lonlat);
+		$temp_feature['properties'] = array("title"=>$title,"categories"=> $post_terms,"audio"=>$audio_val,"content"=>$content_att,"transcript"=>$transcript_val,"timecode"=>$timecode_val,"link"=>$term_links);
+
+		// $json_string .= '{"type": "Feature","geometry": { "type": "Point","coordinates": [ '.$lonlat. '] },';
+		// //properties
+		// $json_string .= '"properties": {"title": "'.$title.'","categories": '.json_encode($post_terms);
+		// $json_string .= ',"audio":"'.$audio_val[0].'"'.$content_att.',"transcript":"'.$transcript_val.'","timecode":"'.$timecode_val[0].'","link":"'.$term_links.'"';
+		// $json_string .= '}}';
 
 		//array_push($markerArray,$json_string); 
+		array_push($feature_array,$temp_feature);
 		}
 	
 		
 	endwhile;
-	$json_string .= ']}]';	
+	//$json_string .= ']';
+	$json_string['features'] = $feature_array;
+	array_push($json_Object, $json_string);	
 	 //$result = array_unique($array)
-	return $json_string;
-	//return $content_att;
+	return $json_Object;
+	//return $term_icons;
 }
 function dateFormatSplit($date_range){
 	$posA = strpos($date_range, "~");
@@ -916,7 +963,6 @@ function print_new_bootstrap_html(){
                     <option>Lat/Lon Coordinates</option>
                     <option>File</option>
                     <option>Image</option>
-                    <option>Dynamic Data Field</option>
                   </select><span class="help-inline">Choose a data type</span>
                 </p>
                 <p><input class="delim" type="text" name="delim" placeholder="Delimiter" /> If multiple text indicate the delimiter</p>
@@ -1029,28 +1075,16 @@ function diphSaveProjectSettings(){
 	die('working... '. $settings);
 }
 add_action( 'wp_ajax_diphSaveProjectSettings', 'diphSaveProjectSettings' );
-function diphGetMoteValues(){
-	$mote_values = array();
-	$mote = $_POST['mote_name'];
-	$mote_type = $mote['type'];
-	$mote_delim = $mote['delim'];
-	
-	$custom_field = $mote['custom-fields'];
-	$diph_projectID = $_POST['project'];
 
-	$diph_project = get_post($diph_projectID);
-	$diph_project_slug = $diph_project->post_name;
-	$diph_tax_name = 'diph_tax_'.$diph_project->ID;
-	createParentTerm($mote['name'],$diph_tax_name);
-	//get fresh terms from meta feild 
 
-	$mArray = createMoteValueArrays($custom_field,$mote_delim,$diph_projectID);
-
+function diphUpdateTaxonomy($mArray, $mote_name, $diph_tax_name){ 
 	$term_counts = array_count_values($mArray);	
 
-	$parent_term = get_term_by('name', $mote['name'], $diph_tax_name);
+	$parent_term = get_term_by('name', $mote_name, $diph_tax_name);
 	$parent_id = $parent_term->term_id;
 	$args = array('parent' => $parent_id);
+
+
 	//loop through terms and add to taxonomy
 	foreach ($term_counts as $key=>$term) {
 		$term_name = $key;
@@ -1117,10 +1151,87 @@ function diphGetMoteValues(){
   	    	//array_push($term, array('icon_url' => $term_url ));
 		}
 	}
+	return $terms_loaded;
+}
+function diphCreateLegendTax(){ 
 
-	die(json_encode($terms_loaded));
+	$mote_values = array();
+	$mote = $_POST['mote_name'];
+	$mote_type = $mote['type'];
+	$mote_delim = $mote['delim'];
+	
+	$custom_field = $mote['custom-fields'];
+	$diph_projectID = $_POST['project'];
+
+	$diph_project = get_post($diph_projectID);
+	$diph_project_slug = $diph_project->post_name;
+	$diph_tax_name = 'diph_tax_'.$diph_project->ID;
+
+	createParentTerm($mote['name'],$diph_tax_name);
+	//get fresh terms from meta feild 
+
+	$mArray = createMoteValueArrays($custom_field,$mote_delim,$diph_projectID);
+	$terms_loaded = diphUpdateTaxonomy($mArray, $mote['name'], $diph_tax_name);
+
+
+	//createParentTerm($mote['name'],$diph_tax_name);
+	$mArray2 = createMoteValueArrays($custom_field,$mote_delim,$diph_projectID);
+	$terms_loaded2 = diphUpdateTaxonomy($mArray2, $mote['name'], $diph_tax_name);
+	
+
+	die(json_encode($terms_loaded2));
 	//die(json_encode($exclude_string));
 }
+//creates terms in taxonomy when a legend is created
+add_action( 'wp_ajax_diphCreateLegendTax', 'diphCreateLegendTax' );
+
+
+function diphGetMoteValues(){
+	$diph_projectID = $_POST['project'];
+	$mote = $_POST['mote_name'];
+	$diph_tax_name = 'diph_tax_'.$diph_projectID;
+
+	$parent_term = get_term_by('name', $mote['name'], $diph_tax_name);
+	$parent_id = $parent_term->term_id;
+	$args = array('parent' => $parent_id);
+
+	$parent_terms_to_exclude = get_terms($diph_tax_name, 'parent=0&orderby=term_group&hide_empty=0');
+	$exclude_string;
+	$exclude_count = 0;
+	foreach ( $parent_terms_to_exclude as $term ) {
+		if($term->term_id != $parent_id) {
+			
+			if($exclude_count >0) {
+				$exclude_string.=',';
+			}
+			$exclude_string.= $term->term_id;
+			$exclude_count = 1;
+		}
+  	    //array_push($exclude_array, $term->term_id);
+	}
+	$terms_loaded = get_terms($diph_tax_name, 'exclude_tree='.$exclude_string.'&orderby=term_group&hide_empty=0');
+	//$terms = get_terms($diph_tax_name, array( 'orderby' => 'term_id' ) );
+ 	$t_count = count($terms_loaded);
+
+ 	//return wp tax id,name,count,order
+ 	//$diph_top_term = get_term_by('name', $term_name, $diph_tax_name);
+ 	if ( $t_count > 0 ){
+   		foreach ( $terms_loaded as $term ) {
+  	    	
+
+  	    	$term_url = get_term_meta($term->term_id, 'icon_url', true);
+			//$term .= '"icon_url" : "'.$term_url.'"';
+
+			$term ->icon_url = $term_url;
+  	    	//array_push($term, array('icon_url' => $term_url ));
+		}
+	}
+
+	die(json_encode($terms_loaded));
+	//die(json_encode($diph_tax_name));
+	
+}
+//Lists all the terms in taxonomies(already created)
 add_action( 'wp_ajax_diphGetMoteValues', 'diphGetMoteValues' );
 
 function diphGetMarkers(){
@@ -1162,11 +1273,36 @@ function getTranscriptClip($tran,$clip){
 	$clipStart = strpos($tran, $clipArray[0]);
 	$clipEnd = strpos($tran, $clipArray[1]);
 	$clipLength = $clipEnd - $clipStart;
-
-	$returnClip = substr($tran, $clipStart-1, $clipLength+13);
+	if($clipStart&&$clipEnd) {
+		$returnClip = substr($tran, $clipStart-1, $clipLength+13);
+	}
+	else {
+		$returnClip = 'incorrect timestamp or transcript not found';
+	}
+	//return $clipArray[0];
 	return $returnClip;
 }
-
+function loadTranscriptFromFile($fileUrl) {
+	//'http://msc.renci.org/dev/wp-content/uploads/2012/11/Ambler-Susan.mp3.qt.txt'
+	$content = @file_get_contents($fileUrl);
+	if ($content === false) { /* failure */ } 
+	
+	else { /* success */ 
+		return $content;
+	}
+}
+function diphGetTranscriptClip() {
+	$diph_project = $_POST['project'];
+	$diph_transcript_field = $_POST['transcript'];
+	$diph_clip = $_POST['timecode'];
+	$projectObj = get_post($diph_project);
+	//$diph_transcript = get_post_meta( $diph_project, $diph_project_field, true);
+	$diph_transcript = loadTranscriptFromFile($diph_transcript_field);
+	$diph_transcript_clip = getTranscriptClip($diph_transcript,$diph_clip);
+	die(json_encode($diph_transcript_clip));
+}
+add_action( 'wp_ajax_diphGetTranscriptClip', 'diphGetTranscriptClip' );
+add_action('wp_ajax_nopriv_diphGetTranscriptClip', 'diphGetTranscriptClip');
 function diphGetTranscript(){
 
 	$diph_project = $_POST['project'];
@@ -1227,6 +1363,104 @@ function diphAddCustomField(){
 	die();
 }
 add_action( 'wp_ajax_diphAddCustomField', 'diphAddCustomField' );
+
+/**
+ * [diphCreateCustomFieldFilter description]
+ * @return [type] [description]
+ */
+function diphCreateCustomFieldFilter(){
+	$diph_project 				= $_POST['project'];
+	$diph_custom_field_name 	= $_POST['field_name'];
+	$diph_custom_field_value	= $_POST['field_value'];
+	$diph_custom_filter_key 	= $_POST['filter_key'];
+	$diph_custom_filter_value 	= $_POST['filter_value'];
+
+	$args = array( 
+		'post_type' => 'dhp-markers', 
+		'posts_per_page' => -1,
+		'meta_query' => array(
+			'relation' => 'AND',
+			array(
+				'key' => 'project_id',
+				'value' => $diph_project
+			),
+			array(
+				'key' => $diph_custom_filter_key,
+				'value' => $diph_custom_filter_value
+			)
+		)
+	);
+
+	$loop = new WP_Query( $args );
+	while ( $loop->have_posts() ) : $loop->the_post();
+
+		$marker_id = get_the_ID();
+		add_post_meta($marker_id, $diph_custom_field_name, $diph_custom_field_value, true);
+				
+	endwhile;
+	
+	die();
+}
+add_action( 'wp_ajax_diphCreateCustomFieldFilter', 'diphCreateCustomFieldFilter' );
+
+function diphUpdateCustomFieldFilter(){
+	$diph_project 				= $_POST['project'];
+	$diph_custom_field_name 	= $_POST['field_name'];
+	$diph_custom_current_value	= $_POST['current_value'];
+	$diph_custom_new_value		= $_POST['new_value'];
+	$diph_custom_filter_key 	= $_POST['filter_key'];
+	$diph_custom_filter_value 	= $_POST['filter_value'];
+
+	$args = array( 
+		'post_type' => 'dhp-markers', 
+		'posts_per_page' => -1,
+		'meta_query' => array(
+			'relation' => 'AND',
+			array(
+				'key' => 'project_id',
+				'value' => $diph_project
+			),
+			array(
+				'key' => $diph_custom_filter_key,
+				'value' => $diph_custom_filter_value
+			)
+		)
+	);
+	$diph_count=0;
+	$loop = new WP_Query( $args );
+	while ( $loop->have_posts() ) : $loop->the_post();
+		$diph_count++;
+		$marker_id = get_the_ID();
+		$tempPostContent = get_the_content();
+		if($diph_custom_field_name=='the_content') {
+			$new_value = str_replace($diph_custom_find_value,$diph_custom_replace_value,$tempPostContent);
+			
+			$new_post = array();
+			$new_post['ID'] = $marker_id;
+			$new_post['post_content'] = $new_value;
+			wp_update_post( $new_post );
+		}
+		else {
+			$temp_value = get_post_meta( $marker_id, $diph_custom_field_name, true );
+			//replaces string within the value not the whole value
+			$new_value = str_replace($diph_custom_find_value,$diph_custom_replace_value,$temp_value);
+			update_post_meta($marker_id, $diph_custom_field_name, $new_value);
+		}
+	endwhile;
+	
+	die(json_encode($diph_count));
+}
+add_action( 'wp_ajax_diphUpdateCustomFieldFilter', 'diphUpdateCustomFieldFilter' );
+
+function diphGetFieldValues() {
+	$diph_project 				= $_POST['project'];
+	$diph_custom_field_name 	= $_POST['field_name'];
+	$tempValues = createMetaValueArray($diph_custom_field_name, $diph_project);
+
+	die(json_encode($tempValues));
+}
+add_action( 'wp_ajax_diphGetFieldValues', 'diphGetFieldValues' );
+
 function diphFindReplaceCustomField(){
 	$diph_project = $_POST['project'];
 	$diph_custom_field_name = $_POST['field_name'];
@@ -1239,14 +1473,25 @@ function diphFindReplaceCustomField(){
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$diph_count++;
 		$marker_id = get_the_ID();
-		$temp_value = get_post_meta($marker_id,$diph_custom_field_name);
-		$new_value = str_replace($diph_custom_find_value,$diph_custom_replace_value,$temp_value[0]);
-		update_post_meta($marker_id, $diph_custom_field_name, $new_value);
-		//add_post_meta($marker_id, $diph_custom_field_name, $diph_custom_field_value, true);
-				
+		$tempPostContent = get_the_content();
+		if($diph_custom_field_name=='the_content') {
+			$new_value = str_replace($diph_custom_find_value,$diph_custom_replace_value,$tempPostContent);
+			
+			$new_post = array();
+			$new_post['ID'] = $marker_id;
+			$new_post['post_content'] = $new_value;
+			wp_update_post( $new_post );
+		}
+		else {
+			$temp_value = get_post_meta( $marker_id, $diph_custom_field_name, true );
+			//replaces string within the value not the whole value
+			$new_value = str_replace($diph_custom_find_value,$diph_custom_replace_value,$temp_value);
+			update_post_meta($marker_id, $diph_custom_field_name, $new_value);
+		}
+		
 	endwhile;
 	
-	die($diph_count);
+	die(json_encode($diph_count));
 }
 add_action( 'wp_ajax_diphFindReplaceCustomField', 'diphFindReplaceCustomField' );
 
@@ -1273,18 +1518,27 @@ function diphCreateTaxTerms(){
 	$mote_parent = $_POST['mote_name'];
 	$diph_projectID = $_POST['project'];
 	$diph_project_terms = str_replace('\\', '', $_POST['terms']);
-	$diph_project_terms = json_decode($diph_project_terms);
-	
-	$diph_project = get_post($diph_projectID);
-	$diph_project_slug = $diph_project->post_name;
-	$diph_tax_name = 'diph_tax_'.$diph_project->ID;
 
-	$mote_parent_id = term_exists( $mote_parent, $diph_tax_name );
+
+	$diph_project_terms1 = json_decode($diph_project_terms);
+	$termDetailsArray = array('parentTerm'=>$mote_parent, 'projectID' => $diph_projectID, 'termsArray'=>$diph_project_terms1);
+
+	$newArgs = loopTermHeirarchy($termDetailsArray);
+
+	die(json_encode($newArgs));
+}
+add_action( 'wp_ajax_diphCreateTaxTerms', 'diphCreateTaxTerms' );
+
+function loopTermHeirarchy($argArray) {
+	$mote_parent = $argArray['parentTerm'];
+	//convert mote_parent to id
+	
+	$diph_project_terms = $argArray['termsArray'];
+	$diph_tax_name = 'diph_tax_'.$argArray['projectID'];
+	$mote_parentID = get_term_by('name', $mote_parent, $diph_tax_name);
 	$meta_key = 'icon_url';
-	
+	$myCount = count($diph_project_terms);
 
-	$testArray = array();
-	array_push($testArray, 'here');
 	foreach ($diph_project_terms as $term) {
 		$term_name = $term->{'name'};
 		$parent_term_id = $term->{'parent'};
@@ -1308,15 +1562,31 @@ function diphCreateTaxTerms(){
 		}
 		else {
 			wp_insert_term( $term_name, $diph_tax_name, $args );
+			$term_id = term_exists( $term_name, $diph_tax_name );
 			add_term_meta($term_id, $meta_key, $meta_value, true);
 			update_term_meta($term_id, $meta_key, $meta_value);
 		}
-		array_push($testArray, $meta_value);
+
 	}
-	
-	die(json_encode($testArray));
+	$oldArgs = array('parentTerm'=>$mote_parent, 'projectID' => $argArray['projectID'], 'termsArray'=>$diph_project_terms, 'count'=> $myCount);
+	return $oldArgs;
 }
-add_action( 'wp_ajax_diphCreateTaxTerms', 'diphCreateTaxTerms' );
+function diphCreateTermInTax(){
+$diph_projectID = $_POST['project'];
+$diph_term_name = $_POST['term_name'];
+$parent_term_name = $_POST['parent_term_name'];
+
+$diph_tax_name = 'diph_tax_'.$diph_projectID;
+$parent_term = term_exists( $parent_term_name, $diph_tax_name );
+$parent_term_id = $parent_term['term_id'];
+$args = array( 'parent' => $parent_term_id );
+
+wp_insert_term( $diph_term_name, $diph_tax_name, $args );
+$newTerm = get_term_by('name', $diph_term_name, $diph_tax_name);
+
+die(json_encode($newTerm));
+}
+add_action( 'wp_ajax_diphCreateTermInTax', 'diphCreateTermInTax' );
 
 function diphDeleteTerms(){
 	$diph_projectID = $_POST['project'];
@@ -1550,7 +1820,7 @@ function diph_page_template( $page_template )
 		//wp_enqueue_script( 'open-layers', 'http://dev.openlayers.org/releases/OpenLayers-2.12/lib/OpenLayers.js' );
     	wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
     	wp_enqueue_script( 'diph-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-        
+        wp_enqueue_script( 'soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
     	wp_enqueue_script( 'cdlaMaps' );
 
     	if($projectSettings_map_cdla) {
@@ -1606,10 +1876,11 @@ function diph_page_template( $page_template )
 		wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
 		wp_enqueue_script('backbone');
 		wp_enqueue_script('underscore');
+
 		//wp_enqueue_script( 'open-layers', 'http://dev.openlayers.org/releases/OpenLayers-2.12/lib/OpenLayers.js' );
     	wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
     	wp_enqueue_script( 'diph-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-        
+
     	wp_enqueue_script( 'cdlaMaps' );
         //wp_enqueue_script( 'timeline-js', plugins_url('/js/storyjs-embed.js', dirname(__FILE__) ));
 

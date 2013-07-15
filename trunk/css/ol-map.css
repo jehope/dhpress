@@ -186,6 +186,16 @@ img {
 .modal { 
 	z-index: 1150;
 }
+.modal.transcript {
+position: fixed;
+top: 10%;
+left: 50%;
+width: 90%;
+margin-left: -45%;
+}
+.current-clip {
+	background-color: #999;
+}
 .modal-backdrop {
 	z-index: 1140;
 }

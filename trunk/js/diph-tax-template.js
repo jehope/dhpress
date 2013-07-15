@@ -142,7 +142,7 @@ function loadTranscriptClip(projectID,transcriptName,clip){
         type: 'POST',
         url: ajax_url,
         data: {
-            action: 'diphGetTranscript',
+            action: 'diphGetTranscriptClip',
             project: projectID,
             transcript: transcriptName,
             timecode: clip

@@ -194,15 +194,29 @@ $('#search-replace-btn').click(function(){
     <select name="custom-fields" class="custom-fields"></select>\
     <input class="span4 find-custom-field-value" type="text" name="new-custom-field-name" placeholder="Find" />\
     <input class="span4 replace-custom-field-value" type="text" name="new-custom-field-value" placeholder="Replace" />\
+    <p>Filter by: <input type="checkbox" class="filter-active"></p>\
+    <select name="filter-fields" class="filter-fields"></select>\
+    <select name="filter-field-values" class="filter-field-values"></select>\
   </div>\
   <div class="modal-footer">\
     <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\
     <button class="btn btn-primary" id="find-custom-field" aria-hidden="true">Find & Replace</button>\
   </div>');
   $('#projectModal .custom-fields').append($('#create-mote select.custom-fields').clone().html());
+  
+  $('#projectModal .filter-fields').append($('#create-mote select.custom-fields').clone().html());
+
+  $('.filter-fields').on('change',function(e){
+    var tempFindValues = $('.filter-fields option:selected').val();
+    console.log(tempFindValues)
+    diphGetFieldValues(postID,tempFindValues);
+    
+    
+  });
 
   $('.find-custom-field-value').on('focus',function(e){
-    $('#projectModal .modal-body').append('<div class="alert alert-error"><p>Warning! This action can not be undone.</p></div>');
+    $('.undone-warning').remove();
+    $('#projectModal .modal-body').append('<div class="alert alert-error undone-warning"><p>Warning! This action can not be undone.</p></div>');
   });
  
   $('#find-custom-field').click(function(e){
@@ -210,13 +224,20 @@ $('#search-replace-btn').click(function(){
   var tempFindCFvalue = $('#projectModal .find-custom-field-value').val();
   var tempReplaceCFvalue = $('#projectModal .replace-custom-field-value').val();
   var tempCFName = $('#projectModal .custom-fields option:selected').val();
-  if(tempFindCFvalue) {
-    //console.log(tempFindCFvalue)
-    //console.log($('#projectModal .custom-fields option:selected').val())
-  
+  var tempFilter = $('#projectModal .filter-fields option:selected').val();
+  var tempFilterValue = $('#projectModal .filter-field-values option:selected').val();
+  var filterTrue = $('#projectModal .filter-active').prop('checked');
+  console.log("is it "+filterTrue)
+  if(tempFindCFvalue&&!filterTrue) {
+
+    console.log('just find all')
     findReplaceCustomField(postID,tempCFName,tempFindCFvalue,tempReplaceCFvalue);
 
-    //$('#projectModal').modal('hide');
+  }
+  else if(tempFindCFvalue&&tempFilterValue&&filterTrue){
+    console.log('find by filter')
+
+    updateCustomFieldFilter(postID,tempCFName,tempFindCFvalue,tempReplaceCFvalue,tempFilter,tempFilterValue);
   }
   else {
     $('#projectModal .modal-body .alert-error').remove();
@@ -607,7 +628,7 @@ function buildViews(viewObject){
   //Setup layout for frontend modals
   $('.setup-modal-view').click(function(){
     var title = '';
-
+    console.log(viewObject)
     var content = [];
     var linkTarget;
     if(viewObject['title']) {
@@ -622,6 +643,9 @@ function buildViews(viewObject){
       <h3 id="myModalLabel">Choose Title: <select name="custom-fields" class="title-custom-fields"><option selected="selected" value="the_title" >Marker Title</option>'+getLoadedMotes(title)+'</select></h3>\
     </div>\
     <div class="modal-body">\
+      <p>Pick the entry points to display in the modal.</p>\
+      <ul id="modal-body-ep">\
+      </ul><button class="btn btn-success add-modal-ep" type="button">Add</button>\
       <p>Pick the motes to display in the modal.</p>\
       <ul id="modal-body-content">\
       </ul><button class="btn btn-success add-modal-content" type="button">Add</button>\
@@ -646,7 +670,19 @@ function buildViews(viewObject){
 
       //title = viewObject['title'];
     }
+    if(viewObject['modal-ep']) {
+      //each
+      _.map(viewObject['modal-ep'],function(val,index) {
+        //console.log(val);
+        $('#modal-body-ep').append(addEntryPoint(val));
+      });
+      $('.delete-ep-view').unbind('click');
+      $('.delete-ep-view').on('click',function(){
+        $(this).parent('li').remove();
+      });
 
+      //title = viewObject['title'];
+    }
     //load view settings
     
     
@@ -662,13 +698,14 @@ function buildViews(viewObject){
       e.preventDefault();
       //console.log($('#projectModal .title-custom-fields option:selected').val());
       viewObject['title'] = $('#projectModal .title-custom-fields option:selected').val();
+      viewObject['modal-ep'] = new Object();
+      $('#projectModal .content-ep option:selected').each( function(index) {
+        viewObject['modal-ep'][index] = $(this).val();
+      });
       viewObject['content'] = new Object();
       $('#projectModal .content-motes option:selected').each( function(index) {
-        
         viewObject['content'][index] = $(this).val();
-          //console.log($(this).val()); 
       });
-      //console.log($('#projectModal .link-legends option:selected').val());
       viewObject['link'] = $('#projectModal .link-legends option:selected').val();
       // $('#save-modal-view').text('saving...');
 
@@ -682,6 +719,13 @@ function buildViews(viewObject){
       $('#modal-body-content').append(addContentMotes());
       
     });
+    $('.add-modal-ep').click(function(e){
+      //console.log($('#projectModal .custom-fields option:selected').val());
+      $('#modal-body-ep').append(addEntryPoint());
+      $('.delete-ep-view').on('click',function(){
+        $(this).parent('li').remove();
+      });
+    });
     
   });  
 
@@ -692,6 +736,24 @@ function addContentMotes(selected) {
 
   return contentMote;
 }
+function addEntryPoint(selected) {
+  var contentEP = '<li><select name="content-ep" class="content-ep">\
+  '+getEntryPoints(selected)+'</select> <button class="btn btn-danger delete-ep-view" type="button">-</button></li>';
+
+  return contentEP;
+}
+function getEntryPoints(selected) {
+  console.log(projectObj['entry-points'])
+  var epItems = '';
+
+  _.map(projectObj['entry-points'], function(val,key){
+    var isSelected = '';
+    if(selected==val['type']) { isSelected = 'selected'; }
+    epItems += '<option name="'+val['type']+'" '+isSelected+' >'+val['type']+'</option>';
+  });
+  return epItems;
+}
+
 function loadLayers(layerObject){
   var layerHtml = $('<ul><li><label>Base Layer</label><select name="base-layer" id="base-layer"></select><label>Additional Layers</label></li></ul>');
   $('select', layerHtml).append($('#hidden-layers .base-layer').clone());
@@ -729,7 +791,29 @@ function getAvailableLayers(){
   return layersA;
 }
 function assignLegendListeners(){
-$('.load-legend').unbind('click');
+  $('.create-legend').unbind('click');
+  $('.create-legend').click(function() {
+      var moteName = $(this).parent().find('#filter-mote option:selected').val();
+      var mote = getMote(moteName);
+      var projectID = projectObj['project-details']['id'];
+
+      $('body').append('<!-- Modal -->\
+        <div id="createModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
+          <div class="modal-header">\
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+            <h3 id="myModalLabel">Creating Legend</h3>\
+          </div>\
+          <div class="modal-body">\
+            <p>Creating terms associated with the '+moteName+' legend.</p>\
+          </div>\
+          <div class="modal-footer">\
+          </div>\
+        </div>');
+    $('#createModal').modal('show');
+      //console.log(projectObj['motes'])
+      diphCreateLegendTax(mote,projectID,true);
+  });
+  $('.load-legend').unbind('click');
   $('.load-legend').click(function() {
       var moteName = $(this).parent().find('#filter-mote option:selected').val();
       var mote = getMote(moteName);
@@ -740,29 +824,34 @@ $('.load-legend').unbind('click');
   $('.delete-legend').unbind('click');
   $('.delete-legend').click(function() {
     var moteName = $(this).parent().find('#filter-mote option:selected').val();
+    var createdYet = $(this).parent().find('.create-legend');
     var lineID = $(this).closest('li').attr('id');
-    $('body').append('<!-- Modal -->\
-        <div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
-          <div class="modal-header">\
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
-            <h3 id="myModalLabel">Delete Legend</h3>\
-          </div>\
-          <div class="modal-body">\
-            <p>This will delete all terms and icons associated with the '+moteName+' legend.</p>\
-          </div>\
-          <div class="modal-footer">\
-            <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
-            <button class="btn btn-primary delete-confirm">Delete Legend</button>\
-          </div>\
-        </div>');
-    $('#deleteModal').modal('show');
-    $('.delete-confirm').click(function(){
-      //console.log('delete '+moteName+' now delete terms and children');
-      $('#deleteModal .delete-confirm').text('deleting...');
-      deleteTerms(postID,moteName);
-      $('#'+lineID).remove();
-      //$('#deleteModal').modal('hide');
-    })
+    if(!createdYet) {
+          
+      $('body').append('<!-- Modal -->\
+          <div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
+            <div class="modal-header">\
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+              <h3 id="myModalLabel">Delete Legend</h3>\
+            </div>\
+            <div class="modal-body">\
+              <p>This will delete all terms and icons associated with the '+moteName+' legend.</p>\
+            </div>\
+            <div class="modal-footer">\
+              <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
+              <button class="btn btn-primary delete-confirm">Delete Legend</button>\
+            </div>\
+          </div>');
+      $('#deleteModal').modal('show');
+      $('.delete-confirm').click(function(){
+        //console.log('delete '+moteName+' now delete terms and children');
+        $('#deleteModal .delete-confirm').text('deleting...');
+        deleteTerms(postID,moteName);
+        
+        //$('#deleteModal').modal('hide');
+      });
+    }
+    $('#'+lineID).remove();
     $('#deleteModal').on('hidden', function () {
       saveProjectAlert();
       $('#deleteModal').remove();
@@ -782,17 +871,21 @@ function loadLegendList(legendObject) {
 
 }
 function addLegend(selected, count){
+  legendButton = '<button class="btn btn-inverse load-legend" type="button">Load Legend</button>';
   if(selected=='') {
     selected = '';
+    
   }
-  if(!count && $('.legend-list li').last().attr('id')) {
-    tempcount = $('.legend-list li').last().attr('id').split('-');
-    count = parseInt(tempcount[1])+1;
+  if(!count) {
+    legendButton = '<button class="btn btn-inverse create-legend" type="button">Create Legend</button><button class="btn btn-inverse load-legend hide" type="button">Load Legend</button>';
+    tempcount = $('.legend-list li').length;
+    console.log(tempcount)
+    count = tempcount+1;
     //console.log('3legend count '+tempcount[1]);
   }
   //console.log('legend count '+count);
-  var legendLine = '<li id="legend-'+count+'"><select name="filter-mote" id="filter-mote">'+getLoadedMotes(selected)+'</select>\
-                        <button class="btn btn-inverse load-legend" type="button">Create Legend</button> <button class="btn btn-danger delete-legend" type="button">Delete</button>\
+  var legendLine = '<li id="legend-'+count+'"><select name="filter-mote" id="filter-mote">'+getLoadedMotes(selected)+'</select>'+
+                        legendButton+' <button class="btn btn-danger delete-legend" type="button">Delete</button>\
                         </li>';
   
   return legendLine;
@@ -807,6 +900,9 @@ function legendOptions(selected){
   }
   else if (selected=="marker") {
     optionHtml = '<option name="no-link" value="no-link" >No Link</option><option name="marker" value="marker" selected="selected" >Marker Post</option>';
+  }
+  else {
+    optionHtml = '<option name="no-link" value="no-link" >No Link</option><option name="marker" value="marker" >Marker Post</option>'; 
   }
   for (var i =0; i < Object.keys(mapObject['settings']['filter-data']).length; i++) {
     if(mapObject['settings']['filter-data'][i]==selected){
@@ -942,7 +1038,7 @@ function buildSharedMotes(sharedMoteObject){
   }
 }
 function dataTypeOption(selected){
-  dataTypes = ['Text','HTML','Exact Date','Date Range','Lat/Lon Coordinates','File','Image','Dynamic Data Field'];
+  dataTypes = ['Text','HTML','Exact Date','Date Range','Lat/Lon Coordinates','File','Image'];
   dataTypeHTML ='';
   for (var i =0; i < Object.keys(dataTypes).length; i++) {
     //console.log(selected);
@@ -1015,6 +1111,7 @@ function customFieldDynamicOption(selected){
     }
   return cflistHtml;
 }       
+
 //Load icons that are stored in custom field
 function loadSelectedIcons(){
 
@@ -1108,16 +1205,18 @@ function doneTypingMote() {
 // 	saveProjectSettings();
 
 // });
-$('#save-btn').on('click', function(){
+$('#save-btn').on('click', function(evt){
+  saveProjectListeners(evt);
+  
+});
+
+function saveProjectListeners(evt) {
   $('#publish').removeClass('button-primary-disabled');
     $('#publishing-action .spinner').hide();
   $('#save-btn').removeClass('btn-danger');
   $('#publish').popover('hide');
-	saveProjectSettings();
-  
-});
-
-
+  saveProjectSettings();
+}
 
 function saveProjectSettings()	{
 	//console.log($('#diph-projectid').val())
@@ -1209,14 +1308,7 @@ function saveProjectSettings()	{
         //   console.log(val); 
            projectObj['views'][$(val).attr('name')] = false;
         }
-        // if(val.type=="text"&&val.value) {
-        //   projectObj['views'][$(val).attr('name')] = val.value;
-        // }
-        // if(val.type=="select-one") {
-        //   console.log(val.value);
-        //   projectObj['views'][$(val).attr('name')] = val.value;
-        // }
-        //$('#modal-body-content').append(addContentMotes(val));
+
   });
 	
   //console.log(projectObj);
@@ -1224,7 +1316,13 @@ function saveProjectSettings()	{
 	$('#project_settings').val(JSON.stringify(projectObj));
 	updateProjectSettings();
 }
-
+function addNewTermToLegend(termData){
+  var termName = termData['name'];
+  var termID = termData['term_id'];
+  $('.cat-list .ui-sortable')
+    .prepend('<li id="'+termID+'" class="mjs-nestedSortable-leaf"><div><span class="disclose"><span></span></span><span class="term-name">'+termName+'</span><span class="term-count"> </span><span class="term-icon">Pick Icon</span></div></li>');
+ 
+}
 
 function createLegend(title,data){
 	//console.log('fire how many times?');
@@ -1263,6 +1361,17 @@ function createLegend(title,data){
 		saveArrayTree();
 		
 	});
+  $('.add-term').on('click',function(){
+    var newTerm = $('.new-term-name').val();
+    var parentTerm = $('.cat-list').find('h2').text();
+   
+    var projectID = postID;
+    if(newTerm) {
+      diphCreateTermInTax(newTerm,parentTerm,projectID);
+    }
+    
+  });
+
   $('.use-colors').click(function(e){
 
     
@@ -1374,7 +1483,6 @@ function saveArrayTree(){
 	createTaxTerms(treeParent,postID,termTree);	
 }
 
-
 function diphCatObject(data){
 	var catObject = JSON.parse(data);
 	var htmlObj = show_props(catObject);
@@ -1389,7 +1497,7 @@ function show_props(obj) {
 	for(i=0;i<countTerms;i++) {
 		if(obj[i].parent==0) {
 			
-			$(result).prepend('<h2 id="'+obj[i].term_id+'">'+obj[i].name+'</h2><p class="default-marker">Pick default icon or color. <i class="icon-picture pick-default pull-right"></i></p>');
+			$(result).prepend('<h2 id="'+obj[i].term_id+'">'+obj[i].name+'</h2><button class="btn btn-success add-term" type="button">Add Term</button><input class="new-term-name" type="text" /><p class="default-marker">Pick default icon or color. <i class="icon-picture pick-default pull-right"></i></p>');
 			//console.log('title');
 		}
 		else if($('ol.sortable li#'+obj[i].parent, result).length>0) {
@@ -1427,6 +1535,23 @@ function show_props(obj) {
     
     
     return result;
+}
+//Create option list from json array
+function createOptionList(optionArray) {
+  var tempOptionArray = JSON.parse(optionArray);
+  var tempHtml = null;
+  _.map(tempOptionArray, function(val,key){
+      console.log(val)
+      tempHtml += '<option value="'+val+'" >'+val+'</option>';
+  })
+
+  return tempHtml;
+}
+
+function changeToLoadBtn() {
+  $('.create-legend').remove();
+  $('.load-legend').removeClass('hide');
+  saveProjectListeners(evt);
 }
 
 //AJAX functions
@@ -1474,6 +1599,68 @@ function createTaxTerms(treeParentID,projectID,taxTerms) {
         }
     });
 }	
+/**
+ * [createCustomFieldFilter create a custom field using a subset of markers filtered by a custom field and value]
+ * @param  {[int]} projectID   [project id that marker is associated to]
+ * @param  {[text]} fieldName   [new custom field name]
+ * @param  {[text]} fieldValue  [new custom field value]
+ * @param  {[text]} filterKey   [custom field to filter on]
+ * @param  {[text]} filterValue [custom field value to filter on]
+ */
+function createCustomFieldFilter(projectID,fieldName,fieldValue,filterKey,filterValue){
+  jQuery.ajax({
+    type: 'POST',
+    url: ajax_url,
+    data: {
+        action: 'diphCreateCustomFieldFilter',
+        project: projectID,
+        field_name: fieldName,
+        field_value: fieldValue,
+        filter_key: filterKey,
+        filter_value: filterValue
+    },
+    success: function(data, textStatus, XMLHttpRequest){
+        //console.log(textStatus); 
+        $('#projectModal').modal('hide');        
+    },
+    error: function(XMLHttpRequest, textStatus, errorThrown){
+       alert(errorThrown);
+    }
+  });
+
+}
+/**
+ * [updateCustomFieldFilter update a custom field using a subset of markers filtered by a custom field and value]
+ * @param  {[int]} projectID    [project id that marker is associated to]
+ * @param  {[text]} fieldName    [custom field name]
+ * @param  {[text]} currentValue [custom field current value]
+ * @param  {[text]} newValue     [custom field new value]
+ * @param  {[text]} filterKey    [custom field to filter on]
+ * @param  {[text]} filterValue  [custom field value to filter on]
+ */
+function updateCustomFieldFilter(projectID,fieldName,currentValue,newValue,filterKey,filterValue){
+  jQuery.ajax({
+    type: 'POST',
+    url: ajax_url,
+    data: {
+        action: 'diphUpdateCustomFieldFilter',
+        project: projectID,
+        field_name: fieldName,
+        current_value: currentValue,
+        new_value: newValue,
+        filter_key: filterKey,
+        filter_value: filterValue
+    },
+    success: function(data, textStatus, XMLHttpRequest){
+        //console.log(textStatus); 
+        $('#projectModal').modal('hide');        
+    },
+    error: function(XMLHttpRequest, textStatus, errorThrown){
+       alert(errorThrown);
+    }
+  });
+
+}
 function createCustomField(projectID,fieldName,fieldValue) { 
   jQuery.ajax({
         type: 'POST',
@@ -1568,6 +1755,76 @@ function diphGetCustomFields(projectID) {
     });
 
 }
+function diphGetFieldValues(projectID,fieldName){
+  jQuery.ajax({
+        type: 'POST',
+        url: ajax_url,
+        data: {
+            action: 'diphGetFieldValues',
+            project: projectID,
+            field_name: fieldName
+        },
+        success: function(data, textStatus, XMLHttpRequest){
+            console.log(data);
+            $('.filter-field-values').empty().append(createOptionList(data));
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown){
+           alert(errorThrown);
+        }
+    });
+}
+
+function diphCreateTermInTax(new_term,parent_term,projectID) {
+console.log(parent_term);
+
+  jQuery.ajax({
+        type: 'POST',
+        url: ajax_url,
+        data: {
+            action: 'diphCreateTermInTax',
+            project: projectID,
+            term_name: new_term,
+            parent_term_name: parent_term
+        },
+        success: function(data, textStatus, XMLHttpRequest){
+            //console.log(textStatus);
+            //console.log(JSON.parse(data));
+            //$('#createModal').modal('hide');
+            console.log(JSON.parse(data));
+            addNewTermToLegend(JSON.parse(data));
+
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown){
+           alert(errorThrown);
+        }
+    });
+}
+function diphCreateLegendTax(mote,projectID,loadLegend) {
+  //console.log(moteName);
+
+  jQuery.ajax({
+        type: 'POST',
+        url: ajax_url,
+        data: {
+            action: 'diphCreateLegendTax',
+            project: projectID,
+            mote_name: mote
+        },
+        success: function(data, textStatus, XMLHttpRequest){
+            //console.log(textStatus);
+            //console.log(JSON.parse(data));
+            $('#createModal').modal('hide');
+            changeToLoadBtn();
+            if(loadLegend && data) { 
+              createLegend(mote['name'],data); 
+            }
+
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown){
+           alert(errorThrown);
+        }
+    });
+} 
 function diphGetMoteValues(mote,projectID,loadLegend) {
 	//console.log(moteName);
 

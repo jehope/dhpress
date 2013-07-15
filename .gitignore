@@ -1,2 +1,5 @@
 .DS_Store
 _notes
+sftp-config.json
+.sublime-project
+.sublime-workspace
