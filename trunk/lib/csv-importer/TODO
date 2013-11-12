@@ -1,0 +1,6 @@
+* Add a column for page templates
+* Add column for importing post thumbnails
+* Add an option to the GUI for specifying a delimiter other than a comma
+* Create users if they don't exist (as an option)
+* Add support for unix timestamp dates
+* Add support for category descriptions

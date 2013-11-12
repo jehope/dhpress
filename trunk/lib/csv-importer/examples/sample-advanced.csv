@@ -1,0 +1,9 @@
+"csv_post_title","csv_post_post","csv_post_categories","csv_post_date","csv_post_author","csv_post_slug","csv_post_type","csv_post_parent"
+"[CSV Importer] Assign an author","You can manually assign an author to a post, provided that user exists.","Testing CSV Importer",,"alice",,,
+"[CSV Importer] Set a slug","Slugs are supported, too.","Testing CSV Importer",,,"slug-ability",,
+"[CSV Importer] Yesterday's post","Dates can be specified in a variety of formats, including plain English (with limitations, of course).","Testing CSV Importer","yesterday",,,,
+"[CSV Importer] A year ago","Set date to the same day, a year ago.","Testing CSV Importer","-1 year",,,,
+"[CSV Importer] Exact date 1","More precise date formats are supported, too.","Testing CSV Importer","2011, feb 2",,,,
+"[CSV Importer] Exact date 2","More precise date formats are supported, too.","Testing CSV Importer","01/01/11",,,,
+"[CSV Importer] Parent","You can specify a parent page using its id. The page has to already exist for this to work.","Testing CSV Importer",,,,"page",83
+"[CSV Importer] Subcategories","To specify a category structure, use the greater than sign > in the csv_post_categories column.","Testing CSV Importer > Guitars > Electric",,,,,

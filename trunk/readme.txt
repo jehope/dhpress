@@ -1,14 +1,14 @@
 === DH Press - Digital Humanities Toolkit ===
 Contributors: jehope, bgaston
-Donate link: http://diph.org/
+Donate link: http://dhpress.org/
 Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours
 Requires at least: 3.4
 Tested up to: 3.4.1
-Stable tag: 0.1
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-diPH is a flexible, repurposable, fully extensible digital public humanities toolkit designed for non-technical users.
+DHPress is a flexible, repurposable, fully extensible digital public humanities toolkit designed for non-technical users.
 
 == Description ==
 
@@ -25,7 +25,7 @@ Thus, building DH Press on top of the WordPress CMS results in a truly sustainab
 
 == Installation ==
 
-1. Upload `diph` to the `/wp-content/plugins/` directory
+1. Upload `dhpress` to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
 
@@ -33,16 +33,13 @@ Thus, building DH Press on top of the WordPress CMS results in a truly sustainab
 
 = How do I get a project to show up =
 
-Go to diPH > New Project and create a new project to get started
+Go to DHPress > New Project and create a new project to get started
 
-
-== Screenshots ==
-
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the directory of the stable readme.txt, so in this case, `/tags/4.3/screenshot-1.png` (or jpg, jpeg, gif)
-2. This is the second screen shot
 
 == Changelog ==
+
+= 1.1.1=
+* Beta release candidate overhaul
 
 = 1.0.1=
 * Stable beta release candidate

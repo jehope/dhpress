@@ -18,7 +18,7 @@ class NS_TMO_Plugin {
 		
 		self::$plugin_path = realpath(dirname(__FILE__) . '/../term-menu-order.php');
 		
-		register_activation_hook(self::$plugin_path, array(&$this, 'activate'));
+		//register_activation_hook(self::$plugin_path, array(&$this, 'activate'));
 
 		add_action( 'init', array(&$this, 'init'), 99 );
 		

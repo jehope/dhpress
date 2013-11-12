@@ -1,0 +1,20 @@
+"csv_post_title","csv_post_post","csv_post_type","csv_post_excerpt","csv_post_categories","csv_post_tags","csv_post_date","custom_field_1","custom_field_2"
+"[CSV Importer] Test","Don't panic, this is only a test.
+
+The <a href=""http://wordpress.org/extend/plugins/csv-importer/other_notes/"">manual</a> has a lot of useful information.
+
+Unsurprisingly, one of the most frequently asked questions is ""What should I do if my data has commas and double quotes?"".
+
+<em>CSV Importer</em> can be used with any language (just make sure to save the file with UTF-8 encoding):
+
+<blockquote>
+A comma-separated values or character-separated values (CSV) file is a simple text format for a database table.
+
+Comma-separated values (CSV) est un format informatique ouvert représentant des données tabulaires sous forme de « valeurs séparées par des virgules ».
+
+CSV (от англ. Comma Separated Values — значения, разделённые запятыми) — текстовый формат, предназначенный для представления табличных данных.
+
+Comma-Separated Values（略称：CSV）は、いくつかのフィールド（項目）をカンマ「,」で区切ったテキストデータおよびテキストファイル。
+</blockquote>",,"This is an excerpt for a CSV Importer test post.","Testing CSV Importer, Testing CSV Importer 2","test,csv","2000-12-31 20:00:12","custom value","custom value 2"
+"[CSV Importer] A future post","This is a post that's scheduled to be published in the future (provided that it's not imported as a draft).","post","An excerpt of a future post.","Testing CSV Importer","test,csv,future","2014-01-01 14:00:00",42,43
+"[CSV Importer] How to import a page?","To import a page, set csv_post_type column value to ""page"".","page",,,,,,

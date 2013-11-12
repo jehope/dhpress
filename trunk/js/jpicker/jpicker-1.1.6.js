@@ -1989,7 +1989,7 @@
         },
       images:
         {
-          clientPath: prefixUrl[0]+'wp-content/plugins/diph/js/jpicker/images/', /* Path to image files */
+          clientPath: prefixUrl[0]+'wp-content/plugins/dhpress/js/jpicker/images/', /* Path to image files */
           colorMap:
           {
             width: 256,

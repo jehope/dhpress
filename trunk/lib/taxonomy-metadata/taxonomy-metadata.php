@@ -75,7 +75,10 @@ class Taxonomy_Metadata {
 	}
 }
 $taxonomy_metadata = new Taxonomy_Metadata;
-register_activation_hook( __FILE__, array($taxonomy_metadata, 'activate') );
+$taxonomy_metadata->activate();
+// return $taxonomy_metadata;
+
+// register_activation_hook( __FILE__, array($taxonomy_metadata, 'activate') );
 
 // THE REST OF THIS CODE IS FROM http://core.trac.wordpress.org/ticket/10142
 // BY sirzooro

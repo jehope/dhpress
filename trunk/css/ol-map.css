@@ -31,11 +31,11 @@
 	left: 20px;
 
 }
-.diph-nav {
+.dhp-nav {
 	z-index: 3000;
 	width: 100%;
 }
-.fullscreen .diph-nav {
+.fullscreen .dhp-nav {
 	position: absolute;
 	left: 0px;
 	top: 0px;
@@ -51,7 +51,7 @@
 	
 top:80px;
 }
-.logged-in.fullscreen .diph-nav {
+.logged-in.fullscreen .dhp-nav {
 top: 30px; 
 }
 .logged-in.fullscreen #legends {
@@ -80,19 +80,19 @@ top: 30px;
     height : 250px;
 	width:300px;
 }
-#diph_icon_cont {
+#dhp_icon_cont {
 	min-height:50px;
 }
-.diph_icon {
+.dhp_icon {
 	cursor:pointer;
 	float:left;
 	width:24px;
 	height:24px;
 }
-.diph_icon img {
+.dhp_icon img {
 	padding:2px
 }
-#diph_icon_cont .selected {
+#dhp_icon_cont .selected {
 	background:#999;
 }
 #term-legend {
@@ -212,6 +212,11 @@ margin-left: -45%;
 	padding-right: 5px;
 	padding-bottom: 5px;
 }
+.modal-backdrop, .modal-backdrop.fade.in {
+opacity: .6;
+filter: alpha(opacity=60);
+}
+
 .new-content h3 {
 	clear: none;
 }
