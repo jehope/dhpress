@@ -1,4 +1,3 @@
-diph
+DH Press
 ====
 
-diph plugin

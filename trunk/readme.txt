@@ -4,7 +4,7 @@ Donate link: http://dhpress.org/
 Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours
 Requires at least: 3.4
 Tested up to: 3.4.1
-Stable tag: 1.1.1
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,6 +37,12 @@ Go to DHPress > New Project and create a new project to get started
 
 
 == Changelog ==
+
+= 1.2.0=
+* Naming convention changed to dhp
+* Category creation updated to be more stable
+* Branding icons added
+
 
 = 1.1.1=
 * Beta release candidate overhaul
