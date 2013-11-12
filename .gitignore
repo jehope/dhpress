@@ -3,3 +3,4 @@ _notes
 sftp-config.json
 *.sublime-project
 *.sublime-workspace
+_assets
