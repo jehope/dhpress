@@ -1074,7 +1074,7 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name){
    		else {
    			$termName = get_term($termIs->term_id, $dhp_tax_name);
    			$args = array('parent' => $parent_id, 'alias_of'=>$termName->slug);
-   			wp_update_term( $value, $dhp_tax_name, $args );
+   			wp_insert_term( $value, $dhp_tax_name, $args );
    		}
 	}
 
