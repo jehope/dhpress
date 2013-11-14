@@ -144,22 +144,19 @@ function dhp_array_sort($array, $on, $order=SORT_ASC)
 function dhp_get_projects() {
 
 	// I'm assuming that project titles will have already been trimmed, so I haven't included code to deal with that.  I can if you want.
-	//global $wpdb;
+	global $wpdb;
 
 	$args = array( 
 		'post_type' => 'project',
-		'post_status' => array('drafts', 'publish')
+		'post_status' => array('drafts', 'publish'),
+		'posts_per_page'   => -1
 	);
 	
 	// Get array of all projects (as post objects)
 	$projects_query = get_posts ( $args );
 	
 	$projects_array = array();
-	$choose_project = array(
-			'value' => 0,
-			'label' => '---'
-		);
-	array_push( $projects_array, $choose_project );
+	
 	foreach( $projects_query as $project ) {
 		$this_project = array(
 			'value' => $project->ID,
@@ -205,7 +202,7 @@ function get_selected_project() {
 	global $dhp_marker_settings_fields, $post;
 	foreach ($dhp_marker_settings_fields as $field) {
 		// get value of this field if it exists for this post
-		if($field['id']=='marker_project') {
+		if($field['id']=='project_id') {
 			$meta = get_post_meta($post->ID, $field['id'], true);
 			foreach ($field['options'] as $option) {
 				if($meta == $option['value']) {
@@ -421,7 +418,7 @@ add_action( 'wp_ajax_dhpGetProjectSettings', 'dhpGetProjectSettings' );
 //code for managing dhp-markers admin panel
 
 function dhp_markers_filter_restrict_manage_posts(){
-    $type = 'dhp-markers';
+    $type = 'post';
     if (isset($_GET['post_type'])) {
         $type = $_GET['post_type'];
     }
@@ -432,10 +429,10 @@ function dhp_markers_filter_restrict_manage_posts(){
         //in 'label' => 'value' format
         $values = dhp_get_projects();
         ?>
-        <select name="dhp_project">
+        <select name="PROJECT_ID_VALUE">
         <option value=""><?php _e('Filter By Project', 'acs'); ?></option>
         <?php
-            $current_v = isset($_GET['dhp_project'])? $_GET['dhp_project']:'';
+            $current_v = isset($_GET['PROJECT_ID_VALUE'])? $_GET['PROJECT_ID_VALUE']:'';
             foreach ($values as $label => $value) {
                 printf
                     (
@@ -450,80 +447,52 @@ function dhp_markers_filter_restrict_manage_posts(){
         <?php
     }
 }
-//add_action( 'restrict_manage_posts', 'dhp_markers_filter_restrict_manage_posts' );
+add_action( 'restrict_manage_posts', 'dhp_markers_filter_restrict_manage_posts' );
 
 function dhp_markers_filter( $query ){
     global $pagenow;
-    $type = 'dhp-markers';
+    $type = 'post';
     if (isset($_GET['post_type'])) {
         $type = $_GET['post_type'];
     }
-    if ( 'dhp-markers' == $type && is_admin() && $pagenow=='edit.php' && isset($_GET['dhp_project']) && $_GET['dhp_project'] != '') {
+    if ( 'dhp-markers' == $type && is_admin() && $pagenow=='edit.php' && isset($_GET['PROJECT_ID_VALUE']) && $_GET['PROJECT_ID_VALUE'] != '') {
         $query->query_vars['meta_key'] = 'project_id';
-        $query->query_vars['meta_value'] = $_GET['project_id'];
+        $query->query_vars['meta_value'] = $_GET['PROJECT_ID_VALUE'];
     }
 }
-//add_filter( 'parse_query', 'dhp_markers_filter' );
+add_filter( 'parse_query', 'dhp_markers_filter' );
 
-function add_dhp_projects_columns($defaults) {
-    global $post;
-    $post_type = get_query_var('post_type');
-    if ( $post_type != 'dhp-markers' )
-        return $defaults;
-    unset($defaults['author']);
-    unset($defaults['comments']);
-    unset($defaults['date']);
+function add_dhp_markers_columns($columns) {
+
+
+    unset($columns['comments']);
+
     
-    $defaults['types'] = __('Type');
-    $defaults['category'] = __('Category');
-    $defaults['classification'] = __('Classification');
-    $defaults['state'] = __('State');
-    $defaults['county'] = __('County');
-    $defaults['city'] = __('City');
-    $defaults['year'] = __('Year');
-    $defaults['date'] = __('Date');
+    $columns['project'] = __('Project');
+
     
-    return $defaults;
+    return $columns;
 }
-//add_filter('manage_posts_columns', 'add_dhp_maps_columns');
+add_filter('manage_edit-dhp-markers_columns', 'add_dhp_markers_columns');
 
-function dhp_projects_custom_column($name, $post_id) {
+function dhp_markers_custom_column($column, $post_id) {
     global $post;
     $post_type = get_query_var('post_type');
     if ( $post_type == 'dhp-markers' ){
-        $meta_type = get_post_meta( $post_id, 'dhp_map_type', true );
-        $meta_category = get_post_meta( $post_id, 'dhp_map_category', true );
-        $meta_classification = get_post_meta( $post_id, 'dhp_map_classification', true );
-        $meta_state = get_post_meta( $post_id, 'dhp_map_state', true );
-        $meta_county = get_post_meta( $post_id, 'dhp_map_county', true );
-        $meta_city = get_post_meta( $post_id, 'dhp_map_city', true );
-        $meta_year = get_post_meta( $post_id, 'dhp_map_year', true );
-        switch ($name)
+        $meta_project = get_post_meta( $post_id, 'project_id', true );
+        $project_name = get_the_title($meta_project);
+        
+        switch ($column)
         {
-            case 'types':
-                echo $meta_type;
+            case 'project':
+                echo $project_name;
             break;
             case 'category':
                 echo $meta_category;
             break;
-            case 'classification':
-                echo $meta_classification;
-            break;
-            case 'state':
-                echo $meta_state;
-            break;
-            case 'county':
-                echo $meta_county;
-            break;
-            case 'city':
-                echo $meta_city;
-            break;
-            case 'year':
-                echo $meta_year;
-            break;
         }
     }
 }
-//add_action('manage_posts_custom_column', 'dhp_maps_custom_column', 10, 2);
+add_action('manage_dhp-markers_posts_custom_column', 'dhp_markers_custom_column', 10, 2);
 
 ?>
