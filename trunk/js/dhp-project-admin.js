@@ -18,23 +18,6 @@ var BASE_LAYERS = $('#hidden-layers .base-layer').map(function(){
 var OVERLAYS = $('#hidden-layers option').clone();
 //console.log(BASE_LAYERS);
 
-function pickCenterZoom(){
-  //setup map to pick center and zoom
-
-  var gg = new OpenLayers.Projection("EPSG:4326");
-  var sm = new OpenLayers.Projection("EPSG:900913");
-  var osm = new OpenLayers.Layer.OSM();      
-  //var map = new OpenLayers.Map('set_map');
-  var map = new OpenLayers.Map({
-      div: "map_canvas",
-      projection: sm,
-      displayProjection: gg
-  });
-  var lonlat = new OpenLayers.LonLat(-88.52349,38.03501);
-  lonlat.transform(gg, map.getProjectionObject());
-  map.addLayers([osm]);
-  map.setCenter(lonlat, 5);
-}
 //Assign listener to icons loaded by php
 $('.dhp_icon').click(function() {
 	if($(this).hasClass('selected')==false){
@@ -610,6 +593,44 @@ function addMarkerView(viewObject) {
       });
     });
 }
+function updateViewObjectFormat(theObject) {
+  var newViewObject = new Object();
+  console.log('//start viewObject update')
+  _.map(theObject, function(val,key){
+    console.log(key + ' : '+ val)
+    if(val instanceof Object == true ) {
+      console.log(val)
+    }
+  });
+  console.log('//new viewObject format')
+
+  newViewObject['projectPage'] = new Object();
+    newViewObject['projectPage'][0] = new Object();
+    newViewObject['projectPage'][0].type = 'map';
+    newViewObject['projectPage'][0].width = theObject['map-width'];
+    newViewObject['projectPage'][0].height = theObject['map-height'];
+    newViewObject['projectPage'][0].fullscreen = theObject['map-fullscreen'];
+    newViewObject['projectPage'][0].legend = theObject['legend-pos'];
+
+  newViewObject['popupModals'] = new Object();
+    newViewObject['popupModals']['title'] = theObject['title'];
+    newViewObject['popupModals']['ep'] = theObject['modal-ep'];
+    newViewObject['popupModals']['motes'] = theObject['content'];
+    newViewObject['popupModals']['links'] = new Object();
+    newViewObject['popupModals']['links'][0] = new Object();
+    newViewObject['popupModals']['links'][1] = new Object();
+    newViewObject['popupModals']['links'][0].link = theObject['link'];
+    newViewObject['popupModals']['links'][0].title = 'link 1';
+    newViewObject['popupModals']['links'][1].link = theObject['link2'];
+    newViewObject['popupModals']['links'][1].title = 'link 2';
+
+  newViewObject['markerPage'] = new Object();
+    newViewObject['markerPage'].title = theObject['post-view-title'];
+    newViewObject['markerPage'].motes = theObject['post-view-content'];
+
+  console.log(newViewObject);
+  console.log('//end viewObject update')
+}
 function buildViews(viewObject){
   if(!viewObject) {
     viewObject = new Object();
@@ -632,10 +653,13 @@ function buildViews(viewObject){
 
   addMarkerView(viewObject);
 
+  updateViewObjectFormat(viewObject);
+  
   //Setup layout for frontend modals
   $('.setup-modal-view').click(function(){
     var title = '';
     console.log(viewObject)
+
     var content = [];
     var linkTarget,linkTarget2;
     if(viewObject['title']) {
