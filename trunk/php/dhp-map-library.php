@@ -242,7 +242,7 @@ add_filter( 'single_template', 'dhp_map_page_template' );
 //code for managing dhp-maps admin panel
 
 function dhp_maps_filter_restrict_manage_posts(){
-    $type = 'dhp-maps';
+    $type = 'posts';
     if (isset($_GET['post_type'])) {
         $type = $_GET['post_type'];
     }
@@ -279,7 +279,7 @@ add_action( 'restrict_manage_posts', 'dhp_maps_filter_restrict_manage_posts' );
 
 function dhp_maps_filter( $query ){
     global $pagenow;
-    $type = 'dhp-maps';
+    $type = 'posts';
     if (isset($_GET['post_type'])) {
         $type = $_GET['post_type'];
     }
