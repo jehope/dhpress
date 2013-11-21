@@ -40,31 +40,10 @@ function dhp_add_pages() {
   
 }
 
-// mt_settings_page() displays the page content for the Test settings submenu
-function dhp_settings_page() {
-    echo "<h2>" . __( 'Test Settings', 'dhp-menu' ) . "</h2>";
-}
-
-// mt_tools_page() displays the page content for the Test Tools submenu
-function dhp_tools_page() {
-    echo "<h2>" . __( 'Test Tools', 'dhp-menu' ) . "</h2>";
-}
-
 // mt_toplevel_page() displays the page content for the custom Test Toplevel menu
 function dhp_toplevel_page() {
     echo "<h2>" . __( 'Map Layer Library', 'dhp-menu' ) . "</h2>";
 	 echo "<p>" . __( 'Add map ids with descriptions here', 'dhp-menu' ) . "</p>";
-}
-
-// of the custom Test Toplevel menu
-function dhp_sublevel_page2() {
-    echo "<h2>" . __( 'Icon Library', 'dhp-menu' ) . "</h2>";
-	echo "<p>" . __( 'Display icons and add upload ability to add new icons', 'dhp-menu' ) . "</p>";
-}
-
-function dhp_sublevel_page3() {
-    echo "<h2>" . __( 'Category Manager', 'dhp-menu' ) . "</h2>";
-    echo "<p>" . __( 'Manage custom taxonomies', 'dhp-menu' ) . "</p>";
 }
 
 
