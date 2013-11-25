@@ -9,7 +9,7 @@ var tempProjectObj;
 $('#screen-meta-links a').click(function(){
   $('#screen-options-wrap').removeClass('hidden');
 });
-//console.log(dhpDataLib.ajax_url);
+console.log("testing dev");
 
 //$('#hidden-layers').show();
 var BASE_LAYERS = $('#hidden-layers .base-layer').map(function(){
