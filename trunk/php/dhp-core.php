@@ -24,26 +24,13 @@ require_once( dirname(__FILE__) . '/../lib/csv-importer/csv_importer.php' );
 
 // action function for above hook
 function dhp_add_pages() {
-    // Add a new submenu under Settings:
-    //add_options_page(__('DH Press Settings','dhp-menu'), __('dhp Settings','dhp-menu'), 'manage_options', 'dhp_settings', 'dhp_settings_page');
-
-    // Add a new top-level menu (ill-advised):
+    // Add a new top-level menu -- This is hooked into the custom post type (Projects, Markers, Maps)
     add_menu_page(__('DH Press','dhp-menu'), __('DH Press','dhp-menu'), 'manage_options', 'dhp-top-level-handle', 'dhp_toplevel_page', plugins_url( 'dhpress/images/dhpress-plugin-icon16.png' ) );
-
-    // Add a submenu to the custom top-level menu:
-    //add_submenu_page('dhp-top-level-handle', __('Map Library','dhp-menu'), __('Map Library','dhp-menu'), 'manage_options', 'map-library', 'dhp_sublevel_page');
-
-    // Add a second submenu to the custom top-level menu:
-    //add_submenu_page('dhp-top-level-handle', __('Icon Library','dhp-menu'), __('Icon Library','dhp-menu'), 'manage_options', 'icon-library', 'dhp_sublevel_page2');
-  
-    //add_submenu_page('dhp-top-level-handle', __('Category Manager','dhp-menu'), __('Category Manager','dhp-menu'), 'manage_options', 'category-manager', 'dhp_sublevel_page3');
-  
 }
 
 // mt_toplevel_page() displays the page content for the custom Test Toplevel menu
+// This is never actually called; it is replaced by logic elsewhere
 function dhp_toplevel_page() {
-    echo "<h2>" . __( 'Map Layer Library', 'dhp-menu' ) . "</h2>";
-	 echo "<p>" . __( 'Add map ids with descriptions here', 'dhp-menu' ) . "</p>";
 }
 
 

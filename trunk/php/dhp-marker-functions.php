@@ -34,7 +34,7 @@ function dhp_marker_init() {
     'rewrite' => true,
     'capability_type' => 'post',
     'has_archive' => true, 
-    'hierarchical' => true,
+    'hierarchical' => false,
     'menu_position' => null,
     'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions','custom-fields' )
   ); 

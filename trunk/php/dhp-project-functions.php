@@ -36,9 +36,11 @@ function dhp_project_init() {
     'query_var' => true,
     'rewrite' => array('slug' => 'dhp-projects','with_front' => FALSE),
     'capability_type' => 'page',
-    'has_archive' => true, 
-    'hierarchical' => true,
+    'has_archive' => true,
+    /* if we want to subclass project types in future (i.e., Entry Points), will need to set 'hierarchical' => true */
+    'hierarchical' => false,
     'menu_position' => null,
+    /* if hierarchical, then may want to add 'page-attributes' to supports */
     'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments','revisions', 'custom-fields' )
   ); 
   register_post_type('project',$args);
