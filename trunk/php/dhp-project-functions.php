@@ -1763,7 +1763,6 @@ function add_dhp_project_admin_scripts( $hook ) {
 			wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
-			wp_enqueue_style( 'dhp-font-awesome', plugins_url('/lib/font-awesome/css/font-awesome.min.css',  dirname(__FILE__) ));
 			//wp_enqueue_style( 'dhp-bootstrap-slider-style', plugins_url('/lib/bootstrap/css/slider.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
 			
@@ -1875,7 +1874,6 @@ function dhp_page_template( $page_template )
 
 		wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 		wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
-        wp_enqueue_style( 'dhp-font-awesome', plugins_url('/lib/font-awesome/css/font-awesome.min.css',  dirname(__FILE__) ));
         wp_enqueue_style( 'dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
 		wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 		wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));
@@ -1938,7 +1936,6 @@ function dhp_page_template( $page_template )
 
 		wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 		wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
-        wp_enqueue_style( 'dhp-font-awesome', plugins_url('/lib/font-awesome/css/font-awesome.min.css',  dirname(__FILE__) ));
 
 		wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 		wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));	
@@ -1995,7 +1992,6 @@ function dhp_tax_template( $page_template )
 	wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
 	wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 	wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
-    wp_enqueue_style( 'dhp-font-awesome', plugins_url('/lib/font-awesome/css/font-awesome.min.css',  dirname(__FILE__) ));
     wp_enqueue_script( 'soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
     wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
     wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));
