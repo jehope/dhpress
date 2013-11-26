@@ -235,11 +235,20 @@ function show_dhp_project_icons_box() {
 	//dhp_deploy_icons();
 	bdw_get_images();
 }
-// The Callback
+
+// show_dhp_project_settings_box()
+// PURPOSE:		Called by WP to create GUI HTML for editing Project (in admin panel)
+// ASSUMPTIONS:	Global $post is set to point to post for current project
+//				Global $dhp_project_settings_fields is set to array of ???
+// SIDE-FX:		Sets _PROJECT_ID_ global to ID of project post
+// TO DO:		Don't use _PROJECT_ID_ global; tried removing logic but didn't work!
+//				Put all HTML producing logic into special generalized function
+
 function show_dhp_project_settings_box() {
 
 	global $dhp_project_settings_fields, $post;
-	// define("_PROJECT_ID_", $post->ID);
+	define("_PROJECT_ID_", $post->ID);
+
 	// Load post id for project settings
 	echo '<input type="hidden" id="dhp-projectid" value="'.$post->ID.'"/>';
 	// Use nonce for verification
@@ -385,8 +394,9 @@ function createMetaValueArray($custom_name,$project_id){
 
 //create unique array of custom fields from the project
 function createUniqueProjectCustomFieldArray(){
-	global $post;
-	$project_id = $post->ID;
+	// global $post;
+	// $project_id = $post->ID;
+	$project_id = _PROJECT_ID_;
 	$project_custom_field_array = array();
 	$temp_project_custom_field_keys = get_post_custom_keys($project_id);
 
@@ -880,44 +890,33 @@ function create_custom_field_option_list($cf_array){
 }
 
 function print_new_bootstrap_html(){
-	global $dhp_custom_fields, $post;
+	// global $dhp_custom_fields, $post;
+	global $dhp_custom_fields;
 
-	$projectPage = get_page($post->ID);
+	// $projectPage = get_page($post->ID);
+	$projectPage = get_page($_PROJECT_ID_);
 	$projectTax_slug = $projectPage->post_name;
-	$dhp_custom_fields = createUniqueCustomFieldArray($post->ID);
+//	$dhp_custom_fields = createUniqueCustomFieldArray($post->ID);
+	$dhp_custom_fields = createUniqueCustomFieldArray(_PROJECT_ID_);
 	echo '<div class="new-bootstrap">
     <div class="row-fluid"> 	
     	<div class="span12">
         <div class="tabbable tabs-left">
           <ul class="nav nav-tabs">
-           <li class="active"><a href="#entry-point" data-toggle="tab">Entry Points</a></li>
+           <li class="active"><a href="#info" data-toggle="tab">Info</a></li>
            <li><a href="#motes" data-toggle="tab">Motes</a></li>
+           <li><a href="#entry-point" data-toggle="tab">Entry Points</a></li>
            <li><a href="#views" data-toggle="tab">Views</a></li>
             <a id="save-btn" type="button" class="btn" data-loading-text="Saving...">Save</a>
           </ul>
           <div class="tab-content">
-            <div id="entry-point" class="tab-pane fade in active">
-              <h4>Entry Points</h4>
-              <ul id="entryTabs" class="nav nav-tabs">
-                <li class="active"><a href="#home" data-toggle="tab">Home</a></li>           
-                <li class="dropdown  pull-right">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Create Entry Point<b class="caret"></b></a>
-                  <ul class="dropdown-menu">
-                    <li><a id="add-map" >Map</a></li>
-                    <li><a id="add-timeline" >Timeline</a></li>
-                    <li class="disabled"><a >Topic Cards</a></li>
-                    <li><a id="add-transcript" >A/V Transcript</a></li>
-                  </ul>
-                </li>
-              </ul>
-              <div id="entryTabContent" class="tab-content">
-                <div class="tab-pane fade in active" id="home">
-                	<p>Project ID: '.$post->ID.'</p>
-                	<p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=dhp_tax_'.$post->ID.'" >Category Manager</a></p>
-                  <p>Create entry points to the project using the right most tab above. </p>
-                </div>               
-              </div>
-            </div>
+
+          	<div id="info" class="tab-pane fade in active">
+              <h4>Project Info</h4>
+              <p>Project ID: '._PROJECT_ID_.'</p>
+              <p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=dhp_tax_'._PROJECT_ID_.'" >Category Manager</a></p>
+          	</div>
+
             <div id="motes" class="tab-pane fade in">
               <h4>Motes</h4>
               <p>Create relational containers for the data in the custom fields</p>
@@ -952,6 +951,28 @@ function print_new_bootstrap_html(){
               <div class="accordion" id="mote-list">                
               </div>              
             </div>
+
+            <div id="entry-point" class="tab-pane fade in">
+              <h4>Entry Points</h4>
+              <ul id="entryTabs" class="nav nav-tabs">
+                <li class="active"><a href="#home" data-toggle="tab">Home</a></li>           
+                <li class="dropdown  pull-right">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Create Entry Point<b class="caret"></b></a>
+                  <ul class="dropdown-menu">
+                    <li><a id="add-map" >Map</a></li>
+                    <li><a id="add-timeline" >Timeline</a></li>
+                    <li class="disabled"><a >Topic Cards</a></li>
+                    <li><a id="add-transcript" >A/V Transcript</a></li>
+                  </ul>
+                </li>
+              </ul>
+              <div id="entryTabContent" class="tab-content">
+                <div class="tab-pane fade in active" id="home">
+                  <p>Create entry points to the project using the right most tab above. </p>
+                </div>               
+              </div>
+            </div>
+
             <div id="views" class="tab-pane fade in">
               <h4>Views</h4>
               

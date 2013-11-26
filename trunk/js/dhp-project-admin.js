@@ -464,7 +464,7 @@ function buildEntryHtml(type,settings){
                       <ul class="layer-list">\
                         '+loadLayers(settings['layers'])+'\
                         </ul>\
-                    <button class="btn btn-success add-layer" type="button">Add</button>\
+                    <button class="btn btn-success add-layer" type="button">Add Layer</button>\
                     </div>\
                 </div>\
                 <div class="row-fluid vars">\
@@ -478,7 +478,7 @@ function buildEntryHtml(type,settings){
                         <ul class="legend-list">\
                         '+loadLegendList(settings['filter-data'])+'\
                         </ul>\
-                        <button class="btn btn-success add-legend" type="button">Add</button>\
+                        <button class="btn btn-success add-legend" type="button">Add Legend</button>\
                     </div>\
                 </div>';
   }
@@ -909,13 +909,13 @@ function loadLegendList(legendObject) {
 
 }
 function addLegend(selected, count){
-  legendButton = '<button class="btn btn-success load-legend" type="button">Load Legend</button>';
+  legendButton = '<button class="btn btn-success load-legend" type="button">Configure</button>';
   if(selected=='') {
     selected = '';
     
   }
   if(!count) {
-    legendButton = '<button class="btn btn-inverse create-legend" type="button">Create Legend</button><button class="btn btn-success load-legend hide" type="button">Load Legend</button>';
+    legendButton = '<button class="btn btn-inverse create-legend" type="button">Create</button><button class="btn btn-success load-legend hide" type="button">Configure</button>';
     tempcount = $('.legend-list li').length;
     console.log(tempcount)
     count = tempcount+1;
