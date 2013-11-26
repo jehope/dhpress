@@ -238,12 +238,12 @@ function show_dhp_project_icons_box() {
 // The Callback
 function show_dhp_project_settings_box() {
 
-global $dhp_project_settings_fields, $post;
-define("_PROJECT_ID_", $post->ID);
-// Load post id for project settings
-echo '<input type="hidden" id="dhp-projectid" value="'.$post->ID.'"/>';
-// Use nonce for verification
-echo '<input type="hidden" name="dhp_project_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
+	global $dhp_project_settings_fields, $post;
+	// define("_PROJECT_ID_", $post->ID);
+	// Load post id for project settings
+	echo '<input type="hidden" id="dhp-projectid" value="'.$post->ID.'"/>';
+	// Use nonce for verification
+	echo '<input type="hidden" name="dhp_project_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
 	//echo '<div id="map-divs"></div><button id="locate">Locate me!</button>';
 
 	// Begin the field table and loop
@@ -385,8 +385,8 @@ function createMetaValueArray($custom_name,$project_id){
 
 //create unique array of custom fields from the project
 function createUniqueProjectCustomFieldArray(){
-
-	$project_id = _PROJECT_ID_;
+	global $post;
+	$project_id = $post->ID;
 	$project_custom_field_array = array();
 	$temp_project_custom_field_keys = get_post_custom_keys($project_id);
 
@@ -880,10 +880,11 @@ function create_custom_field_option_list($cf_array){
 }
 
 function print_new_bootstrap_html(){
-	$projectPage = get_page(_PROJECT_ID_);
+	global $dhp_custom_fields, $post;
+
+	$projectPage = get_page($post->ID);
 	$projectTax_slug = $projectPage->post_name;
-	global $dhp_custom_fields;
-	$dhp_custom_fields = createUniqueCustomFieldArray(_PROJECT_ID_);
+	$dhp_custom_fields = createUniqueCustomFieldArray($post->ID);
 	echo '<div class="new-bootstrap">
     <div class="row-fluid"> 	
     	<div class="span12">
@@ -911,8 +912,8 @@ function print_new_bootstrap_html(){
               </ul>
               <div id="entryTabContent" class="tab-content">
                 <div class="tab-pane fade in active" id="home">
-                	<p>Project ID: '._PROJECT_ID_.'</p>
-                	<p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=dhp_tax_'._PROJECT_ID_.'" >Category Manager</a></p>
+                	<p>Project ID: '.$post->ID.'</p>
+                	<p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=dhp_tax_'.$post->ID.'" >Category Manager</a></p>
                   <p>Create entry points to the project using the right most tab above. </p>
                 </div>               
               </div>
