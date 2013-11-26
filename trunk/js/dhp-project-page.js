@@ -117,6 +117,10 @@ var context = {
         }
         var highParentI ='';
         if(cats) {
+            // console.log(feature.cluster[0].attributes.title);
+
+            if (feature.cluster[0].attributes.title.indexOf("pressing") > -1)
+                 console.log(feature);
             highParentI = getHighestParentColor(cats);            
         }
 
@@ -196,6 +200,7 @@ $('.dhp-nav .tips').click(function(){
 
 function createLookup(filter){
     catFilter = filter;
+    console.log(filter);
 
     var lookupData = filter.terms;
     var countTerms = Object.keys(lookupData).length; 
@@ -257,15 +262,22 @@ function getHighestParentColor(categories) {
 
     var countTerms = Object.keys(lookupData).length; 
     //console.log(categories)
+    // console.log(lookupData);
     var tempCats = categories;
     var countCats =  Object.keys(tempCats).length; 
 
     for(i=0;i<countTerms;i++) {
         for(j=0;j<countCats;j++) {
-            //console.log(lookupData[i]);
-            var tempName = lookupData[i].name;
+            // console.log(lookupData[i]);
+            // console.log(categories)
+            var tempName = lookupData[i].name.replace(/&amp;/, "&");
+  
+            var cleanCatName = tempCats[j];
+
+            if (tempName.indexOf("&") > -1)
+                console.log(tempName+': '+cleanCatName);
             
-            if (tempName==tempCats[j]) {
+            if (tempName==cleanCatName) {
                 if(lookupData[i].icon_url.substring(0,1) == '#') {
                     //console.log(tempName)
                     return lookupData[i].icon_url;
@@ -282,7 +294,7 @@ function getHighestParentColor(categories) {
                     var tempChildCount = Object.keys(lookupData[i].children).length;
                     
                     for (k=0;k<tempChildCount;k++) {
-                        if(tempChildren[k]==tempCats[j]) {
+                        if(tempChildren[k]==cleanCatName) {
                            if(lookupData[i].icon_url.substring(0,1) == '#') {
                                 //console.log(lookupData[i].children)
                                 //console.log(tempCats[j])
@@ -617,9 +629,12 @@ function findSelectedCats(single) {
             //console.log(tempSelCat+' :'+index)
             for(i=0;i<countTerms;i++) {
                 var tempFilter = catFilter.terms[i].name;
+                    // must encode ampersands
+                tempFilter = tempFilter.replace(/&amp;/, "&");
+                // console.log(catFilter.terms);
                 if(tempFilter==tempSelCat) {
                     selCatFilter[index] = catFilter.terms[i];
-                    
+                    // console.log(tempFilter, tempSelCat);
                 }
             }
         });
@@ -673,7 +688,7 @@ function onFeatureSelect(feature) {
         var tempModalHtml;
         if(feature.cluster){selectedFeature = feature.cluster[0];}
         else {selectedFeature = feature;}
-            console.log(dhpSettings)
+        // console.log(dhpSettings)
         tempModalHtml = $('<div><ul/></div>');
 
 		 var audioLink = selectedFeature.attributes.link;
@@ -958,6 +973,7 @@ function createMarkers(data,mLayer) {
     //}
     catFilter  = legends[0];//dataObject[0];
     console.log(featureObject)
+    console.log(catFilter)
     var countFeatures = Object.keys(featureObject.features).length; 
     for(i=0;i<countFeatures;i++) {
         var countCategories = Object.keys(featureObject.features[i].properties.categories).length; 

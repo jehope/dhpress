@@ -912,7 +912,7 @@ function print_new_bootstrap_html(){
               <div id="entryTabContent" class="tab-content">
                 <div class="tab-pane fade in active" id="home">
                 	<p>Project ID: '._PROJECT_ID_.'</p>
-                	<p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=dhp_tax_'._PROJECT_ID_.'" >Catagory Manager</a></p>
+                	<p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=dhp_tax_'._PROJECT_ID_.'" >Category Manager</a></p>
                   <p>Create entry points to the project using the right most tab above. </p>
                 </div>               
               </div>
