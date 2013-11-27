@@ -909,6 +909,7 @@ function print_new_bootstrap_html(){
            <li><a href="#views" data-toggle="tab">Views</a></li>
             <a id="save-btn" type="button" class="btn" data-loading-text="Saving...">Save</a>
           </ul>
+ 
           <div class="tab-content">
 
           	<div id="info" class="tab-pane fade in active">
