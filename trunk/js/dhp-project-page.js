@@ -119,8 +119,6 @@ var context = {
         if(cats) {
             // console.log(feature.cluster[0].attributes.title);
 
-            if (feature.cluster[0].attributes.title.indexOf("pressing") > -1)
-                 console.log(feature);
             highParentI = getHighestParentColor(cats);            
         }
 
@@ -200,7 +198,7 @@ $('.dhp-nav .tips').click(function(){
 
 function createLookup(filter){
     catFilter = filter;
-    console.log(filter);
+    // console.log(filter);
 
     var lookupData = filter.terms;
     var countTerms = Object.keys(lookupData).length; 
@@ -274,8 +272,8 @@ function getHighestParentColor(categories) {
   
             var cleanCatName = tempCats[j];
 
-            if (tempName.indexOf("&") > -1)
-                console.log(tempName+': '+cleanCatName);
+            // if (tempName.indexOf("&") > -1)
+            //     console.log(tempName+': '+cleanCatName);
             
             if (tempName==cleanCatName) {
                 if(lookupData[i].icon_url.substring(0,1) == '#') {
@@ -385,7 +383,7 @@ function createLegend(object) {
                     $(tempGroup).append('<div id="term-'+key+key2+'" class="accordion-body collapse"><div class="accordion-inner" /></div>');
                 }
                 _.map(val2.children, function(val3,key3) {
-                    console.log('Children Terms: '+val3)
+                    // console.log('Children Terms: '+val3)
                     $('.accordion-inner', tempGroup).append(val3+'<br/>');
                 });
                 $('#accordion-'+key, newLegendsHtml).append('<div class="accordion-group">'+$(tempGroup).html()+'</div>')
