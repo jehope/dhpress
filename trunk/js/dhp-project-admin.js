@@ -27,9 +27,9 @@ $('.dhp_icon').click(function() {
 		assignListeners(this);
 	}		
 });
-$(window).resize(function() {
-	resizeTB();
- });
+// $(window).resize(function() {
+// 	resizeTB();
+//  });
 $('#publish').popover({
     title:'Project requires save',
     content:'Don\'t forget to save your project(red button on the left).',
@@ -1492,26 +1492,24 @@ $('#taxModal').remove();
 			$('#taxModal .modal-body .icons a').unbind('click');
 		});
 	});
-	
-
 }
-function resizeTB() {
-	if($('#taxModal .modal-body').length>0) {
+// function resizeTB() {
+// 	if($('#taxModal .modal-body').length>0) {
 		
-		var div = document.getElementById('TB_ajaxContent');
-		var hasVerticalScrollbar = div.scrollHeight>div.clientHeight;
-		var boxWidth = $('#TB_window').width() -30;
-		var boxHeight = $('#TB_window').height() -42;
-		if(hasVerticalScrollbar) {
-			$('.cat-list').width('385px');
-		}
-		else {
-			$('.cat-list').width('400px');
-		}
+// 		var div = document.getElementById('TB_ajaxContent');
+// 		var hasVerticalScrollbar = div.scrollHeight>div.clientHeight;
+// 		var boxWidth = $('#TB_window').width() -30;
+// 		var boxHeight = $('#TB_window').height() -42;
+// 		if(hasVerticalScrollbar) {
+// 			$('.cat-list').width('385px');
+// 		}
+// 		else {
+// 			$('.cat-list').width('400px');
+// 		}
 		
-		$('#taxModal .modal-body').css({'width': boxWidth,'height':boxHeight});
-	}
-}
+// 		$('#taxModal .modal-body').css({'width': boxWidth,'height':boxHeight});
+// 	}
+// }
 function saveArrayTree(){
 	//var arraied = $('ol.sortable').nestedSortable('toHierarchy');
 	//arraied = dump(arraied);
