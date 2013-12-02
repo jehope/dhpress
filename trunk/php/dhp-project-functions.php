@@ -799,7 +799,8 @@ function dhp_get_group_feed($tax_name,$term_name)
 //			?? describe the format ??
 // INPUT:	$project_id
 
-function createMarkerArray($project_id) {
+function createMarkerArray($project_id)
+{
 	//loop through all markers in project -add to array
 	$markerArray = array();
 	$json_Object = array();
@@ -1003,12 +1004,14 @@ function createMarkerArray($project_id) {
 	 //$result = array_unique($array)
 	return $json_Object;
 	//return $term_icons;
-}
+} // createMarkerArray()
+
 
 // dateFormatSplit($date_range)
-// PURPOSE:	Parse date range into the two 
+// PURPOSE:	Parse date range into two ??
 // INPUT:	Date as String in format ??
 // RETURNS: Array where [0] is From-Date and [1] is To-Date ??
+
 function dateFormatSplit($date_range)
 {
 	$posA = strpos($date_range, "~");
@@ -1029,7 +1032,13 @@ function dateFormatSplit($date_range)
 } // dateFormatSplit()
 
 
-function createTimelineArray($project_id) {
+// createTimelineArray($project_id)
+// PURPOSE: $project_id: ??
+// INPUT:	ID of project
+// TO DO:	Remove hard-coded constants!
+
+function createTimelineArray($project_id)
+{
 	//loop through all markers in project -add to array
 	$timelineArray = array();
 	$project_object = get_post($project_id);
@@ -1084,18 +1093,31 @@ function createTimelineArray($project_id) {
 	$json_string .= ']}}';	
 	 //$result = array_unique($array)
 	return $json_string;
-}
+} // createTimelineArray()
 
-//used in print_new_bootstrap_html()
-function create_custom_field_option_list($cf_array){
+
+// create_custom_field_option_list($cf_array)
+// PURPOSE:	Create HTML for option buttons for listing custom fields in print_new_bootstrap_html()
+// INPUT:	$cf_array = list of custom fields
+// RETURNS:	String containing HTML
+
+function create_custom_field_option_list($cf_array)
+{
 	$optionHtml .='<option value="">--</option><option value="the_content">Post Content</option>';
 	foreach ($cf_array as $key => $value) {
 		$optionHtml .='<option value="'.$value.'">'.$value.'</option>';
 	}
 	return $optionHtml;
-}
+} // create_custom_field_option_list()
 
-function print_new_bootstrap_html(){
+
+// print_new_bootstrap_html()
+// PURPOSE:	Create the HTML for DHP admin panel for editing a Project
+// ASSUMES:	_PROJECT_ID_ global has been set
+// TO DO:	Remove use of _PROJECT_ID_  global !
+
+function print_new_bootstrap_html()
+{
 	// global $dhp_custom_fields, $post;
 	global $dhp_custom_fields;
 
@@ -1247,9 +1269,16 @@ function print_new_bootstrap_html(){
 <!--New Custom Field Modal -->
 <div id="projectModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 </div>';
-}
+} // print_new_bootstrap_html()
 
-function categoryString($cats){
+
+// categoryString($cats)
+// PURPOSE:	Form list of category names
+// INPUT:	$cats = array of category names
+// RETURNS: Concatenated string of category names separated by comma
+
+function categoryString($cats)
+{
 	$catString;
 
 	foreach ($catArray as $key => $cat) {
@@ -1261,9 +1290,16 @@ function categoryString($cats){
 		} 
 	}
 	return $catString;
-}
-function createParentTerm($term_name,$dhp_tax_name){
+} // categoryString()
 
+
+// createParentTerm($term_name,$dhp_tax_name)
+// PURPOSE:	Ensure WP database has term within taxonomy (may insert or update)
+// INPUT:	$term_name = name of term (?? must be HTML-encoded)
+//			$dhp_tax_name = name of taxonomy (?? in form)
+
+function createParentTerm($term_name, $dhp_tax_name)
+{
 	if(term_exists( $term_name, $dhp_tax_name )) {
 			$temp_term = get_term_by('name', $term_name, $dhp_tax_name);
 			$term_id = $temp_term->id;			
@@ -1273,20 +1309,35 @@ function createParentTerm($term_name,$dhp_tax_name){
 		wp_insert_term( $term_name, $dhp_tax_name );
 	}
 
-}
-//ajax functions
-function dhpSaveProjectSettings(){
+} // createParentTerm()
+
+
+// ====================== AJAX Functions ======================
+
+add_action( 'wp_ajax_dhpSaveProjectSettings', 'dhpSaveProjectSettings' );
+
+// dhpSaveProjectSettings()
+// PURPOSE:	Called by JS code on page to save the settings (constructed by JS) for the Project
+// ASSUMES:	Project ID encoded in string
+
+function dhpSaveProjectSettings()
+{
 	$settings =  $_POST['settings'];
 	$dhp_projectID = $_POST['project'];
 
 	update_post_meta($dhp_projectID, 'project_settings', $settings);
 
+		// Ajax call must terminate with "die"
 	die('working... '. $settings);
-}
-add_action( 'wp_ajax_dhpSaveProjectSettings', 'dhpSaveProjectSettings' );
+} // dhpSaveProjectSettings()
 
 
-function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name){ 
+// dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
+// PURPOSE:	??
+// RETURNS:	??
+
+function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
+{ 
 	$term_counts = array_count_values($mArray);	
 
 	$parent_term = get_term_by('name', $mote_name, $dhp_tax_name);
@@ -1337,12 +1388,20 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name){
 	}
 
 	return $terms_loaded;
-}
+} // dhpUpdateTaxonomy()
 
-//create arrays of custom field values associated with a project
-function createMoteValueArrays($custom_name, $delim, $project_id){
 
-	//loop through all markers in project -add to moteArray
+// createMoteValueArrays($custom_name, $delim, $project_id)
+// PURPOSE: Create arrays of custom field values associated with a project
+// INPUT:	$custom_name = name of the custom field (specified by mote) for which we are creating values
+//			$delim = character separator for values in field (if any), or null if none
+//			$project_id = ID of the Project
+// RETURNS:	Array of unique values for the custom field
+// TO DO:	A more efficient way of doing this? Sorted array?
+
+function createMoteValueArrays($custom_name, $delim, $project_id)
+{
+		// Loop through all markers in project
 	$moteArray = array();
 
 	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
@@ -1352,7 +1411,10 @@ function createMoteValueArrays($custom_name, $delim, $project_id){
 
 		$marker_id = get_the_ID();
 		//$temp_post = get_post($marker_id);
+
+			// Get the value in this marker for the custom field
 		$tempMoteValue = get_post_meta($marker_id, $custom_name, true);
+			// ?? is this needed?
 		$tempMoteArray = array();
 		if($delim) {
 			$tempMoteArray = split($delim,$tempMoteValue);
@@ -1365,27 +1427,25 @@ function createMoteValueArrays($custom_name, $delim, $project_id){
    		 	array_push($moteArray,$value);
 		}
 		
-		
 	endwhile;
 
 	$result = array_unique($moteArray);
 
 	return $result;
-}
-//find if a term exists under a specific parent. Create it if it doesn't
-function addOrUpdateTermInTax($term_name, $tax_name, $term_parent) {
-	if(term_exists( $term_name, $tax_name, $term_parent )) {
+} // createMoteValueArrays()
 
-	}
-	else {
-		//create term
-		wp_insert_term( $term, $taxonomy, $args = array() );
-	}
 
-}
+// creates terms in taxonomy when a legend is created
+add_action( 'wp_ajax_dhpCreateLegendTax', 'dhpCreateLegendTax' );
 
-function dhpCreateLegendTax(){ 
+// dhpCreateLegendTax()
+// PURPOSE:	Handle Ajax call to create a taxonomy when a Legend is created
+// INPUT:	Through $_POST['mote_name'] array: ['type', 'delim', 'custom-fields', 'name']
+//			$_POST['project'] = ID of Project
+// RETURN:	Array of unique values/tax-terms ??
 
+function dhpCreateLegendTax()
+{ 
 	$mote_values = array();
 	$mote = $_POST['mote_name'];
 	$mote_type = $mote['type'];
@@ -1411,19 +1471,31 @@ function dhpCreateLegendTax(){
 	//die(json_encode($mArray));
 	die(json_encode($terms_loaded));
 	//die(json_encode($exclude_string));
-}
-//creates terms in taxonomy when a legend is created
-add_action( 'wp_ajax_dhpCreateLegendTax', 'dhpCreateLegendTax' );
+} // dhpCreateLegendTax()
 
 
-function dhpGetMoteValues(){
+//Lists all the terms in taxonomies(already created)
+add_action( 'wp_ajax_dhpGetMoteValues', 'dhpGetMoteValues' );
+
+// dhpGetMoteValues()
+// PURPOSE:	Handle Ajax call to get the unique values for a mote and associate these as
+//			taxonomy terms with each marker ??
+// INPUT:	$_POST['project'] global is ID of Project
+//			$_POST['mote_name'] global is Hash describing mote
+// RETURNS:	??
+// TO DO:	Isn't there a lot of duplicate code in here?
+
+function dhpGetMoteValues()
+{
 	$dhp_projectID = $_POST['project'];
 	$mote = $_POST['mote_name'];
 	$dhp_tax_name = 'dhp_tax_'.$dhp_projectID;
-	$debugArray = array();
-	//run a loop to populate terms in posts
+	// $debugArray = array();
+
+		// Loop through markers for this Project, getting values for mote in each marker
+		//	and associating the marker with the taxonomic term
 	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$dhp_projectID, 'posts_per_page' => -1 );
-	
+
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$marker_id = get_the_ID();
@@ -1444,11 +1516,13 @@ function dhpGetMoteValues(){
 		wp_set_post_terms( $marker_id, $theseTerms, &$dhp_tax_name, true );
 	endwhile;
 
+		// Find all of the terms derived from $mote['name'] in the Project's taxonomy ??
 	$parent_term = get_term_by('name', $mote['name'], $dhp_tax_name);
 	$parent_id = $parent_term->term_id;
 	$args = array('parent' => $parent_id);
-
 	$parent_terms_to_exclude = get_terms($dhp_tax_name, 'parent=0&orderby=term_group&hide_empty=0');
+
+		// Create comma-separated string listing terms derived from other motes ??
 	$exclude_string;
 	$exclude_count = 0;
 	foreach ( $parent_terms_to_exclude as $term ) {
@@ -1470,8 +1544,6 @@ function dhpGetMoteValues(){
  	//$dhp_top_term = get_term_by('name', $term_name, $dhp_tax_name);
  	if ( $t_count > 0 ){
    		foreach ( $terms_loaded as $term ) {
-  	    	
-
   	    	$term_url = get_term_meta($term->term_id, 'icon_url', true);
 			//$term .= '"icon_url" : "'.$term_url.'"';
 
@@ -1482,46 +1554,81 @@ function dhpGetMoteValues(){
 
 	die(json_encode($terms_loaded));
 	//die(json_encode($dhp_tax_name));
-	
-}
-//Lists all the terms in taxonomies(already created)
-add_action( 'wp_ajax_dhpGetMoteValues', 'dhpGetMoteValues' );
+} // dhpGetMoteValues()
 
-function dhpGetMarkers(){
 
+// Enable for both editing and viewing
+
+add_action('wp_ajax_dhpGetMarkers', 'dhpGetMarkers' );
+add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkers');
+
+// dhpGetMarkers()
+// PURPOSE:	Handle Ajax call to get all markers for a Project
+// INPUT:	$_POST['project'] is ID of Project
+// RETURNS:	JSON object of array of marker values
+
+function dhpGetMarkers()
+{
 	$dhp_project = $_POST['project'];
 	$mArray = createMarkerArray($dhp_project);
 	
 	die(json_encode($mArray));
-}
-//show on both front and backend
-add_action( 'wp_ajax_dhpGetMarkers', 'dhpGetMarkers' );
-add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkers');
+} // dhpGetMarkers()
 
-function dhpGetTimeline(){
 
+// Enable for both editing and viewing
+
+add_action( 'wp_ajax_dhpGetTimeline', 'dhpGetTimeline' );
+add_action( 'wp_ajax_nopriv_dhpGetTimeline', 'dhpGetTimeline' );
+
+// dhpGetTimeline()
+// PURPOSE: Handle Ajax call to compute Timeline for Project
+// INPUT:	$_POST['project'] is ID of Project
+// RETURNS:	Array of timeline data
+// TO DO:	Not fully implemented yet
+
+function dhpGetTimeline()
+{
 	$dhp_project = $_POST['project'];
 	$mArray = createTimelineArray($dhp_project);
 	
 	die(json_encode($mArray));
-}
-//show on both front and backend
-add_action( 'wp_ajax_dhpGetTimeline', 'dhpGetTimeline' );
-add_action( 'wp_ajax_nopriv_dhpGetTimeline', 'dhpGetTimeline' );
+} // dhpGetTimeline()
 
-function dhpGetMoteContent(){
+
+// Enable for both editing and viewing
+
+add_action( 'wp_ajax_dhpGetMoteContent', 'dhpGetMoteContent' );
+add_action('wp_ajax_nopriv_dhpGetMoteContent', 'dhpGetMoteContent');
+
+// dhpGetMoteContent()
+// PURPOSE: Handle Ajax call to fetch the Project-specific data for a specific marker
+// INPUT:	$_POST['post'] = ID of marker post
+//			$_POST['field_names'] = array of names of custom fields
+// RETURNS:	JSON object of marker data
+
+function dhpGetMoteContent()
+{
 	$dhp_post_id = $_POST['post'];
 	$dhp_post_field = $_POST['field_names'];
 
 	$post_meta_content = get_post_meta($dhp_post_id,$dhp_post_field,true);
 	die(json_encode($post_meta_content));
-}
-add_action( 'wp_ajax_dhpGetMoteContent', 'dhpGetMoteContent' );
-add_action('wp_ajax_nopriv_dhpGetMoteContent', 'dhpGetMoteContent');
+} // dhpGetMoteContent()
 
+// Enable for both editing and viewing
 
-function getTranscriptClip($tran,$clip){
+add_action( 'wp_ajax_dhpGetTranscriptClip', 'dhpGetTranscriptClip' );
+add_action('wp_ajax_nopriv_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 
+// getTranscriptClip($tran,$clip)
+// PURPOSE:	??
+// INPUT:	$tran = ??
+//			$clip = String containing from-end time of segment
+// RETURNS:	??
+
+function getTranscriptClip($tran,$clip)
+{
 	$clipArray = split("-", $clip);
 	$clipStart = strpos($tran, $clipArray[0]);
 	$clipEnd = mb_strpos($tran, $clipArray[1]);
@@ -1534,30 +1641,59 @@ function getTranscriptClip($tran,$clip){
 	}
 	//return $clipArray[0];
 	return $returnClip;
-}
-function loadTranscriptFromFile($fileUrl) {
-	//'http://msc.renci.org/dev/wp-content/uploads/2012/11/Ambler-Susan.mp3.qt.txt'
+} // getTranscriptClip()
+
+
+// loadTranscriptFromFile($fileUrl)
+// PURPOSE:	Load the contents of a transcript file
+// INPUT:	$fileUrl = the URL to the file
+// RETURNS:	The data in file, if successful
+// TO DO:	Handle i/o errors
+
+function loadTranscriptFromFile($fileUrl)
+{
 	$content = @file_get_contents($fileUrl);
 	if ($content === false) { /* failure */ } 
 	
 	else { /* success */ 
 		return $content;
 	}
-}
-function dhpGetTranscriptClip() {
+} // loadTranscriptFromFile()
+
+// dhpGetTranscriptClip()
+// PURPOSE: 
+// INPUT:	$_POST['project'] = ID of Project ??
+//			$_POST['transcript'] = URL to file containing contents of transcript
+//			$_POST['timecode'] = ??
+// RETURNS:	??
+
+function dhpGetTranscriptClip()
+{
 	$dhp_project = $_POST['project'];
 	$dhp_transcript_field = $_POST['transcript'];
 	$dhp_clip = $_POST['timecode'];
+		// Why is Project post loaded? Does this have a needed side-effect?
 	$projectObj = get_post($dhp_project);
 	//$dhp_transcript = get_post_meta( $dhp_project, $dhp_project_field, true);
 	$dhp_transcript = loadTranscriptFromFile($dhp_transcript_field);
 	$dhp_transcript_clip = getTranscriptClip($dhp_transcript,$dhp_clip);
 	die(json_encode($dhp_transcript_clip));
-}
-add_action( 'wp_ajax_dhpGetTranscriptClip', 'dhpGetTranscriptClip' );
-add_action('wp_ajax_nopriv_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
-function dhpGetTranscript(){
+} // dhpGetTranscriptClip()
 
+// Enable for both editing and viewing
+
+add_action( 'wp_ajax_dhpGetTranscript', 'dhpGetTranscript' );
+add_action( 'wp_ajax_nopriv_dhpGetTranscript', 'dhpGetTranscript');
+
+// dhpGetTranscript()
+// PURPOSE: ??
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['transcript'] = name of custom field in marker that will contain data about transcription ??
+//			$_POST['tax_view'] = ??
+// RETURNS:	??
+
+function dhpGetTranscript()
+{
 	$dhp_project = $_POST['project'];
 	$dhp_project_field = $_POST['transcript'];
 	//$dhp_clip = $_POST['timecode'];
@@ -1600,12 +1736,19 @@ function dhpGetTranscript(){
 	$dhp_object['transcript'] = $dhp_transcript;
 	
 	die(json_encode($dhp_object));	
-}
-//show on both front and backend
-add_action( 'wp_ajax_dhpGetTranscript', 'dhpGetTranscript' );
-add_action( 'wp_ajax_nopriv_dhpGetTranscript', 'dhpGetTranscript');
+} // dhpGetTranscript()
 
-function dhpAddCustomField(){
+
+add_action( 'wp_ajax_dhpAddCustomField', 'dhpAddCustomField' );
+
+// dhpAddCustomField()
+// PURPOSE:	Handle Ajax call to create new custom field for Project
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['field_name'] = name of new custom field to add
+//			$_POST['field_value'] = default value to set in all markers belonging to Project ??
+
+function dhpAddCustomField()
+{
 	$dhp_project = $_POST['project'];
 	$dhp_custom_field_name = $_POST['field_name'];
 	$dhp_custom_field_value = $_POST['field_value'];
@@ -1620,19 +1763,27 @@ function dhpAddCustomField(){
 	endwhile;
 	
 	die();
-}
-add_action( 'wp_ajax_dhpAddCustomField', 'dhpAddCustomField' );
+} // dhpAddCustomField()
 
-/**
- * [dhpCreateCustomFieldFilter description]
- * @return [type] [description]
- */
-function dhpCreateCustomFieldFilter(){
-	$dhp_project 				= $_POST['project'];
+
+add_action( 'wp_ajax_dhpCreateCustomFieldFilter', 'dhpCreateCustomFieldFilter' );
+
+// dhpCreateCustomFieldFilter()
+// PURPOSE: Handle Ajax call to add the value of custom fields that match "filter condition" ??
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['field_name'] = name of custom field
+//			$_POST['field_value'] = value to set of custom field
+//			$_POST['filter_key'] = name of field on which to match
+//			$_POST['filter_value'] = value of field to match
+// TO DO:	Rename function! dhpSetFieldByCustomFieldFilter?
+
+function dhpCreateCustomFieldFilter()
+{
+	$dhp_project 			= $_POST['project'];
 	$dhp_custom_field_name 	= $_POST['field_name'];
 	$dhp_custom_field_value	= $_POST['field_value'];
 	$dhp_custom_filter_key 	= $_POST['filter_key'];
-	$dhp_custom_filter_value 	= $_POST['filter_value'];
+	$dhp_custom_filter_value = $_POST['filter_value'];
 
 	$args = array( 
 		'post_type' => 'dhp-markers', 
@@ -1659,15 +1810,30 @@ function dhpCreateCustomFieldFilter(){
 	endwhile;
 	
 	die();
-}
-add_action( 'wp_ajax_dhpCreateCustomFieldFilter', 'dhpCreateCustomFieldFilter' );
+} // dhpCreateCustomFieldFilter()
 
-function dhpUpdateCustomFieldFilter(){
+
+add_action('wp_ajax_dhpUpdateCustomFieldFilter', 'dhpUpdateCustomFieldFilter');
+
+// dhpUpdateCustomFieldFilter()
+// PURPOSE: To modify the value of a field (based on string replace) in all of a Project's Markers if
+//			it satisfies query condition and currently matches a certain value
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['field_name'] = name of custom field we wish to change
+//			$_POST['current_value'] = custom field must have this field to be changed
+//			$_POST['new_value'] = ??
+//			$_POST['filter_key'] = custom field upon which search/filter is based
+//			$_POST['filter_value'] = value that must be in custom field
+// RETURNS:	Number of markers whose values were changed
+// TO DO:	Reduce redundant code with other nearby functions
+
+function dhpUpdateCustomFieldFilter()
+{
 	$dhp_project 				= $_POST['project'];
-	$dhp_custom_field_name 	= $_POST['field_name'];
+	$dhp_custom_field_name		= $_POST['field_name'];
 	$dhp_custom_current_value	= $_POST['current_value'];
 	$dhp_custom_new_value		= $_POST['new_value'];
-	$dhp_custom_filter_key 	= $_POST['filter_key'];
+	$dhp_custom_filter_key		= $_POST['filter_key'];
 	$dhp_custom_filter_value 	= $_POST['filter_value'];
 
 	$args = array( 
@@ -1709,14 +1875,28 @@ function dhpUpdateCustomFieldFilter(){
 	endwhile;
 	
 	die(json_encode($dhp_count));
-}
-add_action( 'wp_ajax_dhpUpdateCustomFieldFilter', 'dhpUpdateCustomFieldFilter' );
+} // dhpUpdateCustomFieldFilter()
 
-function dhpReplaceCustomFieldFilter(){
+
+add_action( 'wp_ajax_dhpReplaceCustomFieldFilter', 'dhpReplaceCustomFieldFilter' );
+
+// dhpReplaceCustomFieldFilter()
+// PURPOSE: To replace the value of a field in all of a Project's Markers if
+//			it satisfies query condition and currently matches a certain value
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['field_name'] = name of custom field we wish to change
+//			$_POST['new_value'] = value to 
+//			$_POST['filter_key'] = custom field upon which search/filter is based
+//			$_POST['filter_value'] = value that must be in custom field
+// RETURNS:	Number of markers whose values were changed
+// TO DO:	Reduce redundant code with other nearby functions
+
+function dhpReplaceCustomFieldFilter()
+{
 	$dhp_project 				= $_POST['project'];
-	$dhp_custom_field_name 	= $_POST['field_name'];
+	$dhp_custom_field_name		= $_POST['field_name'];
 	$dhp_custom_new_value		= $_POST['new_value'];
-	$dhp_custom_filter_key 	= $_POST['filter_key'];
+	$dhp_custom_filter_key		= $_POST['filter_key'];
 	$dhp_custom_filter_value 	= $_POST['filter_value'];
 
 	$args = array( 
@@ -1757,19 +1937,41 @@ function dhpReplaceCustomFieldFilter(){
 	endwhile;
 	
 	die(json_encode($dhp_count));
-}
-add_action( 'wp_ajax_dhpReplaceCustomFieldFilter', 'dhpReplaceCustomFieldFilter' );
+} // dhpReplaceCustomFieldFilter()
 
-function dhpGetFieldValues() {
-	$dhp_project 				= $_POST['project'];
+
+add_action( 'wp_ajax_dhpGetFieldValues', 'dhpGetFieldValues' );
+
+// dhpGetFieldValues()
+// PURPOSE: Handle Ajax call to get values for custom field
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['field_name'] = name of custom field
+// RETURNS:	JSON Object of array of all unique values for the field in the project
+// TO DO:	Rename function
+
+function dhpGetFieldValues()
+{
+	$dhp_project 			= $_POST['project'];
 	$dhp_custom_field_name 	= $_POST['field_name'];
 	$tempValues = createMetaValueArray($dhp_custom_field_name, $dhp_project);
 
 	die(json_encode($tempValues));
-}
-add_action( 'wp_ajax_dhpGetFieldValues', 'dhpGetFieldValues' );
+} // dhpGetFieldValues()
 
-function dhpFindReplaceCustomField(){
+
+add_action( 'wp_ajax_dhpFindReplaceCustomField', 'dhpFindReplaceCustomField' );
+
+// dhpFindReplaceCustomField()
+// PURPOSE: Handle Ajax function to do string replace on matching values in all custom fields in Project
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['field_name'] = name of custom field
+//			$_POST['find_value'] = field must match this value to be replaced
+//			$_POST['replace_value'] = value to use for string replace in field
+// RETURNS:	Number of markers whose values were changed
+// TO DO:	Reduce redundant code!
+
+function dhpFindReplaceCustomField()
+{
 	$dhp_project = $_POST['project'];
 	$dhp_custom_field_name = $_POST['field_name'];
 	$dhp_custom_find_value = $_POST['find_value'];
@@ -1800,10 +2002,18 @@ function dhpFindReplaceCustomField(){
 	endwhile;
 	
 	die(json_encode($dhp_count));
-}
-add_action( 'wp_ajax_dhpFindReplaceCustomField', 'dhpFindReplaceCustomField' );
+} // dhpFindReplaceCustomField()
 
-function dhpDeleteCustomField(){
+
+add_action( 'wp_ajax_dhpDeleteCustomField', 'dhpDeleteCustomField' );
+
+// dhpDeleteCustomField()
+// PURPOSE:	Handle Ajax query to remove specific custom field from all markers of a Project
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['field_name'] = name of custom field
+
+function dhpDeleteCustomField()
+{
 	$dhp_project = $_POST['project'];
 	$dhp_custom_field_name = $_POST['field_name'];
 	
@@ -1818,15 +2028,24 @@ function dhpDeleteCustomField(){
 	endwhile;
 	
 	die();
-}
-add_action( 'wp_ajax_dhpDeleteCustomField', 'dhpDeleteCustomField' );
+} // dhpDeleteCustomField()
 
 
-function dhpCreateTaxTerms(){
+add_action( 'wp_ajax_dhpCreateTaxTerms', 'dhpCreateTaxTerms' );
+
+// dhpCreateTaxTerms()
+// PURPOSE:	Handle Ajax function to create all terms associated with all of the values defined
+//			by a mote in a Project
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['mote_name'] = name of mote
+//			$_POST['terms'] = ??
+// RETURNS:	JSON Object of ??
+
+function dhpCreateTaxTerms()
+{
 	$mote_parent = $_POST['mote_name'];
 	$dhp_projectID = $_POST['project'];
 	$dhp_project_terms = str_replace('\\', '', $_POST['terms']);
-
 
 	$dhp_project_terms1 = json_decode($dhp_project_terms);
 	$termDetailsArray = array('parentTerm'=>$mote_parent, 'projectID' => $dhp_projectID, 'termsArray'=>$dhp_project_terms1);
@@ -1834,10 +2053,18 @@ function dhpCreateTaxTerms(){
 	$newArgs = loopTermHeirarchy($termDetailsArray);
 
 	die(json_encode($newArgs));
-}
-add_action( 'wp_ajax_dhpCreateTaxTerms', 'dhpCreateTaxTerms' );
+} // dhpCreateTaxTerms()
 
-function loopTermHeirarchy($argArray) {
+
+// loopTermHeirarchy($argArray)
+// PURPOSE: ??
+// INPUT:	$argArray['parentTerm'] = name of parent mote
+//			$argArray['projectID'] = ID of Project
+//			$argArray['termsArray'] = array of taxonomy terms
+// RETURNS:	Hash: ['parentTerm'] = $mote_parent, ['projectID'], ['termsArray'] = array of taxonomy terms, ['count'] = size of terms array
+
+function loopTermHeirarchy($argArray)
+{
 	$mote_parent = $argArray['parentTerm'];
 	//convert mote_parent to id
 	
@@ -1848,6 +2075,7 @@ function loopTermHeirarchy($argArray) {
 	$myCount = count($dhp_project_terms);
 
 	foreach ($dhp_project_terms as $term) {
+			// ?? what is going on here with the ->{''} ??
 		$term_name = $term->{'name'};
 		$parent_term_id = $term->{'parent'};
 		$term_id = $term->{'term_id'};	
@@ -1870,14 +2098,29 @@ function loopTermHeirarchy($argArray) {
 	}
 	$oldArgs = array('parentTerm'=>$mote_parent, 'projectID' => $argArray['projectID'], 'termsArray'=>$dhp_project_terms, 'count'=> $myCount);
 	return $oldArgs;
-}
-function dhpCreateTermInTax(){
-	$dhp_projectID = $_POST['project'];
-	$dhp_term_name = $_POST['term_name'];
-	$parent_term_name = $_POST['parent_term_name'];
+} // loopTermHeirarchy()
+
+
+add_action( 'wp_ajax_dhpCreateTermInTax', 'dhpCreateTermInTax' );
+
+// dhpCreateTermInTax()
+// PURPOSE:	??
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['term_name'] = name of taxonomy term to add
+//			$_POST['parent_term_name'] = name of parent term under which it should be added
+// RETURNS:	JSON Object describing new term
+// TO DO:	Better error handling?
+
+function dhpCreateTermInTax()
+{
+	$dhp_projectID 		= $_POST['project'];
+	$dhp_term_name		= $_POST['term_name'];
+	$parent_term_name	= $_POST['parent_term_name'];
 
 	$dhp_tax_name = 'dhp_tax_'.$dhp_projectID;
 	$parent_term = term_exists( $parent_term_name, $dhp_tax_name );
+		// TO DO: Check and handle non-existing term?
+
 	$parent_term_id = $parent_term['term_id'];
 	$args = array( 'parent' => $parent_term_id );
 	//create new term
@@ -1885,10 +2128,19 @@ function dhpCreateTermInTax(){
 	$newTerm = get_term_by('name', $dhp_term_name, $dhp_tax_name);
 
 	die(json_encode($newTerm));
-}
-add_action( 'wp_ajax_dhpCreateTermInTax', 'dhpCreateTermInTax' );
+} // dhpCreateTermInTax()
 
-function dhpDeleteTerms(){
+
+add_action( 'wp_ajax_dhpDeleteTerms', 'dhpDeleteTerms' );
+
+// dhpDeleteTerms()
+// PURPOSE:	Delete taxonomic terms in Project and all terms derived from it (as parent)
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['term_name'] = name of taxonomy term to delete
+// RETURNS:	Array of all children that were deleted
+
+function dhpDeleteTerms()
+{
 	$dhp_projectID = $_POST['project'];
 	$dhp_term_name = $_POST['term_name'];
 	$dhp_project = get_post($dhp_projectID);
@@ -1903,26 +2155,39 @@ function dhpDeleteTerms(){
 		wp_delete_term($delete_term, $dhp_tax);
 	}
 	wp_delete_term($dhp_delete_parent_id, $dhp_tax);
-	
-	
+
 	die(json_encode($dhp_delete_children));
-}
-add_action( 'wp_ajax_dhpDeleteTerms', 'dhpDeleteTerms' );
-function dhpGetCustomFields(){
-	$dhp_projectID = $_POST['project'];
-	
+} // dhpDeleteTerms()
+
+
+add_action( 'wp_ajax_dhpGetCustomFields', 'dhpGetCustomFields' );
+
+// dhpGetCustomFields()
+// PURPOSE:	Handle Ajax call to retrieve all custom fields defined for a Project
+// INPUT:	$_POST['project'] = ID of Project
+// RETURNS: JSON Object of array of all custom fields
+
+function dhpGetCustomFields()
+{
+	$dhp_projectID = $_POST['project'];	
 	
 	$dhp_custom_fields = createUniqueCustomFieldArray($dhp_projectID);
 	die(json_encode($dhp_custom_fields));
-}
-add_action( 'wp_ajax_dhpGetCustomFields', 'dhpGetCustomFields' );
-
-//getTaxObject()
+} // dhpGetCustomFields()
 
 
-// Restore revision
-function dhp_project_restore_revision( $post_id, $revision_id ) {
+add_action( 'wp_restore_post_revision', 'dhp_project_restore_revision', 10, 2 );
+
+// dhp_project_restore_revision( $post_id, $revision_id )
+// PURPOSE: Handles ??
+// INPUT:	$post_id = ID of original post ??
+//			$revision_id = ID of revised post ??
+// ASSUMES:	$dhp_project_settings_fields global is set
+
+function dhp_project_restore_revision( $post_id, $revision_id )
+{
 	global $dhp_project_settings_fields;
+
 	$post     = get_post( $post_id );
 	$revision = get_post( $revision_id );
 	foreach ($dhp_project_settings_fields as $field) {
@@ -1933,58 +2198,81 @@ function dhp_project_restore_revision( $post_id, $revision_id ) {
 				delete_post_meta($post_id, $field['id'] );
 			}
 		} // end foreach
-}
-add_action( 'wp_restore_post_revision', 'dhp_project_restore_revision', 10, 2 );
+} // dhp_project_restore_revision()
 
 
-function my_plugin_revision_fields( $fields ) {
-
-	$fields['my_meta'] = 'My Meta';
-	return $fields;
-
-}
 //add_filter( '_wp_post_revision_fields', 'my_plugin_revision_fields' );
+// function my_plugin_revision_fields( $fields )
+// {
+// 	$fields['my_meta'] = 'My Meta';
+// 	return $fields;
+// } // my_plugin_revision_fields()
 
-function my_plugin_revision_field( $value, $field ) {
-
-	global $revision;
-	return get_metadata( 'post', $revision->ID, $field, true );
-
-}
 //add_filter( '_wp_post_revision_field_my_meta', 'my_plugin_revision_field', 10, 2 );
-function dhp_get_type_settings($type,$object) {
+// function my_plugin_revision_field( $value, $field )
+// {
+// 	global $revision;
+// 	return get_metadata( 'post', $revision->ID, $field, true );
+// } // my_plugin_revision_field()
+
+
+// dhp_get_type_settings($type,$object)
+// PURPOSE: ??
+// INPUT:	$type = ??
+//			$object = ??
+// RETURNS:	['settings'] value for matching object
+// ASSUMES:	The type is definitely contained in object
+
+function dhp_get_type_settings($type,$object)
+{
 	foreach($object as $eps) {
-		//var $ec = $eps.type;
 		if($eps['type'] == $type){
 			return $eps['settings'];
 		}
-		//return $ec;
 	}
-}
-function dhp_get_map_type($type,$object) {
+} // dhp_get_type_settings()
+
+
+// dhp_get_map_type($type,$object)
+// PURPOSE: ??
+// INPUT:	$type = ??
+//			$object = ??
+// ASSUMES:	The type is definitely contained in object
+
+function dhp_get_map_type($type,$object)
+{
 	foreach($object as $layer) {
-		//var $ec = $eps.type;
-		//return $layer['id'];
-		if($layer['mapType'] == $type){
+		if($layer['mapType'] == $type) {
 			$map_id = get_post_meta($layer['id'],'dhp_map_typeid');
 			return $map_id[0];
 		}
-		//return $ec;
 	}
-}
+} // dhp_get_map_type()
 
+
+add_action( 'admin_enqueue_scripts', 'add_dhp_project_admin_scripts', 10, 1 );
+
+// add_dhp_project_admin_scripts( $hook )
 // Custom scripts to be run on Project new/edit pages only
-function add_dhp_project_admin_scripts( $hook ) {
+// PURPOSE: Prepare CSS and JS files for all page types in WP
+// INPUT:	$hook = name of template file being loaded
+// ASSUMES:	Other WP global variables for current page are set
+//			$layers_global has been set by init process
 
+function add_dhp_project_admin_scripts( $hook )
+{
     global $post;
     global $layers_global;
+
     $blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
     //$dhp_custom_fields = createUniqueCustomFieldArray($post->ID);
+
+ 		// Viewing content??
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( 'project' === $post->post_type ) {    
-        $tempLayers = 'layers '.$layers_global; 
+        	$tempLayers = 'layers '.$layers_global;
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			//wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			
@@ -2026,23 +2314,27 @@ function add_dhp_project_admin_scripts( $hook ) {
 			wp_enqueue_script('thickbox');
 
         }
-    }
-    //Bulk display of all projects
-	if ( $hook == 'edit.php'  ) {
+
+        // Editing content??
+    } else if ( $hook == 'edit.php'  ) {
         if ( 'project' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 			 //wp_enqueue_script(  'dhp-project-script2', plugins_url('/js/dhp-project-admin2.js', dirname(__FILE__) ));
-			 
         }
     }
-}
-add_action( 'admin_enqueue_scripts', 'add_dhp_project_admin_scripts', 10, 1 );
+} // add_dhp_project_admin_scripts()
 
+// dhp_register_maps($mapObject)
+// PURPOSE: Prepare required scripts for maps to be rendered as WP content
+// INPUT:	$mapObject = array of map layers (each containing Hash ['mapType'], ['id'])
+// ASSUMES:	Map data has been loaded into WP DB
+// TO DO:	Better error handling if map data doesn't exist?
 
-function dhp_register_maps($mapObject){
+function dhp_register_maps($mapObject)
+{
 	//if cdla, load api
 	wp_register_script(
 				'cdlaMaps',
@@ -2056,7 +2348,8 @@ function dhp_register_maps($mapObject){
 	foreach($mapObject as $layer) {
 		//var $ec = $eps.type;
 		//return $layer['id'];
-		if($layer['mapType'] == 'type-CDLA'){
+		if($layer['mapType'] == 'type-CDLA')
+		{
 			$map_id = get_post_meta($layer['id'],'dhp_map_typeid',true);
 			$cdla_layer_url = 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$map_id;
 			
@@ -2072,15 +2365,26 @@ function dhp_register_maps($mapObject){
 		}
 		//return $ec;
 	}	
-}
+} // dhp_register_maps()
 
-// Set template to be used for Project type
+
+add_filter( 'single_template', 'dhp_page_template' );
+
+// dhp_page_template( $page_template )
+// PURPOSE:	Called by WP to modify parameters for rending page, inc template to be used, acc to Project
+// INPUT:	$page_template = default path to file to use for template to render page
+// ASSUMES:	WP global variables for current post set correctly
+// RETURNS:	Modified $page_template setting (file path to new php template file)
+
 function dhp_page_template( $page_template )
 {
 	global $post;
+
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 	$post_type = get_query_var('post_type');
+
+		// Viewing a Project?
     if ( $post_type == 'project' ) {
     	$projectSettings_get = get_post_meta($post->ID, 'project_settings');
     	$projectSettings = json_decode($projectSettings_get[0],true);
@@ -2141,8 +2445,9 @@ function dhp_page_template( $page_template )
 			'map' => __($projectSettings_map, 'dhp'),
 			'layers' => __($projectSettings_map['layers'], 'dhp')
 		) );
-    }
-    if ( $post_type == 'dhp-markers' ) {
+
+		// Looking at a Marker/Data entry?
+    } else if ( $post_type == 'dhp-markers' ) {
 		$projectSettings_id = get_post_meta($post->ID, 'project_id',true);
 		$projectSettings_get = get_post_meta($projectSettings_id, 'project_settings');
     	$projectSettings = json_decode($projectSettings_get[0],true);
@@ -2194,103 +2499,113 @@ function dhp_page_template( $page_template )
 		) );
     }
     return $page_template;
-}
-add_filter( 'single_template', 'dhp_page_template' );
+} // dhp_page_template()
 
 
+add_filter( 'archive_template', 'dhp_tax_template' );
 
-// Set template to be used for top level custom taxonomy term
+// dhp_tax_template( $page_template )
+// PURPOSE: Set template to be used to show results of top-level custom taxonomy display
+//			When is this invoked?  Related to Legend use ??
+// INPUT:	$page_template = default path to file to use for template to render page
+// RETURNS:	Modified $page_template setting (file path to new php template file)
+
 function dhp_tax_template( $page_template )
 {
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
-	if( is_tax() ) {
-    global $wp_query;
-    $term = $wp_query->get_queried_object();
-    $title = $term->taxonomy;
-    $term_parent = get_term($term->parent, $title);
-    $term->parent_name = $term_parent->name;
 
-    $page_template = dirname( __FILE__ ) . '/dhp-archive.php';
-    //get mp3 url from first term marker
-    //get transcript url
-    $pieces = explode("dhp_tax_", $title);
-    $projectID = get_page($pieces[1],OBJECT,'project');
-    $project_settings = get_post_meta($projectID->ID,'project_settings',true);
-	
-	wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
-	wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
-	wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
-    wp_enqueue_script( 'soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
-    wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
-    wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));
-	//map reqs	
-    wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-    wp_enqueue_script( 'cdlaMaps' );
-	if($projectSettings_map_cdla) {
-    	wp_enqueue_script( 'cdla-layer-data' );
-    }
-	//$projectSettings_get = get_post_meta($post->ID, 'project_settings');
-	
-	wp_enqueue_script( 'jquery' );
-	wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');		
-	wp_enqueue_script( 'backbone' );
-	wp_enqueue_script( 'underscore' );
-	wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
+		// ensure actually a taxonomy render
+	if( is_tax() ) {
+	    global $wp_query;
+
+	    $term = $wp_query->get_queried_object();
+	    $title = $term->taxonomy;
+	    $term_parent = get_term($term->parent, $title);
+
+	    	// Get the name of the term, which is also the name of the custom field
+	    $term->parent_name = $term_parent->name;
+
+	    $page_template = dirname( __FILE__ ) . '/dhp-archive.php';
+	    //get mp3 url from first term marker
+	    //get transcript url
+	    $pieces = explode("dhp_tax_", $title);
+	    $projectID = get_page($pieces[1],OBJECT,'project');
+	    $project_settings = get_post_meta($projectID->ID,'project_settings',true);
 		
-	wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__) ),'mediaelement');
-	
-	wp_localize_script( 'dhp-tax-script', 'dhpData', array(
-			'project_id' => __($projectID->ID,'dhp'),
-			'ajax_url' => __($dev_url, 'dhp'),
-			'tax' => __($term,'dhp'), 
-			'project' => __($project_settings)
+		wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
+		wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
+		wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
+	    wp_enqueue_script( 'soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
+	    wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+	    wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));
+		//map reqs	
+	    wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+	    wp_enqueue_script( 'cdlaMaps' );
+		if($projectSettings_map_cdla) {
+	    	wp_enqueue_script( 'cdla-layer-data' );
+	    }
+		//$projectSettings_get = get_post_meta($post->ID, 'project_settings');
+		
+		wp_enqueue_script( 'jquery' );
+		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');		
+		wp_enqueue_script( 'backbone' );
+		wp_enqueue_script( 'underscore' );
+		wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
 			
-		) );
+		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__) ),'mediaelement');
+		
+		wp_localize_script( 'dhp-tax-script', 'dhpData', array(
+				'project_id' => __($projectID->ID,'dhp'),
+				'ajax_url' => __($dev_url, 'dhp'),
+				'tax' => __($term,'dhp'), 
+				'project' => __($project_settings)
+				
+			) );
 	}
 	return $page_template;
-}
-add_filter( 'archive_template', 'dhp_tax_template' );
+} // dhp_tax_template()
 
-/**
- * Deploy the icons list to select one
- */
-function dhp_deploy_icons()
-{ 	
-	$icon_path = DHP_PLUGIN_URL.'/images/icons/';
-	$icon_dir = DHP_PLUGIN_DIR.'/images/icons/';	
+// dhp_deploy_icons()
+// PURPOSE:	Produce HTML to display all marker icons in sidebar; search for all gif, jpg and png files
+
+// function dhp_deploy_icons()
+// { 	
+// 	$icon_path = DHP_PLUGIN_URL.'/images/icons/';
+// 	$icon_dir = DHP_PLUGIN_DIR.'/images/icons/';	
 	
-	$icons_array = array();
+// 	$icons_array = array();
 	
 	
-	if ($handle = opendir($icon_dir)) {
+// 	if ($handle = opendir($icon_dir)) {
 		
-		while (false !== ($file = readdir($handle))) {
+// 		while (false !== ($file = readdir($handle))) {
 	
-			$file_type = wp_check_filetype($file);
+// 			$file_type = wp_check_filetype($file);
 	
-			$file_ext = $file_type['ext'];
+// 			$file_ext = $file_type['ext'];
 		
-			if ($file != "." && $file != ".." && ($file_ext == 'gif' || $file_ext == 'jpg' || $file_ext == 'png') ) {
-				array_push($icons_array,$icon_path.$file);
-			}
-		}
-	}
-	?>
+// 			if ($file != "." && $file != ".." && ($file_ext == 'gif' || $file_ext == 'jpg' || $file_ext == 'png') ) {
+// 				array_push($icons_array,$icon_path.$file);
+// 			}
+// 		}
+// 	}
+/** 	?>
           	   
-		<div id="dhp_icon_cont">
+// 		<div id="dhp_icon_cont">
         	
-		<?php $i = 1; foreach ($icons_array as $icon){ ?>
-		  <div class="dhp_icon" id="icon_<?php echo $i;?>">
-		  <img src="<?php echo $icon; $i++; ?>" /> 
-		  </div>
-		<?php } ?>
+// 		<?php $i = 1; foreach ($icons_array as $icon){ ?>
+// 		  <div class="dhp_icon" id="icon_<?php echo $i;?>">
+// 		  <img src="<?php echo $icon; $i++; ?>" /> 
+// 		  </div>
+// 		<?php } ?>
         
-		 </div> 
-         <div id="icon-cats"><ul>
+// 		 </div> 
+//          <div id="icon-cats"><ul>
          
-         </ul></div>
+//          </ul></div>
          
          	
-	<?php
-} // dhp_deploy_icons()
+// 	<?php
+// } // dhp_deploy_icons()
+**/
