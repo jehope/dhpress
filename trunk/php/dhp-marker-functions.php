@@ -2,13 +2,32 @@
 
 /**
 	 * Registers and handles DHPress Marker functions
+	 *	(i.e., posts representing a single data point)
 	 *
 	 * @package diPH Toolkit
 	 * @author diPH Team
 	 * @link http://diph.org/download/
 	 */
 
-function dhp_marker_init() {
+// ====================== Global Variables ==========================
+
+	// Edit box to allow associating Marker with a Project ??
+$dhp_marker_settings_fields = array(
+	array(
+		'label'=> 'Associated Project',
+		'desc'	=> 'Select which project this marker should belong to.',
+		'id'	=> $prefix .'project_id',
+		'type'	=> 'select',
+		'options' => dhp_get_projects()
+		)
+);
+
+// ====================== Init Functions ==========================
+
+add_action( 'init', 'dhp_marker_init' );
+
+function dhp_marker_init()
+{
   $labels = array(
     'name' => _x('Markers', 'post type general name'),
     'singular_name' => _x('Marker', 'post type singular name'),
@@ -39,17 +58,26 @@ function dhp_marker_init() {
     'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions','custom-fields' )
   ); 
   register_post_type('dhp-markers',$args);
-}
-add_action( 'init', 'dhp_marker_init' );
+} // dhp_marker_init()
 
-// Custom scripts to be run on Project new/edit pages only
-function add_dhp_marker_admin_scripts( $hook ) {
 
+add_action( 'admin_enqueue_scripts', 'add_dhp_marker_admin_scripts', 10, 1 );
+
+// add_dhp_marker_admin_scripts( $hook )
+// PURPOSE: Prepare CSS and JS files for this page
+// INPUT:	$hook is file path to template page for this page
+// ASSUMES:	WP global variables set to current post & context
+
+function add_dhp_marker_admin_scripts( $hook )
+{
     global $post;
+
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
-    if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
+		// Viewing a marker?
+    if ( $hook == 'post-new.php' || $hook == 'post.php' )
+    {
         if ( 'dhp-markers' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
@@ -62,8 +90,9 @@ function add_dhp_marker_admin_scripts( $hook ) {
 				//'dhp_custom_fields' => __($dhp_custom_fields, 'dhp'),				
 			) );
         }
-    }
-	if ( $hook == 'edit.php'  ) {
+
+ 		// Editing a marker?
+    } else if ( $hook == 'edit.php'  ) {
         if ( 'dhp-markers' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
@@ -71,14 +100,20 @@ function add_dhp_marker_admin_scripts( $hook ) {
 			wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 			 //wp_enqueue_script(  'dhp-marker-script2', plugins_url('/js/dhp-marker-admin2.js', dirname(__FILE__) ));
-			 wp_enqueue_style('thickbox');
-wp_enqueue_script('thickbox');
+			wp_enqueue_style('thickbox');
+			wp_enqueue_script('thickbox');
         }
     }
-}
-add_action( 'admin_enqueue_scripts', 'add_dhp_marker_admin_scripts', 10, 1 );
-//add filter to ensure the text Marker, or marker, is displayed when user updates a marker
-function dhp_marker_updated_messages( $messages ) {
+} // add_dhp_marker_admin_scripts()
+
+
+add_filter( 'post_updated_messages', 'dhp_marker_updated_messages' );
+
+// dhp_marker_updated_messages( $messages )
+// PURPOSE: Ensure the text Marker is displayed when user updates a marker
+
+function dhp_marker_updated_messages( $messages )
+{
   global $post, $post_ID;
 
   $messages['dhp-markers'] = array(
@@ -99,13 +134,16 @@ function dhp_marker_updated_messages( $messages ) {
   );
 
   return $messages;
-}
-add_filter( 'post_updated_messages', 'dhp_marker_updated_messages' );
+} // dhp_marker_updated_messages()
 
-/*
-Sorts an array based on a specific key
-Courtesy of http://php.net/manual/en/function.sort.php
-*/
+// dhp_array_sort($array, $on, $order=SORT_ASC)
+// PURPOSE: Sorts an array based on value of a specific key
+//			From http://php.net/manual/en/function.sort.php
+// INPUT:	$array = array to sort
+//			$on = key to use for sort
+//			$order = ascending or descending
+// RETURNS:	new sorted array
+
 function dhp_array_sort($array, $on, $order=SORT_ASC)
 {
     $new_array = array();
@@ -139,9 +177,15 @@ function dhp_array_sort($array, $on, $order=SORT_ASC)
     }
 
     return $new_array;
-}
+} // dhp_array_sort()
 
-function dhp_get_projects() {
+
+// dhp_get_projects()
+// PURPOSE:	Retrieve list of all DHP Projects in WP DB
+// RETURNS:	Array of arrays [ID, Title] sorted by Title
+
+function dhp_get_projects()
+{
 
 	// I'm assuming that project titles will have already been trimmed, so I haven't included code to deal with that.  I can if you want.
 	global $wpdb;
@@ -168,13 +212,13 @@ function dhp_get_projects() {
 	
 	$projects_array = dhp_array_sort( $projects_array, 'label' );
 	return $projects_array;
-	
-}
+} // dhp_get_projects()
 
-// an array of arrays containing 'value' and 'label' for each project
-//$projects = dhp_get_projects();
 
-// Add the Meta Box
+
+add_action('add_meta_boxes', 'add_dhp_marker_settings_box');
+
+// PURPOSE: Register box in panel for editing Marker settings
 function add_dhp_marker_settings_box() {
     add_meta_box(
 		'dhp_marker_settings_meta_box', 		// $id
@@ -184,68 +228,26 @@ function add_dhp_marker_settings_box() {
 		'normal',								// $context
 		'high'); 								// $priority
 }
-add_action('add_meta_boxes', 'add_dhp_marker_settings_box');
 
-// Add the Marker Icon Box
-function add_dhp_marker_icon_box() {
-    add_meta_box(
-		'dhp_marker_icon_box', 		// $id
-		'Marker Settings', 						// $title
-		'show_dhp_marker_icon_box', 		// $callback
-		'dhp-markers', 						// $page
-		'side',								// $context
-		'default'); 								// $priority
-}
-//add_action('add_meta_boxes', 'add_dhp_marker_icon_box');
-//Get the project id and it's marker icons
-function get_selected_project() {
-	global $dhp_marker_settings_fields, $post;
-	foreach ($dhp_marker_settings_fields as $field) {
-		// get value of this field if it exists for this post
-		if($field['id']=='project_id') {
-			$meta = get_post_meta($post->ID, $field['id'], true);
-			foreach ($field['options'] as $option) {
-				if($meta == $option['value']) {
-					if ($option['value']==0) {return 'Pick a project';}
-					else {
-						//get_project_icons($option['value']);
-					return $option['label'];
-					}
-				}
-				
-			}
-		}
-	}
-}
+// show_dhp_marker_settings_box()
+// PURPOSE: Handle Callback to create editing boxes for Marker admin panel
+// ASSUMES:	$post is set to Project post
 
-//$projects = dhp_get_projects();
-// The icon settings callback
-function show_dhp_marker_icon_box() {
-	echo get_selected_project();
-}
-// The Callback
-function show_dhp_marker_settings_box() {
-global $post,$dhp_marker_settings_fields ;
+function show_dhp_marker_settings_box()
+{
+	global $post,$dhp_marker_settings_fields ;
 
-// Field Array
-$prefix = 'marker_';
-$dhp_marker_settings_fields = array(
-	array(
-		'label'=> 'Associated Project',
-		'desc'	=> 'Select which project this marker should belong to.',
-		'id'	=> $prefix .'project_id',
-		'type'	=> 'select',
-		'options' => dhp_get_projects()
-		)
-);
+	// Field Array
+	$prefix = 'marker_';
+
 	//display selected project settings
 	$selected_project = get_post_meta($post->ID, 'project_id', true);
 	if($selected_project) {
 		$project_settings = get_post_meta($selected_project, 'project_settings', true);
 		//echo $project_settings;
 	}
-// Use nonce for verification
-echo '<input type="hidden" name="dhp_marker_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
+	// Use nonce for verification
+	echo '<input type="hidden" name="dhp_marker_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
 
 	// Begin the field table and loop
 	echo '<table class="form-table dhp_marker_project" id="'.$selected_project.'">';
@@ -257,7 +259,6 @@ echo '<input type="hidden" name="dhp_marker_settings_box_nonce" value="'.wp_crea
 				<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
 				<td>';
 				switch($field['type']) {
-					// case items will go here
 					// text
 					case 'text':
 						echo '<input type="text" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" size="30" />
@@ -290,8 +291,16 @@ echo '<input type="hidden" name="dhp_marker_settings_box_nonce" value="'.wp_crea
 	$markerMeta = get_post_meta( $post->ID );
 	//print_r($markerMeta);
 	echo buildMarkerMetaFields($markerMeta);
-}
-function buildMarkerMetaFields($theMeta) {
+} // show_dhp_marker_settings_box()
+
+// buildMarkerMetaFields($theMeta)
+// PURPOSE: Create HTML to display all custom field values of Marker
+// INPUT:	$theMeta = array of ??
+// RETURNS:	HTML string for the edit boxes to edit the data in $theMeta ??
+// NOTE:	CSS class <delete-mote> is used by JavaScript ??
+
+function buildMarkerMetaFields($theMeta)
+{
 	$markerHtml ='<ul class="marker-fields">';
 	foreach ($theMeta as $key => $value) {
 
@@ -305,126 +314,98 @@ function buildMarkerMetaFields($theMeta) {
 	}
 	$markerHtml .='</ul>';
 	//return $markerHtml;
-}
-//create id for traversal
-function createIDfromName($theName){
+} // buildMarkerMetaFields()
+
+// createIDfromName($theName)
+// PURPOSE:	Create slug corresonding custom field
+// INPUT:	$theName = string for name of mote
+// RETURNS:	WP-style slug form of mote name
+// TO DO:	Rename and encapsulate in Marker class?
+
+function createIDfromName($theName)
+{
 	$moteID = strtolower($theName);
     $moteID = str_replace(" ","_",$moteID);
     return $moteID;
-}
+} // createIDfromName()
+
+
 // Save the Data
-function save_dhp_marker_settings($post_id) {
-    global $dhp_marker_settings_fields;
-	$parent_id = wp_is_post_revision( $post_id );
+// function save_dhp_marker_settings($post_id) {
+//     global $dhp_marker_settings_fields;
+// 	$parent_id = wp_is_post_revision( $post_id );
 	
-	// verify nonce
-	if (!wp_verify_nonce($_POST['dhp_marker_settings_box_nonce'], basename(__FILE__)))
-		return $post_id;
-	// check autosave
-	if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)
-		return $post_id;
-	// check permissions
-	if ('page' == $_POST['post_type']) {
-		if (!current_user_can('edit_page', $post_id))
-			return $post_id;
-		} elseif (!current_user_can('edit_post', $post_id)) {
-			return $post_id;
-	}
-	if ( $parent_id ) {
-		// loop through fields and save the data
-		$parent  = get_post( $parent_id );		
-		foreach ($dhp_marker_settings_fields as $field) {
-			$old = get_post_meta( $parent->ID, $field['id'], true);
-			$new = $_POST[$field['id']];
-			if ($new && $new != $old) {
-				update_metadata( 'post', $post_id, $field['id'], $new);
-			} elseif ('' == $new && $old) {
-				delete_metadata( 'post', $post_id, $field['id'], $old);
-			}
-		} // end foreach
-	}
-	else {
-		// loop through fields and save the data
-		foreach ($dhp_marker_settings_fields as $field) {
-			$old = get_post_meta($post_id, $field['id'], true);
-			$new = $_POST[$field['id']];
-			if ($new && $new != $old) {
-				update_post_meta($post_id, $field['id'], $new);
-			} elseif ('' == $new && $old) {
-				delete_post_meta($post_id, $field['id'], $old);
-			}
-		} // end foreach
-	}
-}
+// 	// verify nonce
+// 	if (!wp_verify_nonce($_POST['dhp_marker_settings_box_nonce'], basename(__FILE__)))
+// 		return $post_id;
+// 	// check autosave
+// 	if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)
+// 		return $post_id;
+// 	// check permissions
+// 	if ('page' == $_POST['post_type']) {
+// 		if (!current_user_can('edit_page', $post_id))
+// 			return $post_id;
+// 		} elseif (!current_user_can('edit_post', $post_id)) {
+// 			return $post_id;
+// 	}
+// 	if ( $parent_id ) {
+// 		// loop through fields and save the data
+// 		$parent  = get_post( $parent_id );		
+// 		foreach ($dhp_marker_settings_fields as $field) {
+// 			$old = get_post_meta( $parent->ID, $field['id'], true);
+// 			$new = $_POST[$field['id']];
+// 			if ($new && $new != $old) {
+// 				update_metadata( 'post', $post_id, $field['id'], $new);
+// 			} elseif ('' == $new && $old) {
+// 				delete_metadata( 'post', $post_id, $field['id'], $old);
+// 			}
+// 		} // end foreach
+// 	}
+// 	else {
+// 		// loop through fields and save the data
+// 		foreach ($dhp_marker_settings_fields as $field) {
+// 			$old = get_post_meta($post_id, $field['id'], true);
+// 			$new = $_POST[$field['id']];
+// 			if ($new && $new != $old) {
+// 				update_post_meta($post_id, $field['id'], $new);
+// 			} elseif ('' == $new && $old) {
+// 				delete_post_meta($post_id, $field['id'], $old);
+// 			}
+// 		} // end foreach
+// 	}
+// }
 //add_action('save_post', 'save_dhp_marker_settings');  
 
 
-function get_project_icons( $project_id ){
-		$icons = get_metadata( 'post', $project_id, 'project_icons', true);
-		$icon_array = explode(',',$icons);
-		echo '<div id="icon-cats"><ul>';
-			for ($i=0; $i<count($icon_array)-2; $i=$i+3) {
-		echo '<li><img src="'.$icon_array[$i+2].'"/><span>'.$icon_array[$i+1].'</span>';
-			}
-        echo  '</ul></div>';
+// function get_project_icons( $project_id ){
+// 		$icons = get_metadata( 'post', $project_id, 'project_icons', true);
+// 		$icon_array = explode(',',$icons);
+// 		echo '<div id="icon-cats"><ul>';
+// 			for ($i=0; $i<count($icon_array)-2; $i=$i+3) {
+// 		echo '<li><img src="'.$icon_array[$i+2].'"/><span>'.$icon_array[$i+1].'</span>';
+// 			}
+//         echo  '</ul></div>';
 		 
-	}
-function dhpAddUpdateMetaField(){
-
-    //get data from our ajax() call
-    //$greeting = $_POST['greeting'];
-    $post_id = $_POST['post_id'];
-	$field_name = $_POST['field_name'];
-    $field_value = $_POST['field_value'];
-
-	update_post_meta($post_id, $field_name, $field_value);
-
-}
+// 	}
 
 
-add_action( 'wp_ajax_dhpAddUpdateMetaField', 'dhpAddUpdateMetaField' );
 
-function dhpDeleteMoteMeta(){
+add_action( 'restrict_manage_posts', 'dhp_markers_filter_restrict_manage_posts' );
 
-	$dhp_post = $_POST['post_id'];
-	$dhp_mote = $_POST['mote_id'];
+// dhp_markers_filter_restrict_manage_posts()
+// PURPOSE: Create HTML code to create Drop-down list of Projects to filter lists of Markers in admin Panel
+// INPUT:	$_GET['post_type'] is set to post type being edited in admin panel
 
-	delete_post_meta($dhp_post, $dhp_mote);
-	//die($project_settings);
-}
-add_action( 'wp_ajax_dhpDeleteMoteMeta', 'dhpDeleteMoteMeta' );
-
-function dhpUpdateProjectSettings(){
-
-	$dhp_project = $_POST['project'];
-	$dhp_project_settings = $_POST['project_settings'];
-
-	update_post_meta($dhp_project, 'project_settings', $dhp_project_settings);
-	//die($project_settings);
-
-}
-add_action( 'wp_ajax_dhpUpdateProjectSettings', 'dhpUpdateProjectSettings' );
-
-function dhpGetProjectSettings(){
-
-	$dhp_project = $_POST['project'];
-
-	$project_settings = get_post_meta($dhp_project, 'project_settings', true);
-	die($project_settings);
-}
-add_action( 'wp_ajax_dhpGetProjectSettings', 'dhpGetProjectSettings' );
-
-
-//code for managing dhp-markers admin panel
-
-function dhp_markers_filter_restrict_manage_posts(){
+function dhp_markers_filter_restrict_manage_posts()
+{
     $type = 'post';
     if (isset($_GET['post_type'])) {
         $type = $_GET['post_type'];
     }
  
     //only add filter to post type you want
-    if ('dhp-markers' == $type){
+    if ('dhp-markers' == $type)
+    {
         //change this to the list of values you want to show
         //in 'label' => 'value' format
         $values = dhp_get_projects();
@@ -446,11 +427,22 @@ function dhp_markers_filter_restrict_manage_posts(){
         </select>
         <?php
     }
-}
-add_action( 'restrict_manage_posts', 'dhp_markers_filter_restrict_manage_posts' );
+} // dhp_markers_filter_restrict_manage_posts()
 
-function dhp_markers_filter( $query ){
+
+add_filter( 'parse_query', 'dhp_markers_filter' );
+
+// dhp_markers_filter($query)
+// PURPOSE:	Modify the query string (used to show list in Markers admin panel) according to UI selection
+// INPUT:	$query = the array describing the query for Markers to display in panel
+//			$_GET['post_type'] = post type of posts being displayed in admin panel
+//			$_GET['PROJECT_ID_VALUE'] = ID of Project selected in option button
+// ASSUMES:	$pagenow global is set to file name of current page-wide template file
+
+function dhp_markers_filter( $query )
+{
     global $pagenow;
+
     $type = 'post';
     if (isset($_GET['post_type'])) {
         $type = $_GET['post_type'];
@@ -459,26 +451,39 @@ function dhp_markers_filter( $query ){
         $query->query_vars['meta_key'] = 'project_id';
         $query->query_vars['meta_value'] = $_GET['PROJECT_ID_VALUE'];
     }
-}
-add_filter( 'parse_query', 'dhp_markers_filter' );
-
-function add_dhp_markers_columns($columns) {
+} // dhp_markers_filter()
 
 
-    unset($columns['comments']);
-
-    
-    $columns['project'] = __('Project');
-
-    
-    return $columns;
-}
 add_filter('manage_edit-dhp-markers_columns', 'add_dhp_markers_columns');
 
-function dhp_markers_custom_column($column, $post_id) {
-    global $post;
+// add_dhp_markers_columns($columns)
+// PURPOSE: Handle modifying array of columns to show when listing Markers in admin panel
+// INPUT:	$columns = hash/array of field names and labels for the columns to display
+// RETURNS:	Hash/array of column names with Project added
+
+function add_dhp_markers_columns($columns)
+{
+    unset($columns['comments']);
+
+    $columns['project'] = __('Project');
+
+    return $columns;
+} // add_dhp_markers_columns()
+
+
+add_action('manage_dhp-markers_posts_custom_column', 'dhp_markers_custom_column', 10, 2);
+
+// dhp_markers_custom_column($column, $post_id)
+// PURPOSE: Output value of custom column for Marker in admin panel
+// INPUT:	$column = key for column (name of field)
+//			$post_id = ID of Marker post
+// SIDE-FX:	Outputs text for name of project or category
+
+function dhp_markers_custom_column($column, $post_id)
+{
     $post_type = get_query_var('post_type');
-    if ( $post_type == 'dhp-markers' ){
+    if ( $post_type == 'dhp-markers' )
+    {
         $meta_project = get_post_meta( $post_id, 'project_id', true );
         $project_name = get_the_title($meta_project);
         
@@ -486,13 +491,81 @@ function dhp_markers_custom_column($column, $post_id) {
         {
             case 'project':
                 echo $project_name;
-            break;
+            	break;
             case 'category':
                 echo $meta_category;
-            break;
+            	break;
         }
     }
-}
-add_action('manage_dhp-markers_posts_custom_column', 'dhp_markers_custom_column', 10, 2);
+} // dhp_markers_custom_column()
+
+// ================================ Ajax Functions =============================
+
+	// Edit only
+add_action( 'wp_ajax_dhpAddUpdateMetaField', 'dhpAddUpdateMetaField' );
+
+// dhpAddUpdateMetaField()
+// PURPOSE: Handle saving edited values for a single field
+// INPUT:	$_POST['post_id'] = the ID of the Marker post
+//			$_POST['field_name'] = the name of the custom field
+//			$_POST['field_value'] = the value to save in the field
+
+function dhpAddUpdateMetaField()
+{
+    $post_id = $_POST['post_id'];
+	$field_name = $_POST['field_name'];
+    $field_value = $_POST['field_value'];
+
+	update_post_meta($post_id, $field_name, $field_value);
+} // hpAddUpdateMetaField()
+
+	// Edit only
+add_action( 'wp_ajax_dhpDeleteMoteMeta', 'dhpDeleteMoteMeta' );
+
+// dhpDeleteMoteMeta()
+// PURPOSE: Handle deleting Mote?? or custom value ?? from a Marker post
+// INPUT:	$_POST['post_id'] = ID of Marker post
+//			$_POST['post_id'] = ID of custom field to remove
+
+function dhpDeleteMoteMeta()
+{
+	$dhp_post = $_POST['post_id'];
+	$dhp_mote = $_POST['mote_id'];
+
+	delete_post_meta($dhp_post, $dhp_mote);
+	//die($project_settings);
+} // dhpDeleteMoteMeta()
+
+	// Edit only
+add_action( 'wp_ajax_dhpUpdateProjectSettings', 'dhpUpdateProjectSettings' );
+
+// dhpUpdateProjectSettings()
+// PURPOSE:	Handle updating the big, hairy project_settings string in the Project post
+// INPUT:	$_POST['project'] = ID of the Project post
+//			$_POST['project_settings'] = new settings String
+
+function dhpUpdateProjectSettings()
+{
+	$dhp_project = $_POST['project'];
+	$dhp_project_settings = $_POST['project_settings'];
+
+	update_post_meta($dhp_project, 'project_settings', $dhp_project_settings);
+	//die($project_settings);
+} // dhpUpdateProjectSettings()
+
+	// Edit only
+add_action( 'wp_ajax_dhpGetProjectSettings', 'dhpGetProjectSettings' );
+
+// dhpGetProjectSettings()
+// PURPOSE: Retrieve project_settings String for Project
+// INPUT:	$_POST['project'] = ID of Project post whose settings are to be retrieved
+
+function dhpGetProjectSettings()
+{
+	$dhp_project = $_POST['project'];
+
+	$project_settings = get_post_meta($dhp_project, 'project_settings', true);
+	die($project_settings);
+} // dhpGetProjectSettings()
 
 ?>

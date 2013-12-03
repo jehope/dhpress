@@ -8,6 +8,26 @@
 	 * @link http://dhpress.org/download/
 	 */
 
+// ================== Global Variables ===================
+
+// These are hidden fields embedded in the page to store values, like project settings,
+//	and these are read by Auto-Save function to save state of edit
+$prefix = 'project_';
+$dhp_project_settings_fields = array (
+	array(
+		'label'=> 'Project Settings',
+		'desc'	=> 'Stores the project setup as json.',
+		'id'	=> $prefix.'settings',
+		'type'	=> 'textarea'
+	),
+	array(
+		'label'=> 'Icons',
+		'desc'	=> 'Icons for categories.',
+		'id'	=> $prefix.'icons',
+		'type'	=> 'hidden'
+	)
+);
+
 // ================== Initialize Plug-in ==================
 
 // init action called to initialize a plug-in
@@ -297,8 +317,8 @@ function show_dhp_project_icons_box()
 
 
 // bdw_get_images()
-// PURPOSE: ??
-// SIDE FX:	Outputs HTML of thumbnail images of images associated with post ??
+// PURPOSE: Create HTML icon box on right sidebox
+// SIDE FX:	Outputs HTML of thumbnail images of images associated with post
 // ASSUMES:	$post global is set to Project post
 // TO DO:	Wrap in Project class
 
@@ -309,7 +329,7 @@ function bdw_get_images()
     // Get the post ID
     $iPostID = $post->ID;
  
-    // Get images for this post
+    // Get images associated with this Project post
     $arrImages = get_children('post_type=attachment&post_mime_type=image&numberpost=-1&post_parent=' . $iPostID );
  
     // If images exist for this page
@@ -341,23 +361,6 @@ function bdw_get_images()
     }
 } // bdw_get_images()
 
-// ?? Is this really used??  Doesn't look like this on admin panel ??
-$prefix = 'project_';
-$dhp_project_settings_fields = array (
-	array(
-		'label'=> 'Project Settings',
-		'desc'	=> 'Stores the project setup as json.',
-		'id'	=> $prefix.'settings',
-		'type'	=> 'textarea'
-	),
-	array(
-		'label'=> 'Icons',
-		'desc'	=> 'Icons for categories.',
-		'id'	=> $prefix.'icons',
-		'type'	=> 'hidden'
-	)
-);
-
 
 // add_meta_boxes called when Edit Post runs
 add_action('add_meta_boxes', 'add_dhp_project_settings_box');
@@ -377,12 +380,12 @@ function add_dhp_project_settings_box()
 } // add_dhp_project_settings_box()
 
 // show_dhp_project_settings_box()
-// PURPOSE:		Called by WP to create GUI HTML for editing Project (in admin panel)
+// PURPOSE:		Called by WP to create HTML for hidden fields (in admin panel) which save Project state
 // ASSUMPTIONS:	Global $post is set to point to post for current project
 //				Global $dhp_project_settings_fields is set to array of strings describing HTML controls
 // SIDE-FX:		Sets _PROJECT_ID_ global to ID of project post
 // TO DO:		Don't use _PROJECT_ID_ global! tried removing logic but didn't work!
-//				Put all HTML producing logic into special generalized function??
+//				Put all HTML producing logic into special generalized function
 
 function show_dhp_project_settings_box()
 {
@@ -462,6 +465,7 @@ add_action('save_post', 'save_dhp_project_settings');
 
 // save_dhp_project_settings($post_id)
 // PURPOSE: Save data posted to WP for project based on project_settings_fields
+//				(Could also be invoked by Auto-Save feature of WP)
 // INPUT:	$post_id is the id of the post updated
 // ASSUMES:	$_POST is set to post data
 //			$dhp_project_settings_fields describes the data posted
@@ -622,27 +626,30 @@ function invertLatLon($latlon)
 
 } // invertLatLon()
 
-// getIconsForTerms($parent_terms, $taxonomy)
-// PURPOSE: ??
-// INPUT:	$parent_terms = ??; $taxonomy = 
-// RETURNS: Object with fields forming a tree of icons associated with taxonomy ??
+// getIconsForTerms($parent_term, $taxonomy)
+// PURPOSE: Get all of the icons associated via metadata with the taxonomic terms associated with 1 Mote
+// INPUT:	$parent_term = Object for mote/top-level term
+//			$taxonomy = name of taxonomy for Project (dhp_tax_<pID>)
+// RETURNS: Description of Legends to appear on Map
+//			Fields describing this Legend and array ['children'] of mote values, icon, subvalues
 
-function getIconsForTerms($parent_terms, $taxonomy)
+function getIconsForTerms($parent_term, $taxonomy)
 {
 		// begin by 
 	$myargs = array( 'orderby'       => 'term_group',
 		 			 'hide_empty'    => false, 
-					 'parent'        => $parent_terms->term_id );
+					 'parent'        => $parent_term->term_id );
 
 	$children_terms = get_terms( $taxonomy, $myargs );
 	$children_names = array();
 	$filter_children = array();
 
 	$filter_object['type'] = "filter";
-	$filter_object['name'] = $parent_terms->name;
+	$filter_object['name'] = $parent_term->name;
 	$filter_object['terms'] = array();
 
-	$icon_url = get_term_meta($parent_terms->term_id,'icon_url',true);
+	$icon_url = get_term_meta($parent_term->term_id,'icon_url',true);
+	$filter_parent['name'] = $parent_term->name;
 	$filter_parent['icon_url'] = $icon_url;
 
 	array_push($filter_object['terms'], $filter_parent);
@@ -678,10 +685,13 @@ function getMoteFromName($settings,$moteName)
 } // getMoteFromName()
 
 // dhp_get_term_by_parent($link_terms, $terms, $tax)
-// PURPOSE:	??
-// INPUT:	$link_terms = array of valid link terms, $terms = array of terms, $tax = Taxonomy Name category
-// RETURNS: Permalink for ??
+// PURPOSE:	
+// INPUT:	$link_terms = single or array taxonomic term
+//			$terms = array of terms associated with a particular Marker
+//			$tax = "dhp_tax_"<pID>
+// RETURNS: If $link_terms appears in the list of $terms, then return PLink for that term
 // ASSUMES:	That strings in $terms have been HTML-escaped
+
 function dhp_get_term_by_parent($link_terms, $terms, $tax)
 {
 	foreach( $terms as $term ) {
@@ -695,109 +705,111 @@ function dhp_get_term_by_parent($link_terms, $terms, $tax)
 } // dhp_get_term_by_parent()
 
 
-// AJAX calls 
-add_action( 'wp_ajax_dhp_get_group_feed', 'dhp_get_group_feed' );
-add_action( 'wp_ajax_nopriv_dhp_get_group_feed', 'dhp_get_group_feed' );
+// ========================================= AJAX calls ======================================
+
+// add_action( 'wp_ajax_dhp_get_group_feed', 'dhp_get_group_feed' );
+// add_action( 'wp_ajax_nopriv_dhp_get_group_feed', 'dhp_get_group_feed' );
 
 // dhp_get_group_feed($tax_name,$term_name)
-// PURPOSE: Ajax hook that ???
-// INPUT:	$tax_name = ??, $term_name = ??
-// RETURNS:	???
-// SIDE-FX:	??
+// PURPOSE: Ajax hook that will return all Markers associated with a specific term
+// INPUT:	$tax_name = "dhp_tax_"<pID>
+//			$term_name = taxonomic term created for Mote value
+// RETURNS:	Feature collection (OpenLayers Object) containing Markers associated with term
+// TO DO:	Currently unused! But may be used in future
 
-function dhp_get_group_feed($tax_name,$term_name)
-{
-//return feed for map, icon color, audio file
-	$pieces = explode("dhp_tax_", $tax_name);
-    $projectID = get_page($pieces[1],OBJECT,'project');
-    $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
-    $the_term = get_term_by('name', $term_name, $tax_name);
-    //$test_string =  $pieces;
-	foreach( $project_settings['entry-points'] as $eps) {
-		if($eps['type']=="map") {
-			$filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
-			$filter = $eps['settings']['filter-data'];
-			$map_pointsMote = getMoteFromName( $project_settings, $eps['settings']['marker-layer'] );
-			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
-				if(!$map_pointsMote['delim']) {$map_pointsMote['delim']=',';}
-				$cordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
-				//array of custom fields
-				//$cordMote = $map_pointsMote['custom-fields'];
-			}
+// function dhp_get_group_feed($tax_name,$term_name)
+// {
+// //return feed for map, icon color, audio file
+// 	$pieces = explode("dhp_tax_", $tax_name);
+//     $projectID = get_page($pieces[1],OBJECT,'project');
+//     $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
+//     $the_term = get_term_by('name', $term_name, $tax_name);
+//     //$test_string =  $pieces;
+// 	foreach( $project_settings['entry-points'] as $eps) {
+// 		if($eps['type']=="map") {
+// 			$filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
+// 			$filter = $eps['settings']['filter-data'];
+// 			$map_pointsMote = getMoteFromName( $project_settings, $eps['settings']['marker-layer'] );
+// 			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
+// 				if(!$map_pointsMote['delim']) {$map_pointsMote['delim']=',';}
+// 				$cordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
+// 				//array of custom fields
+// 				//$cordMote = $map_pointsMote['custom-fields'];
+// 			}
 			
-		}
-		if($eps['type']=="transcript") {
-			$audio = getMoteFromName( $project_settings, $eps['settings']['audio'] );
-			$transcript = getMoteFromName( $project_settings, $eps['settings']['transcript'] );
-			$timecode = getMoteFromName( $project_settings, $eps['settings']['timecode'] );
+// 		}
+// 		if($eps['type']=="transcript") {
+// 			$audio = getMoteFromName( $project_settings, $eps['settings']['audio'] );
+// 			$transcript = getMoteFromName( $project_settings, $eps['settings']['transcript'] );
+// 			$timecode = getMoteFromName( $project_settings, $eps['settings']['timecode'] );
 
-		}
-	}
-	$feature_collection['type'] = "FeatureCollection";
-	$feature_collection['features'] = array();
-	$args = array(
-    'post_type'=> 'dhp-markers',
-    'posts_per_page' => '-1',
-    'tax_query' => array(
-		array(
-			'taxonomy' => $tax_name,
-			'field' => 'slug',
-			'terms' => $the_term->slug
-		)
-	)
-    );   
-	$loop = new WP_Query( $args );
+// 		}
+// 	}
+// 	$feature_collection['type'] = "FeatureCollection";
+// 	$feature_collection['features'] = array();
+// 	$args = array(
+//     'post_type'=> 'dhp-markers',
+//     'posts_per_page' => '-1',
+//     'tax_query' => array(
+// 		array(
+// 			'taxonomy' => $tax_name,
+// 			'field' => 'slug',
+// 			'terms' => $the_term->slug
+// 		)
+// 	)
+//     );   
+// 	$loop = new WP_Query( $args );
 
-	while ( $loop->have_posts() ) : $loop->the_post();
+// 	while ( $loop->have_posts() ) : $loop->the_post();
 	
-		$marker_id = get_the_ID();
-		$args1 = array("fields" => "names");
-		$post_terms = wp_get_post_terms( $marker_id, $tax_name, $args1 );
-		$title = get_the_title();
-		$audio_val = get_post_meta($marker_id,$audio['custom-fields']);
-		$timecode_val = get_post_meta($marker_id,$timecode['custom-fields'],true);
-		if(count($cordMote)==2) {
-			$temp_lat = get_post_meta($marker_id,$cordMote[0]);
-			$temp_lon = get_post_meta($marker_id,$cordMote[1]);
+// 		$marker_id = get_the_ID();
+// 		$args1 = array("fields" => "names");
+// 		$post_terms = wp_get_post_terms( $marker_id, $tax_name, $args1 );
+// 		$title = get_the_title();
+// 		$audio_val = get_post_meta($marker_id,$audio['custom-fields']);
+// 		$timecode_val = get_post_meta($marker_id,$timecode['custom-fields'],true);
+// 		if(count($cordMote)==2) {
+// 			$temp_lat = get_post_meta($marker_id,$cordMote[0]);
+// 			$temp_lon = get_post_meta($marker_id,$cordMote[1]);
 
-			$temp_latlon = $temp_lat[0].','.$temp_lon[0];
+// 			$temp_latlon = $temp_lat[0].','.$temp_lon[0];
 
-			$lonlat = invertLatLon($temp_latlon);
-		}
-		if(count($cordMote)==1) {
-			$temp_latlon = get_post_meta($marker_id,$cordMote[0]);
-			$lonlat = invertLatLon($temp_latlon[0]);
-		}
+// 			$lonlat = invertLatLon($temp_latlon);
+// 		}
+// 		if(count($cordMote)==1) {
+// 			$temp_latlon = get_post_meta($marker_id,$cordMote[0]);
+// 			$lonlat = invertLatLon($temp_latlon[0]);
+// 		}
 
-		if($lonlat) {
-			$this_feature = array();
-			$this_feature['type'] = 'Feature';
-			$this_feature['geometry'] = array();
-			$this_feature['properties']= array();
+// 		if($lonlat) {
+// 			$this_feature = array();
+// 			$this_feature['type'] = 'Feature';
+// 			$this_feature['geometry'] = array();
+// 			$this_feature['properties']= array();
 
-			$this_feature['geometry']['type'] = 'Point';
-			$this_feature['geometry']['coordinates'] = $lonlat;
+// 			$this_feature['geometry']['type'] = 'Point';
+// 			$this_feature['geometry']['coordinates'] = $lonlat;
 			
-			//properties
-			$this_feature['properties']['title'] = $title;
-			$this_feature['properties']['categories'] = json_encode($post_terms);
-			$this_feature['properties']['audio'] = $audio_val[0];
-			$this_feature['properties']['timecode'] = $timecode_val;
+// 			//properties
+// 			$this_feature['properties']['title'] = $title;
+// 			$this_feature['properties']['categories'] = json_encode($post_terms);
+// 			$this_feature['properties']['audio'] = $audio_val[0];
+// 			$this_feature['properties']['timecode'] = $timecode_val;
 			
-		//array_push($markerArray,$json_string); 
-		array_push($feature_collection['features'],$this_feature);
-		}
+// 		//array_push($markerArray,$json_string); 
+// 		array_push($feature_collection['features'],$this_feature);
+// 		}
 
-	endwhile;
+// 	endwhile;
 	
-	return $feature_collection;
-} // dhp_get_group_feed()
+// 	return $feature_collection;
+// } // dhp_get_group_feed()
 
 
 // createMarkerArray($project_id)
+// PURPOSE:	Creates Legends and Feature Collections Object (OpenLayer) when looking at a Map page
 // RETURNS: JSON object describing markers associated with Project
-//			?? describe the format ??
-// INPUT:	$project_id
+// INPUT:	$project_id = ID of Project to view
 
 function createMarkerArray($project_id)
 {
@@ -823,7 +835,15 @@ function createMarkerArray($project_id)
 				//array of custom fields
 				//$cordMote = $map_pointsMote['custom-fields'];
 			}
-			
+
+			//CREATE loop to generate tabs for filters
+			foreach( $filter as $legend ) {
+				$parent = get_term_by('name', $legend, $project_tax);
+				$parent_term_id = $parent->term_id;
+				$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty'    => false ) );
+
+				array_push($json_Object, getIconsForTerms($parent, $project_tax));
+			}
 		}
 		if($eps['type']=="transcript") {
 			$audio = getMoteFromName( $project_settings, $eps['settings']['audio'] );
@@ -831,16 +851,6 @@ function createMarkerArray($project_id)
 			$timecode = getMoteFromName( $project_settings, $eps['settings']['timecode'] );
 
 		}
-	}
-
-	// ?? Is $filter always defined correctly??
-	//CREATE loop to generate tabs for filters
-	foreach( $filter as $legend ) {
-		$parent = get_term_by('name', $legend, $project_tax);
-		$parent_term_id = $parent->term_id;
-		$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty'    => false ) );
-
-		array_push($json_Object, getIconsForTerms($parent, $project_tax));
 	}
 	
 	
@@ -1003,19 +1013,23 @@ function createMarkerArray($project_id)
 	array_push($json_Object, $json_string);	
 	 //$result = array_unique($array)
 	return $json_Object;
-	//return $term_icons;
 } // createMarkerArray()
 
 
 // dateFormatSplit($date_range)
-// PURPOSE:	Parse date range into two ??
-// INPUT:	Date as String in format ??
-// RETURNS: Array where [0] is From-Date and [1] is To-Date ??
+// PURPOSE:	Parse date range into from and to fields in format
+//			DATE1-DATE2 = 
+// INPUT:	Date as String in format 
+// RETURNS: Array where [0] is From-Date and [1] is To-Date
+// TO DO:	Not fully implemented
 
 function dateFormatSplit($date_range)
 {
+		// Approximate date?
 	$posA = strpos($date_range, "~");
+		// Exact date?
 	$posE = strpos($date_range, "-");
+
 	if($posE > 0) {
     	$dateArray = explode('-', $date_range);	
     	if($dateArray[1]=='') {
@@ -1035,7 +1049,7 @@ function dateFormatSplit($date_range)
 // createTimelineArray($project_id)
 // PURPOSE: $project_id: ??
 // INPUT:	ID of project
-// TO DO:	Remove hard-coded constants!
+// TO DO:	Not currently used -- Remove hard-coded constants!
 
 function createTimelineArray($project_id)
 {
@@ -1131,7 +1145,7 @@ function print_new_bootstrap_html()
     	<div class="span12">
         <div class="tabbable tabs-left">
           <ul class="nav nav-tabs">
-           <li class="active"><a href="#info" data-toggle="tab">Info</a></li>
+           <li class="active"><a href="#info" data-toggle="tab">Settings</a></li>
            <li><a href="#motes" data-toggle="tab">Motes</a></li>
            <li><a href="#entry-point" data-toggle="tab">Entry Points</a></li>
            <li><a href="#views" data-toggle="tab">Views</a></li>
@@ -1294,9 +1308,9 @@ function categoryString($cats)
 
 
 // createParentTerm($term_name,$dhp_tax_name)
-// PURPOSE:	Ensure WP database has term within taxonomy (may insert or update)
-// INPUT:	$term_name = name of term (?? must be HTML-encoded)
-//			$dhp_tax_name = name of taxonomy (?? in form)
+// PURPOSE:	Creates top-level term in WP database for a mote taxonomy (may insert or update)
+// INPUT:	$term_name = name of mote (must be HTML-encoded)
+//			$dhp_tax_name = name of top-level Project taxonomy ("dhp_tax"<pID>)
 
 function createParentTerm($term_name, $dhp_tax_name)
 {
@@ -1334,7 +1348,10 @@ function dhpSaveProjectSettings()
 
 // dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 // PURPOSE:	??
-// RETURNS:	??
+// INPUT:	$mArray = array of unique values for mote
+//			$mote_name = name of mote itself (parent term)
+//			$dhp_tax_name = "dhp_tax"<pID>
+// RETURNS:	array of taxonomic terms
 
 function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 { 
@@ -1360,9 +1377,11 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
    		}
 	}
 
+		// Gets all top-level parent terms; need "hide_empty=0" because parent terms not associated with any Marker
 	$parent_terms_to_exclude = get_terms($dhp_tax_name, 'parent=0&orderby=term_group&hide_empty=0');
 	$exclude_string;
 	$exclude_count = 0;
+		// now concatenate all parent terms (except current parent) in string
 	foreach ( $parent_terms_to_exclude as $term ) {
 		if($term->term_id != $parent_id) {
 			
@@ -1374,6 +1393,7 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 		}
 	}
 
+		// Only get terms in this Project and this Mote parent
 	$terms_loaded = get_terms($dhp_tax_name, 'exclude_tree='.$exclude_string.'&orderby=term_group&hide_empty=0');
  	$t_count = count($terms_loaded);
 
@@ -1414,8 +1434,7 @@ function createMoteValueArrays($custom_name, $delim, $project_id)
 
 			// Get the value in this marker for the custom field
 		$tempMoteValue = get_post_meta($marker_id, $custom_name, true);
-			// ?? is this needed?
-		$tempMoteArray = array();
+
 		if($delim) {
 			$tempMoteArray = split($delim,$tempMoteValue);
 		}
@@ -1703,10 +1722,10 @@ function dhpGetTranscript()
 
 	$dhp_settings = json_decode(get_post_meta( $dhp_project, 'project_settings', true),true);
 	foreach ($dhp_settings['entry-points'] as $i => $ep) {
- 	   if (array_key_exists('type', $ep) && $ep['type'] == 'transcript')
-        $dhp_settings_ep = $dhp_settings['entry-points'][$i];
-    	$dhp_audio_mote = getMoteFromName($dhp_settings,$dhp_settings_ep['settings']['audio']);
-		
+ 		if (array_key_exists('type', $ep) && $ep['type'] == 'transcript') {
+        	$dhp_settings_ep = $dhp_settings['entry-points'][$i];
+    		$dhp_audio_mote = getMoteFromName($dhp_settings,$dhp_settings_ep['settings']['audio']);
+		}
 	}
 
 	$args = array(
@@ -2179,9 +2198,9 @@ function dhpGetCustomFields()
 add_action( 'wp_restore_post_revision', 'dhp_project_restore_revision', 10, 2 );
 
 // dhp_project_restore_revision( $post_id, $revision_id )
-// PURPOSE: Handles ??
-// INPUT:	$post_id = ID of original post ??
-//			$revision_id = ID of revised post ??
+// PURPOSE: Handles returning to an earlier revision of this post
+// INPUT:	$post_id = ID of original post
+//			$revision_id = ID of new revised post
 // ASSUMES:	$dhp_project_settings_fields global is set
 
 function dhp_project_restore_revision( $post_id, $revision_id )
@@ -2285,6 +2304,9 @@ function add_dhp_project_admin_scripts( $hook )
 			
 			// wp_enqueue_script( 'jquery' );
 			// wp_enqueue_script( 'jquery-ui' );
+
+				// There is a conflict between default jQuery and nestedSortable, so we must replace it with a different
+				//	version of jQuery
 			wp_dequeue_script( 'jquery' ); 
 			wp_dequeue_script( 'jquery-ui' );
 			wp_enqueue_script(  'dhp-jquery', plugins_url('/lib/jquery-1.7.2.min.js', dirname(__FILE__) ));
@@ -2383,6 +2405,7 @@ function dhp_page_template( $page_template )
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 	$post_type = get_query_var('post_type');
+
 
 		// Viewing a Project?
     if ( $post_type == 'project' ) {
