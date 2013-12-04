@@ -10,8 +10,7 @@
 
 // ================== Global Variables ===================
 
-// These are hidden fields embedded in the page to store values, like project settings,
-//	and these are read by Auto-Save function to save state of edit
+	// HTML fields added to Custom Fields box in Edit Project admin panel
 $prefix = 'project_';
 $dhp_project_settings_fields = array (
 	array(
@@ -1047,8 +1046,8 @@ function dateFormatSplit($date_range)
 
 
 // createTimelineArray($project_id)
-// PURPOSE: $project_id: ??
-// INPUT:	ID of project
+// PURPOSE: Prepare for timeline view
+// INPUT:	$project_id = ID of project
 // TO DO:	Not currently used -- Remove hard-coded constants!
 
 function createTimelineArray($project_id)
@@ -1347,11 +1346,11 @@ function dhpSaveProjectSettings()
 
 
 // dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
-// PURPOSE:	??
+// PURPOSE:	Update the taxonomy 
 // INPUT:	$mArray = array of unique values for mote
 //			$mote_name = name of mote itself (parent term)
-//			$dhp_tax_name = "dhp_tax"<pID>
-// RETURNS:	array of taxonomic terms
+//			$dhp_tax_name = "dhp_tax_"<pID>
+// RETURNS:	array of taxonomic terms belonging to $mote_name
 
 function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 { 
@@ -1461,11 +1460,10 @@ add_action( 'wp_ajax_dhpCreateLegendTax', 'dhpCreateLegendTax' );
 // PURPOSE:	Handle Ajax call to create a taxonomy when a Legend is created
 // INPUT:	Through $_POST['mote_name'] array: ['type', 'delim', 'custom-fields', 'name']
 //			$_POST['project'] = ID of Project
-// RETURN:	Array of unique values/tax-terms ??
+// RETURN:	Array of unique values/tax-terms as JSON object
 
 function dhpCreateLegendTax()
 { 
-	$mote_values = array();
 	$mote = $_POST['mote_name'];
 	$mote_type = $mote['type'];
 	$mote_delim = $mote['delim'];
@@ -1486,7 +1484,6 @@ function dhpCreateLegendTax()
 	//create/update terms with mArray
 	$terms_loaded = dhpUpdateTaxonomy($mArray, $mote['name'], $dhp_tax_name);
 
-	
 	//die(json_encode($mArray));
 	die(json_encode($terms_loaded));
 	//die(json_encode($exclude_string));
@@ -1498,7 +1495,7 @@ add_action( 'wp_ajax_dhpGetMoteValues', 'dhpGetMoteValues' );
 
 // dhpGetMoteValues()
 // PURPOSE:	Handle Ajax call to get the unique values for a mote and associate these as
-//			taxonomy terms with each marker ??
+//			taxonomy terms with each Marker post
 // INPUT:	$_POST['project'] global is ID of Project
 //			$_POST['mote_name'] global is Hash describing mote
 // RETURNS:	??

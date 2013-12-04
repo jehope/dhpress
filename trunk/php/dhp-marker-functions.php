@@ -11,11 +11,11 @@
 
 // ====================== Global Variables ==========================
 
-	// Edit box to allow associating Marker with a Project ??
+	// GUI components added to Marker Settings box in Edit Marker admin panel
 $dhp_marker_settings_fields = array(
 	array(
 		'label'=> 'Associated Project',
-		'desc'	=> 'Select which project this marker should belong to.',
+		'desc'	=> 'Select Project to which this marker should belong',
 		'id'	=> $prefix .'project_id',
 		'type'	=> 'select',
 		'options' => dhp_get_projects()
@@ -230,8 +230,8 @@ function add_dhp_marker_settings_box() {
 }
 
 // show_dhp_marker_settings_box()
-// PURPOSE: Handle Callback to create editing boxes for Marker admin panel
-// ASSUMES:	$post is set to Project post
+// PURPOSE: Handle Callback to create editing boxes for Marker Settings box in admin panel
+// ASSUMES:	$post is set to this Marker post
 
 function show_dhp_marker_settings_box()
 {
