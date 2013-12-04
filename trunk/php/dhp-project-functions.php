@@ -16,7 +16,7 @@ $prefix = 'project_';
 $dhp_project_settings_fields = array (
 	array(
 		'label'=> 'Project Settings',
-		'desc'	=> 'Stores the project setup as json.',
+		'desc'	=> 'Stores the project_settings string as a JSON object.',
 		'id'	=> $prefix.'settings',
 		'type'	=> 'textarea'
 	),
@@ -371,12 +371,12 @@ add_action('add_meta_boxes', 'add_dhp_project_settings_box');
 function add_dhp_project_settings_box()
 {
     add_meta_box(
-		'dhp_settings_box', // $id
-		'Project Details', // $title
-		'show_dhp_project_settings_box', // $callback
-		'project', // $page
-		'normal', // $context
-		'high'); // $priority
+		'dhp_settings_box', 			// id of edit box
+		'Project Details',				// textual title of box
+		'show_dhp_project_settings_box', // name of callback function
+		'project',						// custom page name
+		'normal',						// part of page to add box
+		'high'); 						// priority
 } // add_dhp_project_settings_box()
 
 // show_dhp_project_settings_box()
@@ -415,7 +415,7 @@ function show_dhp_project_settings_box()
 						echo '<input type="text" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" size="30" />
 							<br /><span class="description">'.$field['desc'].'</span>';
 							echo '</td></tr>';
-					break;
+						break;
 					// textarea
 					case 'textarea':
 						echo '<tr>
@@ -424,7 +424,7 @@ function show_dhp_project_settings_box()
 						echo '<textarea name="'.$field['id'].'" id="'.$field['id'].'" cols="60" rows="4">'.$meta.'</textarea>
 							<br /><span class="description">'.$field['desc'].'</span>';
 							echo '</td></tr>';
-					break;
+						break;
 					// checkbox
 					case 'checkbox':
 						echo '<tr>
@@ -433,7 +433,7 @@ function show_dhp_project_settings_box()
 						echo '<input type="checkbox" name="'.$field['id'].'" id="'.$field['id'].'" ',$meta ? ' checked="checked"' : '','/>
 							<label for="'.$field['id'].'">'.$field['desc'].'</label>';
 							echo '</td></tr>';
-					break;
+						break;
 					// select
 					case 'select':
 						echo '<tr>
@@ -445,13 +445,11 @@ function show_dhp_project_settings_box()
 						}
 						echo '</select><br /><span class="description">'.$field['desc'].'</span>';
 						echo '</td></tr>';
-					break;
+						break;
 					// textarea
 					case 'hidden':
-					
 						echo '<input type="hidden" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" />';
-		
-					break;
+						break;
 				} //end switch
 		
 	} // end foreach
@@ -549,6 +547,7 @@ function createMetaValueArray($custom_name,$project_id)
 
 
 // createUniqueProjectCustomFieldArray()
+// PURPOSE:	?? is this used ??
 // RETURNS:	Array of the unique custom fields defined for current Project
 // ASSUMES:	_PROJECT_ID_ is set to current project
 // TO DO:	Don't rely on _PROJECT_ID_ global -- pass parameter?
@@ -578,7 +577,8 @@ function createUniqueProjectCustomFieldArray()
 } // createUniqueProjectCustomFieldArray()
 
 // createUniqueCustomFieldArray($the_id)
-// RETURNS: Array of all unique custom fields of all marker posts associated with the project
+// PURPOSE:	To determine all of the custom fields associated with the Project
+// RETURNS: Array of all unique custom fields of all marker posts associated with the Project
 // TO DO:	A faster way to do this? Create a sorted array/list?
 
 function createUniqueCustomFieldArray($project_id)
@@ -2393,7 +2393,7 @@ function dhp_register_maps($mapObject)
 add_filter( 'single_template', 'dhp_page_template' );
 
 // dhp_page_template( $page_template )
-// PURPOSE:	Called by WP to modify parameters for rending page, inc template to be used, acc to Project
+// PURPOSE:	Called by WP to modify output for rendering page, inc template to be used, acc to Project
 // INPUT:	$page_template = default path to file to use for template to render page
 // ASSUMES:	WP global variables for current post set correctly
 // RETURNS:	Modified $page_template setting (file path to new php template file)
