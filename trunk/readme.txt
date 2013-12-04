@@ -1,10 +1,10 @@
 === DH Press - Digital Humanities Toolkit ===
-Contributors: jehope, bgaston
+Contributors: jehope, gaelicmichael, bgaston
 Donate link: http://dhpress.org/
 Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours
 Requires at least: 3.4
-Tested up to: 3.4.1
-Stable tag: 1.2.0
+Tested up to: 3.7.1
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,11 +38,21 @@ Go to DHPress > New Project and create a new project to get started
 
 == Changelog ==
 
+= 1.5.0 = 
+* Updated views for modals, links can be customized.
+* Two transcripts can be included side by side(modal only).
+
+= 1.4.0 =
+* Filter markers based on project.
+* Category aliases enabled.
+
+= 1.3.0 = 
+* Included CSV Importer into the DHPress install process
+
 = 1.2.0=
 * Naming convention changed to dhp
 * Category creation updated to be more stable
 * Branding icons added
-
 
 = 1.1.1=
 * Beta release candidate overhaul

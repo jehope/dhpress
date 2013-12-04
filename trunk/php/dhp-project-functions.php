@@ -1007,7 +1007,7 @@ function dateFormatSplit($date_range)
     	$dateArray = explode('~', $date_range);	
     	if($dateArray[1]=='') {
     		$dateArray[1] = $dateArray[0];
-    	}
+   	 	}
 	}
 	return $dateArray;
 } // dateFormatSplit()
