@@ -689,22 +689,23 @@ function onFeatureSelect(feature) {
         // console.log(dhpSettings)
         tempModalHtml = $('<div><ul/></div>');
 
-		 var audioLink = selectedFeature.attributes.link;
-         var pageLink = selectedFeature.attributes.link2;
+		 var link1 = selectedFeature.attributes.link;
+         var link2 = selectedFeature.attributes.link2;
 		 var titleAtt;
          var tagAtt =  selectedFeature.attributes.categories;
          var audio =  selectedFeature.attributes.audio;
          var transcript =  selectedFeature.attributes.transcript;
+         var transcript2 =  selectedFeature.attributes.transcript2; ///change php to send transcript2 link
          var timecode =  selectedFeature.attributes.timecode;
          console.log(timecode)
          var time_codes = null; 
         
          if(dhpSettings['views']['title']) {
-            var titleAtt =  selectedFeature.attributes['title'];
+            titleAtt =  selectedFeature.attributes['title'];
          }
          console.log(findModalEpSettings('transcript'));
 
-         //need to check for transcript here 
+         //need to check for transcript here. TODO: check for 2nd transcript and load next to first without timestamps(should match first transcript)
          if(findModalEpSettings('transcript')) {
             console.log('has modal ep')
             time_codes = timecode.split('-');
@@ -719,6 +720,9 @@ function onFeatureSelect(feature) {
             $('#markerModal').addClass('transcript');
             _.map(dhpSettings['views']['modal-ep'],function(val,key) {
                 loadTranscriptClip(projectID,transcript,timecode);
+                if(transcript2) {
+                    loadTranscriptClip(projectID,transcript2,timecode);
+                }    
                 $('ul', tempModalHtml).append('<li class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></li>');
             });
          }
@@ -743,10 +747,6 @@ function onFeatureSelect(feature) {
                 });
               });
          }
-         if(dhpSettings['views']['content']) {
-
-         }
-         
 		 
 		 if(selectedFeature.attributes.thumb){
 			 thumb = selectedFeature.attributes.thumb;
@@ -763,21 +763,23 @@ function onFeatureSelect(feature) {
 		}
 		
 		li += tagAtt+' '+audio+' '+transcript+' '+timecode+'</p>';
-        if(pageLink!='no-link') {
-            li += '<a href="'+pageLink+'" target="_blank">More Info</a>';
+
+            // clear previous marker links
+        $('#markerModal .modal-footer .btn-success').remove();
+            // setup links
+        if(link1!='no-link') {
+            $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link1+'">'+dhpSettings['views']['link-label']+'</a>');
+        }
+        if(link2!='no-link') {
+            $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link2+'">'+dhpSettings['views']['link2-label']+'</a>');
         }
 
         $('#markerModal #markerModalLabel').empty().append(titleAtt);
 
 
         $('#markerModal .modal-body').empty().append(tempModalHtml);
-        $('#markerModal .modal-footer .btn-success').remove();
-        if(audioLink!='no-link') {
-            $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+audioLink+'"><i class="icon-volume-down icon-white"></i> <i class="icon-indent-left icon-white"></i> Listen to full audio</a>');
-        }
-        if(pageLink!='no-link') {
-             $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+pageLink+'">Concept Link</a>');
-        }
+        
+        
         $('#markerModal').modal('show');
         
         if(dhpSettings['views']['modal-ep']) {
@@ -879,7 +881,7 @@ function formatTranscript(dirty_transcript) {
     // split into array by line
     var split_transcript = dirty_transcript.split(/\r\n|\r|\n/g);
     tcArray = [];
-    console.log(split_transcript)
+    // console.log(split_transcript)
     if(split_transcript) {
         var $transcript_html = $('<ul class="transcript-list"/>');
         _.map(split_transcript, function(val){ 
@@ -892,15 +894,53 @@ function formatTranscript(dirty_transcript) {
                 else {
                     $transcript_html.append('<li class="type-text">'+val+'</li>'); 
                 }
+            }
+        });
+    }
+    return $transcript_html;
+}
+function attachSecondTranscript(transcriptData){
+    //target $('.transcript-list')
+    var split_transcript = transcriptData.split(/\r\n|\r|\n/g);
+     $('.transcript-list').addClass('two-column');
+    var first_transcriptHTML = $('.transcript-list .type-text');
+    // console.log(split_transcript)
+    var textArray = [];
+    if(split_transcript) {
+        _.map(split_transcript, function(val,index){ 
+            //skip values with line breaks...basically empty items
+            if(val.length>1) {
+
+                if(val[0]=='['){
+                    
+                }
+                else {
+                    textArray.push(val);
+                    // $transcript_html.append('<li class="type-text">'+val+'</li>'); 
+                }
             }       
         });
-    }   
-    return $transcript_html;
+    }
+    //loop thru original transcript and add second lines
+     _.map(textArray, function(val,index){ 
+        $(first_transcriptHTML).eq(index).after('<li class="type-text">'+val+'</li>')
+     });
+    console.log('first transcript line count');
+    console.log($(first_transcriptHTML)[1]);
+    console.log(textArray.length); 
 }
 function attachTranscript(transcriptData){
     //create millisecond markers for transcript
     //split transcript at timecodes
-    $('.transcript-ep p').append(formatTranscript(transcriptData));
+    console.log($('.transcript-ep .transcript-list').length)
+    if($('.transcript-ep .transcript-list').length>0) {
+        console.log('load second transcript')
+        attachSecondTranscript(transcriptData);
+    }
+    else {
+        $('.transcript-ep p').append(formatTranscript(transcriptData));
+    }
+    
 }
 function zoomCluster(){
     var displayedFeatures = [];

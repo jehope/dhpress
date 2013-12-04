@@ -847,6 +847,7 @@ function createMarkerArray($project_id)
 		if($eps['type']=="transcript") {
 			$audio = getMoteFromName( $project_settings, $eps['settings']['audio'] );
 			$transcript = getMoteFromName( $project_settings, $eps['settings']['transcript'] );
+			$transcript2 = getMoteFromName( $project_settings, $eps['settings']['transcript2'] );			
 			$timecode = getMoteFromName( $project_settings, $eps['settings']['timecode'] );
 
 		}
@@ -927,9 +928,9 @@ function createMarkerArray($project_id)
 		}
 		$audio_val = get_post_meta($marker_id,$audio['custom-fields'],true);
 		
-			$transcript_val1 = get_post_meta($marker_id, $transcript['custom-fields']);
-			$transcript_val = $transcript['delim'].$transcript_val1[0];
-		
+			$transcript_val = get_post_meta($marker_id, $transcript['custom-fields'],true);
+			$transcript2_val = get_post_meta($marker_id, $transcript2['custom-fields'],true);
+			
 		$timecode_val = get_post_meta($marker_id,$timecode['custom-fields'],true);
 		//$categories = get_post_meta($marker_id,'Concepts');
 		$args = array("fields" => "names");
@@ -989,20 +990,19 @@ function createMarkerArray($project_id)
 				//$json_string .= ',';
 			}
 			else {$i++;}
-		$temp_feature['type'] = 'Feature';
-		$temp_feature['geometry'] = array("type"=>"Point","coordinates"=> $lonlat);
-		$temp_feature['properties'] = array("title"=>$title,
-			"categories"=> $post_terms,
-			"audio"=>$audio_val,
-			"content"=>$content_att,
-			"transcript"=>$transcript_val,
-			"timecode"=>$timecode_val,
-			"link"=>$term_links,
-			"link2"=>$term_links2);
+			$temp_feature['type'] = 'Feature';
+			$temp_feature['geometry'] = array("type"=>"Point","coordinates"=> $lonlat);
+			$temp_feature['properties'] = array("title"=>$title,
+				"categories"=> $post_terms,
+				"audio"=>$audio_val,
+				"content"=>$content_att,
+				"transcript"=>$transcript_val,
+				"transcript2"=>$transcript2_val,
+				"timecode"=>$timecode_val,
+				"link"=>$term_links,
+				"link2"=>$term_links2);
 
-
-		//array_push($markerArray,$json_string); 
-		array_push($feature_array,$temp_feature);
+			array_push($feature_array,$temp_feature);
 		}
 	
 		
@@ -1653,7 +1653,7 @@ function getTranscriptClip($tran,$clip)
 		$returnClip = substr($tran, $clipStart-1, $clipLength+13);
 	}
 	else {
-		$returnClip = $clipStart . '-'.$clipEnd.$clipArray[1].$tran;//'incorrect timestamp or transcript not found';
+		$returnClip = 'incorrect timestamp or transcript not found';
 	}
 	//return $clipArray[0];
 	return $returnClip;
