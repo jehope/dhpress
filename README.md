@@ -1,4 +1,5 @@
 # DH Press - Digital Humanities Toolkit
+
 Contributors: jehope, gaelicmichael, bgaston
 Donate link: http://dhpress.org/
 Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours
