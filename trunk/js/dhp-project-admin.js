@@ -9,7 +9,7 @@ var tempProjectObj;
 $('#screen-meta-links a').click(function(){
   $('#screen-options-wrap').removeClass('hidden');
 });
-//console.log(dhpDataLib.ajax_url);
+console.log("testing dev");
 
 //$('#hidden-layers').show();
 var BASE_LAYERS = $('#hidden-layers .base-layer').map(function(){
@@ -27,9 +27,9 @@ $('.dhp_icon').click(function() {
 		assignListeners(this);
 	}		
 });
-$(window).resize(function() {
-	resizeTB();
- });
+// $(window).resize(function() {
+// 	resizeTB();
+//  });
 $('#publish').popover({
     title:'Project requires save',
     content:'Don\'t forget to save your project(red button on the left).',
@@ -445,6 +445,9 @@ function buildEntryHtml(type,settings){
                         <label>Transcript</label>\
                         <select name="av-transcript-txt" id="av-transcript-txt">'+getLoadedMotes(settings['transcript'])+'\
                         </select>\
+                        <label>Transcript 2</label>\
+                        <select name="av-transcript-txt2" id="av-transcript-txt2">'+getLoadedMotes(settings['transcript2'])+'\
+                        </select>\
                           <label>Time Stamp(clip)</label>\
                         <select name="av-transcript-clip" id="av-transcript-clip">'+getLoadedMotes(settings['timecode'])+'\
                         </select>';
@@ -464,7 +467,7 @@ function buildEntryHtml(type,settings){
                       <ul class="layer-list">\
                         '+loadLayers(settings['layers'])+'\
                         </ul>\
-                    <button class="btn btn-success add-layer" type="button">Add</button>\
+                    <button class="btn btn-success add-layer" type="button">Add Layer</button>\
                     </div>\
                 </div>\
                 <div class="row-fluid vars">\
@@ -478,7 +481,7 @@ function buildEntryHtml(type,settings){
                         <ul class="legend-list">\
                         '+loadLegendList(settings['filter-data'])+'\
                         </ul>\
-                        <button class="btn btn-success add-legend" type="button">Add</button>\
+                        <button class="btn btn-success add-legend" type="button">Add Legend</button>\
                     </div>\
                 </div>';
   }
@@ -620,9 +623,9 @@ function updateViewObjectFormat(theObject) {
     newViewObject['popupModals']['links'][0] = new Object();
     newViewObject['popupModals']['links'][1] = new Object();
     newViewObject['popupModals']['links'][0].link = theObject['link'];
-    newViewObject['popupModals']['links'][0].title = 'link 1';
+    newViewObject['popupModals']['links'][0].title = theObject['link-label'];;
     newViewObject['popupModals']['links'][1].link = theObject['link2'];
-    newViewObject['popupModals']['links'][1].title = 'link 2';
+    newViewObject['popupModals']['links'][1].title = theObject['link2-label'];;
 
   newViewObject['markerPage'] = new Object();
     newViewObject['markerPage'].title = theObject['post-view-title'];
@@ -661,15 +664,21 @@ function buildViews(viewObject){
     console.log(viewObject)
 
     var content = [];
-    var linkTarget,linkTarget2;
+    var linkTarget,linkTarget2,linkTargetLabel,linkTarget2Label;
     if(viewObject['title']) {
       title = viewObject['title'];
     }
     if(viewObject['link']) {
       linkTarget = viewObject['link'];
+      if(viewObject['link-label']) {
+        linkTargetLabel = 'value="'+viewObject['link-label']+'"';
+      }
     }
     if(viewObject['link2']) {
       linkTarget2 = viewObject['link2'];
+      if(viewObject['link2-label']) {
+        linkTarget2Label = 'value="'+viewObject['link2-label']+'"';
+      }
     }
     $('#projectModal').empty();
     $('#projectModal').append('<div class="modal-header">\
@@ -683,10 +692,11 @@ function buildViews(viewObject){
       <p>Pick the motes to display in the modal.</p>\
       <ul id="modal-body-content">\
       </ul><button class="btn btn-success add-modal-content" type="button">Add</button>\
+      <p>Setup Links</p>\
+      <span class="pull-left" >Link 1: <input type="text" name="link-legends-label" class="link-legends-label" placeholder="Label" '+linkTargetLabel+'/><select name="link-legends" class="link-legends">'+legendOptions(linkTarget)+'</select></span>\
+      <span class="pull-left" >Link 2: <input type="text" name="link-legends2-label" class="link-legends2-label" placeholder="Label" '+linkTarget2Label+'/><select name="link-legends2" class="link-legends2">'+legendOptions(linkTarget2)+'</select></span>\
     </div>\
     <div class="modal-footer">\
-      <span class="pull-left" >Link to audio: <select name="link-legends" class="link-legends">'+legendOptions(linkTarget)+'</select></span>\
-      <span class="pull-left" >Link to alternative page: <select name="link-legends2" class="link-legends2">'+legendOptions(linkTarget2)+'</select></span>\
       <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
       <button class="btn btn-primary" id="save-modal-view" aria-hidden="true">Confirm</button>\
     </div>');
@@ -742,7 +752,9 @@ function buildViews(viewObject){
         viewObject['content'][index] = $(this).val();
       });
       viewObject['link'] = $('#projectModal .link-legends option:selected').val();
+      viewObject['link-label'] = $('#projectModal .link-legends-label').val();
       viewObject['link2'] = $('#projectModal .link-legends2 option:selected').val();
+      viewObject['link2-label'] = $('#projectModal .link-legends2-label').val();
       // $('#save-modal-view').text('saving...');
 
        //console.log(viewObject);
@@ -909,13 +921,13 @@ function loadLegendList(legendObject) {
 
 }
 function addLegend(selected, count){
-  legendButton = '<button class="btn btn-success load-legend" type="button">Load Legend</button>';
+  legendButton = '<button class="btn btn-success load-legend" type="button">Configure</button>';
   if(selected=='') {
     selected = '';
     
   }
   if(!count) {
-    legendButton = '<button class="btn btn-inverse create-legend" type="button">Create Legend</button><button class="btn btn-success load-legend hide" type="button">Load Legend</button>';
+    legendButton = '<button class="btn btn-inverse create-legend" type="button">Create</button><button class="btn btn-success load-legend hide" type="button">Configure</button>';
     tempcount = $('.legend-list li').length;
     console.log(tempcount)
     count = tempcount+1;
@@ -1333,6 +1345,8 @@ function saveProjectSettings()	{
       projectObj['entry-points'][index]["settings"] = new Object();
       projectObj['entry-points'][index]["settings"]['audio'] = $(this).find('#av-transcript-audio').val();
       projectObj['entry-points'][index]["settings"]['transcript'] = $(this).find('#av-transcript-txt').val();
+      projectObj['entry-points'][index]["settings"]['transcript2'] = $(this).find('#av-transcript-txt2').val();
+      
       projectObj['entry-points'][index]["settings"]['timecode'] = $(this).find('#av-transcript-clip').val();
     }
 	});
@@ -1492,26 +1506,24 @@ $('#taxModal').remove();
 			$('#taxModal .modal-body .icons a').unbind('click');
 		});
 	});
-	
-
 }
-function resizeTB() {
-	if($('#taxModal .modal-body').length>0) {
+// function resizeTB() {
+// 	if($('#taxModal .modal-body').length>0) {
 		
-		var div = document.getElementById('TB_ajaxContent');
-		var hasVerticalScrollbar = div.scrollHeight>div.clientHeight;
-		var boxWidth = $('#TB_window').width() -30;
-		var boxHeight = $('#TB_window').height() -42;
-		if(hasVerticalScrollbar) {
-			$('.cat-list').width('385px');
-		}
-		else {
-			$('.cat-list').width('400px');
-		}
+// 		var div = document.getElementById('TB_ajaxContent');
+// 		var hasVerticalScrollbar = div.scrollHeight>div.clientHeight;
+// 		var boxWidth = $('#TB_window').width() -30;
+// 		var boxHeight = $('#TB_window').height() -42;
+// 		if(hasVerticalScrollbar) {
+// 			$('.cat-list').width('385px');
+// 		}
+// 		else {
+// 			$('.cat-list').width('400px');
+// 		}
 		
-		$('#taxModal .modal-body').css({'width': boxWidth,'height':boxHeight});
-	}
-}
+// 		$('#taxModal .modal-body').css({'width': boxWidth,'height':boxHeight});
+// 	}
+// }
 function saveArrayTree(){
 	//var arraied = $('ol.sortable').nestedSortable('toHierarchy');
 	//arraied = dump(arraied);

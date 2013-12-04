@@ -117,6 +117,8 @@ var context = {
         }
         var highParentI ='';
         if(cats) {
+            // console.log(feature.cluster[0].attributes.title);
+
             highParentI = getHighestParentColor(cats);            
         }
 
@@ -196,6 +198,7 @@ $('.dhp-nav .tips').click(function(){
 
 function createLookup(filter){
     catFilter = filter;
+    // console.log(filter);
 
     var lookupData = filter.terms;
     var countTerms = Object.keys(lookupData).length; 
@@ -257,15 +260,22 @@ function getHighestParentColor(categories) {
 
     var countTerms = Object.keys(lookupData).length; 
     //console.log(categories)
+    // console.log(lookupData);
     var tempCats = categories;
     var countCats =  Object.keys(tempCats).length; 
 
     for(i=0;i<countTerms;i++) {
         for(j=0;j<countCats;j++) {
-            //console.log(lookupData[i]);
-            var tempName = lookupData[i].name;
+            // console.log(lookupData[i]);
+            // console.log(categories)
+            var tempName = lookupData[i].name.replace(/&amp;/, "&");
+  
+            var cleanCatName = tempCats[j];
+
+            // if (tempName.indexOf("&") > -1)
+            //     console.log(tempName+': '+cleanCatName);
             
-            if (tempName==tempCats[j]) {
+            if (tempName==cleanCatName) {
                 if(lookupData[i].icon_url.substring(0,1) == '#') {
                     //console.log(tempName)
                     return lookupData[i].icon_url;
@@ -282,7 +292,7 @@ function getHighestParentColor(categories) {
                     var tempChildCount = Object.keys(lookupData[i].children).length;
                     
                     for (k=0;k<tempChildCount;k++) {
-                        if(tempChildren[k]==tempCats[j]) {
+                        if(tempChildren[k]==cleanCatName) {
                            if(lookupData[i].icon_url.substring(0,1) == '#') {
                                 //console.log(lookupData[i].children)
                                 //console.log(tempCats[j])
@@ -373,7 +383,7 @@ function createLegend(object) {
                     $(tempGroup).append('<div id="term-'+key+key2+'" class="accordion-body collapse"><div class="accordion-inner" /></div>');
                 }
                 _.map(val2.children, function(val3,key3) {
-                    console.log('Children Terms: '+val3)
+                    // console.log('Children Terms: '+val3)
                     $('.accordion-inner', tempGroup).append(val3+'<br/>');
                 });
                 $('#accordion-'+key, newLegendsHtml).append('<div class="accordion-group">'+$(tempGroup).html()+'</div>')
@@ -617,9 +627,12 @@ function findSelectedCats(single) {
             //console.log(tempSelCat+' :'+index)
             for(i=0;i<countTerms;i++) {
                 var tempFilter = catFilter.terms[i].name;
+                    // must encode ampersands
+                tempFilter = tempFilter.replace(/&amp;/, "&");
+                // console.log(catFilter.terms);
                 if(tempFilter==tempSelCat) {
                     selCatFilter[index] = catFilter.terms[i];
-                    
+                    // console.log(tempFilter, tempSelCat);
                 }
             }
         });
@@ -673,25 +686,26 @@ function onFeatureSelect(feature) {
         var tempModalHtml;
         if(feature.cluster){selectedFeature = feature.cluster[0];}
         else {selectedFeature = feature;}
-            console.log(dhpSettings)
+        // console.log(dhpSettings)
         tempModalHtml = $('<div><ul/></div>');
 
-		 var audioLink = selectedFeature.attributes.link;
-         var pageLink = selectedFeature.attributes.link2;
+		 var link1 = selectedFeature.attributes.link;
+         var link2 = selectedFeature.attributes.link2;
 		 var titleAtt;
          var tagAtt =  selectedFeature.attributes.categories;
          var audio =  selectedFeature.attributes.audio;
          var transcript =  selectedFeature.attributes.transcript;
+         var transcript2 =  selectedFeature.attributes.transcript2; ///change php to send transcript2 link
          var timecode =  selectedFeature.attributes.timecode;
          console.log(timecode)
          var time_codes = null; 
         
          if(dhpSettings['views']['title']) {
-            var titleAtt =  selectedFeature.attributes['title'];
+            titleAtt =  selectedFeature.attributes['title'];
          }
          console.log(findModalEpSettings('transcript'));
 
-         //need to check for transcript here 
+         //need to check for transcript here. TODO: check for 2nd transcript and load next to first without timestamps(should match first transcript)
          if(findModalEpSettings('transcript')) {
             console.log('has modal ep')
             time_codes = timecode.split('-');
@@ -706,6 +720,9 @@ function onFeatureSelect(feature) {
             $('#markerModal').addClass('transcript');
             _.map(dhpSettings['views']['modal-ep'],function(val,key) {
                 loadTranscriptClip(projectID,transcript,timecode);
+                if(transcript2) {
+                    loadTranscriptClip(projectID,transcript2,timecode);
+                }    
                 $('ul', tempModalHtml).append('<li class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></li>');
             });
          }
@@ -730,10 +747,6 @@ function onFeatureSelect(feature) {
                 });
               });
          }
-         if(dhpSettings['views']['content']) {
-
-         }
-         
 		 
 		 if(selectedFeature.attributes.thumb){
 			 thumb = selectedFeature.attributes.thumb;
@@ -750,21 +763,23 @@ function onFeatureSelect(feature) {
 		}
 		
 		li += tagAtt+' '+audio+' '+transcript+' '+timecode+'</p>';
-        if(pageLink!='no-link') {
-            li += '<a href="'+pageLink+'" target="_blank">More Info</a>';
+
+            // clear previous marker links
+        $('#markerModal .modal-footer .btn-success').remove();
+            // setup links
+        if(link1!='no-link') {
+            $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link1+'">'+dhpSettings['views']['link-label']+'</a>');
+        }
+        if(link2!='no-link') {
+            $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link2+'">'+dhpSettings['views']['link2-label']+'</a>');
         }
 
         $('#markerModal #markerModalLabel').empty().append(titleAtt);
 
 
         $('#markerModal .modal-body').empty().append(tempModalHtml);
-        $('#markerModal .modal-footer .btn-success').remove();
-        if(audioLink!='no-link') {
-            $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+audioLink+'"><i class="icon-volume-down icon-white"></i> <i class="icon-indent-left icon-white"></i> Listen to full audio</a>');
-        }
-        if(pageLink!='no-link') {
-             $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+pageLink+'">Concept Link</a>');
-        }
+        
+        
         $('#markerModal').modal('show');
         
         if(dhpSettings['views']['modal-ep']) {
@@ -866,7 +881,7 @@ function formatTranscript(dirty_transcript) {
     // split into array by line
     var split_transcript = dirty_transcript.split(/\r\n|\r|\n/g);
     tcArray = [];
-    console.log(split_transcript)
+    // console.log(split_transcript)
     if(split_transcript) {
         var $transcript_html = $('<ul class="transcript-list"/>');
         _.map(split_transcript, function(val){ 
@@ -879,15 +894,53 @@ function formatTranscript(dirty_transcript) {
                 else {
                     $transcript_html.append('<li class="type-text">'+val+'</li>'); 
                 }
+            }
+        });
+    }
+    return $transcript_html;
+}
+function attachSecondTranscript(transcriptData){
+    //target $('.transcript-list')
+    var split_transcript = transcriptData.split(/\r\n|\r|\n/g);
+     $('.transcript-list').addClass('two-column');
+    var first_transcriptHTML = $('.transcript-list .type-text');
+    // console.log(split_transcript)
+    var textArray = [];
+    if(split_transcript) {
+        _.map(split_transcript, function(val,index){ 
+            //skip values with line breaks...basically empty items
+            if(val.length>1) {
+
+                if(val[0]=='['){
+                    
+                }
+                else {
+                    textArray.push(val);
+                    // $transcript_html.append('<li class="type-text">'+val+'</li>'); 
+                }
             }       
         });
-    }   
-    return $transcript_html;
+    }
+    //loop thru original transcript and add second lines
+     _.map(textArray, function(val,index){ 
+        $(first_transcriptHTML).eq(index).after('<li class="type-text">'+val+'</li>')
+     });
+    console.log('first transcript line count');
+    console.log($(first_transcriptHTML)[1]);
+    console.log(textArray.length); 
 }
 function attachTranscript(transcriptData){
     //create millisecond markers for transcript
     //split transcript at timecodes
-    $('.transcript-ep p').append(formatTranscript(transcriptData));
+    console.log($('.transcript-ep .transcript-list').length)
+    if($('.transcript-ep .transcript-list').length>0) {
+        console.log('load second transcript')
+        attachSecondTranscript(transcriptData);
+    }
+    else {
+        $('.transcript-ep p').append(formatTranscript(transcriptData));
+    }
+    
 }
 function zoomCluster(){
     var displayedFeatures = [];
@@ -958,6 +1011,7 @@ function createMarkers(data,mLayer) {
     //}
     catFilter  = legends[0];//dataObject[0];
     console.log(featureObject)
+    console.log(catFilter)
     var countFeatures = Object.keys(featureObject.features).length; 
     for(i=0;i<countFeatures;i++) {
         var countCategories = Object.keys(featureObject.features[i].properties.categories).length; 

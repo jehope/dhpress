@@ -239,8 +239,12 @@ filter: alpha(opacity=60);
 	width: 20%;
 	float: left;
 }
-.type-text {
+.transcript-list .type-text {
 	width: 80%;
+	display: inline-block;
+}
+.transcript-list.two-column .type-text {
+	width: 40%;
 	display: inline-block;
 }
 .legend-resize {
