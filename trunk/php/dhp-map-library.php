@@ -7,9 +7,16 @@
      * @link http://dhpress.org/download/
      */
      
-// Add new taxonomy for mapsets
 global $cdlamapid;
-function dhp_mapset_init() {
+
+// ============================== Init Functions ============================
+
+add_action( 'init', 'dhp_mapset_init' );
+
+// dhp_mapset_init()
+// PURPOSE: Add new taxonomy for mapsets
+function dhp_mapset_init()
+{
   $labels = array(
     'name' => _x( 'Maps', 'taxonomy general name' ),
     'singular_name' => _x( 'Map', 'taxonomy singular name' ),
@@ -43,41 +50,47 @@ function dhp_mapset_init() {
   ); 
   register_post_type('dhp-maps',$args);
 }
-add_action( 'init', 'dhp_mapset_init' );
 
+    // Add new taxonomy, NOT hierarchical
+// function mapset_init()
+// {
+//   $labels = array(
+//     'name' => _x( 'Mapsets', 'taxonomy general name' ),
+//     'singular_name' => _x( 'Mapset', 'taxonomy singular name' ),
+//     'all_items' => __( 'All Mapsets' ),
+//     'parent_item' => null,
+//     'parent_item_colon' => null,
+//     'edit_item' => __( 'Edit Mapset' ), 
+//     'update_item' => __( 'Update Mapset' ),
+//     'add_new_item' => __( 'Add New Mapset' ),
+//     'new_item_name' => __( 'New Mapset Name' ),
+//     'add_or_remove_items' => __( 'Add or remove mapsets' ),
+//     'menu_name' => __( 'Mapsets' ),
+//   ); 
 
-function mapset_init() {
-    // Add new taxonomy, NOT hierarchical (like tags)
-  $labels = array(
-    'name' => _x( 'Mapsets', 'taxonomy general name' ),
-    'singular_name' => _x( 'Mapset', 'taxonomy singular name' ),
-    'all_items' => __( 'All Mapsets' ),
-    'parent_item' => null,
-    'parent_item_colon' => null,
-    'edit_item' => __( 'Edit Mapset' ), 
-    'update_item' => __( 'Update Mapset' ),
-    'add_new_item' => __( 'Add New Mapset' ),
-    'new_item_name' => __( 'New Mapset Name' ),
-    'add_or_remove_items' => __( 'Add or remove mapsets' ),
-    'menu_name' => __( 'Mapsets' ),
-  ); 
-
-  register_taxonomy('mapset','dhp-maps',array(
-    'hierarchical' => true,
-    'labels' => $labels,
-    'show_ui' => true,
-    'update_count_callback' => '_update_post_term_count',
-    'query_var' => true,
-    'rewrite' => array( 'slug' => 'mapsets' ),
-  ));
+//   register_taxonomy('mapset','dhp-maps',array(
+//     'hierarchical' => true,
+//     'labels' => $labels,
+//     'show_ui' => true,
+//     'update_count_callback' => '_update_post_term_count',
+//     'query_var' => true,
+//     'rewrite' => array( 'slug' => 'mapsets' ),
+//   ));
     
-}
+// }
 //add_action( 'init', 'mapset_init' );
 
 
-// Custom scripts to be run on Project new/edit pages only
-function add_dhp_map_library_scripts( $hook ) {
+add_action( 'admin_enqueue_scripts', 'add_dhp_map_library_scripts', 10, 1 );
 
+// add_dhp_map_library_scripts( $hook )
+// Custom scripts to be run on Project new/edit pages only
+// PURPOSE: Prepare CSS and JS files for all page types in WP
+// INPUT:   $hook = name of template file being loaded
+// ASSUMES: Other WP global variables for current page are set
+
+function add_dhp_map_library_scripts( $hook )
+{
     global $post;
 
     if ( $hook == 'edit.php'|| $hook == 'post-new.php' || $hook == 'post.php' ) {
@@ -91,26 +104,32 @@ function add_dhp_map_library_scripts( $hook ) {
             wp_enqueue_script('thickbox');
         }
     }
-}
-add_action( 'admin_enqueue_scripts', 'add_dhp_map_library_scripts', 10, 1 );
+} // dd_dhp_map_library_scripts()
 
-// Add the Meta Box for map attributes
-function add_dhp_map_settings_box() {
-    add_meta_box(
-        'dhp_map_settings_meta_box',       // $id
-        'Map Attributes',                       // $title
-        'show_dhp_map_settings_box',       // $callback
-        'dhp-maps',                        // $page
-        'normal',                               // $context
-        'high');                                // $priority
-}
+
 add_action('add_meta_boxes', 'add_dhp_map_settings_box');
 
+// Add the Meta Box for map attributes
+function add_dhp_map_settings_box()
+{
+    add_meta_box(
+        'dhp_map_settings_meta_box',       // $id
+        'Map Attributes',                  // title
+        'show_dhp_map_settings_box',       // callback function name
+        'dhp-maps',                        // post-type
+        'normal',                          // $context
+        'high');                           // $priority
+}
 
-// Callback function for dhp_map_settings_box
-function show_dhp_map_settings_box() {
+// show_dhp_map_settings_box()
+// PURPOSE: Handle creating HTML to show/edit custom fields specific to Map marker
+// ASSUMES: $post global is set to the Map post we are currently looking at
+// TO DO:   Must be more efficient means of selecting option
+
+function show_dhp_map_settings_box()
+{
     global $post;
-    
+
     // Setup nonce
     echo '<input type="hidden" name="dhp_map_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
     $dhp_map_desc = get_post_meta($post->ID, 'dhp_map_desc',true);
@@ -143,7 +162,8 @@ function show_dhp_map_settings_box() {
     }else{
         $selectCategory = 'selected';
     }
-     
+
+        // Fetch all custom fields for this Map
     $dhp_map_source = get_post_meta($post->ID, 'dhp_map_source',true);
     $dhp_map_creator = get_post_meta($post->ID, 'dhp_map_creator',true);
     $dhp_map_classification = get_post_meta( $post->ID, 'dhp_map_classification', true );
@@ -168,11 +188,17 @@ function show_dhp_map_settings_box() {
     echo '<tr><td align=right>Source:</td><td><input name="dhp_map_source" id="dhp_map_source" type="text" size="30" value="'.$dhp_map_source.'"/></td></tr>';
     echo '<tr><td align=right>Creator:</td><td><input name="dhp_map_creator" id="dhp_map_creator" type="text" size="30" value="'.$dhp_map_creator.'"/></td></tr>';
     echo '</table>';
-}
+} // show_dhp_map_settings_box()
 
-// Save the Data
-function save_dhp_map_settings($post_id) {
-    
+
+add_action('save_post', 'save_dhp_map_settings');  
+
+// save_dhp_map_settings($post_id)
+// PURPOSE: Handle saving values from UI edit boxes into Map post
+// INPUT:   $post_id = ID of Map marker
+
+function save_dhp_map_settings($post_id)
+{    
     // verify nonce
     if (!wp_verify_nonce($_POST['dhp_map_settings_box_nonce'], basename(__FILE__)))
         return $post_id;
@@ -194,12 +220,17 @@ function save_dhp_map_settings($post_id) {
     update_post_meta($post_id, 'dhp_map_category',$_POST['dhp_map_category']);
     update_post_meta($post_id, 'dhp_map_source',$_POST['dhp_map_source']);
     update_post_meta($post_id, 'dhp_map_creator',$_POST['dhp_map_creator']);
-    
-}
-add_action('save_post', 'save_dhp_map_settings');  
+} // save_dhp_map_settings()
 
 
-// Set template to be used for Map type
+add_filter( 'single_template', 'dhp_map_page_template' );
+
+// dhp_map_page_template( $page_template )
+// PURPOSE: Handle setting template to be used for Map type
+// INPUT:   $page_template = default name of template file
+// RETURNS: Modified name of template file
+// ASSUMES: $post global is set to current page post to display
+
 function dhp_map_page_template( $page_template )
 {
     global $post;
@@ -235,20 +266,26 @@ function dhp_map_page_template( $page_template )
         wp_enqueue_script('thickbox');
     }
     return $page_template;
-}
-add_filter( 'single_template', 'dhp_map_page_template' );
+} // dhp_map_page_template()
 
 
-//code for managing dhp-maps admin panel
+// dhp_maps_filter_restrict_manage_posts()
+// PURPOSE: Create HTML code to create Drop-down list of Map-types to filter lists of Maps in admin Panel
+// INPUT:   $_GET['post_type'] = custom post type
+// SIDE-FX: Outputs HTML text for drop-down list
 
-function dhp_maps_filter_restrict_manage_posts(){
+add_action( 'restrict_manage_posts', 'dhp_maps_filter_restrict_manage_posts' );
+
+function dhp_maps_filter_restrict_manage_posts()
+{
     $type = 'posts';
     if (isset($_GET['post_type'])) {
         $type = $_GET['post_type'];
     }
  
     //only add filter to post type you want
-    if ('dhp-maps' == $type){
+    if ('dhp-maps' == $type)
+    {
         //change this to the list of values you want to show
         //in 'label' => 'value' format
         $values = array(
@@ -274,11 +311,22 @@ function dhp_maps_filter_restrict_manage_posts(){
         </select>
         <?php
     }
-}
-add_action( 'restrict_manage_posts', 'dhp_maps_filter_restrict_manage_posts' );
+} // dhp_maps_filter_restrict_manage_posts()
 
-function dhp_maps_filter( $query ){
+
+add_filter( 'parse_query', 'dhp_maps_filter' );
+
+// dhp_maps_filter($query)
+// PURPOSE: Modify the query string (used to show list in Maps admin panel) according to UI selection
+// INPUT:   $query = the array describing the query for Markers to display in panel
+//          $_GET['post_type'] = post type of posts being displayed in admin panel
+//          $_GET['dhp_map_type'] = ID of Project selected in option button
+// ASSUMES: $pagenow global is set to file name of current page-wide template file
+
+function dhp_maps_filter( $query )
+{
     global $pagenow;
+
     $type = 'posts';
     if (isset($_GET['post_type'])) {
         $type = $_GET['post_type'];
@@ -287,18 +335,28 @@ function dhp_maps_filter( $query ){
         $query->query_vars['meta_key'] = 'dhp_map_type';
         $query->query_vars['meta_value'] = $_GET['dhp_map_type'];
     }
-}
-add_filter( 'parse_query', 'dhp_maps_filter' );
+} // dhp_maps_filter()
 
-function add_dhp_maps_columns($defaults) {
-    global $post;
+
+add_filter('manage_posts_columns', 'add_dhp_maps_columns');
+
+// add_dhp_maps_columns($defaults)
+// PURPOSE: Handle modifying array of columns to show when listing Maps in admin panel
+// INPUT:   $defaults = hash/array of field names and labels for the columns to display
+// RETURNS: Hash/array of column names with new columns added, some removed
+
+function add_dhp_maps_columns($defaults)
+{
     $post_type = get_query_var('post_type');
     if ( $post_type != 'dhp-maps' )
         return $defaults;
+
+        // Remove unused columns
     unset($defaults['author']);
     unset($defaults['comments']);
     unset($defaults['date']);
     
+        // Add special ones for Maps
     $defaults['types'] = __('Type');
     $defaults['category'] = __('Category');
     $defaults['classification'] = __('Classification');
@@ -309,11 +367,23 @@ function add_dhp_maps_columns($defaults) {
     $defaults['date'] = __('Date');
     
     return $defaults;
-}
-add_filter('manage_posts_columns', 'add_dhp_maps_columns');
+} // add_dhp_maps_columns()
 
-function dhp_maps_custom_column($name, $post_id) {
+
+add_action('manage_posts_custom_column', 'dhp_maps_custom_column', 10, 2);
+
+// dhp_maps_custom_column($name, $post_id)
+// PURPOSE: Output text to display custom column value for Map in admin panel
+// INPUT:   $name = name key for column (name of field)
+//          $post_id = ID of Map post
+// SIDE-FX: Outputs the name of name of project or category
+// TO DO:   Would be much simpler and more efficient if key for column was custom post name and could use for
+//              get_post_meta call
+
+function dhp_maps_custom_column($name, $post_id)
+{
     global $post;
+
     $post_type = get_query_var('post_type');
     if ( $post_type == 'dhp-maps' ){
         $meta_type = get_post_meta( $post_id, 'dhp_map_type', true );
@@ -327,28 +397,27 @@ function dhp_maps_custom_column($name, $post_id) {
         {
             case 'types':
                 echo $meta_type;
-            break;
+                break;
             case 'category':
                 echo $meta_category;
-            break;
+                break;
             case 'classification':
                 echo $meta_classification;
-            break;
+                break;
             case 'state':
                 echo $meta_state;
-            break;
+                break;
             case 'county':
                 echo $meta_county;
-            break;
+                break;
             case 'city':
                 echo $meta_city;
-            break;
+                break;
             case 'year':
                 echo $meta_year;
-            break;
+                break;
         }
     }
-}
-add_action('manage_posts_custom_column', 'dhp_maps_custom_column', 10, 2);
+} // dhp_maps_custom_column()
 
 ?>
