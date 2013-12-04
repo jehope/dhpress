@@ -544,37 +544,6 @@ function createMetaValueArray($custom_name,$project_id)
 	return $result;
 } // createMetaValueArray()
 
-
-// createUniqueProjectCustomFieldArray()
-// PURPOSE:	?? is this used ??
-// RETURNS:	Array of the unique custom fields defined for current Project
-// ASSUMES:	_PROJECT_ID_ is set to current project
-// TO DO:	Don't rely on _PROJECT_ID_ global -- pass parameter?
-//			A faster way to do this? Create a sorted array/list?
-
-function createUniqueProjectCustomFieldArray()
-{
-	// global $post;
-	// $project_id = $post->ID;
-	$project_id = _PROJECT_ID_;
-	$project_custom_field_array = array();
-		// get all custom_keys
-	$temp_project_custom_field_keys = get_post_custom_keys($project_id);
-
-	if ($temp_project_custom_field_keys) {
-		foreach ($temp_project_custom_field_keys as $key => $value) {
-			$valuet = trim($value);
-				// exclude project_settings and WP internal fields
-     		if ( '_' == $valuet{0} || 'project_settings' == $valuet)
-      			continue;
-			array_push($project_custom_field_array, $value);
-		}
-	}
-	$unique_custom_fields = array_unique($project_custom_field_array);
-
-	return $unique_custom_fields;
-} // createUniqueProjectCustomFieldArray()
-
 // createUniqueCustomFieldArray($the_id)
 // PURPOSE:	To determine all of the custom fields associated with the Project
 // RETURNS: Array of all unique custom fields of all marker posts associated with the Project
@@ -983,7 +952,6 @@ function createMarkerArray($project_id)
 			}
 			
 		}
-		
 		
 		if($lonlat) {
 			if($i>0) {
@@ -1498,7 +1466,7 @@ add_action( 'wp_ajax_dhpGetMoteValues', 'dhpGetMoteValues' );
 //			taxonomy terms with each Marker post
 // INPUT:	$_POST['project'] global is ID of Project
 //			$_POST['mote_name'] global is Hash describing mote
-// RETURNS:	??
+// RETURNS:	JSON Object of all of the unique values of the Mote
 // TO DO:	Isn't there a lot of duplicate code in here?
 
 function dhpGetMoteValues()
