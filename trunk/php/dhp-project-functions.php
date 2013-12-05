@@ -2297,8 +2297,6 @@ function add_dhp_project_admin_scripts( $hook )
 				//'dhp_custom_fields' => __($dhp_custom_fields, 'dhp'),
 				'layers' => __($tempLayers, 'dhp')
 			) );
-			wp_enqueue_style('thickbox');
-			wp_enqueue_script('thickbox');
 
         }
 
@@ -2423,8 +2421,6 @@ function dhp_page_template( $page_template )
 
         wp_enqueue_script( 'timeline-js', plugins_url('/js/storyjs-embed.js', dirname(__FILE__) ));
 
-		wp_enqueue_style('thickbox');
-		wp_enqueue_script('thickbox');
 		wp_enqueue_script( 'dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__) ),'mediaelement');
 		 
 		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(

@@ -100,8 +100,6 @@ function add_dhp_map_library_scripts( $hook )
             wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
              wp_enqueue_script(  'dhp-map-library-script', plugins_url('/js/dhp-map-library-admin.js', dirname(__FILE__) ));
-             wp_enqueue_style('thickbox');
-            wp_enqueue_script('thickbox');
         }
     }
 } // dd_dhp_map_library_scripts()
@@ -262,8 +260,6 @@ function dhp_map_page_template( $page_template )
         //$dhp_map_cdlaid = get_post_meta($post->ID, 'dhp_map_cdlaid',true);
 
         wp_enqueue_script( 'cdla-map-script', 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$cdlamapid);
-        wp_enqueue_style('thickbox');
-        wp_enqueue_script('thickbox');
     }
     return $page_template;
 } // dhp_map_page_template()
