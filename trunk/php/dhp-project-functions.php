@@ -2360,6 +2360,7 @@ add_filter( 'single_template', 'dhp_page_template' );
 // INPUT:	$page_template = default path to file to use for template to render page
 // ASSUMES:	WP global variables for current post set correctly
 // RETURNS:	Modified $page_template setting (file path to new php template file)
+// TO DO:	Only enqueue styles and scripts for the visualization actually used (map, timeline, etc.)
 
 function dhp_page_template( $page_template )
 {
