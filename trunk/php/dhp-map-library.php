@@ -249,8 +249,6 @@ function dhp_map_page_template( $page_template )
         wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
             
         wp_enqueue_script('jquery');
-        wp_enqueue_script('backbone');
-        wp_enqueue_script('underscore');
 
         wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
         //wp_enqueue_script( 'dhp-public-map-script', plugins_url('/js/dhp-map-page.js', dirname(__FILE__) ));
