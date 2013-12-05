@@ -100,6 +100,8 @@ function add_dhp_marker_admin_scripts( $hook )
 			wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 			 //wp_enqueue_script(  'dhp-marker-script2', plugins_url('/js/dhp-marker-admin2.js', dirname(__FILE__) ));
+			wp_enqueue_style('thickbox');
+			wp_enqueue_script('thickbox');
         }
     }
 } // add_dhp_marker_admin_scripts()
