@@ -608,16 +608,17 @@ function getIconsForTerms($parent_term, $taxonomy)
 		 			 'hide_empty'    => false, 
 					 'parent'        => $parent_term->term_id );
 
-	$children_terms = get_terms( $taxonomy, $myargs );
-	$children_names = array();
+	$children_terms  = get_terms( $taxonomy, $myargs );
+	$children_names  = array();
 	$filter_children = array();
-
-	$filter_object['type'] = "filter";
-	$filter_object['name'] = $parent_term->name;
+	$icon_url        = get_term_meta($parent_term->term_id,'icon_url',true);
+	
+	$filter_object['type']  = "filter";
+	$filter_object['name']  = $parent_term->name;
 	$filter_object['terms'] = array();
-
-	$icon_url = get_term_meta($parent_term->term_id,'icon_url',true);
-	$filter_parent['name'] = $parent_term->name;
+	
+	$filter_parent['name']     = $parent_term->name;
+	$filter_parent['id']       = $parent_term->term_id;
 	$filter_parent['icon_url'] = $icon_url;
 
 	array_push($filter_object['terms'], $filter_parent);
@@ -633,12 +634,17 @@ function getIconsForTerms($parent_term, $taxonomy)
 			array_push($children_names2, $child2->name);
 		}
 		$icon_url = get_term_meta($child->term_id,'icon_url',true);
-		$temp_child_filter['name'] = $child->name;
-		$temp_child_filter['icon_url'] = $icon_url;
-		$temp_child_filter['children'] = $children_names2;
+
+		$temp_child_filter['name']        = $child->name;
+		$temp_child_filter['id']          = $child->term_id;
+		$temp_child_filter['icon_url']    = $icon_url;
+		$temp_child_filter['children_names'] = $children_names2;
+		$temp_child_filter['children']    = $children_terms2;
+
 		array_push($filter_object['terms'], $temp_child_filter);
 	}	
-	$filter_parent['children'] = $children_names;
+	$filter_parent['children_names'] = $children_names;
+	$filter_parent['children'] = $children_terms;
 
 	return $filter_object;
 } // getIconsForTerms()
@@ -808,7 +814,7 @@ function createMarkerArray($project_id)
 			foreach( $filter as $legend ) {
 				$parent = get_term_by('name', $legend, $project_tax);
 				$parent_term_id = $parent->term_id;
-				$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty'    => false ) );
+				$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty' => false ) );
 
 				array_push($json_Object, getIconsForTerms($parent, $project_tax));
 			}
@@ -902,7 +908,7 @@ function createMarkerArray($project_id)
 			
 		$timecode_val = get_post_meta($marker_id,$timecode['custom-fields'],true);
 		//$categories = get_post_meta($marker_id,'Concepts');
-		$args = array("fields" => "names");
+		$args = array('fields' => 'ids');
 		$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
 		$p_terms;
 		$viewsContent = $project_settings['views']['content'];
@@ -1332,15 +1338,15 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 	//loop through array and create terms with parent(mote_name)
 
 	foreach ($mArray as &$value) {
-   		$termIs = term_exists( $value, $dhp_tax_name ); 	
+   		$termIs = term_exists( $value, $dhp_tax_name, $parent_id ); 	
    		
    		if(!$termIs) {
    			wp_insert_term( $value, $dhp_tax_name, $args );
    		}
    		else {
    			$termName = get_term($termIs->term_id, $dhp_tax_name);
-   			$args = array('parent' => $parent_id, 'alias_of'=>$termName->slug);
-   			wp_insert_term( $value, $dhp_tax_name, $args );
+   			// $args = array('parent' => $parent_id, 'alias_of'=>$termName->slug);
+   			wp_update_term( $value, $dhp_tax_name, $args );
    		}
 	}
 

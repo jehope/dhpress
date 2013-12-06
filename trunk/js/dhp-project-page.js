@@ -212,7 +212,7 @@ jQuery(document).ready(function($) {
         var countTerms = Object.keys(lookupData).length; 
       
         for(i=0;i<countTerms;i++) {
-            var tempName = lookupData[i].name;
+            var tempName = lookupData[i].id;
             lookupParents[tempName];
             lookupParents[tempName] = { externalGraphic : lookupData[i].icon_url };
             
@@ -233,7 +233,7 @@ jQuery(document).ready(function($) {
 
             for(j=0;j<countCats;j++) {
 
-                var tempName = lookupData[i].name;
+                var tempName = lookupData[i].id;
                 if (tempName==categories[j]) {
                     if(lookupData[i].icon_url.substring(0,1) == 'h') {
                         
@@ -267,25 +267,20 @@ jQuery(document).ready(function($) {
 
 
         var countTerms = Object.keys(lookupData).length; 
-        //console.log(categories)
-        // console.log(lookupData);
-        var tempCats = categories;
+
+        //current marker categories
+        var tempCats  = categories;
         var countCats =  Object.keys(tempCats).length; 
 
         for(i=0;i<countTerms;i++) {
             for(j=0;j<countCats;j++) {
-                // console.log(lookupData[i]);
-                // console.log(categories)
-                var tempName = lookupData[i].name.replace(/&amp;/, "&");
-      
-                var cleanCatName = tempCats[j];
 
-                // if (tempName.indexOf("&") > -1)
-                //     console.log(tempName+': '+cleanCatName);
-                
-                if (tempName==cleanCatName) {
+                // legend categories
+                var tempName     = parseInt(lookupData[i].id);      
+                var cleanCatName = parseInt(tempCats[j]);
+
+                if (tempName===cleanCatName) {
                     if(lookupData[i].icon_url.substring(0,1) == '#') {
-                        //console.log(tempName)
                         return lookupData[i].icon_url;
                     }
                     else {
@@ -322,11 +317,12 @@ jQuery(document).ready(function($) {
         var lookupData = catFilter.terms;
         var countTerms = Object.keys(lookupData).length; 
         var countCats = categories.length;
+        console.log(categories)
         for(i=0;i<countTerms;i++) {
 
             for(j=0;j<countCats;j++) {
 
-                var tempName = lookupData[i].name;
+                var tempName = lookupData[i].id;
                 if (tempName==categories[j]) {              
                     return true;
                 }
@@ -372,6 +368,7 @@ jQuery(document).ready(function($) {
             //console.log('Legend Name: '+val.name)
             //console.log(val)
             //display legend terms
+            
             _.map(val.terms, function(val2,key2) {
                 if(val.name!=val2.name) {
                     // console.log('Term: '+val2.name)
@@ -705,17 +702,14 @@ jQuery(document).ready(function($) {
              var transcript =  selectedFeature.attributes.transcript;
              var transcript2 =  selectedFeature.attributes.transcript2; ///change php to send transcript2 link
              var timecode =  selectedFeature.attributes.timecode;
-             console.log(timecode)
              var time_codes = null; 
             
              if(dhpSettings['views']['title']) {
                 titleAtt =  selectedFeature.attributes['title'];
              }
-             console.log(findModalEpSettings('transcript'));
 
              //need to check for transcript here. TODO: check for 2nd transcript and load next to first without timestamps(should match first transcript)
              if(findModalEpSettings('transcript')) {
-                console.log('has modal ep')
                 time_codes = timecode.split('-');
                 clipPosition = time_codes[0];
                 var thumb;
@@ -735,9 +729,7 @@ jQuery(document).ready(function($) {
                 });
              }
              if(dhpSettings['views']['content']) {
-                //var titleAtt =  selectedFeature.attributes['title'];
-                //var contentAtt;
-                //$('#map_marker .info ul').append($('<ul/>'));
+
                 $('ul', tempModalHtml).append('<li><h3>Details:</h3></li>');
                 _.map(selectedFeature.attributes.content,function(val,key) {
                      _.map(val,function(val1,key1) {
@@ -753,18 +745,15 @@ jQuery(document).ready(function($) {
                             }
                         }
                     });
-                  });
-             }
+                });
+            }
     		 
-    		 if(selectedFeature.attributes.thumb){
-    			 thumb = selectedFeature.attributes.thumb;
-    			 var thumbHtml = '<img src="'+thumb+'"/><br/>';
-    			 }
-    		 var li = '<b>'+titleAtt+'</b>';
-    		 //for(var attr in selectedFeature.attributes){
-             //   li += "<li><div style='width:25%;float:left'>" + attr + "</div><div style='width:75%;float:right'>" 
-             //   + selectedFeature.attributes[attr] + "</div></li>";
-            //	}
+    		if(selectedFeature.attributes.thumb){
+    			thumb = selectedFeature.attributes.thumb;
+    			var thumbHtml = '<img src="'+thumb+'"/><br/>';
+    		}
+    		var li = '<b>'+titleAtt+'</b>';
+
     		li += '<p>';
     		if(thumbHtml){
     			li+= thumbHtml;
@@ -774,6 +763,10 @@ jQuery(document).ready(function($) {
 
                 // clear previous marker links
             $('#markerModal .modal-footer .btn-success').remove();
+
+            $('#markerModal #markerModalLabel').empty().append(titleAtt);
+            $('#markerModal .modal-body').empty().append(tempModalHtml);          
+            
                 // setup links
             if(link1!='no-link') {
                 $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link1+'">'+dhpSettings['views']['link-label']+'</a>');
@@ -782,20 +775,13 @@ jQuery(document).ready(function($) {
                 $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link2+'">'+dhpSettings['views']['link2-label']+'</a>');
             }
 
-            $('#markerModal #markerModalLabel').empty().append(titleAtt);
-
-
-            $('#markerModal .modal-body').empty().append(tempModalHtml);
-            
-            
             $('#markerModal').modal('show');
-            
-            if(dhpSettings['views']['modal-ep']) {
+
+            //setup audio/transcript player
+            if(findModalEpSettings('transcript')) {
                 //build function to load transcript clip and load media player
                 var iframeElement   = document.querySelector('.player');
                 var soundUrl = 'http://soundcloud.com/sohp/u0490-audio';
-                //iframeElement.src = widgetUrl;
-                console.log(iframeElement);
                 var iframeElementID = iframeElement.id;
                 //var widget         = SC.Widget(iframeElement);
                 var widget2         = SC.Widget(iframeElementID);
@@ -804,46 +790,33 @@ jQuery(document).ready(function($) {
                       // load new widget
                       //widget2.play()
                      widget2.bind(SC.Widget.Events.PLAY, function() {
-                        console.log('playing')
                         WIDGET_PLAYING = true;
                         widget2.seekTo(startTime);
                      });
                      widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
                         
                         if(e.currentPosition<startTime){
-                            //console.log(e)
                             widget2.seekTo(startTime);
                         }
                         if(e.currentPosition>endTime){
-                            //console.log(e)
                             widget2.pause();
                         }
                         hightlightTranscriptLine(e.currentPosition);
                      });
-                    widget2.bind(SC.Widget.Events.SEEK, function() {
-                        console.log('seeked')
-                        
-                    });
-                    widget2.bind(SC.Widget.Events.FINISH, function() {
-                    
-                    });
+                    widget2.bind(SC.Widget.Events.SEEK, function() {});
+                    widget2.bind(SC.Widget.Events.FINISH, function() {});
                     $('.seek-override').on('click',function(){
-                        console.log($(this).attr('data-seek'));
                         widget2.seekTo(startTime);
                     });
                 });
 
-                $('#markerModal').on('hidden', function () {
-                    //selectControl.unselect(feature);
-                   
+                $('#markerModal').on('hidden', function () {            
                     if(WIDGET_PLAYING) {
                         var tempWidget = SC.Widget(iframeElementID);
                         tempWidget.pause();
                     }
-                    
                 });
-            }
-            
+            }//end audio/transcript player        
     	
     } 
     function findModalEpSettings(name) {
@@ -876,7 +849,7 @@ jQuery(document).ready(function($) {
     } 
     function splitTranscript(transcriptData) {
         var transcriptArray = transcriptData.split('[');
-        console.log(transcriptArray)
+        // console.log(transcriptArray)
     }
     /**
      * [formatTranscript: cleans up quicktime text, formats transcript and puts it in a list]
@@ -933,16 +906,16 @@ jQuery(document).ready(function($) {
          _.map(textArray, function(val,index){ 
             $(first_transcriptHTML).eq(index).after('<li class="type-text">'+val+'</li>')
          });
-        console.log('first transcript line count');
-        console.log($(first_transcriptHTML)[1]);
-        console.log(textArray.length); 
+        // console.log('first transcript line count');
+        // console.log($(first_transcriptHTML)[1]);
+        // console.log(textArray.length); 
     }
     function attachTranscript(transcriptData){
         //create millisecond markers for transcript
         //split transcript at timecodes
         console.log($('.transcript-ep .transcript-list').length)
         if($('.transcript-ep .transcript-list').length>0) {
-            console.log('load second transcript')
+            // console.log('load second transcript')
             attachSecondTranscript(transcriptData);
         }
         else {
@@ -979,7 +952,7 @@ jQuery(document).ready(function($) {
         var featureObject;
         var legends = new Object();
         _.map(dataObject, function(val,key){
-            console.log(val.type)
+            // console.log(val.type)
             if(val.type =='filter') {
                 legends[key] = val;
                 // var countTerms = Object.keys(legends[i].terms).length; 
@@ -1018,8 +991,8 @@ jQuery(document).ready(function($) {
         //     }
         //}
         catFilter  = legends[0];//dataObject[0];
-        console.log(featureObject)
-        console.log(catFilter)
+        // console.log(featureObject)
+        // console.log(catFilter)
         var countFeatures = Object.keys(featureObject.features).length; 
         for(i=0;i<countFeatures;i++) {
             var countCategories = Object.keys(featureObject.features[i].properties.categories).length; 
