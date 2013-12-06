@@ -1,4 +1,5 @@
-// Library loaded by dhp_page_template() in dhp-project-functions.php for viewing Marker content
+// PURPOSE: Handle viewing Marker content pages
+//			Loaded by dhp_page_template() in dhp-project-functions.php
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 
