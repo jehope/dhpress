@@ -1,14 +1,14 @@
 // JavaScript Document
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //          Some other parameters passed by being embedded in HTML: .post.id
+// USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 // TO DO:   Generalize visualization types better (don't assume maps)
-//          Can the global variables be put into the function or be wrapped into a Class??
-
-var map, map2,dhp_layers,dhpSettings, projectID, mObject,lookupData, lookupParents, markerObject,
-    catFilter,player,clipPosition,dataObject,tcArray;
 
 //jQuery noconfilct wrapper fires when page has loaded
 jQuery(document).ready(function($) {
+
+    var map, map2,dhp_layers,dhpSettings, projectID, mObject,lookupData, lookupParents, markerObject,
+        catFilter,player,clipPosition,dataObject,tcArray;
 
     var projectID = $('.post').attr('id')
 
@@ -347,7 +347,7 @@ jQuery(document).ready(function($) {
      *
      */
     function createLegend(object) {
-        //sets the order
+            // Custom event types bound to the document to be triggered elsewhere
         $(document).bind('order.findSelectedCats',function(){ lookupData= findSelectedCats();});
         $(document).bind('order.updateLayerFeatures',function(){ updateLayerFeatures(lookupData);});
 
@@ -1062,7 +1062,7 @@ jQuery(document).ready(function($) {
 
     function loadMarkers(projectID,mLayer){
         //console.log('loading');
-        //$('#markerModal').
+            // Initially bring up Loading pop-box modal dialog -- hide after Ajax returns
         $('body').append('<div id="loading" class="modal hide fade">\
             <div class="modal-body">\
             <div class="loading-content" style="font-size:56px; ">\
@@ -1083,16 +1083,15 @@ jQuery(document).ready(function($) {
                 // console.log(data);
                 createMarkers(JSON.parse(data),mLayer);
                 //console.log('done');
-                //$('#markerModal').modal({backdrop:true}); 
+                //$('#markerModal').modal({backdrop:true});
+                    // Remove Loading modal
                 $('#loading').modal('hide');
+                    // Enable joyride help tips
                 $("#dhpress-tips").joyride({'tipLocation': 'right', autoStart : true,});
                 $('.joyride-close-tip').click(function(){
                     $('.dhp-nav .tips').removeClass('active');
                 });
                 //$('#markerModal .loading-content').remove();   
-
-                //
-
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
                alert(errorThrown);
