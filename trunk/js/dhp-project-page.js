@@ -1,4 +1,4 @@
-// JavaScript Document
+// PURPOSE: Handle viewing Project content visualizations
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //          Some other parameters passed by being embedded in HTML: .post.id
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
