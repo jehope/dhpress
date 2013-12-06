@@ -1,17 +1,17 @@
 // JavaScript library loaded by dhp_map_page_template() in dhp-map-library.php to show a Map view
+// PURPOSE: To render the map into the div marked "map_div"
 // ASSUMES: That the code in dhp-map-template.php has embedded parameters into the HTML about
 //            the map: post, category, etc.
 //          Thus, the code assumes that only one map being shown!
-//          It will render the map into the div marked "map_div"
+// USES:   jQuery, OpenLayers
 
 //jQuery noconfilct wrapper fires when page has loaded
 jQuery(document).ready(function($) {
 
-    /* Get map parameters from the hidden input values */
+        // Get map parameters from the hidden input values
     var postID = $('#map-post').val();
     var mapCategory = $('#map-category').val();
     var mapType = $('#map-type').val();
-
     var mapUrl = $('#map-url').val();
     var mapCDLAid = $('#map-cdlaid').val();
 

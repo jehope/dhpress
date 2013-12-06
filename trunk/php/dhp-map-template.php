@@ -57,20 +57,20 @@ Template Name: Map Template
 
                 // pass parameters in hidden form, before displaying them
             echo "<form name='map-params-form'>";
-            echo "<input type='hidden' name='map-post' value='".$post->ID."'>";
+            echo "<input type='hidden' id='map-post' name='map-post' value='".$post->ID."'>";
             // echo "<input type='hidden' name='map-desc' value='".$meta_desc."'>";
-            echo "<input type='hidden' name='map-category' value='".$meta_category."'>";
-            echo "<input type='hidden' name='map-type' value='".$meta_type."'>";
-            echo "<input type='hidden' name='map-classification' value='".$meta_classification."'>";
-            echo "<input type='hidden' name='map-state' value='".$meta_state."'>";
-            echo "<input type='hidden' name='map-county' value='".$meta_county."'>";
-            echo "<input type='hidden' name='map-city' value='".$meta_city."'>";
-            echo "<input type='hidden' name='map-year' value='".$meta_year."'>";
-            echo "<input type='hidden' name='map-creator' value='".$meta_creator."'>";
+            echo "<input type='hidden' id='map-category' name='map-category' value='".$meta_category."'>";
+            echo "<input type='hidden' id='map-type' name='map-type' value='".$meta_type."'>";
+            echo "<input type='hidden' id='map-classification' name='map-classification' value='".$meta_classification."'>";
+            echo "<input type='hidden' id='map-state' name='map-state' value='".$meta_state."'>";
+            echo "<input type='hidden' id='map-county' name='map-county' value='".$meta_county."'>";
+            echo "<input type='hidden' id='map-city' name='map-city' value='".$meta_city."'>";
+            echo "<input type='hidden' id='map-year' name='map-year' value='".$meta_year."'>";
+            echo "<input type='hidden' id='map-creator' name='map-creator' value='".$meta_creator."'>";
             if($meta_type == "CDLA"){
-                echo "<input type='hidden' name ='map-cdlaid' value='".$meta_cdlaid."'>";
+                echo "<input type='hidden' id='map-cdlaid' name='map-cdlaid' value='".$meta_cdlaid."'>";
             } else if($meta_type == "KML"){
-                echo "<input type='hidden' name = 'map-url' value='".$meta_url."'>";
+                echo "<input type='hidden' id='map-url' name='map-url' value='".$meta_url."'>";
             }
             echo "</form>";
 
