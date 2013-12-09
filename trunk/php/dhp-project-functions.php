@@ -1596,15 +1596,13 @@ add_action('wp_ajax_nopriv_dhpGetMoteContent', 'dhpGetMoteContent');
 // dhpGetMoteContent()
 // PURPOSE: Handle Ajax call to fetch the Project-specific data for a specific marker
 // INPUT:	$_POST['post'] = ID of marker post
-//			$_POST['field_names'] = array of names of custom fields
 // RETURNS:	JSON object of marker data
 
 function dhpGetMoteContent()
 {
 	$dhp_post_id = $_POST['post'];
-	$dhp_post_field = $_POST['field_names'];
 
-	$post_meta_content = get_post_meta($dhp_post_id,$dhp_post_field,true);
+	$post_meta_content = get_post_meta($dhp_post_id);
 	die(json_encode($post_meta_content));
 } // dhpGetMoteContent()
 

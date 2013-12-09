@@ -1,4 +1,4 @@
-// JavaScript Document
+// NOT CURRENTLY USED
 
 jQuery(document).ready(function($) {
 	
