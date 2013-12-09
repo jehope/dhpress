@@ -669,7 +669,7 @@ function getMoteFromName($settings,$moteName)
 function dhp_get_term_by_parent($link_terms, $terms, $tax)
 {
 	foreach( $terms as $term ) {
-		$real_term = get_term_by('name', $term, $tax);
+		$real_term = get_term_by('id', $term, $tax);
 		$intersect = array_intersect(array($real_term->term_id), $link_terms);
 		if ($intersect) {
 			 $term_link = get_term_link($real_term);
@@ -943,7 +943,6 @@ function createMarkerArray($project_id)
 			if($child_terms) {
 				$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $project_tax);
 			}
-			
 		}
 		
 		if($child_terms2=='marker') {
@@ -955,8 +954,7 @@ function createMarkerArray($project_id)
 		else {
 			if($child_terms2) {
 				$term_links2 = dhp_get_term_by_parent($child_terms2, $post_terms, $project_tax);
-			}
-			
+			}			
 		}
 		
 		if($lonlat) {
