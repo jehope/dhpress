@@ -91,6 +91,16 @@ jQuery(document).ready(function($) {
     lonlat.transform(gg, map.getProjectionObject());
     map.setCenter(lonlat, dhpMap['zoom']);
 
+    //map reset function
+    //
+    function resetMap(lon, lat, zoomL) {
+        var lonlat = new OpenLayers.LonLat(lon,lat);
+        lonlat.transform(gg, map.getProjectionObject());
+        map.setCenter(lonlat, zoomL);
+    }
+
+    resetMap(dhpMap['lon'],dhpMap['lat'],dhpMap['zoom']);
+
     var context = {
                     
         getIcon: function(feature) {
@@ -174,6 +184,11 @@ jQuery(document).ready(function($) {
     hoverControl.activate();  
     selectControl.activate();
 
+    //add reset button
+    $('.olControlZoom').append('<div class="reset-map"><i class="icon-white icon-refresh"></i></div>');
+    $('.olControlZoom .reset-map').click(function(){
+        resetMap(dhpMap['lon'],dhpMap['lat'],dhpMap['zoom']);
+    });
         // handle toggling fullscreen mode
     $('.dhp-nav .fullscreen').click(function(){
         if($('body').hasClass('fullscreen')) {
@@ -394,7 +409,7 @@ jQuery(document).ready(function($) {
             var legendName = object[j].name;
             var countTerms = Object.keys(filterTerms).length; 
             
-            legendHtml = $('<div class="'+legendName+' legend-div span12 row" id="term-legend-'+j+'"><ul class="terms"></ul></div>');
+            legendHtml = $('<div class="'+legendName+' legend-div span12 row" id="term-legend-'+j+'"><h1>'+legendName+'</h1><ul class="terms"></ul></div>');
             for(i=0;i<countTerms;i++) {
                 if(legendName!=filterTerms[i].name) {
                     var firstIconChar = filterTerms[i].icon_url.substring(0,1);
