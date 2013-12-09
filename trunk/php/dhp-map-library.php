@@ -84,7 +84,7 @@ function dhp_mapset_init()
 add_action( 'admin_enqueue_scripts', 'add_dhp_map_library_scripts', 10, 1 );
 
 // add_dhp_map_library_scripts( $hook )
-// Custom scripts to be run on Project new/edit pages only
+// Custom scripts to be run on new/edit Map pages only
 // PURPOSE: Prepare CSS and JS files for all page types in WP
 // INPUT:   $hook = name of template file being loaded
 // ASSUMES: Other WP global variables for current page are set
@@ -100,11 +100,9 @@ function add_dhp_map_library_scripts( $hook )
             wp_enqueue_script(  'jquery' );
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
              wp_enqueue_script(  'dhp-map-library-script', plugins_url('/js/dhp-map-library-admin.js', dirname(__FILE__) ));
-             wp_enqueue_style('thickbox');
-            wp_enqueue_script('thickbox');
         }
     }
-} // dd_dhp_map_library_scripts()
+} // add_dhp_map_library_scripts()
 
 
 add_action('add_meta_boxes', 'add_dhp_map_settings_box');
@@ -137,6 +135,7 @@ function show_dhp_map_settings_box()
     
     $dhp_map_url = get_post_meta($post->ID, 'dhp_map_url',true);  
     $dhp_map_type = get_post_meta($post->ID, 'dhp_map_type',true);
+
     if($dhp_map_type == 'WMS'){
         $selectWMS = 'selected';
     }else if($dhp_map_type == 'KML'){
@@ -251,7 +250,6 @@ function dhp_map_page_template( $page_template )
         wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
             
         wp_enqueue_script('jquery');
-        wp_enqueue_script('backbone');
         wp_enqueue_script('underscore');
 
         wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
@@ -262,8 +260,6 @@ function dhp_map_page_template( $page_template )
         //$dhp_map_cdlaid = get_post_meta($post->ID, 'dhp_map_cdlaid',true);
 
         wp_enqueue_script( 'cdla-map-script', 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$cdlamapid);
-        wp_enqueue_style('thickbox');
-        wp_enqueue_script('thickbox');
     }
     return $page_template;
 } // dhp_map_page_template()

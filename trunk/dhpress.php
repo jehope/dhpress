@@ -78,7 +78,6 @@ function dhp_requirements_not_met()
 if( dhp_requirements_met() )
 {
 	include_once( dirname(__FILE__) . '/php/dhp-core.php' );
-	include_once( dirname(__FILE__) . '/lib/metabox/init.php' );
 }
 else
 	add_action( 'admin_notices', 'dhp_requirements_not_met' );

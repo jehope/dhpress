@@ -608,16 +608,17 @@ function getIconsForTerms($parent_term, $taxonomy)
 		 			 'hide_empty'    => false, 
 					 'parent'        => $parent_term->term_id );
 
-	$children_terms = get_terms( $taxonomy, $myargs );
-	$children_names = array();
+	$children_terms  = get_terms( $taxonomy, $myargs );
+	$children_names  = array();
 	$filter_children = array();
-
-	$filter_object['type'] = "filter";
-	$filter_object['name'] = $parent_term->name;
+	$icon_url        = get_term_meta($parent_term->term_id,'icon_url',true);
+	
+	$filter_object['type']  = "filter";
+	$filter_object['name']  = $parent_term->name;
 	$filter_object['terms'] = array();
-
-	$icon_url = get_term_meta($parent_term->term_id,'icon_url',true);
-	$filter_parent['name'] = $parent_term->name;
+	
+	$filter_parent['name']     = $parent_term->name;
+	$filter_parent['id']       = $parent_term->term_id;
 	$filter_parent['icon_url'] = $icon_url;
 
 	array_push($filter_object['terms'], $filter_parent);
@@ -633,12 +634,17 @@ function getIconsForTerms($parent_term, $taxonomy)
 			array_push($children_names2, $child2->name);
 		}
 		$icon_url = get_term_meta($child->term_id,'icon_url',true);
-		$temp_child_filter['name'] = $child->name;
-		$temp_child_filter['icon_url'] = $icon_url;
-		$temp_child_filter['children'] = $children_names2;
+
+		$temp_child_filter['name']        = $child->name;
+		$temp_child_filter['id']          = $child->term_id;
+		$temp_child_filter['icon_url']    = $icon_url;
+		$temp_child_filter['children_names'] = $children_names2;
+		$temp_child_filter['children']    = $children_terms2;
+
 		array_push($filter_object['terms'], $temp_child_filter);
 	}	
-	$filter_parent['children'] = $children_names;
+	$filter_parent['children_names'] = $children_names;
+	$filter_parent['children'] = $children_terms;
 
 	return $filter_object;
 } // getIconsForTerms()
@@ -808,7 +814,7 @@ function createMarkerArray($project_id)
 			foreach( $filter as $legend ) {
 				$parent = get_term_by('name', $legend, $project_tax);
 				$parent_term_id = $parent->term_id;
-				$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty'    => false ) );
+				$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty' => false ) );
 
 				array_push($json_Object, getIconsForTerms($parent, $project_tax));
 			}
@@ -902,7 +908,7 @@ function createMarkerArray($project_id)
 			
 		$timecode_val = get_post_meta($marker_id,$timecode['custom-fields'],true);
 		//$categories = get_post_meta($marker_id,'Concepts');
-		$args = array("fields" => "names");
+		$args = array('fields' => 'ids');
 		$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
 		$p_terms;
 		$viewsContent = $project_settings['views']['content'];
@@ -1007,7 +1013,7 @@ function dateFormatSplit($date_range)
     	$dateArray = explode('~', $date_range);	
     	if($dateArray[1]=='') {
     		$dateArray[1] = $dateArray[0];
-    	}
+   	 	}
 	}
 	return $dateArray;
 } // dateFormatSplit()
@@ -1332,15 +1338,15 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 	//loop through array and create terms with parent(mote_name)
 
 	foreach ($mArray as &$value) {
-   		$termIs = term_exists( $value, $dhp_tax_name ); 	
+   		$termIs = term_exists( $value, $dhp_tax_name, $parent_id ); 	
    		
    		if(!$termIs) {
    			wp_insert_term( $value, $dhp_tax_name, $args );
    		}
    		else {
    			$termName = get_term($termIs->term_id, $dhp_tax_name);
-   			$args = array('parent' => $parent_id, 'alias_of'=>$termName->slug);
-   			wp_insert_term( $value, $dhp_tax_name, $args );
+   			// $args = array('parent' => $parent_id, 'alias_of'=>$termName->slug);
+   			wp_update_term( $value, $dhp_tax_name, $args );
    		}
 	}
 
@@ -1474,37 +1480,43 @@ function dhpGetMoteValues()
 	$dhp_projectID = $_POST['project'];
 	$mote = $_POST['mote_name'];
 	$dhp_tax_name = 'dhp_tax_'.$dhp_projectID;
-	// $debugArray = array();
-
+	$debugArray = array();
+	$debugArray['name'] = $mote['name'];
+	
 		// Loop through markers for this Project, getting values for mote in each marker
 		//	and associating the marker with the taxonomic term
 	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$dhp_projectID, 'posts_per_page' => -1 );
+
+		// Find all of the terms derived from $mote['name'] in the Project's taxonomy ??
+	$parent_term = get_term_by('name', $mote['name'], $dhp_tax_name);
+	$parent_id = $parent_term->term_id;
+	$parent_terms_to_exclude = get_terms($dhp_tax_name, 'parent=0&orderby=term_group&hide_empty=0');
 
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$marker_id = get_the_ID();
 		$tempMoteValue = get_post_meta($marker_id, $mote['custom-fields'], true);
+		
+
 		$tempMoteArray = array();
 		if($mote['delim']) {
-			$tempMoteArray = split($mote['delim'],$tempMoteValue);
+			$tempMoteArray = split( $mote['delim'], $tempMoteValue );
 		}
 		else {
 			$tempMoteArray = array($tempMoteValue);
 		}
 		$theseTerms = array();
+		$debugArray['terms'] = array();
 		foreach ($tempMoteArray as &$value) {
-			$term = term_exists( $value, $dhp_tax_name ); 	
-   		 	array_push($theseTerms, $term['term_id']);
-   		 	// array_push($debugArray, $term->term_id);
+			// array_push($debugArray, $value);
+			$term = term_exists( $value, $dhp_tax_name, $parent_id ); 	
+   		 	if($term) {
+   		 		array_push($theseTerms, $term['term_id']);
+   		 		array_push($debugArray['terms'], $term['term_id']);
+   		 	}
 		}
 		wp_set_post_terms( $marker_id, $theseTerms, &$dhp_tax_name, true );
 	endwhile;
-
-		// Find all of the terms derived from $mote['name'] in the Project's taxonomy ??
-	$parent_term = get_term_by('name', $mote['name'], $dhp_tax_name);
-	$parent_id = $parent_term->term_id;
-	$args = array('parent' => $parent_id);
-	$parent_terms_to_exclude = get_terms($dhp_tax_name, 'parent=0&orderby=term_group&hide_empty=0');
 
 		// Create comma-separated string listing terms derived from other motes ??
 	$exclude_string;
@@ -1529,14 +1541,12 @@ function dhpGetMoteValues()
  	if ( $t_count > 0 ){
    		foreach ( $terms_loaded as $term ) {
   	    	$term_url = get_term_meta($term->term_id, 'icon_url', true);
-			//$term .= '"icon_url" : "'.$term_url.'"';
-
 			$term ->icon_url = $term_url;
-  	    	//array_push($term, array('icon_url' => $term_url ));
 		}
 	}
 
 	die(json_encode($terms_loaded));
+	// die(json_encode($debugArray));
 	//die(json_encode($dhp_tax_name));
 } // dhpGetMoteValues()
 
@@ -2297,8 +2307,6 @@ function add_dhp_project_admin_scripts( $hook )
 				//'dhp_custom_fields' => __($dhp_custom_fields, 'dhp'),
 				'layers' => __($tempLayers, 'dhp')
 			) );
-			wp_enqueue_style('thickbox');
-			wp_enqueue_script('thickbox');
 
         }
 
@@ -2362,6 +2370,7 @@ add_filter( 'single_template', 'dhp_page_template' );
 // INPUT:	$page_template = default path to file to use for template to render page
 // ASSUMES:	WP global variables for current post set correctly
 // RETURNS:	Modified $page_template setting (file path to new php template file)
+// TO DO:	Only enqueue styles and scripts for the visualization actually used (map, timeline, etc.)
 
 function dhp_page_template( $page_template )
 {
@@ -2409,7 +2418,6 @@ function dhp_page_template( $page_template )
 		wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
 
 
-		wp_enqueue_script('backbone');
 		wp_enqueue_script('underscore');
 		//wp_enqueue_script( 'open-layers', 'http://dev.openlayers.org/releases/OpenLayers-2.12/lib/OpenLayers.js' );
     	wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
@@ -2423,8 +2431,6 @@ function dhp_page_template( $page_template )
 
         wp_enqueue_script( 'timeline-js', plugins_url('/js/storyjs-embed.js', dirname(__FILE__) ));
 
-		wp_enqueue_style('thickbox');
-		wp_enqueue_script('thickbox');
 		wp_enqueue_script( 'dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__) ),'mediaelement');
 		 
 		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
@@ -2467,7 +2473,6 @@ function dhp_page_template( $page_template )
 		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
 			
 		//wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
-		wp_enqueue_script('backbone');
 		wp_enqueue_script('underscore');
 
 		//wp_enqueue_script( 'open-layers', 'http://dev.openlayers.org/releases/OpenLayers-2.12/lib/OpenLayers.js' );
@@ -2537,7 +2542,6 @@ function dhp_tax_template( $page_template )
 		
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');		
-		wp_enqueue_script( 'backbone' );
 		wp_enqueue_script( 'underscore' );
 		wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
 			
