@@ -26,8 +26,9 @@ Thus, building DH Press on top of the WordPress CMS results in a truly sustainab
 
 == Installation ==
 
-1. Upload `dhpress` to the `/wp-content/plugins/` directory
-2. Activate the plugin through the 'Plugins' menu in WordPress
+1. Rename trunk folder to 'dhpress'
+2. Upload 'dhpress' to the '/wp-content/plugins/' directory
+3. Activate the plugin through the 'Plugins' menu in WordPress
 
 
 == Frequently Asked Questions ==
