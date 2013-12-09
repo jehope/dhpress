@@ -411,7 +411,7 @@ jQuery(document).ready(function($) {
                     }
                 }
             }
-            $('ul',legendHtml).prepend('<li><input type="checkbox" ><a class="value" data-id="all">All</a></li>');
+            $('ul',legendHtml).prepend('<li class="check-all"><input type="checkbox" checked="checked"><a class="value" data-id="all">Show All</a></li>');
            
 
             $('#legends .legend-row').append(legendHtml);
@@ -455,13 +455,19 @@ jQuery(document).ready(function($) {
             //$('#child_legend-'+j+'').css({'width':'200px','margin-left':'200px','top':'40px','position':'absolute','z-index': '2001' });
             
             $('#legends ul.terms li a').click(function(event){
-                var spanName = $(this).data('id');                
+                var spanName = $(this).data('id');
                 
                 if(spanName==='all') {
-                    $('.active-legend ul li').addClass('selected');
-                    $('.active-legend ul li').find('input').prop('checked',true);
-                    lookupData = findSelectedCats();
-                    updateLayerFeatures(lookupData);
+                    if($(this).closest('li').find('input').prop('checked')==false) {
+                        $('.active-legend ul li').find('input').prop('checked',true);
+                        lookupData = findSelectedCats();
+                        updateLayerFeatures(lookupData);
+                    }
+                    else {
+                        $('.active-legend ul li').find('input').prop('checked',false);
+                        lookupData = findSelectedCats();
+                        updateLayerFeatures(lookupData);
+                    }
                 }
                 else {
                     $('.active-legend ul input').removeAttr('checked');
@@ -485,18 +491,27 @@ jQuery(document).ready(function($) {
             //     $('#child_legend-'+j+' ul li').remove();
             //     $('#child_legend-'+j+'').hide();
             // });
-            $('#legends ul.terms input').click(function(){
-                lookupData = findSelectedCats(); 
-                //console.log(tempO)       
-                updateLayerFeatures(lookupData);
+            $('#legends ul.terms input').click(function(event){
+                var spanName = $(event.target).parent().find('a').data('id');
+                if( spanName==='all' && $(this).prop('checked') === true ) {
+                    $('.active-legend ul li').find('input').prop('checked',true);
+                    lookupData = findSelectedCats();
+                    updateLayerFeatures(lookupData);
+                }
+                else if(spanName==='all'&& $(this).prop('checked') === false ) {
+                    $('.active-legend ul li').find('input').prop('checked',false);
+                    lookupData = findSelectedCats();
+                    updateLayerFeatures(lookupData);
+                }
+                else {
+                    $('.active-legend ul li.check-all').find('input').prop('checked',false);                  
+                    lookupData = findSelectedCats();
+                    updateLayerFeatures(lookupData);
+                }
+                   
             });
             $('ul.controls li').click(function(){
-                $('.active-legend ul input').attr('checked',true);
-                //$('.active-legend ul.terms li').css({'background': 'none'});
-               //lookupData = findSelectedCats(); 
-                //console.log(tempO)       
-                //updateLayerFeatures(lookupData);
-                
+                $('.active-legend ul input').attr('checked',true);           
             });
         $('#legends .legend-row').append('<div class="legend-div span12" id="layers-panel"><ul></ul></div>');
         $('.legend-div').hide();
