@@ -45,6 +45,23 @@ jQuery(document).ready(function($) {
 		var fieldValue = $('.edit-custom-field').val();
 
 		dhpAddUpdateMetaField(fieldName,fieldValue);
+
+			// Save value in corresponding Custom Fields metabox section
+			// Go through the divs and look for value there (stop at first)
+		_.find($('#the-list .left input:text'),function(option){
+				// Does this have the same name?
+			var match = (fieldName === option.value);
+					// If match, copy value from Custom Field to edit box
+			if (match) {
+					// extract number with RegExp
+				var re=/meta\[(\d+)\]\[key\]/;
+				re.exec(option.id);
+				var valID = 'meta[' + RegExp.$1 + '][value]';
+				var element = document.getElementById(valID);
+				element.value = fieldValue;
+			}
+			return match;
+		});
 	});
 
 	// function displayTranscript(dhpData) {
@@ -122,7 +139,7 @@ jQuery(document).ready(function($) {
 
 				// Bind code to display value for whatever value is selected in dropdown options
 			$('.custom-field-editor select').bind('change',function(){
-				displayMetaValue($('.custom-field-editor select option:selected').val());
+				displayMetaValue(this.value);
 			});
 		} else {
 			$('#dhp_marker_settings_meta_box .inside').append('<div>Project has no settings. Please setup on project page.</div>');
@@ -147,7 +164,7 @@ jQuery(document).ready(function($) {
 				re.exec(option.id);
 				var valID = 'meta[' + RegExp.$1 + '][value]';
 				var element = document.getElementById(valID);
-				$('.edit-custom-field').append(element.value);
+				$('.edit-custom-field').val(element.value);
 			}
 			return match;
 		});
