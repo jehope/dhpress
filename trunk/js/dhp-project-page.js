@@ -122,8 +122,6 @@ jQuery(document).ready(function($) {
             }
             var highParentI ='';
             if(cats) {
-                // console.log(feature.cluster[0].attributes.title);
-
                 highParentI = getHighestParentColor(cats);            
             }
 
@@ -225,8 +223,7 @@ jQuery(document).ready(function($) {
      *  
      */
     function getHighestParentIcon(categories) {
-
-        
+       
         var countTerms = Object.keys(lookupData).length; 
         var countCats = categories.length;
         for(i=0;i<countTerms;i++) {
@@ -297,8 +294,6 @@ jQuery(document).ready(function($) {
                         for (k=0;k<tempChildCount;k++) {
                             if(tempChildren[k]==cleanCatName) {
                                if(lookupData[i].icon_url.substring(0,1) == '#') {
-                                    //console.log(lookupData[i].children)
-                                    //console.log(tempCats[j])
                                     return lookupData[i].icon_url;
                                 }
                                 else {
@@ -412,10 +407,10 @@ jQuery(document).ready(function($) {
                     else { icon = 'background: url(\''+filterTerms[i].icon_url+'\') no-repeat center;'; }
 
                     if(i>50) {
-                    $('ul', legendHtml).append('<li><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value">'+filterTerms[i].name+'</a></li>');
+                    $('ul', legendHtml).append('<li><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
                     }
                     else {
-                      $('ul', legendHtml).append('<li><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value">'+filterTerms[i].name+'</a></li>');
+                      $('ul', legendHtml).append('<li><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
                       
                     }
                 }
@@ -464,16 +459,14 @@ jQuery(document).ready(function($) {
             //$('#child_legend-'+j+'').css({'width':'200px','margin-left':'200px','top':'40px','position':'absolute','z-index': '2001' });
             
             $('#legends ul.terms li a').click(function(event){
-                var spanName = $(this).text();
+                var spanName = $(this).data('id');
                 //console.log(spanName);
                 $('.active-legend ul input').removeAttr('checked');
                 $('.active-legend ul.terms li.selected').removeClass('selected');
                 $(this).closest('li').addClass('selected');
-                $(this).closest('li').find('input').attr('checked',true);
-                //console.log(spanName)
+                $(this).closest('li').find('input').prop('checked',true);
+                
                 lookupData = findSelectedCats(spanName); 
-                //console.log('single object '+tempO)
-                //console.log('fires how many times')
                 updateLayerFeatures(lookupData);
             });
             // $('#term-legend-'+j+' ul.terms li').hover(function(){
@@ -585,7 +578,7 @@ jQuery(document).ready(function($) {
         var childCatObject = [];
      
         _.map(catObject,function(cat,i){
-            childCatObject.push(cat.name);
+            childCatObject.push(cat.id);
 
             if(cat.children.length>0){
                 var tempChildren = cat.children;
@@ -623,17 +616,15 @@ jQuery(document).ready(function($) {
         if(catFilter) {
             countTerms = Object.keys(catFilter.terms).length; 
         }
-        
 
         if(!single) {
 
             $('#legends .active-legend input:checked').each(function(index){
-                var tempSelCat = $(this).parent().find('.value').text();
+                var tempSelCat = $(this).parent().find('.value').data( 'id' );
                 //console.log(tempSelCat+' :'+index)
                 for(i=0;i<countTerms;i++) {
-                    var tempFilter = catFilter.terms[i].name;
-                        // must encode ampersands
-                    tempFilter = tempFilter.replace(/&amp;/, "&");
+                    var tempFilter = catFilter.terms[i].id;
+                   
                     // console.log(catFilter.terms);
                     if(tempFilter==tempSelCat) {
                         selCatFilter[index] = catFilter.terms[i];
@@ -645,7 +636,7 @@ jQuery(document).ready(function($) {
         else {
             var tempSelCat = single;
             for(i=0;i<countTerms;i++) {
-                var tempFilter = catFilter.terms[i].name;
+                var tempFilter = catFilter.terms[i].id;
                 if(tempFilter==tempSelCat) {
                     selCatFilter[0] = catFilter.terms[i];
                 }
