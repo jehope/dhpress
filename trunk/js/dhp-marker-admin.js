@@ -145,9 +145,9 @@ jQuery(document).ready(function($) {
 					// extract number with RegExp
 				var re=/meta\[(\d+)\]\[key\]/;
 				re.exec(option.id);
-				var valID = '#meta[' + RegExp.$1 + '][value]';
-console.log("Match: " + option.value + " / " + option.id + " " + valID + " " + $(valID).val());
-				$('.edit-custom-field').append($(valID).val());
+				var valID = 'meta[' + RegExp.$1 + '][value]';
+				var element = document.getElementById(valID);
+				$('.edit-custom-field').append(element.value);
 			}
 			return match;
 		});
