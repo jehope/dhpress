@@ -1480,37 +1480,43 @@ function dhpGetMoteValues()
 	$dhp_projectID = $_POST['project'];
 	$mote = $_POST['mote_name'];
 	$dhp_tax_name = 'dhp_tax_'.$dhp_projectID;
-	// $debugArray = array();
-
+	$debugArray = array();
+	$debugArray['name'] = $mote['name'];
+	
 		// Loop through markers for this Project, getting values for mote in each marker
 		//	and associating the marker with the taxonomic term
 	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$dhp_projectID, 'posts_per_page' => -1 );
+
+		// Find all of the terms derived from $mote['name'] in the Project's taxonomy ??
+	$parent_term = get_term_by('name', $mote['name'], $dhp_tax_name);
+	$parent_id = $parent_term->term_id;
+	$parent_terms_to_exclude = get_terms($dhp_tax_name, 'parent=0&orderby=term_group&hide_empty=0');
 
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$marker_id = get_the_ID();
 		$tempMoteValue = get_post_meta($marker_id, $mote['custom-fields'], true);
+		
+
 		$tempMoteArray = array();
 		if($mote['delim']) {
-			$tempMoteArray = split($mote['delim'],$tempMoteValue);
+			$tempMoteArray = split( $mote['delim'], $tempMoteValue );
 		}
 		else {
 			$tempMoteArray = array($tempMoteValue);
 		}
 		$theseTerms = array();
+		$debugArray['terms'] = array();
 		foreach ($tempMoteArray as &$value) {
-			$term = term_exists( $value, $dhp_tax_name ); 	
-   		 	array_push($theseTerms, $term['term_id']);
-   		 	// array_push($debugArray, $term->term_id);
+			// array_push($debugArray, $value);
+			$term = term_exists( $value, $dhp_tax_name, $parent_id ); 	
+   		 	if($term) {
+   		 		array_push($theseTerms, $term['term_id']);
+   		 		array_push($debugArray['terms'], $term['term_id']);
+   		 	}
 		}
 		wp_set_post_terms( $marker_id, $theseTerms, &$dhp_tax_name, true );
 	endwhile;
-
-		// Find all of the terms derived from $mote['name'] in the Project's taxonomy ??
-	$parent_term = get_term_by('name', $mote['name'], $dhp_tax_name);
-	$parent_id = $parent_term->term_id;
-	$args = array('parent' => $parent_id);
-	$parent_terms_to_exclude = get_terms($dhp_tax_name, 'parent=0&orderby=term_group&hide_empty=0');
 
 		// Create comma-separated string listing terms derived from other motes ??
 	$exclude_string;
@@ -1535,14 +1541,12 @@ function dhpGetMoteValues()
  	if ( $t_count > 0 ){
    		foreach ( $terms_loaded as $term ) {
   	    	$term_url = get_term_meta($term->term_id, 'icon_url', true);
-			//$term .= '"icon_url" : "'.$term_url.'"';
-
 			$term ->icon_url = $term_url;
-  	    	//array_push($term, array('icon_url' => $term_url ));
 		}
 	}
 
 	die(json_encode($terms_loaded));
+	// die(json_encode($debugArray));
 	//die(json_encode($dhp_tax_name));
 } // dhpGetMoteValues()
 
