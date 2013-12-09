@@ -204,7 +204,6 @@ jQuery(document).ready(function($) {
 
     function createLookup(filter){
         catFilter = filter;
-        // console.log(filter);
 
         var lookupData = filter.terms;
         var countTerms = Object.keys(lookupData).length; 
@@ -261,8 +260,6 @@ jQuery(document).ready(function($) {
 
     }
     function getHighestParentColor(categories) {
-
-
         var countTerms = Object.keys(lookupData).length; 
 
         //current marker categories
@@ -270,11 +267,10 @@ jQuery(document).ready(function($) {
         var countCats =  Object.keys(tempCats).length; 
 
         for(i=0;i<countTerms;i++) {
-            for(j=0;j<countCats;j++) {
-
+            for(j=0;j<countCats;j++) {   
                 // legend categories
-                var tempName     = parseInt(lookupData[i].id);      
-                var cleanCatName = parseInt(tempCats[j]);
+                var tempName     = lookupData[i].id;      
+                var cleanCatName = tempCats[j];
 
                 if (tempName===cleanCatName) {
                     if(lookupData[i].icon_url.substring(0,1) == '#') {
@@ -312,7 +308,7 @@ jQuery(document).ready(function($) {
         var lookupData = catFilter.terms;
         var countTerms = Object.keys(lookupData).length; 
         var countCats = categories.length;
-        console.log(categories)
+
         for(i=0;i<countTerms;i++) {
 
             for(j=0;j<countCats;j++) {
@@ -407,15 +403,15 @@ jQuery(document).ready(function($) {
                     else { icon = 'background: url(\''+filterTerms[i].icon_url+'\') no-repeat center;'; }
 
                     if(i>50) {
-                    $('ul', legendHtml).append('<li><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
+                    $('ul', legendHtml).append('<li class="compare"><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
                     }
                     else {
-                      $('ul', legendHtml).append('<li><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
+                      $('ul', legendHtml).append('<li class="compare"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
                       
                     }
                 }
             }
-            //$('ul',legendHtml).prepend('<li><input type="checkbox" ><a class="value">All</a></li>');
+            $('ul',legendHtml).prepend('<li><input type="checkbox" ><a class="value" data-id="all">All</a></li>');
            
 
             $('#legends .legend-row').append(legendHtml);
@@ -459,15 +455,23 @@ jQuery(document).ready(function($) {
             //$('#child_legend-'+j+'').css({'width':'200px','margin-left':'200px','top':'40px','position':'absolute','z-index': '2001' });
             
             $('#legends ul.terms li a').click(function(event){
-                var spanName = $(this).data('id');
-                //console.log(spanName);
-                $('.active-legend ul input').removeAttr('checked');
-                $('.active-legend ul.terms li.selected').removeClass('selected');
-                $(this).closest('li').addClass('selected');
-                $(this).closest('li').find('input').prop('checked',true);
+                var spanName = $(this).data('id');                
                 
-                lookupData = findSelectedCats(spanName); 
-                updateLayerFeatures(lookupData);
+                if(spanName==='all') {
+                    $('.active-legend ul li').addClass('selected');
+                    $('.active-legend ul li').find('input').prop('checked',true);
+                    lookupData = findSelectedCats();
+                    updateLayerFeatures(lookupData);
+                }
+                else {
+                    $('.active-legend ul input').removeAttr('checked');
+                    $('.active-legend ul.terms li.selected').removeClass('selected');
+                    $(this).closest('li').addClass('selected');
+                    $(this).closest('li').find('input').prop('checked',true);
+                    lookupData = findSelectedCats(spanName);
+                    updateLayerFeatures(lookupData);
+                }
+           
             });
             // $('#term-legend-'+j+' ul.terms li').hover(function(){
             //     $('#child_legend-'+j+'').show();
@@ -619,7 +623,8 @@ jQuery(document).ready(function($) {
 
         if(!single) {
 
-            $('#legends .active-legend input:checked').each(function(index){
+            $('#legends .active-legend li.compare input:checked').each(function(index){
+
                 var tempSelCat = $(this).parent().find('.value').data( 'id' );
                 //console.log(tempSelCat+' :'+index)
                 for(i=0;i<countTerms;i++) {
