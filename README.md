@@ -39,6 +39,11 @@ Go to DHPress > New Project and create a new project to get started
 
 == Changelog ==
 
+= 1.6.0 = 
+* Filter compares terms based on ID not name. 
+* Fixed term assignment when legends are created.
+* Added show all checkbox to legends.
+
 = 1.5.0 = 
 * Updated views for modals, links can be customized.
 * Two transcripts can be included side by side(modal only).
