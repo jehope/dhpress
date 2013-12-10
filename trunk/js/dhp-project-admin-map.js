@@ -1,4 +1,6 @@
 // JavaScript Document
+// NOT CURRENTLY USED
+
 function initFirstMap() {
 
     var style = {
