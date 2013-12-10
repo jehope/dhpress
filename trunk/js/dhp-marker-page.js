@@ -64,30 +64,33 @@ jQuery(document).ready(function($) {
 		_.each(dhpSettings['views']['post-view-content'], function(legName){
 				// Convert Legend name to custom field name
 			var cfName = getCField(legName);
+				// Use custom field to retrieve value
 			var tempVal = response[cfName];
-			console.log(response[cfName]);
+			// console.log(cfName + " = " + tempVal);
 
-				// does this work?  Why??
-			var tempResponse = $("<div/>").html(tempVal);
-			var tempResponseText = $("<div/>").html(tempVal).text();
+			// var tempResponse = $("<div/>").html(tempVal);
+			// var tempResponseText = $("<div/>").html(tempVal).text();
 
-				// Is the field the textual content of post?
+				// Display the normal WP page content
 			if (cfName=='the_content') {
 				$('.post-content').show();
 			}
 
+				// Special legend names to show thumbnails
 			if (legName=='Thumbnail Right') {
-				$(entry_html).append('<p class="thumb-right"><img src="'+tempResponseText+'" /></p>');
-			}
-			else if (legName=='Thumbnail Left') {
-				$(entry_html).append('<p class="thumb-left"><img src="'+tempResponseText+'" /></p>');
+				// $(entry_html).append('<p class="thumb-right"><img src="'+tempResponseText+'" /></p>');
+				$(entry_html).append('<p class="thumb-right"><img src="'+tempVal+'" /></p>');
+			} else if (legName=='Thumbnail Left') {
+				// $(entry_html).append('<p class="thumb-left"><img src="'+tempResponseText+'" /></p>');
+				$(entry_html).append('<p class="thumb-left"><img src="'+tempVal+'" /></p>');
 
 				// Otherwise, just add the legend name and value to the string we are building
 			} else {
-				if(tempVal) {
+				if (tempVal) {
 					$(entry_html).append('<h3>'+legName+'</h3>');
 					//console.log(response[cfName])
-					$(entry_html).append(tempResponse);
+					// $(entry_html).append(tempResponse);
+					$(entry_html).append('<p>'+tempVal+'</p>');
 				}
 			}
 		});

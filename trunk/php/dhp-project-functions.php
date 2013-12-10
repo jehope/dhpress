@@ -2206,33 +2206,28 @@ function dhp_project_restore_revision( $post_id, $revision_id )
 // } // my_plugin_revision_field()
 
 
-// dhp_get_type_settings($type,$object)
-// PURPOSE: ??
-// INPUT:	$type = ??
-//			$object = ??
-// RETURNS:	['settings'] value for matching object
+// dhp_get_type_settings($typeName, $epList)
+// RETURNS: Settings for entry point whose type is typeName in epList
 // ASSUMES:	The type is definitely contained in object
 
-function dhp_get_type_settings($type,$object)
+function dhp_get_type_settings($typeName, $epList)
 {
-	foreach($object as $eps) {
-		if($eps['type'] == $type){
+	foreach($epList as $eps) {
+		if($eps['type'] == $typeName){
 			return $eps['settings'];
 		}
 	}
 } // dhp_get_type_settings()
 
 
-// dhp_get_map_type($type,$object)
-// PURPOSE: ??
-// INPUT:	$type = ??
-//			$object = ??
+// dhp_get_map_type($typeName,$layerList)
+// RETURNS: Map type ID for layer whose type is typeName in epList
 // ASSUMES:	The type is definitely contained in object
 
-function dhp_get_map_type($type,$object)
+function dhp_get_map_type($typeName,$layerList)
 {
-	foreach($object as $layer) {
-		if($layer['mapType'] == $type) {
+	foreach($layerList as $layer) {
+		if($layer['mapType'] == $typeName) {
 			$map_id = get_post_meta($layer['id'],'dhp_map_typeid');
 			return $map_id[0];
 		}
@@ -2259,7 +2254,7 @@ function add_dhp_project_admin_scripts( $hook )
 
     //$dhp_custom_fields = createUniqueCustomFieldArray($post->ID);
 
- 		// Viewing content??
+ 		// Editing content??
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( 'project' === $post->post_type ) {    
         	$tempLayers = 'layers '.$layers_global;
@@ -2303,10 +2298,8 @@ function add_dhp_project_admin_scripts( $hook )
 				//'dhp_custom_fields' => __($dhp_custom_fields, 'dhp'),
 				'layers' => __($tempLayers, 'dhp')
 			) );
-
         }
 
-        // Editing content??
     } else if ( $hook == 'edit.php'  ) {
         if ( 'project' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
