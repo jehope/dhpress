@@ -269,6 +269,11 @@ filter: alpha(opacity=60);
 	width: 40%;
 	display: inline-block;
 }
+
+.transcript-list {
+	height: 600px;
+	overflow-y: scroll;
+}
 .legend-resize {
 	padding: 2px 5px;
 	float: right;
