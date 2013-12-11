@@ -1,9 +1,9 @@
-// PURPOSE: ??
+// PURPOSE: Handle functions for Edit Project page
 //          Loaded by add_dhp_project_admin_scripts() in dhp-project-functions.php
 // ASSUMES: dhpDataLib is used to pass parameters to this function via wp_localize_script()
 //          ID of this Project post is embedded in HTML element input#post_ID
 // SIDE-FX: 
-// USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
+// USES:    JavaScript libraries jQuery, jQuery UI, Underscore, Bootstrap ...
 
 
 jQuery(document).ready(function($) {
@@ -44,7 +44,7 @@ jQuery(document).ready(function($) {
   // 	resizeTB();
   //  });
 
-    // Create Bootstrap modal popover on ??
+    // Create Bootstrap modal popover on Publish button
   $('#publish').popover({
       title:'Project requires save',
       content:'Don\'t forget to save your project(red button on the left).',
@@ -52,9 +52,10 @@ jQuery(document).ready(function($) {
       trigger: 'manual'
     });
 
+    // Check to see if changes have been made without Saving project
   $('#publish').click(function(e){
     if($('#save-btn').hasClass('btn-danger')){
-      //console.log('real quick')
+        // Don't allow Publish w/o Save
       $('#publish').popover('show');
       e.preventDefault();
     }
@@ -63,9 +64,9 @@ jQuery(document).ready(function($) {
   loadSelectedIcons();
 
 
-    // Handle add-map button ??
+    // Handle Create Entry Point > Map
   $('#add-map').click(function(){
-    var mapCount  = countEntries('map') +1;
+    var mapCount  = countEntryPoints('map') +1;
       // Maximum of 3 maps allowed
     if(mapCount==3) {
       var options = { 
@@ -87,12 +88,12 @@ jQuery(document).ready(function($) {
       buildEntryHtml('map',epsettings);
       //show tab/content after loading
       $('#map'+mapCount+'-tab a').tab('show');
-
-    }      
+    }
   });
 
+    // Handle Create Entry Point > Timeline
   $('#add-timeline').click(function(){
-    var timelineCount  = countEntries('timeline') +1;
+    var timelineCount  = countEntryPoints('timeline') +1;
     if(timelineCount==2) {
       var options = { 
         animation: true, 
@@ -117,9 +118,9 @@ jQuery(document).ready(function($) {
     }    
   });
 
-    // ??
+    // Handle Create Entry Point > A/V Transcript
   $('#add-transcript').click(function(){
-    var transcriptCount  = countEntries('transcript') +1;
+    var transcriptCount  = countEntryPoints('transcript') +1;
     if(transcriptCount==2) {
       var options = { 
         animation: true, 
@@ -244,7 +245,7 @@ jQuery(document).ready(function($) {
     //$('#projectModal .modal-body .alert-error').remove();
   });
 
-
+    // Delete Mote button (trash can)
   $('#delete-cf-btn').click(function(){
     $('#projectModal').empty();
     $('#projectModal').append('<div class="modal-header">\
@@ -276,8 +277,11 @@ jQuery(document).ready(function($) {
 
   //console.log($('#project_settings').val());
 
+    // Parse Project settings
   if($('#project_settings').val()) {
     loadSettings(JSON.parse($('#project_settings').val()));
+
+    // Or else create empty settings for new Project
   } else {
     projectObj['project-details'] = new Object();
     projectObj['entry-points'] = new Object();
@@ -288,16 +292,15 @@ jQuery(document).ready(function($) {
     saveProjectSettings();
   }
 
-
-  $('#save-btn').on('click', function(evt){
+  $('#save-btn').click(function(){
     saveProjectListeners();
   });
 
 
   //  =============  Utility Functions ============================
 
-    // RETURNS: Number of ??
-  function countEntries(type){
+    // RETURNS: Number of Entry Points that the user has defined
+  function countEntryPoints(type){
     var count = $('#entryTabs .ep-'+type);
     //console.log(count.length);
     return count.length;
@@ -314,50 +317,49 @@ jQuery(document).ready(function($) {
     projectObj['project-details']['marker-custom-fields'] = cfarray;
   }
 
-    // ??
-  function loadSettings(data) {
+    // PURPOSE: Initialize all Project settings
+    // INPUT:   pSettings = JSON object representing project settings string
+  function loadSettings(pSettings) {
     $('#motes #create-mote .cf-type').change(function(){
         if($(this).find("option:selected").text()=='Dynamic Data Field'){
           //console.log($(this).find("option:selected").text());
-        }
-        else {
+        } else {
 
         }
       });
     //if new project
     projectObj['project-details'] = new Object();
-    if(data.hasOwnProperty('project-details')) {
-      projectObj['project-details']['id'] = data['project-details']['id'];
-      projectObj['project-details']['name'] = data['project-details']['name'];
+    if(pSettings.hasOwnProperty('project-details')) {
+      projectObj['project-details']['id'] = pSettings['project-details']['id'];
+      projectObj['project-details']['name'] = pSettings['project-details']['name'];
       dhpGetCustomFields(projectObj['project-details']['id']);
     }
 
-    //create handelers to load data in order. Entry points and shared motes are dependent on motes.
+    //create handlers to load data in order. Entry points and shared motes are dependent on motes.
     $('body').bind('load-motes', function(e) {
-      if(data['motes']) {
+      if(pSettings['motes']) {
         projectObj['motes'] = new Object();
-        buildMotes(data['motes']);
+        buildMotes(pSettings['motes']);
       }
       return;
     });
     $('body').bind('load-entry-points', function(e) {
-      if(data['entry-points']) {
-        buildEntryPoints(data['entry-points']);
+      if(pSettings['entry-points']) {
+        buildEntryPoints(pSettings['entry-points']);
       }
       return;
     });
 
     $('body').bind('load-shared-motes', function(e) {
-      if(data['shared-motes']) {
-        buildSharedMotes(data['shared-motes']);
+      if(pSettings['shared-motes']) {
+        buildSharedMotes(pSettings['shared-motes']);
       }
       return;
     });
     $('body').bind('load-views', function(e) {
       //console.log(data['views']);
-      projectObj['views'] = data['views'];
-        buildViews(data['views']);
-        
+      projectObj['views'] = pSettings['views'];
+      buildViews(pSettings['views']);
       return;
     });
     $('body').bind('add-save-alert', function(e) {
@@ -390,8 +392,9 @@ jQuery(document).ready(function($) {
         $('#create-mote .custom-fields').removeAttr('multiple');
       } 
     }); 
-  }
+  } // loadSettings()
 
+    // PURPOSE: Create placeholder for new mote based on UI fields
   function createNewMote() {
     //console.log($('#create-mote #mote-name').val())
     if($('#create-mote .mote-name').val()) {
@@ -407,6 +410,8 @@ jQuery(document).ready(function($) {
 
       buildMotes(newMoteSettings);
       clearCreateValues();
+
+      // Don't allow unless mote is given a name
     } else {
       $('#create-mote .mote-name').after('<span class="help-inline mote-error label label-important" >Name is required</span>');
     }
@@ -418,6 +423,7 @@ jQuery(document).ready(function($) {
     return count.length;
   }
 
+    // PURPOSE: Clear out name and delim fields after new mote created
   function clearCreateValues() {
     $('#create-mote .mote-name').val('');
     $('#create-mote .delim').val('');
@@ -444,7 +450,7 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Build the HTML for a single Entry Point, given its type and settings
   function buildEntryHtml(type,settings){
-    var epCount  = countEntries(type) +1;
+    var epCount  = countEntryPoints(type) +1;
     if(!settings) {
       settings = new Object();
     }
@@ -583,7 +589,7 @@ jQuery(document).ready(function($) {
 
     $('.add-legend').unbind('click');
     $('.add-legend').click(function(){   
-      $('.legend-list').append(addLegend());
+      $('.legend-list').append(addLegend(null, 0));
       assignLegendListeners();
       saveProjectAlert();
     });
@@ -600,6 +606,8 @@ jQuery(document).ready(function($) {
     return _.find(epList, function(theEP) { return theEP.type == epType });
   }
 
+    // PURPOSE: ?? when called ??
+    // INPUT:   JSON object representing "views" portion of project settings (could be empty if new)
   function addMarkerView(viewObject) {
     var markerTitle = '';
     var markerContent ='';
@@ -612,7 +620,7 @@ jQuery(document).ready(function($) {
 
     if(viewObject['post-view-content']){
       var tempVar = $('<div/>');
-      _.map(viewObject['post-view-content'],function(val,key){
+      _.each(viewObject['post-view-content'],function(val){
         $(tempVar).append(addContentMotes(val));
       });
       $('#post-content-view').append(tempVar);
@@ -633,45 +641,51 @@ jQuery(document).ready(function($) {
       });
   }
 
-  function updateViewObjectFormat(theObject) {
-    var newViewObject = new Object();
-    console.log('//start viewObject update')
-    _.map(theObject, function(val,key){
-      console.log(key + ' : '+ val)
-      if(val instanceof Object == true ) {
-        console.log(val)
-      }
-    });
-    console.log('//new viewObject format')
+    // PURPOSE: ?? when is this called ?? Just for debug ??
+    // INPUT:   theView = object containing parameters corresponding to "views" portion of project settings
+  // function updateViewObjectFormat(theView) {
+  //   var newViewObject = new Object();
 
-    newViewObject['projectPage'] = new Object();
-      newViewObject['projectPage'][0] = new Object();
-      newViewObject['projectPage'][0].type = 'map';
-      newViewObject['projectPage'][0].width = theObject['map-width'];
-      newViewObject['projectPage'][0].height = theObject['map-height'];
-      newViewObject['projectPage'][0].fullscreen = theObject['map-fullscreen'];
-      newViewObject['projectPage'][0].legend = theObject['legend-pos'];
+  //   console.log('//start viewObject update');
 
-    newViewObject['popupModals'] = new Object();
-      newViewObject['popupModals']['title'] = theObject['title'];
-      newViewObject['popupModals']['ep'] = theObject['modal-ep'];
-      newViewObject['popupModals']['motes'] = theObject['content'];
-      newViewObject['popupModals']['links'] = new Object();
-      newViewObject['popupModals']['links'][0] = new Object();
-      newViewObject['popupModals']['links'][1] = new Object();
-      newViewObject['popupModals']['links'][0].link = theObject['link'];
-      newViewObject['popupModals']['links'][0].title = theObject['link-label'];;
-      newViewObject['popupModals']['links'][1].link = theObject['link2'];
-      newViewObject['popupModals']['links'][1].title = theObject['link2-label'];;
+  //   _.each(theView, function(val,key){
+  //     console.log(key + ' : '+ val)
+  //     if(val instanceof Object == true ) {
+  //       console.log(val)
+  //     }
+  //   });
+  //   console.log('//new viewObject format')
 
-    newViewObject['markerPage'] = new Object();
-      newViewObject['markerPage'].title = theObject['post-view-title'];
-      newViewObject['markerPage'].motes = theObject['post-view-content'];
+  //   newViewObject['projectPage'] = new Object();
+  //   newViewObject['projectPage'][0] = new Object();
+  //   newViewObject['projectPage'][0].type = 'map';
+  //   newViewObject['projectPage'][0].width = theView['map-width'];
+  //   newViewObject['projectPage'][0].height = theView['map-height'];
+  //   newViewObject['projectPage'][0].fullscreen = theView['map-fullscreen'];
+  //   // newViewObject['projectPage'][0].legend = theView['legend-pos'];
 
-    console.log(newViewObject);
-    console.log('//end viewObject update')
-  }
+  //   newViewObject['popupModals'] = new Object();
+  //   newViewObject['popupModals']['title'] = theView['title'];
+  //   newViewObject['popupModals']['ep'] = theView['modal-ep'];
+  //   newViewObject['popupModals']['motes'] = theView['content'];
+  //   newViewObject['popupModals']['links'] = new Object();
+  //   newViewObject['popupModals']['links'][0] = new Object();
+  //   newViewObject['popupModals']['links'][1] = new Object();
+  //   newViewObject['popupModals']['links'][0].link = theView['link'];
+  //   newViewObject['popupModals']['links'][0].title = theView['link-label'];;
+  //   newViewObject['popupModals']['links'][1].link = theView['link2'];
+  //   newViewObject['popupModals']['links'][1].title = theView['link2-label'];;
 
+  //   newViewObject['markerPage'] = new Object();
+  //   newViewObject['markerPage'].title = theView['post-view-title'];
+  //   newViewObject['markerPage'].motes = theView['post-view-content'];
+
+  //   console.log(newViewObject);
+  //   console.log('//end viewObject update')
+  // }
+
+    // PURPOSE: ?? when called ??
+    // INPUT:   viewObject = JSON object representing views portion of project settings
   function buildViews(viewObject){
     if(!viewObject) {
       viewObject = new Object();
@@ -681,22 +695,24 @@ jQuery(document).ready(function($) {
     //setup layout for main view
     var mapView,legendView;
     mapView = viewObject;
-    
-    _.map(mapView,function(val,key) {
+
+      // set HTML values for each UI component that matches
+    _.each(mapView,function(val,key) {
       $('.'+key).val(val);
       if(viewObject['map-fullscreen']) {
         $('.'+key).attr('checked','checked');
       }
     });
-    if(viewObject['title']) {
-      legendView = viewObject['legend'];
-    }
+
+    // if(viewObject['title']) {
+    //   legendView = viewObject['legend'];
+    // }
 
     addMarkerView(viewObject);
 
-    updateViewObjectFormat(viewObject);
-    
-    //Setup layout for frontend modals
+    // updateViewObjectFormat(viewObject);
+
+    // Setup layout for frontend modals
     $('.setup-modal-view').click(function(){
       var title = '';
       console.log(viewObject)
@@ -742,7 +758,7 @@ jQuery(document).ready(function($) {
       //$('#projectModal .title-custom-fields').prepend('<option name="the_title" value="the_title">Marker Title</option>');
       if(viewObject['content']) {
         //each
-        _.map(viewObject['content'],function(val,index) {
+        _.each(viewObject['content'],function(val,index) {
           //console.log(val);
           $('#modal-body-content').append(addContentMotes(val));
         });
@@ -750,12 +766,11 @@ jQuery(document).ready(function($) {
         $('.delete-content-mote').on('click',function(){
           $(this).parent('li').remove();
         });
-
         //title = viewObject['title'];
       }
       if(viewObject['modal-ep']) {
         //each
-        _.map(viewObject['modal-ep'],function(val,index) {
+        _.each(viewObject['modal-ep'],function(val,index) {
           //console.log(val);
           $('#modal-body-ep').append(addEntryPoint(val));
         });
@@ -763,11 +778,9 @@ jQuery(document).ready(function($) {
         $('.delete-ep-view').on('click',function(){
           $(this).parent('li').remove();
         });
-
         //title = viewObject['title'];
       }
       //load view settings
-      
       
       $('#projectModal .title-custom-fields').on('change',function(){
         $('#projectModal .title-custom-fields option:selected').each( function() {
@@ -776,7 +789,7 @@ jQuery(document).ready(function($) {
         
         //$('#projectModal .modal-body').append('<div class="alert alert-error"><p>Warning! Can not undo this action.</p></div>');
       });
-      
+
       $('#save-modal-view').click(function(e){
         e.preventDefault();
         //console.log($('#projectModal .title-custom-fields option:selected').val());
@@ -800,11 +813,12 @@ jQuery(document).ready(function($) {
         saveProjectAlert();
         $('#projectModal').modal('hide'); 
       });
+
       $('.add-modal-content').click(function(e){
         //console.log($('#projectModal .custom-fields option:selected').val());
         $('#modal-body-content').append(addContentMotes());
-        
       });
+
       $('.add-modal-ep').click(function(e){
         //console.log($('#projectModal .custom-fields option:selected').val());
         $('#modal-body-ep').append(addEntryPoint());
@@ -813,7 +827,7 @@ jQuery(document).ready(function($) {
         });
       });
     });
-  }
+  } // buildViews()
 
   function addContentMotes(selected) {
     var contentMote = '<li><select name="content-motes" class="content-motes">\
@@ -961,23 +975,20 @@ jQuery(document).ready(function($) {
           listHtml += addLegend(legendList[i],i+1);
          }
        } else {
-        listHtml += addLegend(); 
+        listHtml += addLegend(null, 0); 
       } 
     return listHtml;
   }
 
     // RETURNS: HTML string to represent theLegend, which is index (1..n) in list
-    // INPUT:   theLegend and count are nil if there are no legends at all
+    // INPUT:   theLegend is null and count is 0 if there are no legends yet at all
   function addLegend(theLegend, count){
     var legendButton = '<button class="btn btn-success load-legend" type="button">Configure</button>';
-    if(theLegend=='') {
+    if (count == 0) {
       theLegend = '';
-      
-    }
-    if(!count) {
       legendButton = '<button class="btn btn-inverse create-legend" type="button">Create</button><button class="btn btn-success load-legend hide" type="button">Configure</button>';
       tempcount = $('.legend-list li').length;
-      console.log(tempcount)
+      console.log(tempcount);
       count = tempcount+1;
       //console.log('3legend count '+tempcount[1]);
     }
@@ -1057,7 +1068,7 @@ console.log("Filter: " + theFilter);
     }
   }
 
-  // builds the html for the motes and preloads the data
+    // PURPOSE: Insert HTML for moteList (corresponding to "motes" of project settings) and preloads the data
   function buildMotes(moteList){
     var moteCount = countMotes();
     for (var i =0; i < Object.keys(moteList).length; i++) {
@@ -1122,12 +1133,12 @@ console.log("Filter: " + theFilter);
       });
       $('#mote-list #pickMultiple').unbind('click');
       $('#mote-list #pickMultiple').click(function(){
-      if($('#mote-list #pickMultiple').is(':checked')) { 
-        $('#mote-list .custom-fields').attr('multiple','multiple');
-      } else {
-        $('#mote-list .custom-fields').removeAttr('multiple');
-      } 
-    });
+        if($('#mote-list #pickMultiple').is(':checked')) { 
+          $('#mote-list .custom-fields').attr('multiple','multiple');
+        } else {
+          $('#mote-list .custom-fields').removeAttr('multiple');
+        } 
+      });
     }
   }
 

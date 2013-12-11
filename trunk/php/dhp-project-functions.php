@@ -2311,13 +2311,13 @@ function add_dhp_project_admin_scripts( $hook )
     }
 } // add_dhp_project_admin_scripts()
 
-// dhp_register_maps($mapObject)
+// dhp_register_maps($mapLayers)
 // PURPOSE: Prepare required scripts for maps to be rendered as WP content
-// INPUT:	$mapObject = array of map layers (each containing Hash ['mapType'], ['id'])
+// INPUT:	$mapLayers = array of map layers (each containing Hash ['mapType'], ['id'])
 // ASSUMES:	Map data has been loaded into WP DB
 // TO DO:	Better error handling if map data doesn't exist?
 
-function dhp_register_maps($mapObject)
+function dhp_register_maps($mapLayers)
 {
 	//if cdla, load api
 	wp_register_script(
@@ -2329,7 +2329,7 @@ function dhp_register_maps($mapObject)
 			);
 	//loop thru layers
 	$cdla_count = 0;
-	foreach($mapObject as $layer) {
+	foreach($mapLayers as $layer) {
 		//var $ec = $eps.type;
 		//return $layer['id'];
 		if($layer['mapType'] == 'type-CDLA')
@@ -2488,16 +2488,18 @@ add_filter( 'archive_template', 'dhp_tax_template' );
 
 // dhp_tax_template( $page_template )
 // PURPOSE: Set template to be used to show results of top-level custom taxonomy display
-//			When is this invoked?  Related to Legend use ??
+//			
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
+// TO DO:   Replace use of get_page() for finding Project ID!
+//			Only enqueue the styles/scripts actually used for the visualization/interface
 
 function dhp_tax_template( $page_template )
 {
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
-		// ensure actually a taxonomy render
+		// ensure a Taxonomy archive page is being rendered ??
 	if( is_tax() ) {
 	    global $wp_query;
 
@@ -2511,11 +2513,17 @@ function dhp_tax_template( $page_template )
 	    $page_template = dirname( __FILE__ ) . '/dhp-archive.php';
 	    //get mp3 url from first term marker
 	    //get transcript url
+
+	    	// Get Project name by removing prefix from taxonomy name
 	    $pieces = explode("dhp_tax_", $title);
+	    	// Retrieve ID from Project post
 	    $projectID = get_page($pieces[1],OBJECT,'project');
+	    	// Retrieve Project's settings
 	    $project_settings = get_post_meta($projectID->ID,'project_settings',true);
-		
-		wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
+
+	    	// mediaelement for timelines -- not currently used
+		// wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
+
 		wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 		wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
 	    wp_enqueue_script( 'soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
@@ -2540,7 +2548,7 @@ function dhp_tax_template( $page_template )
 				'project_id' => __($projectID->ID,'dhp'),
 				'ajax_url' => __($dev_url, 'dhp'),
 				'tax' => __($term,'dhp'), 
-				'project' => __($project_settings)
+				'project_settings' => __($project_settings)
 				
 			) );
 	}
