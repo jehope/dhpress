@@ -681,103 +681,103 @@ function dhp_get_term_by_parent($link_terms, $terms, $tax)
 
 // ========================================= AJAX calls ======================================
 
-// add_action( 'wp_ajax_dhp_get_group_feed', 'dhp_get_group_feed' );
-// add_action( 'wp_ajax_nopriv_dhp_get_group_feed', 'dhp_get_group_feed' );
+add_action( 'wp_ajax_dhp_get_group_feed', 'dhp_get_group_feed' );
+add_action( 'wp_ajax_nopriv_dhp_get_group_feed', 'dhp_get_group_feed' );
 
 // dhp_get_group_feed($tax_name,$term_name)
 // PURPOSE: Ajax hook that will return all Markers associated with a specific term
 // INPUT:	$tax_name = "dhp_tax_"<pID>
-//			$term_name = taxonomic term created for Mote value
+// 			$term_name = taxonomic term created for Mote value
 // RETURNS:	Feature collection (OpenLayers Object) containing Markers associated with term
 // TO DO:	Currently unused! But may be used in future
 
-// function dhp_get_group_feed($tax_name,$term_name)
-// {
-// //return feed for map, icon color, audio file
-// 	$pieces = explode("dhp_tax_", $tax_name);
-//     $projectID = get_page($pieces[1],OBJECT,'project');
-//     $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
-//     $the_term = get_term_by('name', $term_name, $tax_name);
-//     //$test_string =  $pieces;
-// 	foreach( $project_settings['entry-points'] as $eps) {
-// 		if($eps['type']=="map") {
-// 			$filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
-// 			$filter = $eps['settings']['filter-data'];
-// 			$map_pointsMote = getMoteFromName( $project_settings, $eps['settings']['marker-layer'] );
-// 			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
-// 				if(!$map_pointsMote['delim']) {$map_pointsMote['delim']=',';}
-// 				$cordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
-// 				//array of custom fields
-// 				//$cordMote = $map_pointsMote['custom-fields'];
-// 			}
+function dhp_get_group_feed($tax_name,$term_name)
+{
+//return feed for map, icon color, audio file
+	$pieces = explode("dhp_tax_", $tax_name);
+    $projectID = get_page($pieces[1],OBJECT,'project');
+    $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
+    $the_term = get_term_by('name', $term_name, $tax_name);
+    //$test_string =  $pieces;
+	foreach( $project_settings['entry-points'] as $eps) {
+		if($eps['type']=="map") {
+			$filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
+			$filter = $eps['settings']['filter-data'];
+			$map_pointsMote = getMoteFromName( $project_settings, $eps['settings']['marker-layer'] );
+			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
+				if(!$map_pointsMote['delim']) {$map_pointsMote['delim']=',';}
+				$cordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
+				//array of custom fields
+				//$cordMote = $map_pointsMote['custom-fields'];
+			}
 			
-// 		}
-// 		if($eps['type']=="transcript") {
-// 			$audio = getMoteFromName( $project_settings, $eps['settings']['audio'] );
-// 			$transcript = getMoteFromName( $project_settings, $eps['settings']['transcript'] );
-// 			$timecode = getMoteFromName( $project_settings, $eps['settings']['timecode'] );
+		}
+		if($eps['type']=="transcript") {
+			$audio = getMoteFromName( $project_settings, $eps['settings']['audio'] );
+			$transcript = getMoteFromName( $project_settings, $eps['settings']['transcript'] );
+			$timecode = getMoteFromName( $project_settings, $eps['settings']['timecode'] );
 
-// 		}
-// 	}
-// 	$feature_collection['type'] = "FeatureCollection";
-// 	$feature_collection['features'] = array();
-// 	$args = array(
-//     'post_type'=> 'dhp-markers',
-//     'posts_per_page' => '-1',
-//     'tax_query' => array(
-// 		array(
-// 			'taxonomy' => $tax_name,
-// 			'field' => 'slug',
-// 			'terms' => $the_term->slug
-// 		)
-// 	)
-//     );   
-// 	$loop = new WP_Query( $args );
+		}
+	}
+	$feature_collection['type'] = "FeatureCollection";
+	$feature_collection['features'] = array();
+	$args = array(
+    'post_type'=> 'dhp-markers',
+    'posts_per_page' => '-1',
+    'tax_query' => array(
+		array(
+			'taxonomy' => $tax_name,
+			'field' => 'slug',
+			'terms' => $the_term->slug
+		)
+	)
+    );   
+	$loop = new WP_Query( $args );
 
-// 	while ( $loop->have_posts() ) : $loop->the_post();
+	while ( $loop->have_posts() ) : $loop->the_post();
 	
-// 		$marker_id = get_the_ID();
-// 		$args1 = array("fields" => "names");
-// 		$post_terms = wp_get_post_terms( $marker_id, $tax_name, $args1 );
-// 		$title = get_the_title();
-// 		$audio_val = get_post_meta($marker_id,$audio['custom-fields']);
-// 		$timecode_val = get_post_meta($marker_id,$timecode['custom-fields'],true);
-// 		if(count($cordMote)==2) {
-// 			$temp_lat = get_post_meta($marker_id,$cordMote[0]);
-// 			$temp_lon = get_post_meta($marker_id,$cordMote[1]);
+		$marker_id = get_the_ID();
+		$args1 = array("fields" => "names");
+		$post_terms = wp_get_post_terms( $marker_id, $tax_name, $args1 );
+		$title = get_the_title();
+		$audio_val = get_post_meta($marker_id,$audio['custom-fields']);
+		$timecode_val = get_post_meta($marker_id,$timecode['custom-fields'],true);
+		if(count($cordMote)==2) {
+			$temp_lat = get_post_meta($marker_id,$cordMote[0]);
+			$temp_lon = get_post_meta($marker_id,$cordMote[1]);
 
-// 			$temp_latlon = $temp_lat[0].','.$temp_lon[0];
+			$temp_latlon = $temp_lat[0].','.$temp_lon[0];
 
-// 			$lonlat = invertLatLon($temp_latlon);
-// 		}
-// 		if(count($cordMote)==1) {
-// 			$temp_latlon = get_post_meta($marker_id,$cordMote[0]);
-// 			$lonlat = invertLatLon($temp_latlon[0]);
-// 		}
+			$lonlat = invertLatLon($temp_latlon);
+		}
+		if(count($cordMote)==1) {
+			$temp_latlon = get_post_meta($marker_id,$cordMote[0]);
+			$lonlat = invertLatLon($temp_latlon[0]);
+		}
 
-// 		if($lonlat) {
-// 			$this_feature = array();
-// 			$this_feature['type'] = 'Feature';
-// 			$this_feature['geometry'] = array();
-// 			$this_feature['properties']= array();
+		if($lonlat) {
+			$this_feature = array();
+			$this_feature['type'] = 'Feature';
+			$this_feature['geometry'] = array();
+			$this_feature['properties']= array();
 
-// 			$this_feature['geometry']['type'] = 'Point';
-// 			$this_feature['geometry']['coordinates'] = $lonlat;
+			$this_feature['geometry']['type'] = 'Point';
+			$this_feature['geometry']['coordinates'] = $lonlat;
 			
-// 			//properties
-// 			$this_feature['properties']['title'] = $title;
-// 			$this_feature['properties']['categories'] = json_encode($post_terms);
-// 			$this_feature['properties']['audio'] = $audio_val[0];
-// 			$this_feature['properties']['timecode'] = $timecode_val;
+			//properties
+			$this_feature['properties']['title'] = $title;
+			$this_feature['properties']['categories'] = json_encode($post_terms);
+			$this_feature['properties']['audio'] = $audio_val[0];
+			$this_feature['properties']['timecode'] = $timecode_val;
 			
-// 		//array_push($markerArray,$json_string); 
-// 		array_push($feature_collection['features'],$this_feature);
-// 		}
+		//array_push($markerArray,$json_string); 
+		array_push($feature_collection['features'],$this_feature);
+		}
 
-// 	endwhile;
+	endwhile;
 	
-// 	return $feature_collection;
-// } // dhp_get_group_feed()
+	return $feature_collection;
+} // dhp_get_group_feed()
 
 
 // createMarkerArray($project_id)
