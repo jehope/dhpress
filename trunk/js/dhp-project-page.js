@@ -258,7 +258,7 @@ jQuery(document).ready(function($) {
                     var tempChildren = lookupData[i].children;
                     var tempChildCount = tempChildren.length;
                     for (k=0;k<tempChildCount;k++) {
-                        if(tempChildren[k]==categories[j]) {
+                        if(tempChildren[k].term_id==categories[j]) {
                            if(lookupData[i].icon_url.substring(0,1) == 'h') {
                                 return lookupData[i].icon_url;
                             }
@@ -297,12 +297,11 @@ jQuery(document).ready(function($) {
                 else {
                     //for each child cat
                     if(lookupData[i].children.length>0) {
-                        //console.log(lookupData[i].children)
                         var tempChildren = lookupData[i].children;
                         var tempChildCount = Object.keys(lookupData[i].children).length;
                         
                         for (k=0;k<tempChildCount;k++) {
-                            if(tempChildren[k]==cleanCatName) {
+                            if(tempChildren[k].term_id==cleanCatName) {
                                if(lookupData[i].icon_url.substring(0,1) == '#') {
                                     return lookupData[i].icon_url;
                                 }
@@ -616,7 +615,7 @@ jQuery(document).ready(function($) {
             if(cat.children.length>0){
                 var tempChildren = cat.children;
                 _.map(tempChildren, function(catChild,i) {
-                    childCatObject.push(catChild);
+                    childCatObject.push(catChild['term_id']);
                 });
             }
         });
@@ -643,7 +642,6 @@ jQuery(document).ready(function($) {
     //rewrite this to eliminate loop
     function findSelectedCats(single) {
         //console.log(single);
-
         var selCatFilter = new Object();
         var countTerms = 0; 
         if(catFilter) {
@@ -658,8 +656,6 @@ jQuery(document).ready(function($) {
                 //console.log(tempSelCat+' :'+index)
                 for(i=0;i<countTerms;i++) {
                     var tempFilter = catFilter.terms[i].id;
-                   
-                    // console.log(catFilter.terms);
                     if(tempFilter==tempSelCat) {
                         selCatFilter[index] = catFilter.terms[i];
                         // console.log(tempFilter, tempSelCat);
@@ -676,7 +672,6 @@ jQuery(document).ready(function($) {
                 }
             }
         }
-
         return selCatFilter;
     }
     function convertToMilliSeconds(timecode) {
