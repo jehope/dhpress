@@ -4,7 +4,6 @@
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 // TO DO:   Generalize visualization types better (don't assume maps)
 
-//jQuery noconfilct wrapper fires when page has loaded
 jQuery(document).ready(function($) {
 
     var map, map2,dhp_layers,dhpSettings, projectID, mObject,lookupData, lookupParents, markerObject,
