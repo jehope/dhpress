@@ -2,8 +2,7 @@
 //          Loaded by add_dhp_project_admin_scripts() in dhp-project-functions.php
 // ASSUMES: dhpDataLib is used to pass parameters to this function via wp_localize_script()
 //          ID of this Project post is embedded in HTML element input#post_ID
-// SIDE-FX: 
-// USES:    JavaScript libraries jQuery, jQuery UI, Underscore, Bootstrap ...
+// USES:    JavaScript libraries jQuery, jQuery UI (for drag-drop), Underscore, Bootstrap ...
 
 
 jQuery(document).ready(function($) {
@@ -14,7 +13,7 @@ jQuery(document).ready(function($) {
   var postID = $('input#post_ID').val();
 
   var projectObj = new Object();          // Stores Project fields: 'project-details', 'entry-points', 'motes', 'views'
-  var tempProjectObj;
+                                          // Initialized in initializeProjectObj() but only updated by saveProjectSettings() when user selects Save button
 
     // Screen options tab on T-L
   $('#screen-meta-links a').click(function(){
@@ -83,9 +82,9 @@ jQuery(document).ready(function($) {
       setTimeout(function () { $('#map2-tab').popover('hide'); }, 3000);
 
     } else {
-      saveProjectAlert();
+      projectNeedsToBeSaved();
       epsettings = '';
-      buildEntryHtml('map',epsettings);
+      buildHTMLForEntryPoint('map',epsettings);
       //show tab/content after loading
       $('#map'+mapCount+'-tab a').tab('show');
     }
@@ -110,9 +109,9 @@ jQuery(document).ready(function($) {
         $('#timeline1-tab').popover('hide');
       }, 3000);
     } else {
-      saveProjectAlert();
+      projectNeedsToBeSaved();
       epsettings = '';
-      buildEntryHtml('timeline',epsettings);
+      buildHTMLForEntryPoint('timeline',epsettings);
       //show tab/content after loading
       $('#timeline'+timelineCount+'-tab a').tab('show');
     }    
@@ -137,9 +136,9 @@ jQuery(document).ready(function($) {
         $('#transcript1-tab').popover('hide');
       }, 3000);
     } else {
-      saveProjectAlert();
+      projectNeedsToBeSaved();
       epsettings = '';
-      buildEntryHtml('transcript',epsettings);
+      buildHTMLForEntryPoint('transcript',epsettings);
       //show tab/content after loading
       $('#transcript'+transcriptCount+'-tab a').tab('show');
     }    
@@ -243,7 +242,7 @@ jQuery(document).ready(function($) {
       }
     });
     //$('#projectModal .modal-body .alert-error').remove();
-  });
+  }); // #search-replace-btn.click
 
     // Handle Trash Can icon (Delete Mote in all Markers)
   $('#delete-cf-btn').click(function(){
@@ -280,7 +279,7 @@ jQuery(document).ready(function($) {
 
     // Parse Project settings
   if($('#project_settings').val()) {
-    loadSettings(JSON.parse($('#project_settings').val()));
+    initializeProjectObj(JSON.parse($('#project_settings').val()));
 
     // Or else create empty settings for new Project
   } else {
@@ -289,7 +288,7 @@ jQuery(document).ready(function($) {
     projectObj['motes'] = new Object();
     projectObj['views'] = new Object();
 
-    loadSettings(projectObj);
+    initializeProjectObj(projectObj);
     saveProjectSettings();
   }
 
@@ -308,15 +307,14 @@ jQuery(document).ready(function($) {
   }
 
     // PURPOSE: Store updated Custom Field data list in Project Object
-    // TO DO:   Why not just projectObj['project-details']['marker-custom-fields'] = JSON.parse(cfdata)
-    //          Call this after user adds a new custom field
+    // TO DO:   Update after user adds a new custom field?
   function updateCustomFieldList(cfdata){
     projectObj['project-details']['marker-custom-fields'] = _.values(JSON.parse(cfdata));
   }
 
-    // PURPOSE: Initialize all Project settings
+    // PURPOSE: Initialize all Project settings in projectObj
     // INPUT:   pSettings = JSON object representing project settings string
-  function loadSettings(pSettings) {
+  function initializeProjectObj(pSettings) {
     // $('#motes #create-mote .cf-type').change(function(){
     //     if($(this).find("option:selected").text()=='Dynamic Data Field'){
     //       //console.log($(this).find("option:selected").text());
@@ -336,7 +334,7 @@ jQuery(document).ready(function($) {
     $('body').bind('load-motes', function(e) {
       if(pSettings['motes']) {
         projectObj['motes'] = new Object();
-        buildMotes(pSettings['motes']);
+        insertHTMLForMoteList(pSettings['motes']);
       }
       return;
     });
@@ -356,15 +354,15 @@ jQuery(document).ready(function($) {
     $('body').bind('load-views', function(e) {
       //console.log(data['views']);
       projectObj['views'] = pSettings['views'];
-      buildViews(pSettings['views']);
+      builtHTMLForViewsTab(pSettings['views']);
       return;
     });
     $('body').bind('add-save-alert', function(e) {
       $('#dhp_settings_box input').on('change',function(){
-        saveProjectAlert();
+        projectNeedsToBeSaved();
       });
       $('#dhp_settings_box select').on('change',function(){
-        saveProjectAlert();
+        projectNeedsToBeSaved();
       });
       return;
     });
@@ -376,7 +374,7 @@ jQuery(document).ready(function($) {
     $('body').trigger('load-views');
     $('body').trigger('add-save-alert');
 
-    //$('#create-mote .custom-fields').replaceWith(customFieldOption());
+    //$('#create-mote .custom-fields').replaceWith(buildHTMLForCustomFields());
     $('#create-mote #create-btn').click(function() {
       createNewMote();
     });
@@ -389,7 +387,7 @@ jQuery(document).ready(function($) {
         $('#create-mote .custom-fields').removeAttr('multiple');
       } 
     }); 
-  } // loadSettings()
+  } // initializeProjectObj()
 
     // PURPOSE: Create placeholder for new mote based on UI fields
   function createNewMote() {
@@ -405,8 +403,8 @@ jQuery(document).ready(function($) {
       newMoteSettings[0]["delim"] = $('#create-mote .delim').val();
       $('.mote-error').remove();
 
-      buildMotes(newMoteSettings);
-      clearCreateValues();
+      insertHTMLForMoteList(newMoteSettings);
+      clearCreateMoteValues();
 
       // Don't allow unless mote is given a name
     } else {
@@ -421,7 +419,7 @@ jQuery(document).ready(function($) {
   }
 
     // PURPOSE: Clear out name and delim fields after new mote created
-  function clearCreateValues() {
+  function clearCreateMoteValues() {
     $('#create-mote .mote-name').val('');
     $('#create-mote .delim').val('');
     //$('#create-mote .custom-fields option').eq(0).attr('selected','selected');
@@ -431,7 +429,7 @@ jQuery(document).ready(function($) {
   function buildEntryPoints(entryPoints) {
     projectObj['entry-points'] = entryPoints;
     _.each(entryPoints, function(theEP) {
-      buildEntryHtml(theEP["type"], theEP["settings"]);
+      buildHTMLForEntryPoint(theEP["type"], theEP["settings"]);
     });
     // for (var i =0; i < Object.keys(entryPoints).length; i++) {
     // //console.log(epObject[i]["type"])
@@ -441,12 +439,12 @@ jQuery(document).ready(function($) {
     //   if(entryPoints[i]["type"]=="timeline") {
     //     //console.log("timeline...no way")
     //   }
-    //   buildEntryHtml(entryPoints[i]["type"],entryPoints[i]["settings"])
+    //   buildHTMLForEntryPoint(entryPoints[i]["type"],entryPoints[i]["settings"])
     // }
   }
 
     // PURPOSE: Build the HTML for a single Entry Point, given its type and settings
-  function buildEntryHtml(type,settings){
+  function buildHTMLForEntryPoint(type,settings){
     var epCount  = countEntryPoints(type) +1;
     if(!settings) {
       settings = new Object();
@@ -464,23 +462,23 @@ jQuery(document).ready(function($) {
                               <input class="span4" type="text" name="end-date" id="end-date" placeholder="End Date" value="'+createIfEmpty(settings['end-date'])+'" />\
                               </div>\
                               <label>Timeline Data</label>\
-                            <select name="timeline-mote" id="timeline-mote">'+getLoadedMotes(settings['timeline-data'])+'\
+                            <select name="timeline-mote" id="timeline-mote">'+buildHTMLForMotes(settings['timeline-data'])+'\
                             </select>';
       break;
     case 'transcript':
       //settings['start-date'] = '01/01/2012';
       //need audio, transcript, timecode
       entryTabContent = '<label>Audio URL</label>\
-                          <select name="av-transcript-audio" id="av-transcript-audio">'+getLoadedMotes(settings['audio'])+'\
+                          <select name="av-transcript-audio" id="av-transcript-audio">'+buildHTMLForMotes(settings['audio'])+'\
                           </select>\
                           <label>Transcript</label>\
-                          <select name="av-transcript-txt" id="av-transcript-txt">'+getLoadedMotes(settings['transcript'])+'\
+                          <select name="av-transcript-txt" id="av-transcript-txt">'+buildHTMLForMotes(settings['transcript'])+'\
                           </select>\
                           <label>Transcript 2</label>\
-                          <select name="av-transcript-txt2" id="av-transcript-txt2">'+getLoadedMotes(settings['transcript2'])+'\
+                          <select name="av-transcript-txt2" id="av-transcript-txt2">'+buildHTMLForMotes(settings['transcript2'])+'\
                           </select>\
                             <label>Time Stamp(clip)</label>\
-                          <select name="av-transcript-clip" id="av-transcript-clip">'+getLoadedMotes(settings['timecode'])+'\
+                          <select name="av-transcript-clip" id="av-transcript-clip">'+buildHTMLForMotes(settings['timecode'])+'\
                           </select>';
       break;
     case 'map':
@@ -504,13 +502,13 @@ jQuery(document).ready(function($) {
                   <div class="row-fluid vars">\
                       <div class="span5">\
                       	<label>Marker Layer(Lat/Lon) <span class="badge badge-info"><i class="icon-question-sign icon-white"></i></span></label>\
-                          <select class="span12" name="marker-layer" id="marker-layer">'+getLoadedMotes(settings['marker-layer'],'Lat/Lon Coordinates')+'\
+                          <select class="span12" name="marker-layer" id="marker-layer">'+buildHTMLForMotes(settings['marker-layer'],'Lat/Lon Coordinates')+'\
                           </select>\
                       </div>\
                       <div class="span7">\
                       	<label>Legends</label>\
                           <ul class="legend-list">\
-                          '+loadLegendList(settings['filter-data'])+'\
+                          '+buildHTMLForLegendList(settings['filter-data'])+'\
                           </ul>\
                           <button class="btn btn-success add-legend" type="button">Add Legend</button>\
                       </div>\
@@ -542,7 +540,7 @@ jQuery(document).ready(function($) {
 
         // 2nd stage -- user has confirmed
       if($(this).text()=='Confirm Delete') {
-        saveProjectAlert();
+        projectNeedsToBeSaved();
         $('#entryTabs .active').remove();
         $(this).closest('.ep').remove();
         // 1st stage -- ask user to confirm
@@ -562,7 +560,7 @@ jQuery(document).ready(function($) {
     $('.delete-layer').click(function(){   
       //console.log('delete')
       $(this).closest('li').remove();
-      //assignLegendListeners();
+      //bindLegendEventsInEPTab();
     });
 
       // Handle button for loading map
@@ -582,21 +580,21 @@ jQuery(document).ready(function($) {
       </div>');
     });
 
-    assignLegendListeners();
+    bindLegendEventsInEPTab();
 
     $('.add-legend').unbind('click');
     $('.add-legend').click(function(){   
-      $('.legend-list').append(addLegend(null, 0));
-      assignLegendListeners();
-      saveProjectAlert();
+      $('.legend-list').append(buildHTMLForALegend(null, 0));
+      bindLegendEventsInEPTab();
+      projectNeedsToBeSaved();
     });
     $('.add-layer').unbind('click');
     $('.add-layer').click(function(){   
       $('.layer-list').append(addNewLayer());
-      saveProjectAlert();
-      //assignLegendListeners();
+      projectNeedsToBeSaved();
+      //bindLegendEventsInEPTab();
     });    
-  } // buildEntryHtml()
+  } // buildHTMLForEntryPoint()
 
     // RETURNS: First entry point within parentObj of type objType
   function getEntryPointByType(epList,epType) {
@@ -605,14 +603,14 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Creates Post View section of Views tab
     // INPUT:   JSON object representing "views" portion of project settings (could be empty if new)
-  function addMarkerView(viewObject) {
+  function builtHTMLForPostView(viewObject) {
     var markerTitle = '';
     var markerContent ='';
     if(viewObject['post-view-title']) {
       markerTitle = viewObject['post-view-title'];
     }
     
-    $('.marker-view').append('<select name="post-view-title" class="title-custom-fields save-view"><option selected="selected" value="the_title" >Marker Title</option>'+getLoadedMotes(markerTitle)+'</select>');
+    $('.marker-view').append('<select name="post-view-title" class="title-custom-fields save-view"><option selected="selected" value="the_title" >Marker Title</option>'+buildHTMLForMotes(markerTitle)+'</select>');
     $('.marker-view').append('<p>Pick the motes to display in single page view.</p><ul id="post-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add</button>');
 
     if(viewObject['post-view-content']){
@@ -623,20 +621,20 @@ jQuery(document).ready(function($) {
       $('#post-content-view').append(tempVar);
     }
     $('.delete-content-mote').unbind('click');
-        $('.delete-content-mote').on('click',function(){
+    $('.delete-content-mote').on('click',function(){
           $(this).parent('li').remove();
-           saveProjectAlert();
-        });
+           projectNeedsToBeSaved();
+    });
     $('.add-mote-content').click(function(e){
         //console.log($('#projectModal .custom-fields option:selected').val());
         $('#post-content-view').append(addContentMotes());
-        saveProjectAlert();
+        projectNeedsToBeSaved();
         $('.delete-content-mote').unbind('click');
         $('.delete-content-mote').on('click',function(){
           $(this).parent('li').remove();
         });
       });
-  } // addMarkerView()
+  } // builtHTMLForPostView()
 
     // INPUT:   theView = object containing parameters corresponding to "views" portion of project settings
   // function updateViewObjectFormat(theView) {
@@ -682,7 +680,7 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Called to create HTML for Main View and Modal View sections of Views tab
     // INPUT:   viewObject = JSON object representing "views" portion of project settings
-  function buildViews(viewObject){
+  function builtHTMLForViewsTab(viewObject){
     if(!viewObject) {
       viewObject = new Object();
     } 
@@ -700,7 +698,7 @@ jQuery(document).ready(function($) {
       }
     });
 
-    addMarkerView(viewObject);
+    builtHTMLForPostView(viewObject);
 
     // updateViewObjectFormat(viewObject);
 
@@ -729,7 +727,7 @@ jQuery(document).ready(function($) {
       $('#projectModal').empty();
       $('#projectModal').append('<div class="modal-header">\
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
-        <h3 id="myModalLabel">Choose Title: <select name="custom-fields" class="title-custom-fields"><option selected="selected" value="the_title" >Marker Title</option>'+getLoadedMotes(title)+'</select></h3>\
+        <h3 id="myModalLabel">Choose Title: <select name="custom-fields" class="title-custom-fields"><option selected="selected" value="the_title" >Marker Title</option>'+buildHTMLForMotes(title)+'</select></h3>\
       </div>\
       <div class="modal-body">\
         <p>Pick the entry points to display in the modal.</p>\
@@ -739,8 +737,8 @@ jQuery(document).ready(function($) {
         <ul id="modal-body-content">\
         </ul><button class="btn btn-success add-modal-content" type="button">Add</button>\
         <p>Setup Links</p>\
-        <span class="pull-left" >Link 1: <input type="text" name="link-legends-label" class="link-legends-label" placeholder="Label" '+linkTargetLabel+'/><select name="link-legends" class="link-legends">'+legendOptions(linkTarget)+'</select></span>\
-        <span class="pull-left" >Link 2: <input type="text" name="link-legends2-label" class="link-legends2-label" placeholder="Label" '+linkTarget2Label+'/><select name="link-legends2" class="link-legends2">'+legendOptions(linkTarget2)+'</select></span>\
+        <span class="pull-left" >Link 1: <input type="text" name="link-legends-label" class="link-legends-label" placeholder="Label" '+linkTargetLabel+'/><select name="link-legends" class="link-legends">'+buildHTMLForSetupLinks(linkTarget)+'</select></span>\
+        <span class="pull-left" >Link 2: <input type="text" name="link-legends2-label" class="link-legends2-label" placeholder="Label" '+linkTarget2Label+'/><select name="link-legends2" class="link-legends2">'+buildHTMLForSetupLinks(linkTarget2)+'</select></span>\
       </div>\
       <div class="modal-footer">\
         <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
@@ -802,7 +800,7 @@ jQuery(document).ready(function($) {
 
          //console.log(viewObject);
         projectObj['views'] = viewObject;
-        saveProjectAlert();
+        projectNeedsToBeSaved();
         $('#projectModal').modal('hide'); 
       });
 
@@ -819,11 +817,11 @@ jQuery(document).ready(function($) {
         });
       });
     });
-  } // buildViews()
+  } // builtHTMLForViewsTab()
 
   function addContentMotes(selected) {
     var contentMote = '<li><select name="content-motes" class="content-motes">\
-    '+getLoadedMotes(selected)+'</select> <button class="btn btn-danger delete-content-mote" type="button">-</button></li>';
+    '+buildHTMLForMotes(selected)+'</select> <button class="btn btn-danger delete-content-mote" type="button">-</button></li>';
 
     return contentMote;
   }
@@ -835,8 +833,10 @@ jQuery(document).ready(function($) {
     return contentEP;
   }
 
+    // RETURNS: HTML string of dropdown options for all Entry Points defined for Project
+    // ASSUMES: Can read entry points from projectObj 
   function getEntryPoints(selected) {
-    console.log(projectObj['entry-points'])
+    // console.log(projectObj['entry-points']);
     var epItems = '';
 
     _.each(projectObj['entry-points'], function(val,key){
@@ -874,8 +874,8 @@ jQuery(document).ready(function($) {
     $('select',layerLine).append($('#hidden-layers option').clone());
     $('.delete-layer',layerLine).click(function(){   
       $(this).closest('li').remove();
-      //assignLegendListeners();
-      saveProjectAlert();
+      //bindLegendEventsInEPTab();
+      projectNeedsToBeSaved();
     });
     return layerLine;
   }
@@ -886,7 +886,8 @@ jQuery(document).ready(function($) {
     return layersA;
   }
 
-  function assignLegendListeners(){
+    // PURPOSE: Bind all event listeners for Legend buttons on Entry Points tab (with EP selected)
+  function bindLegendEventsInEPTab(){
       // Remove all previous bindings for "Create Legend" buttons
     $('.create-legend').unbind('click');
       // Rebind code to Create Legend buttons
@@ -923,7 +924,7 @@ jQuery(document).ready(function($) {
     $('.delete-legend').click(function() {
       var moteName = $(this).parent().find('#filter-mote option:selected').val();
       var createdYet = $(this).parent('li');
-      console.log($(createdYet).children().eq(1))
+      // console.log($(createdYet).children().eq(1));
       var lineID = $(this).closest('li').attr('id');
       if($(createdYet).children().eq(1).hasClass('load-legend')) {
         $('body').append('<!-- Modal -->\
@@ -945,11 +946,10 @@ jQuery(document).ready(function($) {
           //console.log('delete '+moteName+' now delete terms and children');
           $('#deleteModal .delete-confirm').text('deleting...');
           deleteTerms(postID,moteName);
-          $('#'+lineID).remove();  
-          saveProjectAlert();      
+          $('#'+lineID).remove();
+          projectNeedsToBeSaved();
         });
-      }
-      else {
+      } else {
         $('#'+lineID).remove();
       }
 
@@ -957,24 +957,24 @@ jQuery(document).ready(function($) {
         $('#deleteModal').remove();
       })
     });  
-  }
+  } // bindLegendEventsInEPTab()
 
     // RETURNS: HTML string to represent legendList
-  function loadLegendList(legendList) {
+  function buildHTMLForLegendList(legendList) {
       var listHtml ='';
       if(legendList) {
         for (var i =0; i < Object.keys(legendList).length; i++) {
-          listHtml += addLegend(legendList[i],i+1);
+          listHtml += buildHTMLForALegend(legendList[i],i+1);
          }
        } else {
-        listHtml += addLegend(null, 0); 
+        listHtml += buildHTMLForALegend(null, 0); 
       } 
     return listHtml;
   }
 
     // RETURNS: HTML string to represent theLegend, which is index (1..n) in list
     // INPUT:   theLegend is null and count is 0 if there are no legends yet at all
-  function addLegend(theLegend, count){
+  function buildHTMLForALegend(theLegend, count){
     var legendButton = '<button class="btn btn-success load-legend" type="button">Configure</button>';
     if (count == 0) {
       theLegend = '';
@@ -985,8 +985,8 @@ jQuery(document).ready(function($) {
       //console.log('3legend count '+tempcount[1]);
     }
     //console.log('legend count '+count);
-    console.log(theLegend);
-    var legendLine = '<li id="legend-'+count+'"><select name="filter-mote" id="filter-mote">'+getLoadedMotes(theLegend,'Text')+'</select>'+
+    // console.log(theLegend);
+    var legendLine = '<li id="legend-'+count+'"><select name="filter-mote" id="filter-mote">'+buildHTMLForMotes(theLegend,'Text')+'</select>'+
                           legendButton+' <button class="btn btn-danger delete-legend" type="button">Delete</button>\
                           </li>';
     return legendLine;
@@ -997,7 +997,7 @@ jQuery(document).ready(function($) {
     // ASSUMES: That user has configured a Map for the Project
     // TO DO:   Don't require a map!! Rename function
 
-  function legendOptions(selected){
+  function buildHTMLForSetupLinks(selected){
     //console.log(mapObject);
     var mapObject = getEntryPointByType(projectObj['entry-points'], 'map');
     var optionHtml = '';
@@ -1022,35 +1022,38 @@ jQuery(document).ready(function($) {
   }
 
     // RETURNS: mote Object associated with Project whose name is moteName
+    // ASSUMES: Can use projectObj data
   function getMote(moteName) {
-    //console.log(findMote);
     return _.find(projectObj['motes'], function(thisMote) { return thisMote['name'] == moteName; });
-    // for (var i =0; i < Object.keys(projectObj['motes']).length; i++) {
-    //   if(projectObj['motes'][i]['name']==moteName) {
-    //     return projectObj['motes'][i];
+  }
+
+    // RETURNS: HTML string of dropdown options for motes defined by project of a specific type
+    // INPUT:   selected is the current selection (name of mote), if any
+    //          moteType is the datatype of mote to list, or undefined for any type
+    // ASSUMES: Can use projectObj data
+  function buildHTMLForMotes(selected, moteType) {
+    //console.log(projectObj['motes']);
+    var moteOptions = '', selectedTxt;
+
+    _.each(projectObj['motes'], function(theMote) {
+      selectedTxt = (theMote['name'] == selected) ? 'selected="selected"' : '';
+      if(!moteType||theMote['type']==moteType)
+        moteOptions += '<option value="'+theMote['name']+'" '+selectedTxt+'>'+theMote['name']+'</option>';
+    });
+    // for(var iKey in projectObj['motes']) {
+    //   var val = projectObj['motes'][iKey];
+    //   if(val['name']==selected) {
+    //     var selectedTxt = 'selected="selected"';
+    //   }  else {
+    //     var selectedTxt = '';
+    //   }
+    //   if(!type||val['type']==type) {
+    //     moteOptions += '<option value="'+val['name']+'" '+selectedTxt+'>'+val['name']+'</option>';
     //   }
     // }
-  }
-
-  function getLoadedMotes(selected, type) {
-    //console.log(projectObj['motes']);
-    var moteOptions = '';
-
-    for(var iKey in projectObj['motes']) {
-
-      var val = projectObj['motes'][iKey];
-      if(val['name']==selected) {
-        var selectedTxt = 'selected="selected"';
-      }  else {
-        var selectedTxt = '';
-      }
-
-      if(!type||val['type']==type) {
-        moteOptions += '<option value="'+val['name']+'" '+selectedTxt+'>'+val['name']+'</option>';
-      }
-    }
     return moteOptions;
-  }
+  } // buildHTMLForMotes()
+
 
   function createIfEmpty(value) {
     if(!value) {
@@ -1061,7 +1064,7 @@ jQuery(document).ready(function($) {
   }
 
     // PURPOSE: Insert HTML for moteList (corresponding to "motes" of project settings) and preloads the data
-  function buildMotes(moteList){
+  function insertHTMLForMoteList(moteList){
     var moteCount = countMotes();
     for (var i =0; i < Object.keys(moteList).length; i++) {
       //console.log('html for '+moteObject[i]['name']);
@@ -1086,9 +1089,9 @@ jQuery(document).ready(function($) {
                        	</div>\
                        	<div class="span8 layers">\
                         <select name="cf-type" class="cf-type">\
-                           '+dataTypeOption(moteList[i]['type'])+'\
+                           '+buildHTMLForDataTypes(moteList[i]['type'])+'\
                         </select><span class="help-inline">data type</span>\
-                          '+customFieldOption(moteList[i]['custom-fields'])+'\
+                          '+buildHTMLForCustomFields(moteList[i]['custom-fields'])+'\
                         <span class="help-inline">custom field</span>\
                         <label class="checkbox inline">\
                           <input type="checkbox" id="pickMultiple" value="multiple"> Multiple\
@@ -1118,6 +1121,7 @@ jQuery(document).ready(function($) {
         }
       });
 
+        // If user selects mote title, cancel the "Confirm Delete" state
       $('#group'+(moteCount+i)+' .accordion-toggle').click(function(e){
         if($(this).find('.close').text()=='Confirm Delete') {
           $(this).find('.close').html('&times;');
@@ -1132,13 +1136,10 @@ jQuery(document).ready(function($) {
         } 
       });
     }
-  }
+  } // insertHTMLForMoteList()
 
-  /**
-   * [saveProjectAlert adds popover below save button if project needs to be saved. Changes color to red.]
-   * @return {[type]}
-   */
-  function saveProjectAlert(){
+    // PURPOSE: Change Save button to red since project_settings has changed
+  function projectNeedsToBeSaved(){
     //$('#save-btn').after()
     $('#save-btn').addClass('btn-danger');
     //console.log('save alert');
@@ -1148,24 +1149,25 @@ jQuery(document).ready(function($) {
   }
 
     // RETURNS: HTML string to represent possible data types
-    // INPUT:   curSelection is the current selection
-  function dataTypeOption(curSelection){
+    // INPUT:   selection is the current selection
+  function buildHTMLForDataTypes(selection){
     dataTypes = ['Text','Exact Date','Date Range','Lat/Lon Coordinates','File','Image'];
     dataTypeHTML ='';
     _.each(dataTypes, function(theDataType) {
       dataTypeHTML += '<option value="'+theDataType+'"';
-      if(theDataType==curSelection)
+      if(theDataType==selection)
          dataTypeHTML += ' selected="selected"';
       dataTypeHTML += '>'+theDataType+'</option>';
     });
     return dataTypeHTML;
-  }
+  } // buildHTMLForDataTypes()
 
-  //create select list of custom fields for motes
+
+  // PURPOSE: Create select list of custom fields for motes
   // RETURNS: HTML string for all of the Custom Fields (for this Project)
   // INPUT:   selected is current selection (single name or list of them)
   // ASSUMES: List of these fields is embedded in HTML under create-mote ID as .custom0-fields options
-  function customFieldOption(selected){
+  function buildHTMLForCustomFields(selected){
     if(!selected) { selected = '';}
     var trimSelected = selected.split(',');
     cflistString = $('#create-mote').find('.custom-fields option').map(function() {
@@ -1348,7 +1350,7 @@ jQuery(document).ready(function($) {
         }).get().join();
       newMote["delim"] = $(this).find('.delim').val();
       projectObj['motes'][index] = newMote;
-  	})
+  	});
 
   	  //ENTRY POINTS - clear old values...add fresh
   	projectObj['entry-points'] = new Object();
@@ -1425,7 +1427,6 @@ jQuery(document).ready(function($) {
           //   console.log(val); 
              projectObj['views'][$(theElement).attr('name')] = false;
           }
-
     });
 
     //console.log(projectObj);
@@ -1434,7 +1435,8 @@ jQuery(document).ready(function($) {
   	$('#project_settings').val(JSON.stringify(projectObj));
       // And send out to WP
   	updateProjectSettings();
-  }
+  } // saveProjectSettings()
+
 
   function addNewTermToLegend(termData){
     var termName = termData['name'];
@@ -1446,7 +1448,7 @@ jQuery(document).ready(function($) {
     // PURPOSE: Create new modal to configure legend
     // INPUT:   title = name of mote (unused!)
     //          data = JSON Object of all of the unique values of the Mote
-  function createLegend(title,data){
+  function createConfigureLegendModal(title,data){
     //create modal
     $('#taxModal').remove();
     $('body').append('<!-- Modal -->\
@@ -1469,7 +1471,7 @@ jQuery(document).ready(function($) {
   	
   	// resizeTB();
     $('#taxModal .modal-body').empty();
-  	$('#taxModal .modal-body').append(dhpCatObject(data));
+  	$('#taxModal .modal-body').append(builtHTMLForLegendValues(data));
   	
     $('#taxModal .modal-body').append('<div class="icons-color"><a class="use-icons">Icons</a> | <a class="use-colors">Colors</a></div>');
   	$('#taxModal .modal-body .icons-color').append($('.icons').clone());
@@ -1561,7 +1563,7 @@ jQuery(document).ready(function($) {
   			$('#taxModal .modal-body .icons a').unbind('click');
   		});
   	});
-  } // createLegend()
+  } // createConfigureLegendModal()
 
   // function resizeTB() {
   // 	if($('#taxModal .modal-body').length>0) {
@@ -1621,53 +1623,47 @@ jQuery(document).ready(function($) {
   	createTaxTerms(treeParent,postID,termTree);	
   } // saveArrayTree()
 
-    // PURPOSE: Create HTML for Legend in Configure Legend modal
-    // RETURNS: HTML string
-  function dhpCatObject(data){
-  	var catObject = JSON.parse(data);
-  	var htmlObj = show_props(catObject);
-  	//console.log('dhpcat');
-  	return htmlObj;
-  }
 
-    // PURPOSE: Create HTML for nested sortable list of Legend values (w/icon or color)
-    // INPUT:   obj = Object for taxonomic term
+    // PURPOSE: Create HTML for nested sortable list of Legend values w/icon or color (for Configure Legend modal)
+    // INPUT:   taxTermString = JSON string for taxonomic term
     // RETURNS: jQuery HTML object for Legend values
-  function show_props(obj) {
+    // TO DO:   Make more efficient with _.each()
+  function builtHTMLForLegendValues(taxTermString) {
+    var termObj = JSON.parse(taxTermString);
   	var htmlStart = '';
-      var result = $('<div class="cat-list"><ol class="sortable"></ol></div>');
-      console.log(obj)
-      var countTerms = 0;
-      if(obj) {
-        countTerms = Object.keys(obj).length; 
-      } 
-  	  for(i=0;i<countTerms;i++) {
-  		if(obj[i].parent==0) {
+
+    var result = $('<div class="cat-list"><ol class="sortable"></ol></div>');
+    var countTerms = 0;
+    // console.log(obj);
+
+    if(termObj) {
+      countTerms = Object.keys(termObj).length; 
+    } 
+	  for(i=0;i<countTerms;i++) {
+  		if(termObj[i].parent==0) {
   			
-  			$(result).prepend('<h2 id="'+obj[i].term_id+'">'+obj[i].name+'</h2><button class="btn btn-success add-term" type="button">Add Term</button><input class="new-term-name" type="text" /><p class="default-marker">Pick default icon or color. <i class="icon-picture pick-default pull-right"></i></p>');
+  			$(result).prepend('<h2 id="'+termObj[i].term_id+'">'+termObj[i].name+'</h2><button class="btn btn-success add-term" type="button">Add Term</button><input class="new-term-name" type="text" /><p class="default-marker">Pick default icon or color. <i class="icon-picture pick-default pull-right"></i></p>');
   			//console.log('title');
-  		} else if($('ol.sortable li#'+obj[i].parent, result).length>0) {
-  			$('ol.sortable li#'+obj[i].parent, result).append('<ol><li id="'+obj[i].term_id+'"><div></div></li></ol>');
-  			$('li#'+obj[i].term_id+' div', result).append('<span class="disclose"><span></span></span>');
-  			$('li#'+obj[i].term_id+' div', result).append('<span class="term-name '+obj[i].parent+'">'+ obj[i].name + '</span>');		
-  			$('li#'+obj[i].term_id+' div', result).append('<span class="term-count"> ' + obj[i].count + '</span>');
+  		} else if($('ol.sortable li#'+termObj[i].parent, result).length>0) {
+  			$('ol.sortable li#'+termObj[i].parent, result).append('<ol><li id="'+termObj[i].term_id+'"><div></div></li></ol>');
+  			$('li#'+termObj[i].term_id+' div', result).append('<span class="disclose"><span></span></span>');
+  			$('li#'+termObj[i].term_id+' div', result).append('<span class="term-name '+termObj[i].parent+'">'+ termObj[i].name + '</span>');		
+  			$('li#'+termObj[i].term_id+' div', result).append('<span class="term-count"> ' + termObj[i].count + '</span>');
   	
   		} else {
-  			$('ol.sortable', result).append('<li id="'+obj[i].term_id+'"><div></div></li>');
-  			$('li#'+obj[i].term_id+' div', result).append('<span class="disclose"><span></span></span>');
-  			$('li#'+obj[i].term_id+' div', result).append('<span class="term-name">'+ obj[i].name + '</span>');		
-  			$('li#'+obj[i].term_id+' div', result).append('<span class="term-count"> ' + obj[i].count + '</span>');
-  			if(obj[i].icon_url!='undefined'&&obj[i].icon_url!='') {
+  			$('ol.sortable', result).append('<li id="'+termObj[i].term_id+'"><div></div></li>');
+  			$('li#'+termObj[i].term_id+' div', result).append('<span class="disclose"><span></span></span>');
+  			$('li#'+termObj[i].term_id+' div', result).append('<span class="term-name">'+ termObj[i].name + '</span>');		
+  			$('li#'+termObj[i].term_id+' div', result).append('<span class="term-count"> ' + termObj[i].count + '</span>');
+  			if(termObj[i].icon_url!='undefined'&&termObj[i].icon_url!='') {
   				//console.log('before:'+obj[i].icon_url+'after');
-          if(obj[i].icon_url.substring(0,1)=='#') {
-            $('li#'+obj[i].term_id+' div', result).append('<span class="term-icon">'+obj[i].icon_url+'</span>');
+          if(termObj[i].icon_url.substring(0,1)=='#') {
+            $('li#'+termObj[i].term_id+' div', result).append('<span class="term-icon">'+termObj[i].icon_url+'</span>');
+          } else {
+  				  $('li#'+termObj[i].term_id+' div', result).append('<span class="term-icon"><img src="'+termObj[i].icon_url+'" height="20px" /></span>');
           }
-          else {
-  				  $('li#'+obj[i].term_id+' div', result).append('<span class="term-icon"><img src="'+obj[i].icon_url+'" height="20px" /></span>');
-          }
-  			}
-  			else {
-  				$('li#'+obj[i].term_id+' div', result).append('<span class="term-icon">Pick Icon</span>');
+  			} else {
+  				$('li#'+termObj[i].term_id+' div', result).append('<span class="term-icon">Pick Icon</span>');
           //$('li#'+obj[i].term_id+' div', result).append('<span class="term-color">Pick Color</span>');
   			}
   		}
@@ -1678,7 +1674,7 @@ jQuery(document).ready(function($) {
 
     // INPUT:   optionArrayAsJSON = JSON object containing array of items
     // RETURNS: HTML text representing all of the options in optionArrayAsJSON
-  function createOptionList(optionArrayAsJSON) {
+  function builtHTMLForOptionList(optionArrayAsJSON) {
     var tempOptionArray = JSON.parse(optionArrayAsJSON);
     var tempHtml = null;
     _.each(tempOptionArray, function(val,key){
@@ -1932,7 +1928,7 @@ jQuery(document).ready(function($) {
           },
           success: function(data, textStatus, XMLHttpRequest){
               console.log(data);
-              $('.filter-field-values').empty().append(createOptionList(data));
+              $('.filter-field-values').empty().append(builtHTMLForOptionList(data));
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1982,7 +1978,7 @@ jQuery(document).ready(function($) {
               $('#createModal').modal('hide');
               changeToLoadBtn();
               // if(loadLegend && data) { 
-              //   //createLegend(mote['name'],data); 
+              //   //createConfigureLegendModal(mote['name'],data); 
               // }
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
@@ -2007,7 +2003,7 @@ jQuery(document).ready(function($) {
               console.log(JSON.parse(data));
               
               if(loadLegend && data) { 
-                createLegend(mote['name'],data); 
+                createConfigureLegendModal(mote['name'],data); 
               }
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
