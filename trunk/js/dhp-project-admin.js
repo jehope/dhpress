@@ -16,7 +16,7 @@ jQuery(document).ready(function($) {
   var projectObj = new Object();          // Stores Project fields: 'project-details', 'entry-points', 'motes', 'views'
   var tempProjectObj;
 
-    // ?? what is this??
+    // Screen options tab on T-L
   $('#screen-meta-links a').click(function(){
     $('#screen-options-wrap').removeClass('hidden');
   });
@@ -145,7 +145,7 @@ jQuery(document).ready(function($) {
     }    
   });
 
-    // ??
+    // + button on Motes tab (for creating new custom field)
   $('#create-new-custom').click(function(){
     $('#projectModal').empty();
     $('#projectModal').append('<div class="modal-header">\
@@ -245,7 +245,7 @@ jQuery(document).ready(function($) {
     //$('#projectModal .modal-body .alert-error').remove();
   });
 
-    // Delete Mote button (trash can)
+    // Handle Trash Can icon (Delete Mote in all Markers)
   $('#delete-cf-btn').click(function(){
     $('#projectModal').empty();
     $('#projectModal').append('<div class="modal-header">\
@@ -265,7 +265,8 @@ jQuery(document).ready(function($) {
       //console.log($('#projectModal .custom-fields option:selected').val())
       $('#projectModal .modal-body').append('<div class="alert alert-error"><p>Warning! Can not undo this action.</p></div>');
     });
-    
+
+      // Handle confirm delete button in popup
     $('#delete-custom-field').click(function(e){
       e.preventDefault();
       //console.log($('#projectModal .custom-fields option:selected').val());
@@ -306,27 +307,23 @@ jQuery(document).ready(function($) {
     return count.length;
   }
 
-    // PURPOSE: Store upodated Custom Field data list in Project Object
-    // TO DO:   Why not just projectObj['project-details']['marker-custom-fields'] = JSON.parse(cfdata)??
+    // PURPOSE: Store updated Custom Field data list in Project Object
+    // TO DO:   Why not just projectObj['project-details']['marker-custom-fields'] = JSON.parse(cfdata)
+    //          Call this after user adds a new custom field
   function updateCustomFieldList(cfdata){
-    var cfarray = [];
-    _.map(JSON.parse(cfdata), function(cfname){
-      cfarray.push(cfname);
-    });
-    //console.log(cfarray);
-    projectObj['project-details']['marker-custom-fields'] = cfarray;
+    projectObj['project-details']['marker-custom-fields'] = _.values(JSON.parse(cfdata));
   }
 
     // PURPOSE: Initialize all Project settings
     // INPUT:   pSettings = JSON object representing project settings string
   function loadSettings(pSettings) {
-    $('#motes #create-mote .cf-type').change(function(){
-        if($(this).find("option:selected").text()=='Dynamic Data Field'){
-          //console.log($(this).find("option:selected").text());
-        } else {
+    // $('#motes #create-mote .cf-type').change(function(){
+    //     if($(this).find("option:selected").text()=='Dynamic Data Field'){
+    //       //console.log($(this).find("option:selected").text());
+    //     } else {
 
-        }
-      });
+    //     }
+    //   });
     //if new project
     projectObj['project-details'] = new Object();
     if(pSettings.hasOwnProperty('project-details')) {
@@ -335,7 +332,7 @@ jQuery(document).ready(function($) {
       dhpGetCustomFields(projectObj['project-details']['id']);
     }
 
-    //create handlers to load data in order. Entry points and shared motes are dependent on motes.
+    //create handlers to load data in order. Entry points are dependent on motes.
     $('body').bind('load-motes', function(e) {
       if(pSettings['motes']) {
         projectObj['motes'] = new Object();
@@ -350,12 +347,12 @@ jQuery(document).ready(function($) {
       return;
     });
 
-    $('body').bind('load-shared-motes', function(e) {
-      if(pSettings['shared-motes']) {
-        buildSharedMotes(pSettings['shared-motes']);
-      }
-      return;
-    });
+    // $('body').bind('load-shared-motes', function(e) {
+    //   if(pSettings['shared-motes']) {
+    //     buildSharedMotes(pSettings['shared-motes']);
+    //   }
+    //   return;
+    // });
     $('body').bind('load-views', function(e) {
       //console.log(data['views']);
       projectObj['views'] = pSettings['views'];
@@ -375,7 +372,7 @@ jQuery(document).ready(function($) {
     //fire in order, according to dependencies
     $('body').trigger('load-motes');
     $('body').trigger('load-entry-points');
-    $('body').trigger('load-shared-motes');
+    // $('body').trigger('load-shared-motes');
     $('body').trigger('load-views');
     $('body').trigger('add-save-alert');
 
@@ -538,7 +535,7 @@ jQuery(document).ready(function($) {
       }
     });
 
-      // Handle Delete button??
+      // Handle Delete button for Entry Point
     $('#'+type+'-'+epCount+ ' .close').click(function(e){
       e.stopPropagation();
       e.preventDefault();
@@ -554,7 +551,7 @@ jQuery(document).ready(function($) {
       }
     });
 
-      // Handle ??
+      // Handle clicking elsewhere in Entry Point tab area to cancel delete
     $('#'+type+'-'+epCount+ '.ep').click(function(e){
       if($(this).find('.close').text()=='Confirm Delete') {
         $(this).find('.close').html('&times;');
@@ -606,7 +603,7 @@ jQuery(document).ready(function($) {
     return _.find(epList, function(theEP) { return theEP.type == epType });
   }
 
-    // PURPOSE: ?? when called ??
+    // PURPOSE: Creates Post View section of Views tab
     // INPUT:   JSON object representing "views" portion of project settings (could be empty if new)
   function addMarkerView(viewObject) {
     var markerTitle = '';
@@ -639,9 +636,8 @@ jQuery(document).ready(function($) {
           $(this).parent('li').remove();
         });
       });
-  }
+  } // addMarkerView()
 
-    // PURPOSE: ?? when is this called ?? Just for debug ??
     // INPUT:   theView = object containing parameters corresponding to "views" portion of project settings
   // function updateViewObjectFormat(theView) {
   //   var newViewObject = new Object();
@@ -684,8 +680,8 @@ jQuery(document).ready(function($) {
   //   console.log('//end viewObject update')
   // }
 
-    // PURPOSE: ?? when called ??
-    // INPUT:   viewObject = JSON object representing views portion of project settings
+    // PURPOSE: Called to create HTML for Main View and Modal View sections of Views tab
+    // INPUT:   viewObject = JSON object representing "views" portion of project settings
   function buildViews(viewObject){
     if(!viewObject) {
       viewObject = new Object();
@@ -703,10 +699,6 @@ jQuery(document).ready(function($) {
         $('.'+key).attr('checked','checked');
       }
     });
-
-    // if(viewObject['title']) {
-    //   legendView = viewObject['legend'];
-    // }
 
     addMarkerView(viewObject);
 
@@ -1000,11 +992,11 @@ jQuery(document).ready(function($) {
     return legendLine;
   }
 
-    // RETURNS: HMTL string to represent option list associated with the legends
-    // INPUT:   selected in the current selection??
+    // RETURNS: HMTL string to represent option list in Setup Links dropdown options in Modal Views
+    // INPUT:   selected is the current selection
     // ASSUMES: That user has configured a Map for the Project
-    // TO DO:   Don't require a map!!
-    //          Is this used??
+    // TO DO:   Don't require a map!! Rename function
+
   function legendOptions(selected){
     //console.log(mapObject);
     var mapObject = getEntryPointByType(projectObj['entry-points'], 'map');
@@ -1017,9 +1009,9 @@ jQuery(document).ready(function($) {
       optionHtml = '<option name="no-link" value="no-link" >No Link</option><option name="marker" value="marker" >Marker Post</option>'; 
     }
 
-   // for (var i =0; i < Object.keys(mapObject['settings']['filter-data']).length; i++) {
+      // For linking to taxonomic pages
     _.each(mapObject['settings']['filter-data'], function(theFilter) {
-console.log("Filter: " + theFilter);
+// console.log("Filter: " + theFilter);
       if(theFilter==selected) {
         optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" selected="selected" >'+theFilter+'</option>';
       } else {
@@ -1155,16 +1147,6 @@ console.log("Filter: " + theFilter);
     //$('#save-btn').popover('show');
   }
 
-    // Is this used ??
-  function buildSharedMotes(sharedMoteObject){
-    $('#shared .cf-type').change(function(){
-      //console.log($("select option:selected").text());
-    });
-    for (var i =0; i < Object.keys(sharedMoteObject).length; i++) {
-      //console.log('shared html for '+sharedMoteObject[i]['name']);
-    }
-  }
-
     // RETURNS: HTML string to represent possible data types
     // INPUT:   curSelection is the current selection
   function dataTypeOption(curSelection){
@@ -1216,35 +1198,34 @@ console.log("Filter: " + theFilter);
   }
 
   //create select list of project custom fields for motes(dynamic data type)
-  // ?? What is difference between this and above??
-  function customFieldDynamicOption(selected){
-    if(!selected){ selected = '';}
-    var trimSelected = selected.split(',');
-    cflistString = $('#shared #create-mote').find('.custom-fields option').map(function() {
-      return $(this).val();
-    }).get().join();
-    cflist = cflistString.split(',');
-    //cflist = ['Audio Url','lat','lon','alt_location','date_range','Interviewee']
-    if (trimSelected.length>1) {
-      cflistHtml = '<select name="custom-fields" class="custom-fields" multiple="multiple">'
-      for (var i =0; i < Object.keys(cflist).length; i++) {
-        selectedTag = ''
-        for (var j =0; j < Object.keys(trimSelected).length; j++) {                 
-          if(trimSelected[j]==cflist[i]) { selectedTag = 'selected="selected"';} 
-        }
-        cflistHtml += '<option value="'+cflist[i]+'" '+selectedTag+'>'+cflist[i]+'</option>';
-      }
-      cflistHtml += '</select>';
-    } else {
-      cflistHtml = '<select name="custom-fields" class="custom-fields">';
-      for (var i =0; i < Object.keys(cflist).length; i++) {
-        if(selected==cflist[i]) { selectedTag = 'selected="selected"'} else { selectedTag = ''}
-          cflistHtml += '<option value="'+cflist[i]+'" '+selectedTag+'>'+cflist[i]+'</option>';
-        }
-        cflistHtml += '</select>';
-      }
-    return cflistHtml;
-  } 
+  // function customFieldDynamicOption(selected){
+  //   if(!selected){ selected = '';}
+  //   var trimSelected = selected.split(',');
+  //   cflistString = $('#shared #create-mote').find('.custom-fields option').map(function() {
+  //     return $(this).val();
+  //   }).get().join();
+  //   cflist = cflistString.split(',');
+  //   //cflist = ['Audio Url','lat','lon','alt_location','date_range','Interviewee']
+  //   if (trimSelected.length>1) {
+  //     cflistHtml = '<select name="custom-fields" class="custom-fields" multiple="multiple">'
+  //     for (var i =0; i < Object.keys(cflist).length; i++) {
+  //       selectedTag = ''
+  //       for (var j =0; j < Object.keys(trimSelected).length; j++) {                 
+  //         if(trimSelected[j]==cflist[i]) { selectedTag = 'selected="selected"';} 
+  //       }
+  //       cflistHtml += '<option value="'+cflist[i]+'" '+selectedTag+'>'+cflist[i]+'</option>';
+  //     }
+  //     cflistHtml += '</select>';
+  //   } else {
+  //     cflistHtml = '<select name="custom-fields" class="custom-fields">';
+  //     for (var i =0; i < Object.keys(cflist).length; i++) {
+  //       if(selected==cflist[i]) { selectedTag = 'selected="selected"'} else { selectedTag = ''}
+  //         cflistHtml += '<option value="'+cflist[i]+'" '+selectedTag+'>'+cflist[i]+'</option>';
+  //       }
+  //       cflistHtml += '</select>';
+  //     }
+  //   return cflistHtml;
+  // } 
 
   // Load icons that are stored in custom field
   // Where is tb_show defined?
@@ -1340,6 +1321,7 @@ console.log("Filter: " + theFilter);
 
   // });
 
+    // PURPOSE: User has selected Save button -- update UI and save configuration data
   function saveProjectListeners() {
     $('#publish').removeClass('button-primary-disabled');
     $('#publishing-action .spinner').hide();
@@ -1348,8 +1330,10 @@ console.log("Filter: " + theFilter);
     saveProjectSettings();
   }
 
+    // PURPOSE: Read UI settings into projectObj and save those into WP DB
+    // TO DO:   Make more efficient by minimizing use of indices
   function saveProjectSettings()	{
-  	console.log($('#dhp-projectid').val());
+  	// console.log($('#dhp-projectid').val());
   	projectObj['project-details']['name'] = $('#titlediv #title').val();
     projectObj['project-details']['id'] = $('#dhp-projectid').val();
     //console.log(projectObj['project-details']['marker-custom-fields'])
@@ -1381,27 +1365,24 @@ console.log("Filter: " + theFilter);
        	projectObj['entry-points'][index]["settings"]['zoom'] = $(this).find('#zoom').val();
         //layers
         projectObj['entry-points'][index]["settings"]['layers'] = new Object();
-        $('.layer-list li option:selected').map(function(ind2) {
+        $('.layer-list li option:selected').each(function(ind2) {
           projectObj['entry-points'][index]["settings"]['layers'][ind2] = new Object();
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['id'] = $(this).attr('id'); 
           //console.log($(this).find('.slider-value').text()); 
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['opacity'] = $(this).attr('data-opacity'); 
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['name'] = $(this).text(); 
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapType'] = $(this).attr('data-mapType'); 
-          projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapTypeId'] = $(this).val(); 
-
+          projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapTypeId'] = $(this).val();
           //console.log($(this).attr('data-mapType'));
             //$("div[class^='apple-']")
-        
-        }).get().join();
+        });
 
        	projectObj['entry-points'][index]["settings"]['marker-layer'] = $(this).find('#marker-layer').val();
         //legends
         projectObj['entry-points'][index]["settings"]['filter-data'] = new Object();
-        $('.legend-list li option:selected').map(function(index2) {
+        $('.legend-list li option:selected').each(function(index2) {
           projectObj['entry-points'][index]["settings"]['filter-data'][index2] = $(this).val(); 
-        }).get().join();
-       	
+        });
       }
       if(type[0]=='timeline') {
   			projectObj['entry-points'][index] = new Object();
@@ -1426,28 +1407,32 @@ console.log("Filter: " + theFilter);
         projectObj['views'] = new Object();
     }
     var tempMarkerContent = [];
-    _.map($('#post-content-view li'), function(val,key){
-        tempMarkerContent.push($(val).find('option:selected').val());
+
+    $('#post-content-view li').each(function(index, theElement){
+        tempMarkerContent.push($(theElement).find('option:selected').val());
     });
     projectObj['views']['post-view-content'] = tempMarkerContent;
-    _.map($('.save-view'),function(val,index) {
-      projectObj['views'][$(val).attr('name')] = val.value;
+
+    $('.save-view').each(function(index, theElement) {
+      projectObj['views'][$(theElement).attr('name')] = theElement.value;
           //console.log(val);
           //if(val.type=='')
-          if(val.type=="checkbox"&&val.checked) {
+          if(theElement.type=="checkbox"&&theElement.checked) {
           //   console.log(val); 
-             projectObj['views'][$(val).attr('name')] = true;
+             projectObj['views'][$(theElement).attr('name')] = true;
           }
-          if(val.type=="checkbox"&&!val.checked) {
+          if(theElement.type=="checkbox"&&!theElement.checked) {
           //   console.log(val); 
-             projectObj['views'][$(val).attr('name')] = false;
+             projectObj['views'][$(theElement).attr('name')] = false;
           }
 
     });
-  	
+
     //console.log(projectObj);
-  	//save object for real
+
+      // Save the project_settings as a string in the field
   	$('#project_settings').val(JSON.stringify(projectObj));
+      // And send out to WP
   	updateProjectSettings();
   }
 
@@ -1458,14 +1443,17 @@ console.log("Filter: " + theFilter);
       .prepend('<li id="'+termID+'" class="mjs-nestedSortable-leaf"><div><span class="disclose"><span></span></span><span class="term-name">'+termName+'</span><span class="term-count"> </span><span class="term-icon">Pick Icon</span></div></li>');
   }
 
+    // PURPOSE: Create new modal to configure legend
+    // INPUT:   title = name of mote (unused!)
+    //          data = JSON Object of all of the unique values of the Mote
   function createLegend(title,data){
     //create modal
-  $('#taxModal').remove();
+    $('#taxModal').remove();
     $('body').append('<!-- Modal -->\
           <div id="taxModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
             <div class="modal-header">\
               <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
-              <h3 id="myModalLabel">Legend Setup</h3>\
+              <h3 id="myModalLabel">Legend Configure</h3>\
             </div>\
             <div class="modal-body">\
             </div>\
@@ -1473,7 +1461,6 @@ console.log("Filter: " + theFilter);
             </div>\
           </div>');
       $('#taxModal').modal('show');
-
 
   	//console.log('fire how many times?');
   	//$('#filter_legend_builder').append(data);
@@ -1506,13 +1493,13 @@ console.log("Filter: " + theFilter);
     });
   	$('.disclose').on('click', function() {
   			$(this).closest('li').toggleClass('mjs-nestedSortable-collapsed').toggleClass('mjs-nestedSortable-expanded');
-  		})
+  		});
   	$('.save-array').click(function(){
   		saveArrayTree();
-      $('.save-array').html('saving...')
+      $('.save-array').html('saving...');
   		
   	});
-    $('.add-term').on('click',function(){
+    $('.add-term').click(function(){
       var newTerm = $('.new-term-name').val();
       var parentTerm = $('.cat-list').find('h2').text();
      
@@ -1520,12 +1507,10 @@ console.log("Filter: " + theFilter);
       if(newTerm) {
         dhpCreateTermInTax(newTerm,parentTerm,projectID);
       }
-      
     });
 
+      // If user selects "Colors" in Legend configure modal
     $('.use-colors').click(function(e){
-
-      
       $('.term-icon').unbind('click');
       $('.term-icon').each(function() {
         if($(this).text().substring(0,1)!='#') {
@@ -1535,22 +1520,18 @@ console.log("Filter: " + theFilter);
         else {
           var tempColor = $(this).text();
         }
-        
+
         $(this).jPicker(
           { window: { expandable: true,liveUpdate: false },
-          color:
-            {
-              
-              active: new $.jPicker.Color({ hex: tempColor })
-            },
-          position:
+            color: { active: new $.jPicker.Color({ hex: tempColor }) },
+            position:
             {
               x: 'screenCenter', // acceptable values "left", "center", "right",
                            // "screenCenter", or relative px value
               y: '300px', // acceptable values "top", "bottom", "center", or relative px
                   // value
             }
-        },
+          },
           function(color, context)
           {
             var all = color.val('all');
@@ -1561,9 +1542,11 @@ console.log("Filter: " + theFilter);
                 backgroundColor: all && '#' + all.hex || 'transparent'
               }).text('#'+all.hex); // prevent IE from throwing exception if hex is empty
           }
-          );
-      });
-    });
+        ); // jPicker
+      }); // each
+    }); // click
+
+      // If user selects "Icons" in Legend configure modal
   	$('.term-icon').click(function(e){
   		//console.log($(this).parents('li').attr('id'));
   		//$('.mjs-nestedSortable-expanded').toggleClass('mjs-nestedSortable-collapsed');
@@ -1578,7 +1561,8 @@ console.log("Filter: " + theFilter);
   			$('#taxModal .modal-body .icons a').unbind('click');
   		});
   	});
-  }
+  } // createLegend()
+
   // function resizeTB() {
   // 	if($('#taxModal .modal-body').length>0) {
   		
@@ -1597,8 +1581,9 @@ console.log("Filter: " + theFilter);
   // 	}
   // }
 
-    // PURPOSE: Save the Taxonomies edited by user
+    // PURPOSE: Save the taxonomy edited by user (in Legend setup modal)
     // NOTES:   The user changes are stored in the HTML itself and read from there to WP
+    // ASSUMES: Taxonomy can be uniquely located in HTML markup as "ol.sortable"
   function saveArrayTree(){
   	//var arraied = $('ol.sortable').nestedSortable('toHierarchy');
   	//arraied = dump(arraied);
@@ -1634,8 +1619,10 @@ console.log("Filter: " + theFilter);
   	termTree += ']';
   	console.log(termTree);
   	createTaxTerms(treeParent,postID,termTree);	
-  }
+  } // saveArrayTree()
 
+    // PURPOSE: Create HTML for Legend in Configure Legend modal
+    // RETURNS: HTML string
   function dhpCatObject(data){
   	var catObject = JSON.parse(data);
   	var htmlObj = show_props(catObject);
@@ -1643,6 +1630,9 @@ console.log("Filter: " + theFilter);
   	return htmlObj;
   }
 
+    // PURPOSE: Create HTML for nested sortable list of Legend values (w/icon or color)
+    // INPUT:   obj = Object for taxonomic term
+    // RETURNS: jQuery HTML object for Legend values
   function show_props(obj) {
   	var htmlStart = '';
       var result = $('<div class="cat-list"><ol class="sortable"></ol></div>');
@@ -1663,9 +1653,6 @@ console.log("Filter: " + theFilter);
   			$('li#'+obj[i].term_id+' div', result).append('<span class="term-count"> ' + obj[i].count + '</span>');
   	
   		} else {
-
-  			//img.click(myClickHandler);
-
   			$('ol.sortable', result).append('<li id="'+obj[i].term_id+'"><div></div></li>');
   			$('li#'+obj[i].term_id+' div', result).append('<span class="disclose"><span></span></span>');
   			$('li#'+obj[i].term_id+' div', result).append('<span class="term-name">'+ obj[i].name + '</span>');		
@@ -1686,9 +1673,11 @@ console.log("Filter: " + theFilter);
   		}
   	}
     return result;
-  }
+  } // show_props()
 
-  // RETURNS: HTML text representing all of the options in optionArrayAsJSON
+
+    // INPUT:   optionArrayAsJSON = JSON object containing array of items
+    // RETURNS: HTML text representing all of the options in optionArrayAsJSON
   function createOptionList(optionArrayAsJSON) {
     var tempOptionArray = JSON.parse(optionArrayAsJSON);
     var tempHtml = null;
@@ -1699,13 +1688,15 @@ console.log("Filter: " + theFilter);
     return tempHtml;
   }
 
-  function changeToLoadBtn(evt) {
+    // PURPOSE: Change button next to Legend from Create to Configure
+  function changeToLoadBtn() {
     $('.create-legend').remove();
     $('.load-legend').removeClass('hide');
     saveProjectListeners();
   }
 
   //=================================== AJAX functions ==================================
+
   function updateProjectSettings(){
   	projectID = postID;
   	var settingsData = $('#project_settings').val();

@@ -1485,7 +1485,7 @@ function dhpGetMoteValues()
 		//	and associating the marker with the taxonomic term
 	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$dhp_projectID, 'posts_per_page' => -1 );
 
-		// Find all of the terms derived from $mote['name'] in the Project's taxonomy ??
+		// Find all of the terms derived from $mote['name'] in the Project's taxonomy
 	$parent_term = get_term_by('name', $mote['name'], $dhp_tax_name);
 	$parent_id = $parent_term->term_id;
 	$parent_terms_to_exclude = get_terms($dhp_tax_name, 'parent=0&orderby=term_group&hide_empty=0');
@@ -1516,7 +1516,8 @@ function dhpGetMoteValues()
 		wp_set_post_terms( $marker_id, $theseTerms, &$dhp_tax_name, true );
 	endwhile;
 
-		// Create comma-separated string listing terms derived from other motes ??
+		// Create comma-separated string listing terms derived from other motes
+		// TO DO: Push terms to an array rather than form taxonomic string
 	$exclude_string;
 	$exclude_count = 0;
 	foreach ( $parent_terms_to_exclude as $term ) {
@@ -1612,10 +1613,10 @@ add_action( 'wp_ajax_dhpGetTranscriptClip', 'dhpGetTranscriptClip' );
 add_action('wp_ajax_nopriv_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 
 // getTranscriptClip($tran,$clip)
-// PURPOSE:	??
-// INPUT:	$tran = ??
+// PURPOSE:	Retrieve section of text file for transcript
+// INPUT:	$tran = actual text
 //			$clip = String containing from-end time of segment
-// RETURNS:	??
+// RETURNS:	Section of $tran within the time frame specified by $clip
 
 function getTranscriptClip($tran,$clip)
 {
@@ -1651,11 +1652,11 @@ function loadTranscriptFromFile($fileUrl)
 } // loadTranscriptFromFile()
 
 // dhpGetTranscriptClip()
-// PURPOSE: 
-// INPUT:	$_POST['project'] = ID of Project ??
+// PURPOSE: AJAX function to retrieve section of transcript 
+// INPUT:	$_POST['project'] = ID of Project post
 //			$_POST['transcript'] = URL to file containing contents of transcript
-//			$_POST['timecode'] = ??
-// RETURNS:	??
+//			$_POST['timecode'] = timestamp specifying part of transcript to return
+// RETURNS:	JSON-encoded section of transcription
 
 function dhpGetTranscriptClip()
 {
@@ -1676,11 +1677,12 @@ add_action( 'wp_ajax_dhpGetTranscript', 'dhpGetTranscript' );
 add_action( 'wp_ajax_nopriv_dhpGetTranscript', 'dhpGetTranscript');
 
 // dhpGetTranscript()
-// PURPOSE: ??
+// PURPOSE: AJAX function to retrieve entire transcript
 // INPUT:	$_POST['project'] = ID of Project
-//			$_POST['transcript'] = name of custom field in marker that will contain data about transcription ??
-//			$_POST['tax_view'] = ??
-// RETURNS:	??
+//			$_POST['transcript'] = URL to file containing contents of transcript
+//			$_POST['tax_view'] = the taxonomic term that the marker matches
+// ASSUMES: The transcript is only associated with one taxonomic term
+// RETURNS:	JSON-encoded complete transcript
 
 function dhpGetTranscript()
 {
@@ -1735,7 +1737,7 @@ add_action( 'wp_ajax_dhpAddCustomField', 'dhpAddCustomField' );
 // PURPOSE:	Handle Ajax call to create new custom field for Project
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['field_name'] = name of new custom field to add
-//			$_POST['field_value'] = default value to set in all markers belonging to Project ??
+//			$_POST['field_value'] = default value to set in all markers belonging to Project
 
 function dhpAddCustomField()
 {
@@ -1759,7 +1761,7 @@ function dhpAddCustomField()
 add_action( 'wp_ajax_dhpCreateCustomFieldFilter', 'dhpCreateCustomFieldFilter' );
 
 // dhpCreateCustomFieldFilter()
-// PURPOSE: Handle Ajax call to add the value of custom fields that match "filter condition" ??
+// PURPOSE: Handle Ajax call to add the value of custom fields that match "filter condition"
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['field_name'] = name of custom field
 //			$_POST['field_value'] = value to set of custom field
@@ -1807,11 +1809,11 @@ add_action('wp_ajax_dhpUpdateCustomFieldFilter', 'dhpUpdateCustomFieldFilter');
 
 // dhpUpdateCustomFieldFilter()
 // PURPOSE: To modify the value of a field (based on string replace) in all of a Project's Markers if
-//			it satisfies query condition and currently matches a certain value
+//			it satisfies query condition and currently matches a certain value (like Find & Replace)
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['field_name'] = name of custom field we wish to change
 //			$_POST['current_value'] = custom field must have this field to be changed
-//			$_POST['new_value'] = ??
+//			$_POST['new_value'] = new value to set
 //			$_POST['filter_key'] = custom field upon which search/filter is based
 //			$_POST['filter_value'] = value that must be in custom field
 // RETURNS:	Number of markers whose values were changed
@@ -2025,11 +2027,11 @@ add_action( 'wp_ajax_dhpCreateTaxTerms', 'dhpCreateTaxTerms' );
 
 // dhpCreateTaxTerms()
 // PURPOSE:	Handle Ajax function to create all terms associated with all of the values defined
-//			by a mote in a Project
+//			by a mote in a Project (Saving results of Configure Legend function)
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['mote_name'] = name of mote
-//			$_POST['terms'] = ??
-// RETURNS:	JSON Object of ??
+//			$_POST['terms'] = array of mote/legend values
+// RETURNS:	JSON Object of 
 
 function dhpCreateTaxTerms()
 {
@@ -2047,7 +2049,7 @@ function dhpCreateTaxTerms()
 
 
 // loopTermHeirarchy($argArray)
-// PURPOSE: ??
+// PURPOSE: Saving taxonomy hierarchy in WP and updating display of icon URL
 // INPUT:	$argArray['parentTerm'] = name of parent mote
 //			$argArray['projectID'] = ID of Project
 //			$argArray['termsArray'] = array of taxonomy terms
@@ -2065,12 +2067,11 @@ function loopTermHeirarchy($argArray)
 	$myCount = count($dhp_project_terms);
 
 	foreach ($dhp_project_terms as $term) {
-			// ?? what is going on here with the ->{''} ??
-		$term_name = $term->{'name'};
-		$parent_term_id = $term->{'parent'};
-		$term_id = $term->{'term_id'};	
-		$term_order = $term->{'term_order'};	
-		$meta_value = $term->{'icon_url'};
+		$term_name = $term->name;
+		$parent_term_id = $term->parent;
+		$term_id = $term->term_id;
+		$term_order = $term->term_order;
+		$meta_value = $term->icon_url;
 
 		if($meta_value=='undefined') { $meta_value = '';}
 		
@@ -2081,7 +2082,8 @@ function loopTermHeirarchy($argArray)
 		$args = array( 'parent' => $parent_term_id,'term_group' =>  $term_order );
 		//update term(insert takes place on legend setup)
 		wp_update_term( $term_id, $dhp_tax_name, $args );
-		//clear out old value and insert new
+		//clear out old icon and insert new icon
+		// TO DO: just update_term_meta
 		delete_term_meta($term_id, $meta_key);
 		add_term_meta($term_id, $meta_key, $meta_value);
 		
@@ -2094,7 +2096,7 @@ function loopTermHeirarchy($argArray)
 add_action( 'wp_ajax_dhpCreateTermInTax', 'dhpCreateTermInTax' );
 
 // dhpCreateTermInTax()
-// PURPOSE:	??
+// PURPOSE:	Handle adding new terms to taxonomy (that don't pre-exist in Marker data)
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['term_name'] = name of taxonomy term to add
 //			$_POST['parent_term_name'] = name of parent term under which it should be added
@@ -2254,7 +2256,7 @@ function add_dhp_project_admin_scripts( $hook )
 
     //$dhp_custom_fields = createUniqueCustomFieldArray($post->ID);
 
- 		// Editing content??
+ 		// Editing a specific project in admin panel
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( 'project' === $post->post_type ) {    
         	$tempLayers = 'layers '.$layers_global;
@@ -2300,6 +2302,7 @@ function add_dhp_project_admin_scripts( $hook )
 			) );
         }
 
+        // Shows list of all Project in admin panel
     } else if ( $hook == 'edit.php'  ) {
         if ( 'project' === $post->post_type ) {     
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
@@ -2488,7 +2491,6 @@ add_filter( 'archive_template', 'dhp_tax_template' );
 
 // dhp_tax_template( $page_template )
 // PURPOSE: Set template to be used to show results of top-level custom taxonomy display
-//			
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
 // TO DO:   Replace use of get_page() for finding Project ID!
@@ -2499,7 +2501,7 @@ function dhp_tax_template( $page_template )
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
-		// ensure a Taxonomy archive page is being rendered ??
+		// ensure a Taxonomy archive page is being rendered
 	if( is_tax() ) {
 	    global $wp_query;
 

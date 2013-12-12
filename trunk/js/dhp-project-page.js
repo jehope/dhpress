@@ -424,7 +424,7 @@ jQuery(document).ready(function($) {
                     }
                 }
             }
-            $('ul',legendHtml).prepend('<li class="check-all"><input type="checkbox" checked="checked"><a class="value" data-id="all">Show All</a></li>');
+            $('ul',legendHtml).prepend('<li class="check-all"><input type="checkbox" checked="checked"><a class="value" data-id="all">Hide/Show All</a></li>');
            
 
             $('#legends .legend-row').append(legendHtml);
