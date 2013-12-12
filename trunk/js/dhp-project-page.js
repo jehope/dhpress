@@ -9,7 +9,7 @@ jQuery(document).ready(function($) {
     var map, map2,dhp_layers,dhpSettings, projectID, mObject,lookupData, lookupParents, markerObject,
         catFilter,player,clipPosition,dataObject,tcArray;
 
-    var projectID = $('.post').attr('id')
+    var projectID = $('.post').attr('id');
 
     $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
 
