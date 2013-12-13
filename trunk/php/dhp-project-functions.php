@@ -685,7 +685,7 @@ add_action( 'wp_ajax_dhp_get_group_feed', 'dhp_get_group_feed' );
 add_action( 'wp_ajax_nopriv_dhp_get_group_feed', 'dhp_get_group_feed' );
 
 // dhp_get_group_feed($tax_name,$term_name)
-// PURPOSE: Ajax hook that will return all Markers associated with a specific term
+// PURPOSE: Ajax hook that will return all Markers in this Project associated with a specific term
 // INPUT:	$tax_name = "dhp_tax_"<pID>
 // 			$term_name = taxonomic term created for Mote value
 // RETURNS:	Feature collection (OpenLayers Object) containing Markers associated with term
@@ -699,8 +699,9 @@ function dhp_get_group_feed($tax_name,$term_name)
     $the_term = get_term_by('name', $term_name, $tax_name);
     //$test_string =  $pieces;
 	foreach( $project_settings['entry-points'] as $eps) {
-		if($eps['type']=="map") {
-			$filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
+		switch ($eps['type']) {
+		case "map":
+			// $filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
 			$filter = $eps['settings']['filter-data'];
 			$map_pointsMote = getMoteFromName( $project_settings, $eps['settings']['marker-layer'] );
 			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
@@ -709,13 +710,12 @@ function dhp_get_group_feed($tax_name,$term_name)
 				//array of custom fields
 				//$cordMote = $map_pointsMote['custom-fields'];
 			}
-			
-		}
-		if($eps['type']=="transcript") {
+			break;
+		case "transcript":
 			$audio = getMoteFromName( $project_settings, $eps['settings']['audio'] );
 			$transcript = getMoteFromName( $project_settings, $eps['settings']['transcript'] );
 			$timecode = getMoteFromName( $project_settings, $eps['settings']['timecode'] );
-
+			break;
 		}
 	}
 	$feature_collection['type'] = "FeatureCollection";
@@ -795,12 +795,13 @@ function createMarkerArray($project_id)
 	//LOAD PROJECT SETTINGS
 	//-get primary category parent
 	$project_settingsA = get_post_meta($project_id,'project_settings');
+		// ?? What is the str_replace doing here??
 	$project_settings = json_decode(str_replace('\\','',$project_settingsA[0]),true);
 
 	foreach( $project_settings['entry-points'] as $eps) {
-		if($eps['type']=="map") {
-			$filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
-			$filter = $eps['settings']['filter-data'];
+		switch ($eps['type']) {
+		case "map":
+				// Which field used to encode Lat-Long on map?
 			$map_pointsMote = getMoteFromName( $project_settings, $eps['settings']['marker-layer'] );
 			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
 				if(!$map_pointsMote['delim']) {$map_pointsMote['delim']=',';}
@@ -809,25 +810,25 @@ function createMarkerArray($project_id)
 				//$cordMote = $map_pointsMote['custom-fields'];
 			}
 
-			//CREATE loop to generate tabs for filters
-			foreach( $filter as $legend ) {
+				// Find all possible legends for this map
+			$filters = $eps['settings']['filter-data'];
+				// Collect all icons with their taxonomic terms ??
+			foreach( $filters as $legend ) {
 				$parent = get_term_by('name', $legend, $project_tax);
 				$parent_term_id = $parent->term_id;
 				$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty' => false ) );
-
 				array_push($json_Object, getIconsForTerms($parent, $project_tax));
 			}
-		}
-		if($eps['type']=="transcript") {
+			break;
+		case "transcript":
 			$audio = getMoteFromName( $project_settings, $eps['settings']['audio'] );
 			$transcript = getMoteFromName( $project_settings, $eps['settings']['transcript'] );
 			$transcript2 = getMoteFromName( $project_settings, $eps['settings']['transcript2'] );			
 			$timecode = getMoteFromName( $project_settings, $eps['settings']['timecode'] );
-
+			break;
 		}
 	}
-	
-	
+
 	//$json_string = '{"type": "FeatureCollection","features": [';
 	$json_string['type'] = 'FeatureCollection';
 	$feature_array = array();
@@ -841,7 +842,6 @@ function createMarkerArray($project_id)
 	$timecode_val;
 	$link_parent = $project_settings['views']['link'];
 	$link_parent2 = $project_settings['views']['link2'];
-	
 
 
 	if($link_parent) {
@@ -872,7 +872,7 @@ function createMarkerArray($project_id)
 			$child_terms2 = get_term_children($parent_id2->term_id, $project_tax);
 		}
 	}
-	
+
 	while ( $loop->have_posts() ) : $loop->the_post();
 
 		$marker_id = get_the_ID();
@@ -1260,21 +1260,22 @@ function print_new_bootstrap_html()
 // PURPOSE:	Form list of category names
 // INPUT:	$cats = array of category names
 // RETURNS: Concatenated string of category names separated by comma
+// TO DO:   Can't this be implemented with implode ??
 
-function categoryString($cats)
-{
-	$catString;
+// function categoryString($cats)
+// {
+// 	$catString;
 
-	foreach ($catArray as $key => $cat) {
-		if($key>0) {
-			$catString .= ','.$cat;
-		}
-		else {
-			$catString .= $cat;
-		} 
-	}
-	return $catString;
-} // categoryString()
+// 	foreach ($catArray as $key => $cat) {
+// 		if($key>0) {
+// 			$catString .= ','.$cat;
+// 		}
+// 		else {
+// 			$catString .= $cat;
+// 		} 
+// 	}
+// 	return $catString;
+// } // categoryString()
 
 
 // createParentTerm($term_name,$dhp_tax_name)
