@@ -689,7 +689,6 @@ add_action( 'wp_ajax_nopriv_dhp_get_group_feed', 'dhp_get_group_feed' );
 // INPUT:	$tax_name = "dhp_tax_"<pID>
 // 			$term_name = taxonomic term created for Mote value
 // RETURNS:	Feature collection (OpenLayers Object) containing Markers associated with term
-// TO DO:	Currently unused! But may be used in future
 
 function dhp_get_group_feed($tax_name,$term_name)
 {
