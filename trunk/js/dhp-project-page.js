@@ -3,44 +3,32 @@
 //          Some other parameters passed by being embedded in HTML: .post.id
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 // TO DO:   Generalize visualization types better (don't assume maps)
+//          Change computation of tcArray so that it contains the endtime of the clip rather than
+//              beginning -- this will speed up search in hightlightTranscriptLine()
 
 jQuery(document).ready(function($) {
+        // Project variables
+    var dataObject, projectID, catFilter, dhpSettings, lookupData, markerObject, ajax_url;
+        // Map visualization variables
+    var map, dhpMap, gg, sm, olMarkerInterface, selectControl, hoverControl;
+        // A/V player variables
+    var tcArray, player, clipPosition, videoHasPlayed;
+        // dead variables
+    // var lookupParents;
 
-    var map, map2,dhp_layers,dhpSettings, projectID, mObject,lookupData, lookupParents, markerObject,
-        catFilter,player,clipPosition,dataObject,tcArray;
-
-    var projectID = $('.post').attr('id');
+    projectID = $('.post').attr('id');
 
     $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
 
-    var videoHasPlayed = false;
-    var ajax_url = dhpData.ajax_url;
+    videoHasPlayed = false;
+    ajax_url = dhpData.ajax_url;
     dhpSettings = JSON.parse(dhpData.settings);
-    dhpMap = dhpData.map;
 
-    var layerCount = Object.keys(dhpData.layers).length; 
-    dhp_layers = [];
-    for(i=0;i<layerCount;i++) {
-        //console.log(dhpData.layers[i].name)
-        switch (dhpData.layers[i]['mapType']) {
-        case 'type-OSM':
-            dhp_layers[i] = new OpenLayers.Layer.OSM(); 
-            break;
-        case 'type-Google':
-            dhp_layers[i] = new OpenLayers.Layer.Google(dhpData.layers[i]['name'], // the default
-                {   type:dhpData.layers[i]['mapTypeId'], numZoomLevels: 20}); 
-                //console.log(dhpData.layers[i]['mapTypeId'])
-            break;
-        case 'type-CDLA':
-            cdla.maps.defaultAPI(cdla.maps.API_OPENLAYERS);
-                // create the cdla.maps.Map object
-            var cdlaObj = new cdla.maps.Map(dhpData.layers[i].mapTypeId);
-                // add the map layer
-                //map.addLayers([hwymap.layer()]);
-            dhp_layers[i] = cdlaObj.layer(); 
-            break;
-        }
-    }
+    markerObject = new Object();
+    lookupParents = new Object();
+    catFilter = new Object();
+
+    dhpMap = dhpData.map;
 
         // insert navigational controls
     $('#secondary').prepend('<div id="legends" class="span4"><div class="legend-row row-fluid"></div></div>');
@@ -56,7 +44,6 @@ jQuery(document).ready(function($) {
           <li class="tips active" ><a href="#"><i class="icon-info-sign"></i> Tips </a></li>\
         </ul></div>');
 
-
         // initialize fullscreen mode settings
     if(dhpSettings['views']['map-fullscreen']==true){
         $('body').addClass('fullscreen');
@@ -65,49 +52,13 @@ jQuery(document).ready(function($) {
 
     $('<style type="text/css"> @media screen and (min-width: 600px) { #map_div{ width:'+dhpSettings['views']['map-width']+'px; height:'+dhpSettings['views']['map-height']+'px;}} </style>').appendTo('head');
 
-
-    var gg = new OpenLayers.Projection("EPSG:4326");
-    var sm = new OpenLayers.Projection("EPSG:900913");
-
-    markerObject = new Object();
-    lookupParents = new Object();
-    catFilter = new Object();
-
-    //var osm = new OpenLayers.Layer.OSM(); 
-         
-    map = new OpenLayers.Map({
-        div: "map_div",
-        projection: sm,
-    	displayProjection: gg
-        
-    });
-    map.addLayers(dhp_layers);
-    //load layers here
-
-    //map.addControl(new OpenLayers.Control.LayerSwitcher());
-
-    var lonlat = new OpenLayers.LonLat(dhpMap['lon'],dhpMap['lat']);
-    lonlat.transform(gg, map.getProjectionObject());
-    map.setCenter(lonlat, dhpMap['zoom']);
-
-    //map reset function
-    //
-    function resetMap(lon, lat, zoomL) {
-        var lonlat = new OpenLayers.LonLat(lon,lat);
-        lonlat.transform(gg, map.getProjectionObject());
-        map.setCenter(lonlat, zoomL);
-    }
-
-    resetMap(dhpMap['lon'],dhpMap['lat'],dhpMap['zoom']);
-
-    var context = {
-                    
+        // Interface for OpenLayers to interpret style of a map marker
+    olMarkerInterface = {
         getIcon: function(feature) {
             var cats;
             if(feature.cluster) {
                 cats = feature.cluster[0].attributes.categories;
-            }
-            else {    
+            } else {    
                 cats = feature.attributes["categories"];
             }
             var highParentI ='';
@@ -116,8 +67,7 @@ jQuery(document).ready(function($) {
             }
             if(!highParentI){
                 return '';
-            }
-            else {
+            } else {
                 return highParentI;
             }
         },
@@ -125,8 +75,7 @@ jQuery(document).ready(function($) {
             var cats;
             if(feature.cluster) {
                 cats = feature.cluster[0].attributes.categories;
-            }
-            else {    
+            } else {    
                 cats = feature.attributes["categories"];
             }
             var highParentI ='';
@@ -139,49 +88,13 @@ jQuery(document).ready(function($) {
         getLabel: function(feature) {
             if(feature.cluster.length>1) {
                 return feature.cluster.length;
-            }
-            else {
+            } else {
                 return '';
             }
         }
     };
 
-    var template = {
-        fillColor: "${getColor}",
-        strokeColor: "#333333",
-        pointRadius: 10, // using context.getSize(feature)
-        width:20,
-        externalGraphic: "${getIcon}", //context.getIcon(feature)
-        graphicZIndex: 1
-        // ,
-        // label:"${getLabel}"
-    };
-                
-    var style = new OpenLayers.Style(template, {context: context});
-    strategy = new OpenLayers.Strategy.Cluster();
-    strategy.distance = 1;
-
-    mObject = new OpenLayers.Layer.Vector(dhpMap['marker-layer'],{
-        strategies: [strategy],
-        rendererOptions: { zIndexing: true }, 
-        styleMap: new OpenLayers.StyleMap(style)
-    });    
-
-    selectControl = new OpenLayers.Control.SelectFeature(mObject,
-        { onSelect: onFeatureSelect, onUnselect: onFeatureUnselect, hover: false });
-
-    hoverControl = new OpenLayers.Control.SelectFeature(mObject, 
-        { hover: true, highlightOnly: true, renderIntent: "temporary" });
-
-    loadMarkers(projectID,mObject);   
-
-    //mObject.id = "Markers";       
-    map.addLayer(mObject);
-    map.addControl(hoverControl);
-    map.addControl(selectControl);
-
-    hoverControl.activate();  
-    selectControl.activate();
+    initializeMap();
 
     //add reset button
     $('.olControlZoom').append('<div class="reset-map"><i class="icon-white icon-refresh"></i></div>');
@@ -194,9 +107,7 @@ jQuery(document).ready(function($) {
             $('body').removeClass('fullscreen');
             $('.dhp-nav .fullscreen').removeClass('active');
             map.updateSize();
-        }
-        else {
-
+        } else {
             $('body').addClass('fullscreen');
             $('.dhp-nav .fullscreen').addClass('active');
             map.updateSize();
@@ -208,48 +119,135 @@ jQuery(document).ready(function($) {
         if($('.dhp-nav .tips').hasClass('active')) {
             $('.dhp-nav .tips').removeClass('active');
             $('#dhpress-tips').joyride('hide');
-
-        }
-        else {
+        } else {
             $('#dhpress-tips').joyride('restart');
             $('.dhp-nav .tips').addClass('active');
         }
     });
 
-    function createLookup(filter){
-        catFilter = filter;
-
-        var lookupData = filter.terms;
-        var countTerms = Object.keys(lookupData).length; 
-      
-        for(i=0;i<countTerms;i++) {
-            var tempName = lookupData[i].id;
-            lookupParents[tempName];
-            lookupParents[tempName] = { externalGraphic : lookupData[i].icon_url };
-            
-        }
-        //alert(JSON.stringify(lookupParents));
-        return lookupParents;
-       
+    // PURPOSE: Reset center and scale of map
+    // ASSUMES: gg has been initialized and is accessible
+    function resetMap(lon, lat, zoomL) {
+        var lonlat = new OpenLayers.LonLat(lon,lat);
+        lonlat.transform(gg, map.getProjectionObject());
+        map.setCenter(lonlat, zoomL);
     }
+
+    // PURPOSE: Initialize map layers, map controls, etc.
+    function initializeMap()
+    {
+        var layerCount;
+        var olMapTemplate;
+        var dhp_layers = [];
+        var olStyle, olClusterStrategy;
+        var mObject;
+
+        // layerCount = Object.keys(dhpData.layers).length;
+        // for(i=0;i<layerCount;i++) {
+
+        _.each(dhpData.layers, function(theLayer) {
+            switch (theLayer['mapType']) {
+            case 'type-OSM':
+                dhp_layers.push(new OpenLayers.Layer.OSM());
+                break;
+            case 'type-Google':
+                dhp_layers.push(new OpenLayers.Layer.Google(theLayer['name'],
+                    {   type: theLayer['mapTypeId'], numZoomLevels: 20}));
+                break;
+            case 'type-CDLA':
+                cdla.maps.defaultAPI(cdla.maps.API_OPENLAYERS);
+                var cdlaObj = new cdla.maps.Map(theLayer['mapTypeId']);
+                dhp_layers.push(cdlaObj.layer());
+                break;
+            }
+        });
+
+        gg = new OpenLayers.Projection("EPSG:4326");
+        sm = new OpenLayers.Projection("EPSG:900913");
+
+        //var osm = new OpenLayers.Layer.OSM(); 
+
+        map = new OpenLayers.Map({
+            div: "map_div",
+            projection: sm,
+            displayProjection: gg
+            
+        });
+        map.addLayers(dhp_layers);
+        //load layers here
+
+        //map.addControl(new OpenLayers.Control.LayerSwitcher());
+
+        resetMap(dhpMap['lon'],dhpMap['lat'],dhpMap['zoom']);
+
+        olMapTemplate = {
+            fillColor: "${getColor}",
+            strokeColor: "#333333",
+            pointRadius: 10, // using olMarkerInterface.getSize(feature)
+            width:20,
+            externalGraphic: "${getIcon}", //olMarkerInterface.getIcon(feature)
+            graphicZIndex: 1
+            // label:"${getLabel}"
+        };
+
+        olStyle = new OpenLayers.Style(olMapTemplate, {context: olMarkerInterface});
+        olClusterStrategy = new OpenLayers.Strategy.Cluster();
+        olClusterStrategy.distance = 1;
+
+        mObject = new OpenLayers.Layer.Vector(dhpMap['marker-layer'],{
+            strategies: [olClusterStrategy],
+            rendererOptions: { zIndexing: true }, 
+            styleMap: new OpenLayers.StyleMap(olStyle)
+        });
+
+        selectControl = new OpenLayers.Control.SelectFeature(mObject,
+            { onSelect: onFeatureSelect, onUnselect: onFeatureUnselect, hover: false });
+
+        hoverControl = new OpenLayers.Control.SelectFeature(mObject, 
+            { hover: true, highlightOnly: true, renderIntent: "temporary" });
+
+        loadMarkers(projectID,mObject);
+
+        //mObject.id = "Markers";
+        map.addLayer(mObject);
+        map.addControl(hoverControl);
+        map.addControl(selectControl);
+
+        hoverControl.activate();  
+        selectControl.activate();
+    } // initializeMap()
+
+
+    // function createLookup(filter){
+    //     catFilter = filter;
+
+    //     var lookupData = filter.terms;
+    //     var countTerms = Object.keys(lookupData).length; 
+      
+    //     for(i=0;i<countTerms;i++) {
+    //         var tempName = lookupData[i].id;
+    //         lookupParents[tempName];
+    //         lookupParents[tempName] = { externalGraphic : lookupData[i].icon_url };
+            
+    //     }
+    //     //alert(JSON.stringify(lookupParents));
+    //     return lookupParents;
+       
+    // }
+
     /*  Filter logic
      *  
      */
     function getHighestParentIcon(categories) {
-       
         var countTerms = Object.keys(lookupData).length; 
         var countCats = categories.length;
         for(i=0;i<countTerms;i++) {
-
             for(j=0;j<countCats;j++) {
-
                 var tempName = lookupData[i].id;
                 if (tempName==categories[j]) {
                     if(lookupData[i].icon_url.substring(0,1) == 'h') {
-                        
                         return lookupData[i].icon_url;
-                    }
-                    else {
+                    } else {
                         return '';
                     }
                 }
@@ -268,11 +266,10 @@ jQuery(document).ready(function($) {
                         }
                     }
                 }
-           }
-            
+           }   
         }
-
     }
+
     function getHighestParentColor(categories) {
         var countTerms = Object.keys(lookupData).length; 
 
@@ -289,12 +286,10 @@ jQuery(document).ready(function($) {
                 if (tempName===cleanCatName) {
                     if(lookupData[i].icon_url.substring(0,1) == '#') {
                         return lookupData[i].icon_url;
-                    }
-                    else {
+                    } else {
                         return '';
                     }
-                }
-                else {
+                } else {
                     //for each child cat
                     if(lookupData[i].children.length>0) {
                         var tempChildren = lookupData[i].children;
@@ -304,8 +299,7 @@ jQuery(document).ready(function($) {
                             if(tempChildren[k].term_id==cleanCatName) {
                                if(lookupData[i].icon_url.substring(0,1) == '#') {
                                     return lookupData[i].icon_url;
-                                }
-                                else {
+                                } else {
                                     return '';
                                 }
                             }
@@ -313,36 +307,33 @@ jQuery(document).ready(function($) {
                     }
                 }
            }
-            
-        }
-
-    }
-    function getHighestParentDisplay(categories) {
-        var lookupData = catFilter.terms;
-        var countTerms = Object.keys(lookupData).length; 
-        var countCats = categories.length;
-
-        for(i=0;i<countTerms;i++) {
-
-            for(j=0;j<countCats;j++) {
-
-                var tempName = lookupData[i].id;
-                if (tempName==categories[j]) {              
-                    return true;
-                }
-                else {
-                    //for each child cat
-                    var tempChildren = lookupData[i].children;
-                    var tempChildCount = tempChildren.length;
-                    for (k=0;k<tempChildCount;k++) {
-                        if(tempChildren[k]==categories[j]) {
-                            return 'none';
-                        }
-                    }
-                }
-            }        
         }
     }
+
+    // function getHighestParentDisplay(categories) {
+    //     var lookupData = catFilter.terms;
+    //     var countTerms = Object.keys(lookupData).length; 
+    //     var countCats = categories.length;
+
+    //     for(i=0;i<countTerms;i++) {
+    //         for(j=0;j<countCats;j++) {
+    //             var tempName = lookupData[i].id;
+    //             if (tempName==categories[j]) {              
+    //                 return true;
+    //             } else {
+    //                 //for each child cat
+    //                 var tempChildren = lookupData[i].children;
+    //                 var tempChildCount = tempChildren.length;
+    //                 for (k=0;k<tempChildCount;k++) {
+    //                     if(tempChildren[k]==categories[j]) {
+    //                         return 'none';
+    //                     }
+    //                 }
+    //             }
+    //         }        
+    //     }
+    // }
+
     /*  Create filter control legend
      *
      */
@@ -365,7 +356,7 @@ jQuery(document).ready(function($) {
         
         //create new legend with bootstrap collapse
         var newLegendsHtml = $('<div class="new-legends"/>');
-        _.map(object, function(val,key) {
+        _.each(object, function(val,key) {
             $(newLegendsHtml).append('<div class="legend-'+key+'" />');
             $('.legend-'+key, newLegendsHtml).append('<h3>'+val.name+'</h3>');
             $('.legend-'+key, newLegendsHtml).append('<div class="accordion" id="accordion-'+key+'" />');
@@ -373,7 +364,7 @@ jQuery(document).ready(function($) {
             //console.log(val)
             //display legend terms
             
-            _.map(val.terms, function(val2,key2) {
+            _.each(val.terms, function(val2,key2) {
                 if(val.name!=val2.name) {
                     // console.log('Term: '+val2.name)
                     var firstIconChar = val2.icon_url.substring(0,1);
@@ -391,18 +382,16 @@ jQuery(document).ready(function($) {
                     if(val2.children.length>0) {
                         $(tempGroup).append('<div id="term-'+key+key2+'" class="accordion-body collapse"><div class="accordion-inner" /></div>');
                     }
-                    _.map(val2.children, function(val3,key3) {
+                    _.each(val2.children, function(val3,key3) {
                         // console.log('Children Terms: '+val3)
                         $('.accordion-inner', tempGroup).append(val3+'<br/>');
                     });
                     $('#accordion-'+key, newLegendsHtml).append('<div class="accordion-group">'+$(tempGroup).html()+'</div>')
-
                 }
             });
         });
         //$('#legends').append(newLegendsHtml)
         for (j=0;j<Object.keys(object).length;j++) {
-           
             var filterTerms = object[j].terms;
             var legendName = object[j].name;
             var countTerms = Object.keys(filterTerms).length; 
@@ -416,82 +405,78 @@ jQuery(document).ready(function($) {
                     else { icon = 'background: url(\''+filterTerms[i].icon_url+'\') no-repeat center;'; }
 
                     if(i>50) {
-                    $('ul', legendHtml).append('<li class="compare"><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
-                    }
-                    else {
+                        $('ul', legendHtml).append('<li class="compare"><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
+                    } else {
                       $('ul', legendHtml).append('<li class="compare"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
-                      
                     }
                 }
             }
             $('ul',legendHtml).prepend('<li class="check-all"><input type="checkbox" checked="checked"><a class="value" data-id="all">Hide/Show All</a></li>');
-           
 
             $('#legends .legend-row').append(legendHtml);
             $('.dhp-nav .dropdown-menu').append('<li><a href="#term-legend-'+j+'">'+legendName+'</a></li>');
         }
 
-
             //$('#legends').css({'left':0, 'top':50,'z-index':19});
-            $('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="icon-resize-small"></i></a>');
-            $('.legend-resize').hide();
-            $('#legends').hover(function(){
-                $('.legend-resize').fadeIn(100);
-            },
-            function() {
-                $('.legend-resize').fadeOut(100);
-            });
-            $('.legend-resize').click(function(){
+        $('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="icon-resize-small"></i></a>');
+        $('.legend-resize').hide();
+        $('#legends').hover(function(){
+            $('.legend-resize').fadeIn(100);
+        },
+        function() {
+            $('.legend-resize').fadeOut(100);
+        });
+        $('.legend-resize').click(function(){
 
-                if($('#legends').hasClass('mini')) {
-                    $('.terms .value').show();
-                $('#legends').animate({width: legendWidth}, 500 );
-                $('#legends').removeClass('mini');
-                }
-                else {
-                    //console.log($('#legends').width())
-                    legendWidth = $('#legends').width();
-                    $('.terms .value').hide();
-                    $('#legends').animate({width: 70}, 500 );
-                    $('#legends').addClass('mini');
-                }
+            if($('#legends').hasClass('mini')) {
+                $('.terms .value').show();
+            $('#legends').animate({width: legendWidth}, 500 );
+            $('#legends').removeClass('mini');
+            }
+            else {
+                //console.log($('#legends').width())
+                legendWidth = $('#legends').width();
+                $('.terms .value').hide();
+                $('#legends').animate({width: 70}, 500 );
+                $('#legends').addClass('mini');
+            }
 
-            });
+        });
             //$('#legends').css({
-            $('.active-legend').mousemove(function(e){
-                var xpos = e.pageX - 250;
-                var ypos = e.pageY + 15;
-                //$('#child_legend-'+j+'').css({'left':xpos,'top':ypos});
-            });
+        $('.active-legend').mousemove(function(e){
+            var xpos = e.pageX - 250;
+            var ypos = e.pageY + 15;
+            //$('#child_legend-'+j+'').css({'left':xpos,'top':ypos});
+        });
             //var childrenLegendHtml = $('<div id="child_legend-'+j+'"><h3>Children Terms</h3><ul></ul></div>');
             //$('body').append(childrenLegendHtml);
             //$('#child_legend-'+j+'').css({'width':'200px','margin-left':'200px','top':'40px','position':'absolute','z-index': '2001' });
             
-            $('#legends ul.terms li a').click(function(event){
-                var spanName = $(this).data('id');
-                
-                if(spanName==='all') {
-                    if($(this).closest('li').find('input').prop('checked')==false) {
-                        $('.active-legend ul li').find('input').prop('checked',true);
-                        lookupData = findSelectedCats();
-                        updateLayerFeatures(lookupData);
-                    }
-                    else {
-                        $('.active-legend ul li').find('input').prop('checked',false);
-                        lookupData = findSelectedCats();
-                        updateLayerFeatures(lookupData);
-                    }
-                }
-                else {
-                    $('.active-legend ul input').removeAttr('checked');
-                    $('.active-legend ul.terms li.selected').removeClass('selected');
-                    $(this).closest('li').addClass('selected');
-                    $(this).closest('li').find('input').prop('checked',true);
-                    lookupData = findSelectedCats(spanName);
+        $('#legends ul.terms li a').click(function(event){
+            var spanName = $(this).data('id');
+            
+            if(spanName==='all') {
+                if($(this).closest('li').find('input').prop('checked')==false) {
+                    $('.active-legend ul li').find('input').prop('checked',true);
+                    lookupData = findSelectedCats();
                     updateLayerFeatures(lookupData);
                 }
-           
-            });
+                else {
+                    $('.active-legend ul li').find('input').prop('checked',false);
+                    lookupData = findSelectedCats();
+                    updateLayerFeatures(lookupData);
+                }
+            }
+            else {
+                $('.active-legend ul input').removeAttr('checked');
+                $('.active-legend ul.terms li.selected').removeClass('selected');
+                $(this).closest('li').addClass('selected');
+                $(this).closest('li').find('input').prop('checked',true);
+                lookupData = findSelectedCats(spanName);
+                updateLayerFeatures(lookupData);
+            }
+       
+        });
             // $('#term-legend-'+j+' ul.terms li').hover(function(){
             //     $('#child_legend-'+j+'').show();
             //     var childrenLegend = _.where(filterTerms, {name: $(this).find('a').text()})
@@ -504,28 +489,28 @@ jQuery(document).ready(function($) {
             //     $('#child_legend-'+j+' ul li').remove();
             //     $('#child_legend-'+j+'').hide();
             // });
-            $('#legends ul.terms input').click(function(event){
-                var spanName = $(event.target).parent().find('a').data('id');
-                if( spanName==='all' && $(this).prop('checked') === true ) {
-                    $('.active-legend ul li').find('input').prop('checked',true);
-                    lookupData = findSelectedCats();
-                    updateLayerFeatures(lookupData);
-                }
-                else if(spanName==='all'&& $(this).prop('checked') === false ) {
-                    $('.active-legend ul li').find('input').prop('checked',false);
-                    lookupData = findSelectedCats();
-                    updateLayerFeatures(lookupData);
-                }
-                else {
-                    $('.active-legend ul li.check-all').find('input').prop('checked',false);                  
-                    lookupData = findSelectedCats();
-                    updateLayerFeatures(lookupData);
-                }
-                   
-            });
-            $('ul.controls li').click(function(){
-                $('.active-legend ul input').attr('checked',true);           
-            });
+        $('#legends ul.terms input').click(function(event){
+            var spanName = $(event.target).parent().find('a').data('id');
+            if( spanName==='all' && $(this).prop('checked') === true ) {
+                $('.active-legend ul li').find('input').prop('checked',true);
+                lookupData = findSelectedCats();
+                updateLayerFeatures(lookupData);
+            }
+            else if(spanName==='all'&& $(this).prop('checked') === false ) {
+                $('.active-legend ul li').find('input').prop('checked',false);
+                lookupData = findSelectedCats();
+                updateLayerFeatures(lookupData);
+            }
+            else {
+                $('.active-legend ul li.check-all').find('input').prop('checked',false);                  
+                lookupData = findSelectedCats();
+                updateLayerFeatures(lookupData);
+            }
+        });
+        $('ul.controls li').click(function(){
+            $('.active-legend ul input').attr('checked',true);           
+        });
+
         $('#legends .legend-row').append('<div class="legend-div span12" id="layers-panel"><ul></ul></div>');
         $('.legend-div').hide();
         $('#term-legend-0').show();
@@ -550,7 +535,6 @@ jQuery(document).ready(function($) {
             $(action).addClass('active-legend');
             
             $(action).show();
-            
         });
 
         $('.launch-timeline').click(function(){
@@ -560,9 +544,10 @@ jQuery(document).ready(function($) {
 
         buildLayerControls(map.layers);
     }
+
     function buildLayerControls(layerObject) {
         //console.log(map.layers);
-        _.map(layerObject,function(layer,index){
+        _.each(layerObject,function(layer,index){
             //console.log(layer.name)
             if(index>=0) {
                 $('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+layer.id+'">'+layer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
@@ -581,27 +566,26 @@ jQuery(document).ready(function($) {
                 //click
                 //
                 $( '.layer'+index+' input').click(function(){
-                   if($(this).attr('checked')) {
-                    //console.log('check')
-                    layerObject[index].setVisibility(true);
-
-                   }
-                   else {
+                    if($(this).attr('checked')) {
+                        //console.log('check')
+                        layerObject[index].setVisibility(true);
+                    } else {
                     //console.log('uncheck')
-                    layerObject[index].setVisibility(false);
-                   }
-                })
+                        layerObject[index].setVisibility(false);
+                    }
+                });
                 //$(layerObject[index]).setVisibility(false);
             }
-            
         });
-        }
+    }
+
     function switchFilter(filterName) {
         var filterObj = _.where(dataObject, {type: "filter", name: filterName});
         catFilter = filterObj[0];
         $(document).trigger('order.findSelectedCats').trigger('order.updateLayerFeatures');
         selectControl.activate(); 
     }
+
     function updateLayerFeatures(catObject){
         //find all features with cat
         //lookupData = findSelectedCats(); 
@@ -609,12 +593,12 @@ jQuery(document).ready(function($) {
         var newFeatures = {type: "FeatureCollection", features: []};
         var childCatObject = [];
      
-        _.map(catObject,function(cat,i){
+        _.each(catObject,function(cat,i){
             childCatObject.push(cat.id);
 
             if(cat.children.length>0){
                 var tempChildren = cat.children;
-                _.map(tempChildren, function(catChild,i) {
+                _.each(tempChildren, function(catChild,i) {
                     childCatObject.push(catChild['term_id']);
                 });
             }
@@ -638,7 +622,6 @@ jQuery(document).ready(function($) {
     }
 
 
-
     //rewrite this to eliminate loop
     function findSelectedCats(single) {
         //console.log(single);
@@ -649,7 +632,6 @@ jQuery(document).ready(function($) {
         }
 
         if(!single) {
-
             $('#legends .active-legend li.compare input:checked').each(function(index){
 
                 var tempSelCat = $(this).parent().find('.value').data( 'id' );
@@ -674,6 +656,8 @@ jQuery(document).ready(function($) {
         }
         return selCatFilter;
     }
+
+        // TO DO:  Use RegEx to parse
     function convertToMilliSeconds(timecode) {
         var tempN = timecode.replace("[","");
         var tempM = tempN.replace("]","");
@@ -684,26 +668,28 @@ jQuery(document).ready(function($) {
 
         return milliSecondsCode;
     }
-    function geocodeAddress(addy){
-    	//http://maps.google.com/maps/api/geocode/json?address=Pizzeria+Da+Vittorio,+Rome&sensor=false
-    	jQuery.ajax({
-            type: 'POST',
-            url: 'http://maps.google.com/maps/api/geocode/json?address=Pizzeria+Da+Vittorio,+Rome&sensor=false',
-            dataType:'jsonp',
-            data: {
-                address: addy
-            },
-            success: function(data, textStatus, XMLHttpRequest){
-                //console.log('geocode: '+textStatus);
-                //console.log(data);
-                //
 
-            },
-            error: function(XMLHttpRequest, textStatus, errorThrown){
-               alert(errorThrown);
-            }
-        });
-    }
+    // function geocodeAddress(addy){
+    // 	//http://maps.google.com/maps/api/geocode/json?address=Pizzeria+Da+Vittorio,+Rome&sensor=false
+    // 	jQuery.ajax({
+    //         type: 'POST',
+    //         url: 'http://maps.google.com/maps/api/geocode/json?address=Pizzeria+Da+Vittorio,+Rome&sensor=false',
+    //         dataType:'jsonp',
+    //         data: {
+    //             address: addy
+    //         },
+    //         success: function(data, textStatus, XMLHttpRequest){
+    //             //console.log('geocode: '+textStatus);
+    //             //console.log(data);
+    //             //
+
+    //         },
+    //         error: function(XMLHttpRequest, textStatus, errorThrown){
+    //            alert(errorThrown);
+    //         }
+    //     });
+    // }
+
     function onFeatureSelect(feature) {
     	// if not cluster
 
@@ -740,7 +726,7 @@ jQuery(document).ready(function($) {
 
                 }
                 $('#markerModal').addClass('transcript');
-                _.map(dhpSettings['views']['modal-ep'],function(val,key) {
+                _.each(dhpSettings['views']['modal-ep'],function(val,key) {
                     loadTranscriptClip(projectID,transcript,timecode);
                     if(transcript2) {
                         loadTranscriptClip(projectID,transcript2,timecode);
@@ -751,8 +737,8 @@ jQuery(document).ready(function($) {
              if(dhpSettings['views']['content']) {
 
                 $('ul', tempModalHtml).append('<li><h3>Details:</h3></li>');
-                _.map(selectedFeature.attributes.content,function(val,key) {
-                     _.map(val,function(val1,key1) {
+                _.each(selectedFeature.attributes.content,function(val,key) {
+                     _.each(val,function(val1,key1) {
                         if(val=='Thumbnail Right') {
                             $('ul', tempModalHtml).append('<li class="thumb-right">'+$("<div/>").html(val1).text()+'</li>');
                         }
@@ -814,7 +800,6 @@ jQuery(document).ready(function($) {
                         widget2.seekTo(startTime);
                      });
                      widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
-                        
                         if(e.currentPosition<startTime){
                             widget2.seekTo(startTime);
                         }
@@ -836,41 +821,50 @@ jQuery(document).ready(function($) {
                         tempWidget.pause();
                     }
                 });
-            }//end audio/transcript player        
-    	
-    } 
-    function findModalEpSettings(name) {
-        //console.log(dhpSettings['views']['modal-ep'])
-        var isFound = false;
+            }//end audio/transcript player
+    }
 
-        if(dhpSettings['views']['modal-ep']) {
-            _.map(dhpSettings['views']['modal-ep'],function(val,key) {
-                if(val===name) {
-                    isFound = true;
-                }
-            });
-        }
-        
-        return isFound;
-    }  
+        // RETURNS: true if there is an name in the modal-ep array whose name is modalName
+    function findModalEpSettings(modalName) {
+        return (_.find(dhpSettings['views']['modal-ep'],
+                        function(theName) { return (theName == modalName); }) != undefined);
+        //console.log(dhpSettings['views']['modal-ep'])
+        // var isFound = false;
+
+        // if(dhpSettings['views']['modal-ep']) {
+        //     _.each(dhpSettings['views']['modal-ep'],function(val,key) {
+        //         if(val===modalName) {
+        //             isFound = true;
+        //         }
+        //     });
+        // }
+        // return isFound;
+    }
+
+        // PURPOSE: Given a millisecond reading, unhighlight any previous "playhead" and highlight new one
+        // TO DO:   Change tcArray entry to end of timestamp
     function hightlightTranscriptLine(millisecond){
-        var foundIndex;
-        _.map(tcArray, function(val,index){
-            if(millisecond>=val&&millisecond<tcArray[index+1]){
+        var match;
+        _.find(tcArray, function(val,index){
+            match = (millisecond>=val&&millisecond<tcArray[index+1]);
+            if (match) {
                 $('.transcript-list li.type-timecode').removeClass('current-clip');
                 $('.transcript-list li.type-timecode').eq(index).addClass('current-clip');
             }
+            return match;
         });
-        
         //$('.type-timecode').attr('data-timecode');
-    } 
+    }
+
     function onFeatureUnselect(feature) {
     	feature.attributes.poppedup = false;
-    } 
-    function splitTranscript(transcriptData) {
-        var transcriptArray = transcriptData.split('[');
-        // console.log(transcriptArray)
     }
+
+    // function splitTranscript(transcriptData) {
+    //     var transcriptArray = transcriptData.split('[');
+    //     // console.log(transcriptArray)
+    // }
+
     /**
      * [formatTranscript: cleans up quicktime text, formats transcript and puts it in a list]
      * @author  joeehope
@@ -878,28 +872,32 @@ jQuery(document).ready(function($) {
      * @param   {string} dirty_transcript [quicktime text format]
      * @return  {html}  $transcript_html  [html unordered list]
      */
+        // TO DO: Use RegEx to parse timestamps; change tcArray entry to end of timestamp (shift left?)
     function formatTranscript(dirty_transcript) {
+        var transcript_html='';
         // split into array by line
         var split_transcript = dirty_transcript.split(/\r\n|\r|\n/g);
         tcArray = [];
         // console.log(split_transcript)
         if(split_transcript) {
-            var $transcript_html = $('<ul class="transcript-list"/>');
-            _.map(split_transcript, function(val){ 
+            transcript_html = $('<ul class="transcript-list"/>');
+            _.each(split_transcript, function(val){ 
+                val = val.trim();
                 //skip values with line breaks...basically empty items
                 if(val.length>1) {
                     if(val[0]=='['){
-                        tcArray.push(convertToMilliSeconds(val.trim()));
-                        $transcript_html.append('<li class="type-timecode" data-timecode="'+convertToMilliSeconds(val.trim())+'">'+val.trim()+'</li>'); 
+                        tcArray.push(convertToMilliSeconds(val));
+                        transcript_html.append('<li class="type-timecode" data-timecode="'+convertToMilliSeconds(val)+'">'+val+'</li>'); 
                     }
                     else {
-                        $transcript_html.append('<li class="type-text">'+val+'</li>'); 
+                        transcript_html.append('<li class="type-text">'+val+'</li>'); 
                     }
                 }
             });
         }
-        return $transcript_html;
+        return transcript_html;
     }
+
     function attachSecondTranscript(transcriptData){
         //target $('.transcript-list')
         var split_transcript = transcriptData.split(/\r\n|\r|\n/g);
@@ -908,12 +906,10 @@ jQuery(document).ready(function($) {
         // console.log(split_transcript)
         var textArray = [];
         if(split_transcript) {
-            _.map(split_transcript, function(val,index){ 
+            _.each(split_transcript, function(val,index){ 
                 //skip values with line breaks...basically empty items
                 if(val.length>1) {
-
                     if(val[0]=='['){
-                        
                     }
                     else {
                         textArray.push(val);
@@ -923,13 +919,14 @@ jQuery(document).ready(function($) {
             });
         }
         //loop thru original transcript and add second lines
-         _.map(textArray, function(val,index){ 
+         _.each(textArray, function(val,index){ 
             $(first_transcriptHTML).eq(index).after('<li class="type-text">'+val+'</li>')
          });
         // console.log('first transcript line count');
         // console.log($(first_transcriptHTML)[1]);
         // console.log(textArray.length); 
     }
+
     function attachTranscript(transcriptData){
         //create millisecond markers for transcript
         //split transcript at timecodes
@@ -941,8 +938,8 @@ jQuery(document).ready(function($) {
         else {
             $('.transcript-ep p').append(formatTranscript(transcriptData));
         }
-        
     }
+
     function zoomCluster(){
         var displayedFeatures = [];
         var lay = map.layers[1];
@@ -962,16 +959,15 @@ jQuery(document).ready(function($) {
         }
     }
     //use STYLE to show different icons      
-     
-    function createMarkers(data,mLayer) {
 
+    function createMarkers(data,mLayer) {
         //split the filter and feature object
         //Object.keys(lookupData).length; 
         dataObject = data;
         console.log(dataObject);
         var featureObject;
         var legends = new Object();
-        _.map(dataObject, function(val,key){
+        _.each(dataObject, function(val,key){
             // console.log(val.type)
             if(val.type =='filter') {
                 legends[key] = val;
@@ -983,10 +979,7 @@ jQuery(document).ready(function($) {
                 //         legends[i].terms[k].children[j] = _.unescape(legends[i].terms[k].children[j]);
                 //     }
                 // }
-                
-
-            }
-            if(val.type =='FeatureCollection') {
+            } else if(val.type =='FeatureCollection') {
                 featureObject = val;
                 markerObject = val;
             }
@@ -1035,13 +1028,9 @@ jQuery(document).ready(function($) {
 
         var  myLayer = mLayer;
         myLayer.addFeatures(featureData);
-
-
-
-
     //player.pause();
+    } // createMarkers()
 
-    }
     function createTimeline(data) {
         //console.log(data);
         createStoryJS({
@@ -1103,14 +1092,13 @@ jQuery(document).ready(function($) {
             success: function(data, textStatus, XMLHttpRequest){
                 //console.log(textStatus);
                 createTimeline(JSON.parse(data));
-                //
-
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
                alert(errorThrown);
             }
         });
     }
+
     function loadTranscriptClip(projectID,transcriptName,clip){
         jQuery.ajax({
             type: 'POST',
@@ -1124,7 +1112,6 @@ jQuery(document).ready(function($) {
             success: function(data, textStatus, XMLHttpRequest){
                 //console.log(JSON.parse(data));
                 attachTranscript(JSON.parse(data));
-
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
                alert(errorThrown);
