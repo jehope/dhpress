@@ -8,9 +8,14 @@
 
 jQuery(document).ready(function($) {
         // Project variables
-    var dataObject, projectID, catFilter, dhpSettings, lookupData, markerObject, ajax_url;
-        // Map visualization variables
-    var map, dhpMap, gg, sm, olMarkerInterface, selectControl, hoverControl;
+    var projectID, ajax_url, rawAjaxData, dhpSettings;
+    var catIDToVisTree;     // Each object has fields: id, icon_url, and children (array of same)
+                            // if icon_url starts with #, it is a color in hex; otherwise a URL
+    var catFilter;          // Field "terms" is array of objects, each having id, name and children (array of same)
+
+        // Map visualization variables 
+    var map, dhpMap, allMapMarkers, gg, sm, olMarkerInterface, selectControl, hoverControl;
+
         // A/V player variables
     var tcArray, player, clipPosition, videoHasPlayed;
         // dead variables
@@ -18,17 +23,17 @@ jQuery(document).ready(function($) {
 
     projectID = $('.post').attr('id');
 
-    $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
-
     videoHasPlayed = false;
     ajax_url = dhpData.ajax_url;
     dhpSettings = JSON.parse(dhpData.settings);
 
-    markerObject = new Object();
-    lookupParents = new Object();
+    // lookupParents = new Object();
+    allMapMarkers = [];
     catFilter = new Object();
 
     dhpMap = dhpData.map;
+
+    $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
 
         // insert navigational controls
     $('#secondary').prepend('<div id="legends" class="span4"><div class="legend-row row-fluid"></div></div>');
@@ -52,7 +57,7 @@ jQuery(document).ready(function($) {
 
     $('<style type="text/css"> @media screen and (min-width: 600px) { #map_div{ width:'+dhpSettings['views']['map-width']+'px; height:'+dhpSettings['views']['map-height']+'px;}} </style>').appendTo('head');
 
-        // Interface for OpenLayers to interpret style of a map marker
+        // Interface for OpenLayers to determine visual features of a map marker
     olMarkerInterface = {
         getIcon: function(feature) {
             var cats;
@@ -63,7 +68,7 @@ jQuery(document).ready(function($) {
             }
             var highParentI ='';
             if(cats) {
-                highParentI = getHighestParentIcon(cats);           
+                highParentI = getHighestParentIcon(cats);
             }
             if(!highParentI){
                 return '';
@@ -80,9 +85,8 @@ jQuery(document).ready(function($) {
             }
             var highParentI ='';
             if(cats) {
-                highParentI = getHighestParentColor(cats);            
+                highParentI = getHighestParentColor(cats);
             }
-
             return highParentI;
         },
         getLabel: function(feature) {
@@ -96,7 +100,7 @@ jQuery(document).ready(function($) {
 
     initializeMap();
 
-    //add reset button
+        // Handle reset button
     $('.olControlZoom').append('<div class="reset-map"><i class="icon-white icon-refresh"></i></div>');
     $('.olControlZoom .reset-map').click(function(){
         resetMap(dhpMap['lon'],dhpMap['lat'],dhpMap['zoom']);
@@ -125,22 +129,22 @@ jQuery(document).ready(function($) {
         }
     });
 
-    // PURPOSE: Reset center and scale of map
-    // ASSUMES: gg has been initialized and is accessible
+        // PURPOSE: Reset center and scale of map
+        // ASSUMES: gg has been initialized and is accessible
     function resetMap(lon, lat, zoomL) {
         var lonlat = new OpenLayers.LonLat(lon,lat);
         lonlat.transform(gg, map.getProjectionObject());
         map.setCenter(lonlat, zoomL);
     }
 
-    // PURPOSE: Initialize map layers, map controls, etc.
+        // PURPOSE: Initialize map layers, map controls, etc.
     function initializeMap()
     {
         var layerCount;
         var olMapTemplate;
         var dhp_layers = [];
         var olStyle, olClusterStrategy;
-        var mObject;
+        var mapMarkerLayer;
 
         // layerCount = Object.keys(dhpData.layers).length;
         // for(i=0;i<layerCount;i++) {
@@ -194,22 +198,22 @@ jQuery(document).ready(function($) {
         olClusterStrategy = new OpenLayers.Strategy.Cluster();
         olClusterStrategy.distance = 1;
 
-        mObject = new OpenLayers.Layer.Vector(dhpMap['marker-layer'],{
+        mapMarkerLayer = new OpenLayers.Layer.Vector(dhpMap['marker-layer'],{
             strategies: [olClusterStrategy],
             rendererOptions: { zIndexing: true }, 
             styleMap: new OpenLayers.StyleMap(olStyle)
         });
 
-        selectControl = new OpenLayers.Control.SelectFeature(mObject,
+        selectControl = new OpenLayers.Control.SelectFeature(mapMarkerLayer,
             { onSelect: onFeatureSelect, onUnselect: onFeatureUnselect, hover: false });
 
-        hoverControl = new OpenLayers.Control.SelectFeature(mObject, 
+        hoverControl = new OpenLayers.Control.SelectFeature(mapMarkerLayer, 
             { hover: true, highlightOnly: true, renderIntent: "temporary" });
 
-        loadMarkers(projectID,mObject);
+        loadMapMarkers(projectID,mapMarkerLayer);
 
-        //mObject.id = "Markers";
-        map.addLayer(mObject);
+        //mapMarkerLayer.id = "Markers";
+        map.addLayer(mapMarkerLayer);
         map.addControl(hoverControl);
         map.addControl(selectControl);
 
@@ -221,13 +225,13 @@ jQuery(document).ready(function($) {
     // function createLookup(filter){
     //     catFilter = filter;
 
-    //     var lookupData = filter.terms;
-    //     var countTerms = Object.keys(lookupData).length; 
+    //     var catIDToVisTree = filter.terms;
+    //     var countTerms = Object.keys(catIDToVisTree).length; 
       
     //     for(i=0;i<countTerms;i++) {
-    //         var tempName = lookupData[i].id;
+    //         var tempName = catIDToVisTree[i].id;
     //         lookupParents[tempName];
-    //         lookupParents[tempName] = { externalGraphic : lookupData[i].icon_url };
+    //         lookupParents[tempName] = { externalGraphic : catIDToVisTree[i].icon_url };
             
     //     }
     //     //alert(JSON.stringify(lookupParents));
@@ -235,30 +239,38 @@ jQuery(document).ready(function($) {
        
     // }
 
-    /*  Filter logic
-     *  
-     */
-    function getHighestParentIcon(categories) {
-        var countTerms = Object.keys(lookupData).length; 
-        var countCats = categories.length;
-        for(i=0;i<countTerms;i++) {
-            for(j=0;j<countCats;j++) {
-                var tempName = lookupData[i].id;
-                if (tempName==categories[j]) {
-                    if(lookupData[i].icon_url.substring(0,1) == 'h') {
-                        return lookupData[i].icon_url;
+        // PURPOSE: Called by olMarkerInterface to determine icon to use for marker
+        // RETURNS: First match on URL to use for icon, or else ""
+        // INPUT:   markerValues = one or more values associated with a feature/marker
+        // ASSUMES: catIDToVisTree has been loaded
+        // TO DO:   Make recursive function?
+    function getHighestParentIcon(markerValues) {
+        var countTerms = Object.keys(catIDToVisTree).length; 
+        var countCats = markerValues.length;
+
+        for(i=0;i<countTerms;i++) {         // for all category values
+            var thisCatID = catIDToVisTree[i].id;
+
+            for(j=0;j<countCats;j++) {      // for all marker values
+                var thisMarkerValue = markerValues[j];
+
+                    // Have we matched this item itself?
+                if (thisCatID==thisMarkerValue) {
+                        // Confirm that it looks like a URL (http://...)
+                    if(catIDToVisTree[i].icon_url.substring(0,1) == 'h') {
+                        return catIDToVisTree[i].icon_url;
                     } else {
                         return '';
                     }
                 }
+                    // Check for matches amongst its children
                 else {
-                    //for each child cat
-                    var tempChildren = lookupData[i].children;
+                    var tempChildren = catIDToVisTree[i].children;
                     var tempChildCount = tempChildren.length;
                     for (k=0;k<tempChildCount;k++) {
-                        if(tempChildren[k].term_id==categories[j]) {
-                           if(lookupData[i].icon_url.substring(0,1) == 'h') {
-                                return lookupData[i].icon_url;
+                        if(tempChildren[k].term_id==thisMarkerValue) {
+                           if(catIDToVisTree[i].icon_url.substring(0,1) == 'h') {
+                                return catIDToVisTree[i].icon_url;
                             }
                             else {
                                 return '';
@@ -268,37 +280,45 @@ jQuery(document).ready(function($) {
                 }
            }   
         }
-    }
+    } // getHighestParentIcon()
 
-    function getHighestParentColor(categories) {
-        var countTerms = Object.keys(lookupData).length; 
 
-        //current marker categories
-        var tempCats  = categories;
-        var countCats =  Object.keys(tempCats).length; 
+        // PURPOSE: Called by olMarkerInterface to determine color to use for marker
+        // RETURNS: First match on color to use for icon, or else ""
+        // INPUT:   markerValues = one or more values associated with a feature/marker
+        // ASSUMES: catIDToVisTree has been loaded
+        // TO DO:   Make recursive function
+    function getHighestParentColor(markerValues) {
+        var countTerms = Object.keys(catIDToVisTree).length; 
 
-        for(i=0;i<countTerms;i++) {
-            for(j=0;j<countCats;j++) {   
+        //current marker values
+        var countCats =  Object.keys(markerValues).length; 
+
+        for(i=0;i<countTerms;i++) {         // for all category values
+            var thisCatID = catIDToVisTree[i].id;
+
+            for(j=0;j<countCats;j++) {      // for all marker values
                 // legend categories
-                var tempName     = lookupData[i].id;      
-                var cleanCatName = tempCats[j];
+                var thisMarkerValue = markerValues[j];
 
-                if (tempName===cleanCatName) {
-                    if(lookupData[i].icon_url.substring(0,1) == '#') {
-                        return lookupData[i].icon_url;
+                    // have we matched this element?
+                if (thisCatID===thisMarkerValue) {
+                    if(catIDToVisTree[i].icon_url.substring(0,1) == '#') {
+                        return catIDToVisTree[i].icon_url;
                     } else {
                         return '';
                     }
+
+                    // check for matches on its children
                 } else {
-                    //for each child cat
-                    if(lookupData[i].children.length>0) {
-                        var tempChildren = lookupData[i].children;
-                        var tempChildCount = Object.keys(lookupData[i].children).length;
-                        
+                    var tempChildCount = Object.keys(catIDToVisTree[i].children).length;
+                    if(tempChildCount>0) {
+                        var tempChildren = catIDToVisTree[i].children;
+
                         for (k=0;k<tempChildCount;k++) {
-                            if(tempChildren[k].term_id==cleanCatName) {
-                               if(lookupData[i].icon_url.substring(0,1) == '#') {
-                                    return lookupData[i].icon_url;
+                            if(tempChildren[k].term_id==thisMarkerValue) {
+                               if(catIDToVisTree[i].icon_url.substring(0,1) == '#') {
+                                    return catIDToVisTree[i].icon_url;
                                 } else {
                                     return '';
                                 }
@@ -308,21 +328,22 @@ jQuery(document).ready(function($) {
                 }
            }
         }
-    }
+    } // getHighestParentColor()
+
 
     // function getHighestParentDisplay(categories) {
-    //     var lookupData = catFilter.terms;
-    //     var countTerms = Object.keys(lookupData).length; 
+    //     var catIDToVisTree = catFilter.terms;
+    //     var countTerms = Object.keys(catIDToVisTree).length; 
     //     var countCats = categories.length;
 
     //     for(i=0;i<countTerms;i++) {
     //         for(j=0;j<countCats;j++) {
-    //             var tempName = lookupData[i].id;
+    //             var tempName = catIDToVisTree[i].id;
     //             if (tempName==categories[j]) {              
     //                 return true;
     //             } else {
     //                 //for each child cat
-    //                 var tempChildren = lookupData[i].children;
+    //                 var tempChildren = catIDToVisTree[i].children;
     //                 var tempChildCount = tempChildren.length;
     //                 for (k=0;k<tempChildCount;k++) {
     //                     if(tempChildren[k]==categories[j]) {
@@ -334,13 +355,12 @@ jQuery(document).ready(function($) {
     //     }
     // }
 
-    /*  Create filter control legend
-     *
-     */
+        // PURPOSE: ??
+        // INPUT:   object = ??
     function createLegend(object) {
             // Custom event types bound to the document to be triggered elsewhere
-        $(document).bind('order.findSelectedCats',function(){ lookupData= findSelectedCats();});
-        $(document).bind('order.updateLayerFeatures',function(){ updateLayerFeatures(lookupData);});
+        $(document).bind('order.findSelectedCats',function(){ catIDToVisTree= findSelectedCats();});
+        $(document).bind('order.updateLayerFeatures',function(){ updateLayerFeatures(catIDToVisTree);});
 
         //console.log('here'+_.size(object));
         var legendHtml;
@@ -451,31 +471,32 @@ jQuery(document).ready(function($) {
             //var childrenLegendHtml = $('<div id="child_legend-'+j+'"><h3>Children Terms</h3><ul></ul></div>');
             //$('body').append(childrenLegendHtml);
             //$('#child_legend-'+j+'').css({'width':'200px','margin-left':'200px','top':'40px','position':'absolute','z-index': '2001' });
-            
+
         $('#legends ul.terms li a').click(function(event){
             var spanName = $(this).data('id');
-            
+
+                // "Hide/Show all" button
             if(spanName==='all') {
                 if($(this).closest('li').find('input').prop('checked')==false) {
                     $('.active-legend ul li').find('input').prop('checked',true);
-                    lookupData = findSelectedCats();
-                    updateLayerFeatures(lookupData);
+                    catIDToVisTree = findSelectedCats();
+                    updateLayerFeatures(catIDToVisTree);
                 }
                 else {
                     $('.active-legend ul li').find('input').prop('checked',false);
-                    lookupData = findSelectedCats();
-                    updateLayerFeatures(lookupData);
+                    catIDToVisTree = findSelectedCats();
+                    updateLayerFeatures(catIDToVisTree);
                 }
             }
+                // a specific legend/category value
             else {
                 $('.active-legend ul input').removeAttr('checked');
                 $('.active-legend ul.terms li.selected').removeClass('selected');
                 $(this).closest('li').addClass('selected');
                 $(this).closest('li').find('input').prop('checked',true);
-                lookupData = findSelectedCats(spanName);
-                updateLayerFeatures(lookupData);
+                catIDToVisTree = findSelectedCats(spanName);
+                updateLayerFeatures(catIDToVisTree);
             }
-       
         });
             // $('#term-legend-'+j+' ul.terms li').hover(function(){
             //     $('#child_legend-'+j+'').show();
@@ -493,18 +514,18 @@ jQuery(document).ready(function($) {
             var spanName = $(event.target).parent().find('a').data('id');
             if( spanName==='all' && $(this).prop('checked') === true ) {
                 $('.active-legend ul li').find('input').prop('checked',true);
-                lookupData = findSelectedCats();
-                updateLayerFeatures(lookupData);
+                catIDToVisTree = findSelectedCats();
+                updateLayerFeatures(catIDToVisTree);
             }
             else if(spanName==='all'&& $(this).prop('checked') === false ) {
                 $('.active-legend ul li').find('input').prop('checked',false);
-                lookupData = findSelectedCats();
-                updateLayerFeatures(lookupData);
+                catIDToVisTree = findSelectedCats();
+                updateLayerFeatures(catIDToVisTree);
             }
             else {
                 $('.active-legend ul li.check-all').find('input').prop('checked',false);                  
-                lookupData = findSelectedCats();
-                updateLayerFeatures(lookupData);
+                catIDToVisTree = findSelectedCats();
+                updateLayerFeatures(catIDToVisTree);
             }
         });
         $('ul.controls li').click(function(){
@@ -515,6 +536,8 @@ jQuery(document).ready(function($) {
         $('.legend-div').hide();
         $('#term-legend-0').show();
         $('#term-legend-0').addClass('active-legend');
+
+            // Handle selection of different Legends
         $('.dhp-nav .dropdown-menu a').click(function(evt){
             evt.preventDefault();
             var action = $(this).attr('href');
@@ -540,11 +563,14 @@ jQuery(document).ready(function($) {
         $('.launch-timeline').click(function(){
             loadTimeline('4233');  
         });
-        lookupData = findSelectedCats();
+        catIDToVisTree = findSelectedCats();
 
         buildLayerControls(map.layers);
-    }
+    } // createLegend
 
+        // PURPOSE: ??
+        // INPUT:   layerObject = ??
+        // ASSUMES: map has been initialized
     function buildLayerControls(layerObject) {
         //console.log(map.layers);
         _.each(layerObject,function(layer,index){
@@ -577,36 +603,44 @@ jQuery(document).ready(function($) {
                 //$(layerObject[index]).setVisibility(false);
             }
         });
-    }
+    } // buildLayerControls()
 
+        // PURPOSE: Handle user selecting new legend category
+        // INPUT:   filterName = name of legend/category selected
+        // ASSUMES: rawAjaxData has been assigned, selectControl has been initialized
+        // SIDE-FX: Changes catFilter
     function switchFilter(filterName) {
-        var filterObj = _.where(dataObject, {type: "filter", name: filterName});
+        var filterObj = _.where(rawAjaxData, {type: "filter", name: filterName});
         catFilter = filterObj[0];
         $(document).trigger('order.findSelectedCats').trigger('order.updateLayerFeatures');
         selectControl.activate(); 
     }
 
-    function updateLayerFeatures(catObject){
+        // PURPOSE: Update map's feature layer after user chooses a new legend
+        // INPUT:   categoryTree = JSON object of legend/category data (could be nested 2 deep)
+        // ASSUMES: allMapMarkers contains all of the possible marker objects
+    function updateLayerFeatures(categoryTree){
         //find all features with cat
-        //lookupData = findSelectedCats(); 
-        //catObject = lookupData;
+        //catIDToVisTree = findSelectedCats(); 
+        //categoryTree = catIDToVisTree;
         var newFeatures = {type: "FeatureCollection", features: []};
-        var childCatObject = [];
-     
-        _.each(catObject,function(cat,i){
-            childCatObject.push(cat.id);
+        var allCategoryIDs = [];
 
-            if(cat.children.length>0){
-                var tempChildren = cat.children;
-                _.each(tempChildren, function(catChild,i) {
-                    childCatObject.push(catChild['term_id']);
+            // Flatten out categories (and their children) as IDs
+        _.each(categoryTree,function(theCategory, index){
+            allCategoryIDs.push(theCategory.id);
+
+            if (theCategory.children.length>0) {
+                _.each(theCategory.children, function(catChild) {
+                    allCategoryIDs.push(catChild['term_id']);
                 });
             }
         });
 
-        newFeatures.features = _(markerObject.features).select(function(feature){ 
-            if(_.intersection(feature.properties.categories,childCatObject).length > 0) {         
-               return feature;
+            // Go through all markers and find just those which have values matching current categories
+        newFeatures.features = _.filter(allMapMarkers.features, function(theFeature){ 
+            if(_.intersection(theFeature.properties.categories, allCategoryIDs).length > 0) {         
+               return theFeature;
             }
         });
         var reader = new OpenLayers.Format.GeoJSON({
@@ -619,21 +653,25 @@ jQuery(document).ready(function($) {
         
         myLayer.removeAllFeatures();
         myLayer.addFeatures(featureData);
-    }
+    } // updateLayerFeatures()
 
 
-    //rewrite this to eliminate loop
+        // PURPOSE: Handle user selection of a legend value, so that only markers with that value shown
+        // INPUT:   single = name/value of the legend value, if known (otherwise get current selected items)
+        // RETURNS: Array of terms from catFilter that match current selection
+        // TO DO:   Rewrite this to eliminate loop
+        // ASSUMES: catFilter is null or contains lists of terms
     function findSelectedCats(single) {
         //console.log(single);
-        var selCatFilter = new Object();
+        var selCatFilter = [];
         var countTerms = 0; 
         if(catFilter) {
             countTerms = Object.keys(catFilter.terms).length; 
         }
 
+            // unknown, or multiple selection from legend
         if(!single) {
             $('#legends .active-legend li.compare input:checked').each(function(index){
-
                 var tempSelCat = $(this).parent().find('.value').data( 'id' );
                 //console.log(tempSelCat+' :'+index)
                 for(i=0;i<countTerms;i++) {
@@ -657,7 +695,9 @@ jQuery(document).ready(function($) {
         return selCatFilter;
     }
 
-        // TO DO:  Use RegEx to parse
+        // PURPOSE: Convert timecode string into # of milliseconds
+        // INPUT:   timecode in format [HH:MM:SS], SS can be in floating point format SS.ss
+        // TO DO:   Use RegEx to parse
     function convertToMilliSeconds(timecode) {
         var tempN = timecode.replace("[","");
         var tempM = tempN.replace("]","");
@@ -690,138 +730,148 @@ jQuery(document).ready(function($) {
     //     });
     // }
 
+        // PURPOSE: Handle user selection of a marker on a map to bring up modal
+        // INPUT:   feature = the feature selected on map ?? format??
+        // ASSUMES: Can use only first feature if a cluster of features is passed
+        // SIDE-FX: Modifies DOM for modal dialog window
+        // TO DO:   Put code to create modal in another function, as it will be called by other
+        //              visualization types
     function onFeatureSelect(feature) {
     	// if not cluster
 
     	//if(!feature.cluster||(feature.attributes.count==1)) {
-            var tempModalHtml;
-            if(feature.cluster){selectedFeature = feature.cluster[0];}
-            else {selectedFeature = feature;}
-            // console.log(dhpSettings)
-            tempModalHtml = $('<div><ul/></div>');
+        var tempModalHtml;
+        var selectedFeature;
 
-    		 var link1 = selectedFeature.attributes.link;
-             var link2 = selectedFeature.attributes.link2;
-    		 var titleAtt;
-             var tagAtt =  selectedFeature.attributes.categories;
-             var audio =  selectedFeature.attributes.audio;
-             var transcript =  selectedFeature.attributes.transcript;
-             var transcript2 =  selectedFeature.attributes.transcript2; ///change php to send transcript2 link
-             var timecode =  selectedFeature.attributes.timecode;
-             var time_codes = null; 
-            
-             if(dhpSettings['views']['title']) {
-                titleAtt =  selectedFeature.attributes['title'];
-             }
+        if (feature.cluster)
+            selectedFeature = feature.cluster[0];
+        else
+            selectedFeature = feature;
 
-             //need to check for transcript here. TODO: check for 2nd transcript and load next to first without timestamps(should match first transcript)
-             if(findModalEpSettings('transcript')) {
-                time_codes = timecode.split('-');
-                clipPosition = time_codes[0];
-                var thumb;
+        // console.log(dhpSettings)
+        tempModalHtml = $('<div><ul/></div>');
 
-                 if(timecode) { 
-                    var startTime = convertToMilliSeconds(time_codes[0]);
-                    var endTime = convertToMilliSeconds(time_codes[1]);
+		 var link1 = selectedFeature.attributes.link;
+         var link2 = selectedFeature.attributes.link2;
+		 var titleAtt;
+         var tagAtt =  selectedFeature.attributes.categories;
+         var audio =  selectedFeature.attributes.audio;
+         var transcript =  selectedFeature.attributes.transcript;
+         var transcript2 =  selectedFeature.attributes.transcript2; ///change php to send transcript2 link
+         var timecode =  selectedFeature.attributes.timecode;
+         var time_codes = null; 
 
-                }
-                $('#markerModal').addClass('transcript');
-                _.each(dhpSettings['views']['modal-ep'],function(val,key) {
-                    loadTranscriptClip(projectID,transcript,timecode);
-                    if(transcript2) {
-                        loadTranscriptClip(projectID,transcript2,timecode);
-                    }    
-                    $('ul', tempModalHtml).append('<li class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></li>');
-                });
-             }
-             if(dhpSettings['views']['content']) {
+         if(dhpSettings['views']['title']) {
+            titleAtt =  selectedFeature.attributes['title'];
+         }
 
-                $('ul', tempModalHtml).append('<li><h3>Details:</h3></li>');
-                _.each(selectedFeature.attributes.content,function(val,key) {
-                     _.each(val,function(val1,key1) {
-                        if(val=='Thumbnail Right') {
-                            $('ul', tempModalHtml).append('<li class="thumb-right">'+$("<div/>").html(val1).text()+'</li>');
-                        }
-                        else if(val=='Thumbnail Left') {
-                            $('ul', tempModalHtml).append('<li class="thumb-left">'+$("<div/>").html(val1).text()+'</li>');
-                        }
-                        else {
-                            if(val1) {
-                                $('ul', tempModalHtml).append('<li>'+key1+': '+$("<div/>").html(val1).html()+'</li>');                       
-                            }
-                        }
-                    });
-                });
+         //need to check for transcript here. TODO: check for 2nd transcript and load next to first without timestamps(should match first transcript)
+         if(findModalEpSettings('transcript')) {
+            time_codes = timecode.split('-');
+            clipPosition = time_codes[0];
+            var thumb;
+
+             if(timecode) { 
+                var startTime = convertToMilliSeconds(time_codes[0]);
+                var endTime = convertToMilliSeconds(time_codes[1]);
+
             }
-    		 
-    		if(selectedFeature.attributes.thumb){
-    			thumb = selectedFeature.attributes.thumb;
-    			var thumbHtml = '<img src="'+thumb+'"/><br/>';
-    		}
-    		var li = '<b>'+titleAtt+'</b>';
-
-    		li += '<p>';
-    		if(thumbHtml){
-    			li+= thumbHtml;
-    		}
-    		
-    		li += tagAtt+' '+audio+' '+transcript+' '+timecode+'</p>';
-
-                // clear previous marker links
-            $('#markerModal .modal-footer .btn-success').remove();
-
-            $('#markerModal #markerModalLabel').empty().append(titleAtt);
-            $('#markerModal .modal-body').empty().append(tempModalHtml);          
-            
-                // setup links
-            if(link1!='no-link') {
-                $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link1+'">'+dhpSettings['views']['link-label']+'</a>');
-            }
-            if(link2!='no-link') {
-                $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link2+'">'+dhpSettings['views']['link2-label']+'</a>');
-            }
-
-            $('#markerModal').modal('show');
-
-            //setup audio/transcript player
-            if(findModalEpSettings('transcript')) {
-                //build function to load transcript clip and load media player
-                var iframeElement   = document.querySelector('.player');
-                var soundUrl = 'http://soundcloud.com/sohp/u0490-audio';
-                var iframeElementID = iframeElement.id;
-                //var widget         = SC.Widget(iframeElement);
-                var widget2         = SC.Widget(iframeElementID);
-                var WIDGET_PLAYING = false;
-                widget2.bind(SC.Widget.Events.READY, function() {
-                      // load new widget
-                      //widget2.play()
-                     widget2.bind(SC.Widget.Events.PLAY, function() {
-                        WIDGET_PLAYING = true;
-                        widget2.seekTo(startTime);
-                     });
-                     widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
-                        if(e.currentPosition<startTime){
-                            widget2.seekTo(startTime);
+            $('#markerModal').addClass('transcript');
+            _.each(dhpSettings['views']['modal-ep'],function(val,key) {
+                loadTranscriptClip(projectID,transcript,timecode);
+                if(transcript2) {
+                    loadTranscriptClip(projectID,transcript2,timecode);
+                }    
+                $('ul', tempModalHtml).append('<li class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></li>');
+            });
+         }
+         if(dhpSettings['views']['content']) {
+            $('ul', tempModalHtml).append('<li><h3>Details:</h3></li>');
+            _.each(selectedFeature.attributes.content,function(val,key) {
+                 _.each(val,function(val1,key1) {
+                    if(val=='Thumbnail Right') {
+                        $('ul', tempModalHtml).append('<li class="thumb-right">'+$("<div/>").html(val1).text()+'</li>');
+                    }
+                    else if(val=='Thumbnail Left') {
+                        $('ul', tempModalHtml).append('<li class="thumb-left">'+$("<div/>").html(val1).text()+'</li>');
+                    }
+                    else {
+                        if(val1) {
+                            $('ul', tempModalHtml).append('<li>'+key1+': '+$("<div/>").html(val1).html()+'</li>');                       
                         }
-                        if(e.currentPosition>endTime){
-                            widget2.pause();
-                        }
-                        hightlightTranscriptLine(e.currentPosition);
-                     });
-                    widget2.bind(SC.Widget.Events.SEEK, function() {});
-                    widget2.bind(SC.Widget.Events.FINISH, function() {});
-                    $('.seek-override').on('click',function(){
-                        widget2.seekTo(startTime);
-                    });
-                });
-
-                $('#markerModal').on('hidden', function () {            
-                    if(WIDGET_PLAYING) {
-                        var tempWidget = SC.Widget(iframeElementID);
-                        tempWidget.pause();
                     }
                 });
-            }//end audio/transcript player
+            });
+        }
+
+		if(selectedFeature.attributes.thumb){
+			thumb = selectedFeature.attributes.thumb;
+			var thumbHtml = '<img src="'+thumb+'"/><br/>';
+		}
+		var li = '<b>'+titleAtt+'</b>';
+
+		li += '<p>';
+		if(thumbHtml){
+			li+= thumbHtml;
+		}
+
+		li += tagAtt+' '+audio+' '+transcript+' '+timecode+'</p>';
+
+            // clear previous marker links
+        $('#markerModal .modal-footer .btn-success').remove();
+
+        $('#markerModal #markerModalLabel').empty().append(titleAtt);
+        $('#markerModal .modal-body').empty().append(tempModalHtml);          
+        
+            // setup links
+        if(link1!='no-link') {
+            $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link1+'">'+dhpSettings['views']['link-label']+'</a>');
+        }
+        if(link2!='no-link') {
+            $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link2+'">'+dhpSettings['views']['link2-label']+'</a>');
+        }
+
+        $('#markerModal').modal('show');
+
+            // Setup audio/transcript player
+        if(findModalEpSettings('transcript')) {
+            //build function to load transcript clip and load media player
+            var iframeElement   = document.querySelector('.player');
+            var soundUrl = 'http://soundcloud.com/sohp/u0490-audio';
+            var iframeElementID = iframeElement.id;
+            //var widget         = SC.Widget(iframeElement);
+            var widget2         = SC.Widget(iframeElementID);
+            var WIDGET_PLAYING = false;
+            widget2.bind(SC.Widget.Events.READY, function() {
+                  // load new widget
+                  //widget2.play()
+                 widget2.bind(SC.Widget.Events.PLAY, function() {
+                    WIDGET_PLAYING = true;
+                    widget2.seekTo(startTime);
+                 });
+                 widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
+                    if(e.currentPosition<startTime){
+                        widget2.seekTo(startTime);
+                    }
+                    if(e.currentPosition>endTime){
+                        widget2.pause();
+                    }
+                    hightlightTranscriptLine(e.currentPosition);
+                 });
+                widget2.bind(SC.Widget.Events.SEEK, function() {});
+                widget2.bind(SC.Widget.Events.FINISH, function() {});
+                $('.seek-override').on('click',function(){
+                    widget2.seekTo(startTime);
+                });
+            });
+
+            $('#markerModal').on('hidden', function () {            
+                if(WIDGET_PLAYING) {
+                    var tempWidget = SC.Widget(iframeElementID);
+                    tempWidget.pause();
+                }
+            });
+        }//end audio/transcript player
     }
 
         // RETURNS: true if there is an name in the modal-ep array whose name is modalName
@@ -856,6 +906,7 @@ jQuery(document).ready(function($) {
         //$('.type-timecode').attr('data-timecode');
     }
 
+        // PURPOSE: Handle unselection of a map feature
     function onFeatureUnselect(feature) {
     	feature.attributes.poppedup = false;
     }
@@ -930,47 +981,53 @@ jQuery(document).ready(function($) {
     function attachTranscript(transcriptData){
         //create millisecond markers for transcript
         //split transcript at timecodes
-        console.log($('.transcript-ep .transcript-list').length)
+        console.log($('.transcript-ep .transcript-list').length);
         if($('.transcript-ep .transcript-list').length>0) {
             // console.log('load second transcript')
             attachSecondTranscript(transcriptData);
-        }
-        else {
+        } else {
             $('.transcript-ep p').append(formatTranscript(transcriptData));
         }
     }
 
-    function zoomCluster(){
-        var displayedFeatures = [];
-        var lay = map.layers[1];
-        for (var i=0, len=lay.features.length; i<len; i++) {
-            var featC = lay.features[i];
-            if (featC.onScreen()) {
-                displayedFeatures.push(featC);
-            }
-        }
-        //console.log(displayedFeatures.length);
-        if(displayedFeatures.length<2) {
-            //console.log('only on left');
-            return false;
-        }
-        else {
-            return true;
-        }
-    }
-    //use STYLE to show different icons      
+    // function zoomCluster(){
+    //     var displayedFeatures = [];
+    //     var lay = map.layers[1];
+    //     for (var i=0, len=lay.features.length; i<len; i++) {
+    //         var featC = lay.features[i];
+    //         if (featC.onScreen()) {
+    //             displayedFeatures.push(featC);
+    //         }
+    //     }
+    //     //console.log(displayedFeatures.length);
+    //     if(displayedFeatures.length<2) {
+    //         //console.log('only on left');
+    //         return false;
+    //     }
+    //     else {
+    //         return true;
+    //     }
+    // }
+    //use STYLE to show different icons
 
-    function createMarkers(data,mLayer) {
+        // PURPOSE: Create marker objects for map visualization; called by loadMapMarkers()
+        // INPUT:   data = data as JSON object ?? in what form??
+        //          mLayer = map layer into which the markers inserted 
+        // SIDE-FX: allMapMarkers will be assigned to the map markers
+        // TO DO:   Generalize visualization types
+    function createMapMarkers(data,mLayer) {
         //split the filter and feature object
-        //Object.keys(lookupData).length; 
-        dataObject = data;
-        console.log(dataObject);
+        //Object.keys(catIDToVisTree).length; 
+        rawAjaxData = data;
+        console.log(rawAjaxData);
+
         var featureObject;
         var legends = new Object();
-        _.each(dataObject, function(val,key){
+
+        _.each(rawAjaxData, function(val,index){
             // console.log(val.type)
             if(val.type =='filter') {
-                legends[key] = val;
+                legends[index] = val;
                 // var countTerms = Object.keys(legends[i].terms).length; 
                 // for(k=0;k<countTerms;k++) {
                 //     legends[i].terms[k].name = _.unescape(legends[i].terms[k].name);
@@ -981,12 +1038,12 @@ jQuery(document).ready(function($) {
                 // }
             } else if(val.type =='FeatureCollection') {
                 featureObject = val;
-                markerObject = val;
+                allMapMarkers = val;
             }
         });
-        // for(i=0;i<Object.keys(dataObject).length;i++) {
-        //     if(dataObject[i].type =='filter') {
-        //         legends[i] = (dataObject[i]);
+        // for(i=0;i<Object.keys(rawAjaxData).length;i++) {
+        //     if(rawAjaxData[i].type =='filter') {
+        //         legends[i] = (rawAjaxData[i]);
         //         var countTerms = Object.keys(legends[i].terms).length; 
         //         for(k=0;k<countTerms;k++) {
         //             legends[i].terms[k].name = _.unescape(legends[i].terms[k].name);
@@ -998,12 +1055,13 @@ jQuery(document).ready(function($) {
                 
 
         //     }
-        //     if(dataObject[i].type =='FeatureCollection') {
-        //         featureObject = dataObject[i];
-        //         markerObject = dataObject[i];
+        //     if(rawAjaxData[i].type =='FeatureCollection') {
+        //         featureObject = rawAjaxData[i];
+        //         allMapMarkers = rawAjaxData[i];
         //     }
         //}
-        catFilter  = legends[0];//dataObject[0];
+
+        catFilter  = legends[0];//rawAjaxData[0];
         // console.log(featureObject)
         // console.log(catFilter)
         var countFeatures = Object.keys(featureObject.features).length; 
@@ -1013,11 +1071,11 @@ jQuery(document).ready(function($) {
                 featureObject.features[i].properties.categories[j] = _.unescape(featureObject.features[i].properties.categories[j]);
             }
         }
-        //console.log(markerObject);
+        //console.log(allMapMarkers);
         //console.log(legends);
         createLegend(legends);
-        //markerObject = dataObject[2];
-        //var featureObject = dataObject[2];
+        //allMapMarkers = rawAjaxData[2];
+        //var featureObject = rawAjaxData[2];
        
     	var reader = new OpenLayers.Format.GeoJSON({
                 'externalProjection': gg,
@@ -1029,8 +1087,9 @@ jQuery(document).ready(function($) {
         var  myLayer = mLayer;
         myLayer.addFeatures(featureData);
     //player.pause();
-    } // createMarkers()
+    } // createMapMarkers()
 
+        // TO DO:  Everything; get size from EP paraemters…
     function createTimeline(data) {
         //console.log(data);
         createStoryJS({
@@ -1042,7 +1101,8 @@ jQuery(document).ready(function($) {
         });
     }
 
-    function loadMarkers(projectID,mLayer){
+        // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
+    function loadMapMarkers(projectID,mLayer){
         //console.log('loading');
             // Initially bring up Loading pop-box modal dialog -- hide after Ajax returns
         $('body').append('<div id="loading" class="modal hide fade">\
@@ -1063,7 +1123,7 @@ jQuery(document).ready(function($) {
             },
             success: function(data, textStatus, XMLHttpRequest){
                 // console.log(data);
-                createMarkers(JSON.parse(data),mLayer);
+                createMapMarkers(JSON.parse(data),mLayer);
                 //console.log('done');
                 //$('#markerModal').modal({backdrop:true});
                     // Remove Loading modal
