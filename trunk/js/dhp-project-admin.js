@@ -1625,6 +1625,7 @@ jQuery(document).ready(function($) {
   	var i = 0;
   	var treeParent = $('.cat-list h2').attr('id');
 
+      // Create a JSON string to represent category terms in format usable by WP
   	$(lis).each(function(index){
       console.log(lis.length)
   		var tempParent = $(this).parents('li').attr('id');
