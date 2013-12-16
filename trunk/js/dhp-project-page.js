@@ -150,18 +150,25 @@ jQuery(document).ready(function($) {
         // for(i=0;i<layerCount;i++) {
 
         _.each(dhpData.layers, function(theLayer) {
+            var tempLayer;
             switch (theLayer['mapType']) {
             case 'type-OSM':
-                dhp_layers.push(new OpenLayers.Layer.OSM());
+                tempLayer = new OpenLayers.Layer.OSM();
+                tempLayer.setOpacity(theLayer['opacity']);
+                dhp_layers.push(tempLayer);
                 break;
             case 'type-Google':
-                dhp_layers.push(new OpenLayers.Layer.Google(theLayer['name'],
-                    {   type: theLayer['mapTypeId'], numZoomLevels: 20}));
+                tempLayer = new OpenLayers.Layer.Google(theLayer['name'],
+                                {   type: theLayer['mapTypeId'], numZoomLevels: 20});
+                tempLayer.setOpacity(theLayer['opacity']);
+                dhp_layers.push(tempLayer);
                 break;
             case 'type-CDLA':
                 cdla.maps.defaultAPI(cdla.maps.API_OPENLAYERS);
                 var cdlaObj = new cdla.maps.Map(theLayer['mapTypeId']);
-                dhp_layers.push(cdlaObj.layer());
+                tempLayer = cdlaObj.layer();
+                tempLayer.setOpacity(theLayer['opacity']);
+                dhp_layers.push(tempLayer);
                 break;
             }
         });
@@ -572,10 +579,12 @@ jQuery(document).ready(function($) {
         // INPUT:   layerObject = ??
         // ASSUMES: map has been initialized
     function buildLayerControls(layerObject) {
-        //console.log(map.layers);
         _.each(layerObject,function(layer,index){
-            //console.log(layer.name)
             if(index>=0) {
+                var layerOpacity = 1;
+                if(dhpData.layers[index]) {
+                    layerOpacity = dhpData.layers[index]['opacity'];
+                }
                 $('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+layer.id+'">'+layer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
                 //slider for layer opacity
                 $( '.layer'+index+' .layer-opacity').slider({
@@ -583,24 +592,19 @@ jQuery(document).ready(function($) {
                     min: 0,
                     max: 1,
                     step:.05,
-                    values: [ 1 ],
-                    slide: function( event, ui ) {  
-                    //console.log(index)          
+                    values: [ layerOpacity ],
+                    slide: function( event, ui ) {    
                       map.layers[index].setOpacity(ui.values[ 0 ]);                
                     }
                 });
                 //click
-                //
                 $( '.layer'+index+' input').click(function(){
                     if($(this).attr('checked')) {
-                        //console.log('check')
                         layerObject[index].setVisibility(true);
                     } else {
-                    //console.log('uncheck')
                         layerObject[index].setVisibility(false);
                     }
                 });
-                //$(layerObject[index]).setVisibility(false);
             }
         });
     } // buildLayerControls()
@@ -649,8 +653,8 @@ jQuery(document).ready(function($) {
         });
 
         var featureData = reader.read(newFeatures);
-        var myLayer = map.layers[dhpMap['layers'].length];
-        
+        //marker layer should be the last layer on the map(length-1)
+        var myLayer = map.layers[map.layers.length-1];
         myLayer.removeAllFeatures();
         myLayer.addFeatures(featureData);
     } // updateLayerFeatures()
