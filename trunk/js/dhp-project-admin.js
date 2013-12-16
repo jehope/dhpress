@@ -517,21 +517,26 @@ jQuery(document).ready(function($) {
     }
 
     $('#entryTabContent').append('<div class="tab-pane fade in ep map" id="'+type+'-'+epCount+'"><button type="button" class="close" >&times;</button>\<p>'+entryTabContent+'</p></div>');
-
-      // Create a slider to control opacity
-    $( '.layer-opacity' ).slider({
-      range: false,
-      min: 0,
-      max: 1,
-      step:.05,
-      values: [ 1 ],
-      slide: function( event, ui ) {            
-        
-        //$(this).parent('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
-        $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
-        $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
+    
+    //set sliders
+    _.each($('.layer-list li'), function(layer) {
+      var tempOpacity = 1;
+      if($(layer).find('select option:selected').attr('data-opacity')) {
+        tempOpacity = $(layer).find('select option:selected').attr('data-opacity');
       }
+      $(layer).find('.layer-opacity').slider({
+          range: false,
+          min: 0,
+          max: 1,
+          step:.05,
+          values: [ tempOpacity ],
+          slide: function( event, ui ) {            
+            $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
+            $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
+          }
+        }); 
     });
+        
 
       // Handle Delete button for Entry Point
     $('#'+type+'-'+epCount+ ' .close').click(function(e){
@@ -589,8 +594,21 @@ jQuery(document).ready(function($) {
       projectNeedsToBeSaved();
     });
     $('.add-layer').unbind('click');
-    $('.add-layer').click(function(){   
-      $('.layer-list').append(addNewLayer());
+    $('.add-layer').click(function(){  
+      var layerHTML = addNewLayer() 
+      $('.layer-list').append(layerHTML);
+        // Create a slider to control opacity
+      $(layerHTML).find('.layer-opacity').slider({
+        range: false,
+        min: 0,
+        max: 1,
+        step:.05,
+        values: [ 1 ],
+        slide: function( event, ui ) {            
+          $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
+          $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
+        }
+      });
       projectNeedsToBeSaved();
       //bindLegendEventsInEPTab();
     });    
@@ -848,8 +866,10 @@ jQuery(document).ready(function($) {
   }
 
   function loadLayers(layerObject){
-    var layerHtml = $('<ul><li><label>Base Layer</label><select name="base-layer" id="base-layer"></select><label>Additional Layers</label></li></ul>');
+    console.log(layerObject)
+    var layerHtml = $('<ul><li><label>Base Layer</label><select name="base-layer" id="base-layer"></select></li></ul>');
     $('select', layerHtml).append($('#hidden-layers .base-layer').clone());
+
 
     if(layerObject != null && typeof layerObject === 'object') {
       //console.log('layers'+Object.keys(layerObject).length);
@@ -857,19 +877,26 @@ jQuery(document).ready(function($) {
       for (var i =0; i < Object.keys(layerObject).length; i++) {
         if(i==0) {
           $('select option#'+layerObject[i]['id'], layerHtml).attr('selected','selected');
+          $('select option#'+layerObject[i]['id'], layerHtml).attr('data-opacity',layerObject[i]['opacity']);
+          $('li', layerHtml).append('<br/><div class="layer-opacity"></div><span class="slider-value">'+layerObject[i]['opacity']+'</span> Opacity</div>');
+          $('li', layerHtml).append('<label>Additional Layers</label>');
         }
         else{
           //console.log('second layer')
           $(layerHtml).append(addNewLayer('',layerObject[i]['opacity']));
           $('li',layerHtml).eq(i).find('select option#'+layerObject[i]['id']).attr('selected','selected');
-          $('li',layerHtml).eq(i).find('select option#'+layerObject[i]['id']).attr('data-opacity',layerObject[i]['opacity']);
-        }        
+          $('select option#'+layerObject[i]['id'], layerHtml).attr('data-opacity',layerObject[i]['opacity']);
+        }
+        
       }
     }      
     return $(layerHtml).html();
   }
 
   function addNewLayer(selected,layerOpacity){
+    if(!layerOpacity) {
+      layerOpacity = 1;
+    }
     var layerLine = $('<li><select name="overlay"></select> <button class="btn btn-danger delete-layer" type="button">-</button><div><div class="layer-opacity"></div><span class="slider-value">'+layerOpacity+'</span> Opacity</div></li>');
     $('select',layerLine).append($('#hidden-layers option').clone());
     $('.delete-layer',layerLine).click(function(){   
@@ -1370,7 +1397,7 @@ jQuery(document).ready(function($) {
         $('.layer-list li option:selected').each(function(ind2) {
           projectObj['entry-points'][index]["settings"]['layers'][ind2] = new Object();
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['id'] = $(this).attr('id'); 
-          //console.log($(this).find('.slider-value').text()); 
+          // console.log($(this).attr('data-opacity')); 
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['opacity'] = $(this).attr('data-opacity'); 
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['name'] = $(this).text(); 
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapType'] = $(this).attr('data-mapType'); 

@@ -1,6 +1,8 @@
 @charset "UTF-8";
 /* CSS Document */
-
+ul.wp-submenu {
+	margin-left: 0;
+}
 .entry-point {
 	min-height:200px;
 }

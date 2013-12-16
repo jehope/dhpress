@@ -154,18 +154,30 @@ jQuery(document).ready(function($) {
         // for(i=0;i<layerCount;i++) {
 
         _.each(dhpData.layers, function(theLayer) {
+            var tempLayer;
+            var tempOpacity = 1;
+            if(theLayer['opacity']) {
+                tempOpacity = theLayer['opacity'];
+
+            }
+            console.log('opacity ' +tempOpacity)
             switch (theLayer['mapType']) {
             case 'type-OSM':
-                dhp_layers.push(new OpenLayers.Layer.OSM());
+                tempLayer = new OpenLayers.Layer.OSM();
+                tempLayer.setOpacity(tempOpacity);
+                dhp_layers.push(tempLayer);
                 break;
             case 'type-Google':
-                dhp_layers.push(new OpenLayers.Layer.Google(theLayer['name'],
-                    {   type: theLayer['mapTypeId'], numZoomLevels: 20}));
+                tempLayer = new OpenLayers.Layer.Google(theLayer['name'],
+                                { type: theLayer['mapTypeId'], numZoomLevels: 20, opacity: tempOpacity});
+                dhp_layers.push(tempLayer);
                 break;
             case 'type-CDLA':
                 cdla.maps.defaultAPI(cdla.maps.API_OPENLAYERS);
                 var cdlaObj = new cdla.maps.Map(theLayer['mapTypeId']);
-                dhp_layers.push(cdlaObj.layer());
+                tempLayer = cdlaObj.layer();
+                tempLayer.setOpacity(tempOpacity);
+                dhp_layers.push(tempLayer);
                 break;
             }
         });
@@ -299,7 +311,7 @@ jQuery(document).ready(function($) {
         var countCats =  Object.keys(markerValues).length; 
 
         for(i=0;i<countTerms;i++) {         // for all category values
-            var thisCatID = catFilterSelect[i].id;
+            var thisCatID = parseInt(catFilterSelect[i].id);
 
             for(j=0;j<countCats;j++) {      // for all marker values
                 // legend categories
@@ -583,26 +595,33 @@ jQuery(document).ready(function($) {
 
         // PURPOSE: Create UI controls for opacity of each layer; called by createLegends
         // ASSUMES: map has been initialized
+
     function buildLayerControls() {
         //console.log(map.layers);
         _.each(map.layers,function(thisLayer,index){
             //console.log(layer.name)
             if(index>=0) {
+                var layerOpacity = 1;
+                if(dhpData.layers[index]) {
+                    layerOpacity = dhpData.layers[index]['opacity'];
+                    if(!layerOpacity){
+                        layerOpacity = 1;
+                    }
+                }
                 $('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+thisLayer.id+'">'+thisLayer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
+
                 //slider for layer opacity
                 $( '.layer'+index+' .layer-opacity').slider({
                     range: false,
                     min: 0,
                     max: 1,
                     step:.05,
-                    values: [ 1 ],
-                    slide: function( event, ui ) {
-                    //console.log(index)
+                    values: [ layerOpacity ],
+                    slide: function( event, ui ) {    
                       map.layers[index].setOpacity(ui.values[ 0 ]);                
                     }
                 });
                 //click
-                //
                 $( '.layer'+index+' input').click(function(){
                     if($(this).attr('checked')) {
                         //console.log('check')
@@ -612,7 +631,7 @@ jQuery(document).ready(function($) {
                         map.layers[index].setVisibility(false);
                     }
                 });
-                //$(layerList[index]).setVisibility(false);
+
             }
         });
     } // buildLayerControls()
@@ -637,17 +656,15 @@ jQuery(document).ready(function($) {
         //categoryTree = catFilterSelect;
         var newFeatures = {type: "FeatureCollection", features: []};        // marker set resulting from current selection
         var allCategoryIDs = [];                                            // list of selected IDs
-
             // Flatten out categories (and their children) as IDs
         _.each(catFilterSelect,function(theCategory){
-            allCategoryIDs.push(theCategory.id);
+            allCategoryIDs.push(parseInt(theCategory.id));
             if (theCategory.children) {
                 _.each(theCategory.children, function(catChild) {
-                    allCategoryIDs.push(catChild['term_id']);
+                    allCategoryIDs.push(parseInt(catChild['term_id']));
                 });
             }
         });
-
             // Go through all markers and find just those which have values matching current categories
         newFeatures.features = _.filter(allMarkers.features, function(theMarker){
             if(_.intersection(theMarker.properties.categories, allCategoryIDs).length > 0) {
@@ -660,8 +677,8 @@ jQuery(document).ready(function($) {
         });
 
         var featureData = reader.read(newFeatures);
-        var myLayer = map.layers[dhpMap['layers'].length];
-        
+        //marker layer should be the last layer on the map(length-1)
+        var myLayer = map.layers[map.layers.length-1];
         myLayer.removeAllFeatures();
         myLayer.addFeatures(featureData);
     } // updateLayerFeatures()
