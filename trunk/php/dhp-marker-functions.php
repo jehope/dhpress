@@ -75,7 +75,7 @@ function add_dhp_marker_admin_scripts( $hook )
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
-		// Viewing a marker?
+		// Editing a marker?
     if ( $hook == 'post-new.php' || $hook == 'post.php' )
     {
         if ( 'dhp-markers' === $post->post_type ) {     
@@ -91,9 +91,10 @@ function add_dhp_marker_admin_scripts( $hook )
 			) );
         }
 
- 		// Editing a marker?
+ 		// Viewing a marker?  ?? why would $hook = 'edit.php' for viewing?
+        //  Is this code dead because superceded by logic in dhp_page_template in dhp-project-functions.php?
     } else if ( $hook == 'edit.php'  ) {
-        if ( 'dhp-markers' === $post->post_type ) {     
+        if ( 'dhp-markers' === $post->post_type ) { 
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));

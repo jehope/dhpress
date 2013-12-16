@@ -47,6 +47,23 @@
 #map_div div.olControlZoom {
 	top:10px;
 }
+.olControlZoom .reset-map {
+	margin-top: 5px;
+	padding: 5px;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	width: 14px;
+	/* Fallback for web browsers that doesn't support RGBa */
+    background: rgb(0, 60, 136);
+    /* RGBa with 0.6 opacity */
+    background: rgba(0, 60, 136, 0.5);
+   	cursor: pointer;
+}
+.olControlZoom .reset-map:hover {
+    background: rgba(0, 60, 136, 0.7);
+}
+
 .logged-in.fullscreen #map_div div.olControlZoom {
 	
 top:80px;
@@ -101,6 +118,11 @@ top: 30px;
 }
 .legend-row .legend-div {
 	margin-left: 0px;
+}
+.legend-div h1 {
+	margin-left: 10px;
+	border-bottom: 1px solid #111;
+	margin-right: 10px;
 }
 .legend-div ul {
 list-style: none;
@@ -246,6 +268,11 @@ filter: alpha(opacity=60);
 .transcript-list.two-column .type-text {
 	width: 40%;
 	display: inline-block;
+}
+
+.transcript-list {
+	height: 600px;
+	overflow-y: scroll;
 }
 .legend-resize {
 	padding: 2px 5px;
