@@ -2,6 +2,9 @@
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //          Some other parameters passed by being embedded in HTML: .post.id
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
+// NOTES:   Legends data is in the format: Array [ name, terms: Array [ name, id, icon_url, children: Array [ name ] ] ]
+//          If icon_url starts with #, it is a color in hex; otherwise a URL
+//          The class active-legend is added to whichever legend is currently visible and selected
 // TO DO:   Generalize visualization types better (don't assume maps)
 //          Change computation of tcArray so that it contains the endtime of the clip rather than
 //              beginning -- this will speed up search in hightlightTranscriptLine()
@@ -9,15 +12,16 @@
 jQuery(document).ready(function($) {
         // Project variables
     var projectID, ajax_url, rawAjaxData, dhpSettings;
-    var catIDToVisTree;     // Each object has fields: id, icon_url, and children (array of same)
-                            // if icon_url starts with #, it is a color in hex; otherwise a URL
-    var catFilter;          // Field "terms" is array of objects, each having id, name and children (array of same)
+    var catFilter;          // Contains all values for currently selected Legend; field "terms" is array of objects, each having name, id and children (array of same)
+    var catFilterSelect;     // Array indicating current selection of Legend values; each object has fields: name, id, icon_url, and children (array of term_id)
+    var allMarkers;         // Array of all possible marker posts associated with Project; field "features" is an array of objects which contain field "categories" which is array of IDs
 
         // Map visualization variables 
-    var map, dhpMap, allMapMarkers, gg, sm, olMarkerInterface, selectControl, hoverControl;
+    var map, dhpMap, gg, sm, olMarkerInterface, selectControl, hoverControl;
 
         // A/V player variables
     var tcArray, player, clipPosition, videoHasPlayed;
+
         // dead variables
     // var lookupParents;
 
@@ -28,7 +32,7 @@ jQuery(document).ready(function($) {
     dhpSettings = JSON.parse(dhpData.settings);
 
     // lookupParents = new Object();
-    allMapMarkers = [];
+    allMarkers = [];
     catFilter = new Object();
 
     dhpMap = dhpData.map;
@@ -225,13 +229,13 @@ jQuery(document).ready(function($) {
     // function createLookup(filter){
     //     catFilter = filter;
 
-    //     var catIDToVisTree = filter.terms;
-    //     var countTerms = Object.keys(catIDToVisTree).length; 
+    //     var catFilterSelect = filter.terms;
+    //     var countTerms = Object.keys(catFilterSelect).length; 
       
     //     for(i=0;i<countTerms;i++) {
-    //         var tempName = catIDToVisTree[i].id;
+    //         var tempName = catFilterSelect[i].id;
     //         lookupParents[tempName];
-    //         lookupParents[tempName] = { externalGraphic : catIDToVisTree[i].icon_url };
+    //         lookupParents[tempName] = { externalGraphic : catFilterSelect[i].icon_url };
             
     //     }
     //     //alert(JSON.stringify(lookupParents));
@@ -242,14 +246,14 @@ jQuery(document).ready(function($) {
         // PURPOSE: Called by olMarkerInterface to determine icon to use for marker
         // RETURNS: First match on URL to use for icon, or else ""
         // INPUT:   markerValues = one or more values associated with a feature/marker
-        // ASSUMES: catIDToVisTree has been loaded
+        // ASSUMES: catFilterSelect has been loaded
         // TO DO:   Make recursive function?
     function getHighestParentIcon(markerValues) {
-        var countTerms = Object.keys(catIDToVisTree).length; 
+        var countTerms = Object.keys(catFilterSelect).length; 
         var countCats = markerValues.length;
 
         for(i=0;i<countTerms;i++) {         // for all category values
-            var thisCatID = catIDToVisTree[i].id;
+            var thisCatID = catFilterSelect[i].id;
 
             for(j=0;j<countCats;j++) {      // for all marker values
                 var thisMarkerValue = markerValues[j];
@@ -257,20 +261,20 @@ jQuery(document).ready(function($) {
                     // Have we matched this item itself?
                 if (thisCatID==thisMarkerValue) {
                         // Confirm that it looks like a URL (http://...)
-                    if(catIDToVisTree[i].icon_url.substring(0,1) == 'h') {
-                        return catIDToVisTree[i].icon_url;
+                    if(catFilterSelect[i].icon_url.substring(0,1) == 'h') {
+                        return catFilterSelect[i].icon_url;
                     } else {
                         return '';
                     }
                 }
                     // Check for matches amongst its children
                 else {
-                    var tempChildren = catIDToVisTree[i].children;
+                    var tempChildren = catFilterSelect[i].children;
                     var tempChildCount = tempChildren.length;
                     for (k=0;k<tempChildCount;k++) {
                         if(tempChildren[k].term_id==thisMarkerValue) {
-                           if(catIDToVisTree[i].icon_url.substring(0,1) == 'h') {
-                                return catIDToVisTree[i].icon_url;
+                           if(catFilterSelect[i].icon_url.substring(0,1) == 'h') {
+                                return catFilterSelect[i].icon_url;
                             }
                             else {
                                 return '';
@@ -278,7 +282,7 @@ jQuery(document).ready(function($) {
                         }
                     }
                 }
-           }   
+           }
         }
     } // getHighestParentIcon()
 
@@ -286,16 +290,16 @@ jQuery(document).ready(function($) {
         // PURPOSE: Called by olMarkerInterface to determine color to use for marker
         // RETURNS: First match on color to use for icon, or else ""
         // INPUT:   markerValues = one or more values associated with a feature/marker
-        // ASSUMES: catIDToVisTree has been loaded
+        // ASSUMES: catFilterSelect has been loaded
         // TO DO:   Make recursive function
     function getHighestParentColor(markerValues) {
-        var countTerms = Object.keys(catIDToVisTree).length; 
+        var countTerms = Object.keys(catFilterSelect).length; 
 
         //current marker values
         var countCats =  Object.keys(markerValues).length; 
 
         for(i=0;i<countTerms;i++) {         // for all category values
-            var thisCatID = catIDToVisTree[i].id;
+            var thisCatID = catFilterSelect[i].id;
 
             for(j=0;j<countCats;j++) {      // for all marker values
                 // legend categories
@@ -303,22 +307,22 @@ jQuery(document).ready(function($) {
 
                     // have we matched this element?
                 if (thisCatID===thisMarkerValue) {
-                    if(catIDToVisTree[i].icon_url.substring(0,1) == '#') {
-                        return catIDToVisTree[i].icon_url;
+                    if(catFilterSelect[i].icon_url.substring(0,1) == '#') {
+                        return catFilterSelect[i].icon_url;
                     } else {
                         return '';
                     }
 
                     // check for matches on its children
                 } else {
-                    var tempChildCount = Object.keys(catIDToVisTree[i].children).length;
+                    var tempChildCount = Object.keys(catFilterSelect[i].children).length;
                     if(tempChildCount>0) {
-                        var tempChildren = catIDToVisTree[i].children;
+                        var tempChildren = catFilterSelect[i].children;
 
                         for (k=0;k<tempChildCount;k++) {
                             if(tempChildren[k].term_id==thisMarkerValue) {
-                               if(catIDToVisTree[i].icon_url.substring(0,1) == '#') {
-                                    return catIDToVisTree[i].icon_url;
+                               if(catFilterSelect[i].icon_url.substring(0,1) == '#') {
+                                    return catFilterSelect[i].icon_url;
                                 } else {
                                     return '';
                                 }
@@ -332,18 +336,18 @@ jQuery(document).ready(function($) {
 
 
     // function getHighestParentDisplay(categories) {
-    //     var catIDToVisTree = catFilter.terms;
-    //     var countTerms = Object.keys(catIDToVisTree).length; 
+    //     var catFilterSelect = catFilter.terms;
+    //     var countTerms = Object.keys(catFilterSelect).length; 
     //     var countCats = categories.length;
 
     //     for(i=0;i<countTerms;i++) {
     //         for(j=0;j<countCats;j++) {
-    //             var tempName = catIDToVisTree[i].id;
+    //             var tempName = catFilterSelect[i].id;
     //             if (tempName==categories[j]) {              
     //                 return true;
     //             } else {
     //                 //for each child cat
-    //                 var tempChildren = catIDToVisTree[i].children;
+    //                 var tempChildren = catFilterSelect[i].children;
     //                 var tempChildCount = tempChildren.length;
     //                 for (k=0;k<tempChildCount;k++) {
     //                     if(tempChildren[k]==categories[j]) {
@@ -355,14 +359,14 @@ jQuery(document).ready(function($) {
     //     }
     // }
 
-        // PURPOSE: ??
-        // INPUT:   object = ??
-    function createLegend(object) {
+        // PURPOSE: Create HTML for all of the legends for this visualization
+        // INPUT:   legendList = array of legends to display
+    function createLegends(legendList) {
             // Custom event types bound to the document to be triggered elsewhere
-        $(document).bind('order.findSelectedCats',function(){ catIDToVisTree= findSelectedCats();});
-        $(document).bind('order.updateLayerFeatures',function(){ updateLayerFeatures(catIDToVisTree);});
+        $(document).bind('order.findSelectedCats',function(){ catFilterSelect= findSelectedCats();});
+        $(document).bind('order.updateLayerFeatures',function(){ updateLayerFeatures();});
 
-        //console.log('here'+_.size(object));
+        //console.log('here'+_.size(legendList));
         var legendHtml;
         var legendWidth;
         var mapPosition = $('#map_div').position();
@@ -373,71 +377,77 @@ jQuery(document).ready(function($) {
 
         var rightDiv = mapPosition.left + 50;
         var topDiv = mapPosition.top + 40;
-        
-        //create new legend with bootstrap collapse
-        var newLegendsHtml = $('<div class="new-legends"/>');
-        _.each(object, function(val,key) {
-            $(newLegendsHtml).append('<div class="legend-'+key+'" />');
-            $('.legend-'+key, newLegendsHtml).append('<h3>'+val.name+'</h3>');
-            $('.legend-'+key, newLegendsHtml).append('<div class="accordion" id="accordion-'+key+'" />');
-            //console.log('Legend Name: '+val.name)
-            //console.log(val)
-            //display legend terms
-            
-            _.each(val.terms, function(val2,key2) {
-                if(val.name!=val2.name) {
-                    // console.log('Term: '+val2.name)
-                    var firstIconChar = val2.icon_url.substring(0,1);
-                    var icon;
-                    if(firstIconChar=='#') { icon = 'background:'+val2.icon_url+';'; }
-                    else { icon = 'background: url(\''+val2.icon_url+'\') no-repeat center;'; }
 
-                    var tempLink = $('<div/>');
-                    $(tempLink).append('<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion-'+key+'" href="#term-'+key+key2+'">'+val2.name+'</a>');
+            // Create new Legend with bootstrap collapse
+        // var newLegendsHtml = $('<div class="new-legends"/>');
+        // _.each(legendList, function(val,index) {
+        //     $(newLegendsHtml).append('<div class="legend-'+index+'" />');
+        //     $('.legend-'+index, newLegendsHtml).append('<h3>'+val.name+'</h3>');
+        //     $('.legend-'+index, newLegendsHtml).append('<div class="accordion" id="accordion-'+index+'" />');
+        //     //console.log('Legend Name: '+val.name)
+        //     //console.log(val)
+        //         // Go through all terms in this category and its children (if any)
+        //     _.each(val.terms, function(val2,index2) {
+        //         if(val.name!=val2.name) {
+        //             // console.log('Term: '+val2.name)
+        //             var firstIconChar = val2.icon_url.substring(0,1);
+        //             var icon;
+        //                 // Is it an icon or color?
+        //             if(firstIconChar=='#') { icon = 'background:'+val2.icon_url+';'; }
+        //             else { icon = 'background: url(\''+val2.icon_url+'\') no-repeat center;'; }
 
-                    var tempGroup = $('<div/>');
-                    $(tempGroup).append('<div class="accordion-heading"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+' display: inline-block; width: 15px; height: 15px; margin-top: 10px;"></p>'+$(tempLink).html()+'</div>');
+        //             var tempLink = $('<div/>');
+        //             $(tempLink).append('<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion-'+index+'" href="#term-'+index+index2+'">'+val2.name+'</a>');
+
+        //             var tempGroup = $('<div/>');
+        //             $(tempGroup).append('<div class="accordion-heading"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+' display: inline-block; width: 15px; height: 15px; margin-top: 10px;"></p>'+$(tempLink).html()+'</div>');
                     
-                    //children terms
-                    if(val2.children.length>0) {
-                        $(tempGroup).append('<div id="term-'+key+key2+'" class="accordion-body collapse"><div class="accordion-inner" /></div>');
+        //             // Any child terms ?
+        //             if(val2.children.length>0) {
+        //                 $(tempGroup).append('<div id="term-'+index+index2+'" class="accordion-body collapse"><div class="accordion-inner" /></div>');
+        //                 _.each(val2.children, function(val3,index3) {
+        //                     // console.log('Children Terms: '+val3)
+        //                     $('.accordion-inner', tempGroup).append(val3+'<br/>');
+        //                 });
+        //             }
+        //             $('#accordion-'+index, newLegendsHtml).append('<div class="accordion-group">'+$(tempGroup).html()+'</div>')
+        //         }
+        //     });
+        // });
+        //$('#legends').append(newLegendsHtml)
+
+            // Build Legend controls on the right (category toggles) for each legend value and insert Legend name into dropdown above
+        _.each(legendList, function(theLegend, legIndex) {
+            var filterTerms = theLegend.terms;
+            var legendName = theLegend.name;
+            var countTerms = 0; 
+
+                // Create for all of the terms (do not represent children of terms)
+            legendHtml = $('<div class="'+legendName+' legend-div span12 row" id="term-legend-'+legIndex+'"><h1>'+legendName+'</h1><ul class="terms"></ul></div>');
+            _.each(filterTerms, function(theTerm) {
+                if(legendName!=theTerm.name) {
+                    var firstIconChar = theTerm.icon_url.substring(0,1);
+                    var icon;
+                    if(firstIconChar=='#') { icon = 'background:'+theTerm.icon_url; }
+                    else { icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat center;'; }
+
+                        // Only check the first 50 terms in each Legend
+                    if(++countTerms>50) {
+                        $('ul', legendHtml).append('<li class="compare"><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></li>');
+                    } else {
+                        $('ul', legendHtml).append('<li class="compare"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></li>');
                     }
-                    _.each(val2.children, function(val3,key3) {
-                        // console.log('Children Terms: '+val3)
-                        $('.accordion-inner', tempGroup).append(val3+'<br/>');
-                    });
-                    $('#accordion-'+key, newLegendsHtml).append('<div class="accordion-group">'+$(tempGroup).html()+'</div>')
                 }
             });
-        });
-        //$('#legends').append(newLegendsHtml)
-        for (j=0;j<Object.keys(object).length;j++) {
-            var filterTerms = object[j].terms;
-            var legendName = object[j].name;
-            var countTerms = Object.keys(filterTerms).length; 
-            
-            legendHtml = $('<div class="'+legendName+' legend-div span12 row" id="term-legend-'+j+'"><h1>'+legendName+'</h1><ul class="terms"></ul></div>');
-            for(i=0;i<countTerms;i++) {
-                if(legendName!=filterTerms[i].name) {
-                    var firstIconChar = filterTerms[i].icon_url.substring(0,1);
-                    var icon;
-                    if(firstIconChar=='#') { icon = 'background:'+filterTerms[i].icon_url; }
-                    else { icon = 'background: url(\''+filterTerms[i].icon_url+'\') no-repeat center;'; }
-
-                    if(i>50) {
-                        $('ul', legendHtml).append('<li class="compare"><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
-                    } else {
-                      $('ul', legendHtml).append('<li class="compare"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+filterTerms[i].id+'">'+filterTerms[i].name+'</a></li>');
-                    }
-                }
-            }
             $('ul',legendHtml).prepend('<li class="check-all"><input type="checkbox" checked="checked"><a class="value" data-id="all">Hide/Show All</a></li>');
 
             $('#legends .legend-row').append(legendHtml);
-            $('.dhp-nav .dropdown-menu').append('<li><a href="#term-legend-'+j+'">'+legendName+'</a></li>');
-        }
+                // Add Legend title to dropdown menu above
+            $('.dhp-nav .dropdown-menu').append('<li><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');
+        });
 
             //$('#legends').css({'left':0, 'top':50,'z-index':19});
+            // ?? What does all of this do??
         $('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="icon-resize-small"></i></a>');
         $('.legend-resize').hide();
         $('#legends').hover(function(){
@@ -447,7 +457,6 @@ jQuery(document).ready(function($) {
             $('.legend-resize').fadeOut(100);
         });
         $('.legend-resize').click(function(){
-
             if($('#legends').hasClass('mini')) {
                 $('.terms .value').show();
             $('#legends').animate({width: legendWidth}, 500 );
@@ -460,42 +469,39 @@ jQuery(document).ready(function($) {
                 $('#legends').animate({width: 70}, 500 );
                 $('#legends').addClass('mini');
             }
-
         });
             //$('#legends').css({
-        $('.active-legend').mousemove(function(e){
-            var xpos = e.pageX - 250;
-            var ypos = e.pageY + 15;
-            //$('#child_legend-'+j+'').css({'left':xpos,'top':ypos});
-        });
+        // $('.active-legend').mousemove(function(e){
+        //     var xpos = e.pageX - 250;
+        //     var ypos = e.pageY + 15;
+        //     //$('#child_legend-'+j+'').css({'left':xpos,'top':ypos});
+        // });
             //var childrenLegendHtml = $('<div id="child_legend-'+j+'"><h3>Children Terms</h3><ul></ul></div>');
             //$('body').append(childrenLegendHtml);
             //$('#child_legend-'+j+'').css({'width':'200px','margin-left':'200px','top':'40px','position':'absolute','z-index': '2001' });
 
+            // Handle user selection of value name from current Legend on right
         $('#legends ul.terms li a').click(function(event){
             var spanName = $(this).data('id');
 
                 // "Hide/Show all" button
             if(spanName==='all') {
-                if($(this).closest('li').find('input').prop('checked')==false) {
-                    $('.active-legend ul li').find('input').prop('checked',true);
-                    catIDToVisTree = findSelectedCats();
-                    updateLayerFeatures(catIDToVisTree);
-                }
-                else {
-                    $('.active-legend ul li').find('input').prop('checked',false);
-                    catIDToVisTree = findSelectedCats();
-                    updateLayerFeatures(catIDToVisTree);
-                }
+                    // Should legend values now be checked or unchecked?
+                var boxState = $(this).closest('li').find('input').prop('checked');
+                $('.active-legend ul li').find('input').prop('checked',!boxState);
+                catFilterSelect = findSelectedCats();
+                updateLayerFeatures();
             }
-                // a specific legend/category value
+                // a specific legend/category value (ID#)
             else {
+                    // uncheck everything
                 $('.active-legend ul input').removeAttr('checked');
                 $('.active-legend ul.terms li.selected').removeClass('selected');
+                    // select just this item
                 $(this).closest('li').addClass('selected');
                 $(this).closest('li').find('input').prop('checked',true);
-                catIDToVisTree = findSelectedCats(spanName);
-                updateLayerFeatures(catIDToVisTree);
+                catFilterSelect = findSelectedCats(spanName);
+                updateLayerFeatures();
             }
         });
             // $('#term-legend-'+j+' ul.terms li').hover(function(){
@@ -510,22 +516,24 @@ jQuery(document).ready(function($) {
             //     $('#child_legend-'+j+' ul li').remove();
             //     $('#child_legend-'+j+'').hide();
             // });
+
+            // Handle user selection of checkbox from current Legend on right
         $('#legends ul.terms input').click(function(event){
             var spanName = $(event.target).parent().find('a').data('id');
             if( spanName==='all' && $(this).prop('checked') === true ) {
                 $('.active-legend ul li').find('input').prop('checked',true);
-                catIDToVisTree = findSelectedCats();
-                updateLayerFeatures(catIDToVisTree);
+                catFilterSelect = findSelectedCats();
+                updateLayerFeatures();
             }
             else if(spanName==='all'&& $(this).prop('checked') === false ) {
                 $('.active-legend ul li').find('input').prop('checked',false);
-                catIDToVisTree = findSelectedCats();
-                updateLayerFeatures(catIDToVisTree);
+                catFilterSelect = findSelectedCats();
+                updateLayerFeatures();
             }
             else {
                 $('.active-legend ul li.check-all').find('input').prop('checked',false);                  
-                catIDToVisTree = findSelectedCats();
-                updateLayerFeatures(catIDToVisTree);
+                catFilterSelect = findSelectedCats();
+                updateLayerFeatures();
             }
         });
         $('ul.controls li').click(function(){
@@ -534,6 +542,8 @@ jQuery(document).ready(function($) {
 
         $('#legends .legend-row').append('<div class="legend-div span12" id="layers-panel"><ul></ul></div>');
         $('.legend-div').hide();
+
+            // Show Legend 0 by default
         $('#term-legend-0').show();
         $('#term-legend-0').addClass('active-legend');
 
@@ -549,6 +559,8 @@ jQuery(document).ready(function($) {
             $(action).show();
             switchFilter(filter);
         });
+
+            // Handle selection of Layers button on top
         $('.dhp-nav .layers a').click(function(evt){
             evt.preventDefault();
             var action = $(this).attr('href');
@@ -560,23 +572,23 @@ jQuery(document).ready(function($) {
             $(action).show();
         });
 
-        $('.launch-timeline').click(function(){
-            loadTimeline('4233');  
-        });
-        catIDToVisTree = findSelectedCats();
+        // $('.launch-timeline').click(function(){
+        //     loadTimeline('4233');  
+        // });
+        catFilterSelect = findSelectedCats();
 
         buildLayerControls(map.layers);
-    } // createLegend
+    } // createLegends()
 
-        // PURPOSE: ??
-        // INPUT:   layerObject = ??
+
+        // PURPOSE: Create UI controls for opacity of each layer; called by createLegends
         // ASSUMES: map has been initialized
-    function buildLayerControls(layerObject) {
+    function buildLayerControls() {
         //console.log(map.layers);
-        _.each(layerObject,function(layer,index){
+        _.each(map.layers,function(thisLayer,index){
             //console.log(layer.name)
             if(index>=0) {
-                $('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+layer.id+'">'+layer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
+                $('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+thisLayer.id+'">'+thisLayer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
                 //slider for layer opacity
                 $( '.layer'+index+' .layer-opacity').slider({
                     range: false,
@@ -584,8 +596,8 @@ jQuery(document).ready(function($) {
                     max: 1,
                     step:.05,
                     values: [ 1 ],
-                    slide: function( event, ui ) {  
-                    //console.log(index)          
+                    slide: function( event, ui ) {
+                    //console.log(index)
                       map.layers[index].setOpacity(ui.values[ 0 ]);                
                     }
                 });
@@ -594,16 +606,17 @@ jQuery(document).ready(function($) {
                 $( '.layer'+index+' input').click(function(){
                     if($(this).attr('checked')) {
                         //console.log('check')
-                        layerObject[index].setVisibility(true);
+                        map.layers[index].setVisibility(true);
                     } else {
                     //console.log('uncheck')
-                        layerObject[index].setVisibility(false);
+                        map.layers[index].setVisibility(false);
                     }
                 });
-                //$(layerObject[index]).setVisibility(false);
+                //$(layerList[index]).setVisibility(false);
             }
         });
     } // buildLayerControls()
+
 
         // PURPOSE: Handle user selecting new legend category
         // INPUT:   filterName = name of legend/category selected
@@ -616,21 +629,19 @@ jQuery(document).ready(function($) {
         selectControl.activate(); 
     }
 
-        // PURPOSE: Update map's feature layer after user chooses a new legend
-        // INPUT:   categoryTree = JSON object of legend/category data (could be nested 2 deep)
-        // ASSUMES: allMapMarkers contains all of the possible marker objects
-    function updateLayerFeatures(categoryTree){
+        // PURPOSE: Update map's feature layer after user chooses a new legend acc. to values in catFilterSelect
+        // ASSUMES: allMarkers contains all of the possible marker objects; catFilterSelect set to current legend selection
+    function updateLayerFeatures(){
         //find all features with cat
-        //catIDToVisTree = findSelectedCats(); 
-        //categoryTree = catIDToVisTree;
-        var newFeatures = {type: "FeatureCollection", features: []};
-        var allCategoryIDs = [];
+        //catFilterSelect = findSelectedCats(); 
+        //categoryTree = catFilterSelect;
+        var newFeatures = {type: "FeatureCollection", features: []};        // marker set resulting from current selection
+        var allCategoryIDs = [];                                            // list of selected IDs
 
             // Flatten out categories (and their children) as IDs
-        _.each(categoryTree,function(theCategory, index){
+        _.each(catFilterSelect,function(theCategory){
             allCategoryIDs.push(theCategory.id);
-
-            if (theCategory.children.length>0) {
+            if (theCategory.children) {
                 _.each(theCategory.children, function(catChild) {
                     allCategoryIDs.push(catChild['term_id']);
                 });
@@ -638,9 +649,9 @@ jQuery(document).ready(function($) {
         });
 
             // Go through all markers and find just those which have values matching current categories
-        newFeatures.features = _.filter(allMapMarkers.features, function(theFeature){ 
-            if(_.intersection(theFeature.properties.categories, allCategoryIDs).length > 0) {         
-               return theFeature;
+        newFeatures.features = _.filter(allMarkers.features, function(theMarker){
+            if(_.intersection(theMarker.properties.categories, allCategoryIDs).length > 0) {
+               return theMarker;
             }
         });
         var reader = new OpenLayers.Format.GeoJSON({
@@ -657,43 +668,44 @@ jQuery(document).ready(function($) {
 
 
         // PURPOSE: Handle user selection of a legend value, so that only markers with that value shown
-        // INPUT:   single = name/value of the legend value, if known (otherwise get current selected items)
-        // RETURNS: Array of terms from catFilter that match current selection
+        // INPUT:   single = name/value of the legend value if known (otherwise get current selected items)
+        // RETURNS: Array of term objects from catFilter that match current UI selection based on ID
         // TO DO:   Rewrite this to eliminate loop
-        // ASSUMES: catFilter is null or contains lists of terms
+        // ASSUMES: catFilter is null or contains lists of terms for current Legend/Filter
     function findSelectedCats(single) {
-        //console.log(single);
         var selCatFilter = [];
         var countTerms = 0; 
         if(catFilter) {
-            countTerms = Object.keys(catFilter.terms).length; 
+            countTerms = Object.keys(catFilter.terms).length;
         }
 
+        if(single) {
+            var tempFilter;
+            for(i=0;i<countTerms;i++) {
+                tempFilter = catFilter.terms[i];
+                if(tempFilter.id==single) {
+                    selCatFilter[0] = tempFilter;
+                    break;
+                }
+            }
+
             // unknown, or multiple selection from legend
-        if(!single) {
+        } else {
+            var tempSelCat, tempFilter;
             $('#legends .active-legend li.compare input:checked').each(function(index){
-                var tempSelCat = $(this).parent().find('.value').data( 'id' );
+                tempSelCat = $(this).parent().find('.value').data( 'id' );
                 //console.log(tempSelCat+' :'+index)
                 for(i=0;i<countTerms;i++) {
-                    var tempFilter = catFilter.terms[i].id;
-                    if(tempFilter==tempSelCat) {
-                        selCatFilter[index] = catFilter.terms[i];
+                    tempFilter = catFilter.terms[i];
+                    if(tempFilter.id==tempSelCat) {
+                        selCatFilter[index] = tempFilter;
                         // console.log(tempFilter, tempSelCat);
                     }
                 }
             });
         }
-        else {
-            var tempSelCat = single;
-            for(i=0;i<countTerms;i++) {
-                var tempFilter = catFilter.terms[i].id;
-                if(tempFilter==tempSelCat) {
-                    selCatFilter[0] = catFilter.terms[i];
-                }
-            }
-        }
         return selCatFilter;
-    }
+    } // findSelectedCats()
 
         // PURPOSE: Convert timecode string into # of milliseconds
         // INPUT:   timecode in format [HH:MM:SS], SS can be in floating point format SS.ss
@@ -872,7 +884,7 @@ jQuery(document).ready(function($) {
                 }
             });
         }//end audio/transcript player
-    }
+    } // onFeatureSelect()
 
         // RETURNS: true if there is an name in the modal-ep array whose name is modalName
     function findModalEpSettings(modalName) {
@@ -1011,21 +1023,19 @@ jQuery(document).ready(function($) {
     //use STYLE to show different icons
 
         // PURPOSE: Create marker objects for map visualization; called by loadMapMarkers()
-        // INPUT:   data = data as JSON object ?? in what form??
+        // INPUT:   data = data as JSON object: Array of ["type", ...]
         //          mLayer = map layer into which the markers inserted 
-        // SIDE-FX: allMapMarkers will be assigned to the map markers
+        // SIDE-FX: allMarkers will be assigned to the map markers
         // TO DO:   Generalize visualization types
     function createMapMarkers(data,mLayer) {
-        //split the filter and feature object
-        //Object.keys(catIDToVisTree).length; 
         rawAjaxData = data;
-        console.log(rawAjaxData);
+        // console.log(rawAjaxData);
 
         var featureObject;
         var legends = new Object();
 
+            //split the filter and feature object
         _.each(rawAjaxData, function(val,index){
-            // console.log(val.type)
             if(val.type =='filter') {
                 legends[index] = val;
                 // var countTerms = Object.keys(legends[i].terms).length; 
@@ -1038,7 +1048,7 @@ jQuery(document).ready(function($) {
                 // }
             } else if(val.type =='FeatureCollection') {
                 featureObject = val;
-                allMapMarkers = val;
+                allMarkers = val;
             }
         });
         // for(i=0;i<Object.keys(rawAjaxData).length;i++) {
@@ -1052,31 +1062,18 @@ jQuery(document).ready(function($) {
         //                 legends[i].terms[k].children[j] = _.unescape(legends[i].terms[k].children[j]);
         //             }
         //         }
-                
-
         //     }
         //     if(rawAjaxData[i].type =='FeatureCollection') {
         //         featureObject = rawAjaxData[i];
-        //         allMapMarkers = rawAjaxData[i];
+        //         allMarkers = rawAjaxData[i];
         //     }
         //}
 
-        catFilter  = legends[0];//rawAjaxData[0];
-        // console.log(featureObject)
-        // console.log(catFilter)
-        var countFeatures = Object.keys(featureObject.features).length; 
-        for(i=0;i<countFeatures;i++) {
-            var countCategories = Object.keys(featureObject.features[i].properties.categories).length; 
-            for(j=0;j<countCategories;j++) {
-                featureObject.features[i].properties.categories[j] = _.unescape(featureObject.features[i].properties.categories[j]);
-            }
-        }
-        //console.log(allMapMarkers);
-        //console.log(legends);
-        createLegend(legends);
-        //allMapMarkers = rawAjaxData[2];
+        catFilter  = legends[0];        //rawAjaxData[0];
+        createLegends(legends);
+        //allMarkers = rawAjaxData[2];
         //var featureObject = rawAjaxData[2];
-       
+
     	var reader = new OpenLayers.Format.GeoJSON({
                 'externalProjection': gg,
                 'internalProjection': sm
@@ -1088,6 +1085,7 @@ jQuery(document).ready(function($) {
         myLayer.addFeatures(featureData);
     //player.pause();
     } // createMapMarkers()
+
 
         // TO DO:  Everything; get size from EP paraemters…
     function createTimeline(data) {
@@ -1122,9 +1120,7 @@ jQuery(document).ready(function($) {
                 project: projectID
             },
             success: function(data, textStatus, XMLHttpRequest){
-                // console.log(data);
                 createMapMarkers(JSON.parse(data),mLayer);
-                //console.log('done');
                 //$('#markerModal').modal({backdrop:true});
                     // Remove Loading modal
                 $('#loading').modal('hide');
