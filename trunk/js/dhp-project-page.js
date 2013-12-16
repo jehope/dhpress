@@ -151,23 +151,28 @@ jQuery(document).ready(function($) {
 
         _.each(dhpData.layers, function(theLayer) {
             var tempLayer;
+            var tempOpacity = 1;
+            if(theLayer['opacity']) {
+                tempOpacity = theLayer['opacity'];
+
+            }
+            console.log('opacity ' +tempOpacity)
             switch (theLayer['mapType']) {
             case 'type-OSM':
                 tempLayer = new OpenLayers.Layer.OSM();
-                tempLayer.setOpacity(theLayer['opacity']);
+                tempLayer.setOpacity(tempOpacity);
                 dhp_layers.push(tempLayer);
                 break;
             case 'type-Google':
                 tempLayer = new OpenLayers.Layer.Google(theLayer['name'],
-                                {   type: theLayer['mapTypeId'], numZoomLevels: 20});
-                tempLayer.setOpacity(theLayer['opacity']);
+                                { type: theLayer['mapTypeId'], numZoomLevels: 20, opacity: tempOpacity});
                 dhp_layers.push(tempLayer);
                 break;
             case 'type-CDLA':
                 cdla.maps.defaultAPI(cdla.maps.API_OPENLAYERS);
                 var cdlaObj = new cdla.maps.Map(theLayer['mapTypeId']);
                 tempLayer = cdlaObj.layer();
-                tempLayer.setOpacity(theLayer['opacity']);
+                tempLayer.setOpacity(tempOpacity);
                 dhp_layers.push(tempLayer);
                 break;
             }
@@ -584,6 +589,9 @@ jQuery(document).ready(function($) {
                 var layerOpacity = 1;
                 if(dhpData.layers[index]) {
                     layerOpacity = dhpData.layers[index]['opacity'];
+                    if(!layerOpacity){
+                        layerOpacity = 1;
+                    }
                 }
                 $('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+layer.id+'">'+layer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
                 //slider for layer opacity

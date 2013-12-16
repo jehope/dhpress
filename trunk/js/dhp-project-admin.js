@@ -520,12 +520,16 @@ jQuery(document).ready(function($) {
     
     //set sliders
     _.each($('.layer-list li'), function(layer) {
+      var tempOpacity = 1;
+      if($(layer).find('select option:selected').attr('data-opacity')) {
+        tempOpacity = $(layer).find('select option:selected').attr('data-opacity');
+      }
       $(layer).find('.layer-opacity').slider({
           range: false,
           min: 0,
           max: 1,
           step:.05,
-          values: [ $(layer).find('select option:selected').attr('data-opacity') ],
+          values: [ tempOpacity ],
           slide: function( event, ui ) {            
             $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
             $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
