@@ -158,9 +158,7 @@ jQuery(document).ready(function($) {
             var tempOpacity = 1;
             if(theLayer['opacity']) {
                 tempOpacity = theLayer['opacity'];
-
             }
-            console.log('opacity ' +tempOpacity)
             switch (theLayer['mapType']) {
             case 'type-OSM':
                 tempLayer = new OpenLayers.Layer.OSM();
@@ -807,9 +805,10 @@ jQuery(document).ready(function($) {
             }
             $('#markerModal').addClass('transcript');
             _.each(dhpSettings['views']['modal-ep'],function(val,key) {
-                loadTranscriptClip(projectID,transcript,timecode);
-                if(transcript2) {
-                    loadTranscriptClip(projectID,transcript2,timecode);
+                rawAjaxData['transcriptData'] = [];
+                loadTranscriptClip(projectID,transcript,timecode,1);
+                if(transcript2&&transcript2!=='none') {
+                    loadTranscriptClip(projectID,transcript2,timecode,2);
                 }    
                 $('ul', tempModalHtml).append('<li class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></li>');
             });
@@ -927,8 +926,8 @@ jQuery(document).ready(function($) {
         _.find(tcArray, function(val,index){
             match = (millisecond>=val&&millisecond<tcArray[index+1]);
             if (match) {
-                $('.transcript-list li.type-timecode').removeClass('current-clip');
-                $('.transcript-list li.type-timecode').eq(index).addClass('current-clip');
+                $('.transcript-list div.type-timecode').removeClass('current-clip');
+                $('.transcript-list div.type-timecode').eq(index).addClass('current-clip');
             }
             return match;
         });
@@ -956,22 +955,32 @@ jQuery(document).ready(function($) {
     function formatTranscript(dirty_transcript) {
         var transcript_html='';
         // split into array by line
-        var split_transcript = dirty_transcript.split(/\r\n|\r|\n/g);
+        var split_transcript = dirty_transcript.trim().split(/\r\n|\r|\n/g);
         tcArray = [];
         // console.log(split_transcript)
         if(split_transcript) {
-            transcript_html = $('<ul class="transcript-list"/>');
+            transcript_html = $('<div class="transcript-list"/>');
+
+            var index = 0;
             _.each(split_transcript, function(val){ 
                 val = val.trim();
+                var lineClass = '';
+                var oddEven = index % 4;
+                if(oddEven==0||oddEven==1) {
+                    lineClass = 'odd-line';
+                }
                 //skip values with line breaks...basically empty items
-                if(val.length>1) {
-                    if(val[0]=='['){
+                if(val.length>1) {       
+                    var row = parseInt(index / 2);
+                    if(val[0]=='['){            
+                        transcript_html.append('<div class="row"></div>');
                         tcArray.push(convertToMilliSeconds(val));
-                        transcript_html.append('<li class="type-timecode" data-timecode="'+convertToMilliSeconds(val)+'">'+val+'</li>'); 
+                        $('.row',transcript_html).eq(row).append('<div class="type-timecode '+lineClass+'" data-timecode="'+convertToMilliSeconds(val)+'">'+val+'</div>'); 
                     }
                     else {
-                        transcript_html.append('<li class="type-text">'+val+'</li>'); 
+                        $('.row',transcript_html).eq(row).append('<div class="type-text '+lineClass+'">'+val+'</div>'); 
                     }
+                    index++;
                 }
             });
         }
@@ -999,23 +1008,29 @@ jQuery(document).ready(function($) {
             });
         }
         //loop thru original transcript and add second lines
-         _.each(textArray, function(val,index){ 
-            $(first_transcriptHTML).eq(index).after('<li class="type-text">'+val+'</li>')
+         _.each(textArray, function(val,index){
+            var lineClass = '';
+            if($(first_transcriptHTML).eq(index).hasClass('odd-line')) {
+                lineClass = 'odd-line';
+            }
+            $(first_transcriptHTML).eq(index).after('<div class="type-text '+lineClass+'">'+val+'</div>')
          });
-        // console.log('first transcript line count');
-        // console.log($(first_transcriptHTML)[1]);
-        // console.log(textArray.length); 
     }
 
-    function attachTranscript(transcriptData){
-        //create millisecond markers for transcript
-        //split transcript at timecodes
-        console.log($('.transcript-ep .transcript-list').length);
-        if($('.transcript-ep .transcript-list').length>0) {
-            // console.log('load second transcript')
-            attachSecondTranscript(transcriptData);
-        } else {
+    function attachTranscript(transcriptData,order){
+        //hold second transcript until first is loaded and attached. 
+        if(order==2) {
+            rawAjaxData['transcriptData'][1] = transcriptData;
+            if(rawAjaxData['transcriptData'][0]) {
+                attachSecondTranscript(transcriptData);
+            }
+        }
+        else {
+            rawAjaxData['transcriptData'][0] = transcriptData;
             $('.transcript-ep p').append(formatTranscript(transcriptData));
+            if(rawAjaxData['transcriptData'][1]) {
+                attachSecondTranscript(rawAjaxData['transcriptData'][1]);
+            }
         }
     }
 
@@ -1172,7 +1187,7 @@ jQuery(document).ready(function($) {
         });
     }
 
-    function loadTranscriptClip(projectID,transcriptName,clip){
+    function loadTranscriptClip(projectID,transcriptName,clip,order){
         jQuery.ajax({
             type: 'POST',
             url: ajax_url,
@@ -1184,7 +1199,7 @@ jQuery(document).ready(function($) {
             },
             success: function(data, textStatus, XMLHttpRequest){
                 //console.log(JSON.parse(data));
-                attachTranscript(JSON.parse(data));
+                attachTranscript(JSON.parse(data),order);
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
                alert(errorThrown);

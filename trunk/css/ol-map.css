@@ -215,9 +215,7 @@ left: 50%;
 width: 90%;
 margin-left: -45%;
 }
-.current-clip {
-	background-color: #999;
-}
+
 .modal-backdrop {
 	z-index: 1140;
 }
@@ -256,22 +254,39 @@ filter: alpha(opacity=60);
 	line-height: 1.7;
 	margin-bottom: 10px;
 }
-
+.transcript-list .row {
+	display: table-row;
+}
 .type-timecode {
 	width: 20%;
-	float: left;
+	display: table-cell;
+	padding: 2%;
+}
+.type-timecode.odd-line,
+.type-text.odd-line {
+	background: #ddd;
+}
+.type-timecode.odd-line.current-clip,
+.type-timecode.current-clip {
+	background-color: #007fff;
+	font-weight: bold;
+	color: #fff;
 }
 .transcript-list .type-text {
-	width: 80%;
-	display: inline-block;
+	width: 76%;
+	display: table-cell;
+	vertical-align: top;
+	padding: 2%;
 }
 .transcript-list.two-column .type-text {
 	width: 40%;
-	display: inline-block;
+	display: table-cell;
+	vertical-align: top;
+	padding: 2%;
 }
 
 .transcript-list {
-	height: 600px;
+	height: 300px;
 	overflow-y: scroll;
 }
 .legend-resize {

@@ -1618,19 +1618,21 @@ add_action('wp_ajax_nopriv_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 //			$clip = String containing from-end time of segment
 // RETURNS:	Section of $tran within the time frame specified by $clip
 
-function getTranscriptClip($tran,$clip)
+function getTranscriptClip($transcript, $clip)
 {
-	$clipArray = split("-", $clip);
-	$clipStart = strpos($tran, $clipArray[0]);
-	$clipEnd = mb_strpos($tran, $clipArray[1]);
-	$clipLength = $clipEnd - $clipStart;
-	if($clipStart&&$clipEnd) {
-		$returnClip = substr($tran, $clipStart-1, $clipLength+13);
+	$codedTransctript = utf8_encode($transcript);
+	$clipArray        = split("-", $clip);
+	$clipStart        = mb_strpos($codedTransctript, $clipArray[0]);
+	$clipEnd          = mb_strpos($codedTransctript, $clipArray[1]);
+	$clipLength       = $clipEnd - $clipStart + 13;
+
+	if( $clipStart && $clipEnd ) {		
+		$codedClip  = mb_substr($codedTransctript, $clipStart-1, $clipLength, 'UTF-8');
+		$returnClip = utf8_decode($codedClip);
 	}
 	else {
 		$returnClip = 'incorrect timestamp or transcript not found';
 	}
-	//return $clipArray[0];
 	return $returnClip;
 } // getTranscriptClip()
 
@@ -1668,6 +1670,7 @@ function dhpGetTranscriptClip()
 	//$dhp_transcript = get_post_meta( $dhp_project, $dhp_project_field, true);
 	$dhp_transcript = loadTranscriptFromFile($dhp_transcript_field);
 	$dhp_transcript_clip = getTranscriptClip($dhp_transcript,$dhp_clip);
+
 	die(json_encode($dhp_transcript_clip));
 } // dhpGetTranscriptClip()
 
