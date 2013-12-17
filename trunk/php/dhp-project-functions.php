@@ -910,7 +910,11 @@ function createMarkerArray($project_id)
 		//$categories = get_post_meta($marker_id,'Concepts');
 		$args = array('fields' => 'ids');
 		$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
-		$p_terms;
+		//Convert term ids to Integers
+		foreach( $post_terms as $term) {
+			$term = intval($term);
+		}
+
 		$viewsContent = $project_settings['views']['content'];
 		$json_string['debug'] = $viewsContent;
 		$content_att = array();
@@ -956,24 +960,27 @@ function createMarkerArray($project_id)
 				$term_links2 = dhp_get_term_by_parent($child_terms2, $post_terms, $project_tax);
 			}			
 		}
-		
+
+		$tempProperties = array();
+		$tempProperties["title"]       = $title;
+		$tempProperties["categories"]  = $post_terms;
+		$tempProperties["content"]     = $content_att;
+
+		//OPTIONAL values
+		if($term_links) { $tempProperties["link"] = $term_links; }
+		if($term_links2) { $tempProperties["link2"] = $term_links2; }
+
+		if($audio_val) { $tempProperties["audio"] = $audio_val; }
+		if($transcript_val) { $tempProperties["transcript"]  = $transcript_val; }
+		if($transcript2_val) { $tempProperties["transcript2"] = $transcript2_val; }
+		if($timecode_val) { $tempProperties["timecode"]    = $timecode_val; }
+
+		$temp_feature['properties'] = $tempProperties;
+
 		if($lonlat) {
-			if($i>0) {
-				//$json_string .= ',';
-			}
-			else {$i++;}
 			$temp_feature['type'] = 'Feature';
 			$temp_feature['geometry'] = array("type"=>"Point","coordinates"=> $lonlat);
-			$temp_feature['properties'] = array("title"=>$title,
-				"categories"=> $post_terms,
-				"audio"=>$audio_val,
-				"content"=>$content_att,
-				"transcript"=>$transcript_val,
-				"transcript2"=>$transcript2_val,
-				"timecode"=>$timecode_val,
-				"link"=>$term_links,
-				"link2"=>$term_links2);
-
+			
 			array_push($feature_array,$temp_feature);
 		}
 	
