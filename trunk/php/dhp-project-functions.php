@@ -618,7 +618,7 @@ function getIconsForTerms($parent_term, $taxonomy)
 	$filter_object['terms'] = array();
 	
 	$filter_parent['name']     = $parent_term->name;
-	$filter_parent['id']       = $parent_term->term_id;
+	$filter_parent['id']       = intval($parent_term->term_id);
 	$filter_parent['icon_url'] = $icon_url;
 
 	array_push($filter_object['terms'], $filter_parent);
@@ -631,12 +631,13 @@ function getIconsForTerms($parent_term, $taxonomy)
 		$children_terms2 = get_terms( $taxonomy, $childArgs );
 		$children_names2 = array();
 		foreach ($children_terms2 as $child2) {
+			$child2->term_id = intval($child2->term_id);  
 			array_push($children_names2, $child2->name);
 		}
 		$icon_url = get_term_meta($child->term_id,'icon_url',true);
 
 		$temp_child_filter['name']        = $child->name;
-		$temp_child_filter['id']          = $child->term_id;
+		$temp_child_filter['id']          = intval($child->term_id);
 		$temp_child_filter['icon_url']    = $icon_url;
 		$temp_child_filter['children_names'] = $children_names2;
 		$temp_child_filter['children']    = $children_terms2;

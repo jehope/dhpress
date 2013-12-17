@@ -5,7 +5,6 @@
 // NOTES:   Legends data is in the format: Array [ name, terms: Array [ name, id, icon_url, children: Array [ name ] ] ]
 //          If icon_url starts with #, it is a color in hex; otherwise a URL
 //          The class active-legend is added to whichever legend is currently visible and selected
-//          All data loaded as JSON is in form of string unless explicitly converted to integer
 // TO DO:   Generalize visualization types better (don't assume maps)
 //          Change computation of tcArray so that it contains the endtime of the clip rather than
 //              beginning -- this will speed up search in hightlightTranscriptLine()
@@ -15,7 +14,7 @@ jQuery(document).ready(function($) {
     var projectID, ajax_url, rawAjaxData, dhpSettings;
     var catFilter;          // Contains all values for currently selected Legend; field "terms" is array of objects, each having name, id and children (array of same)
     var catFilterSelect;     // Array indicating current selection of Legend values; each object has fields: name, id, icon_url, and children (array of term_id)
-    var allMarkers;         // All possible marker posts assoc. w/ Project; field "features" is an array of objects which contain field "categories" which is array of IDs
+    var allMarkers;         // Array of all possible marker posts associated with Project; field "features" is an array of objects which contain field "categories" which is array of IDs
 
         // Map visualization variables 
     var map, dhpMap, gg, sm, olMarkerInterface, selectControl, hoverControl;
@@ -220,7 +219,7 @@ jQuery(document).ready(function($) {
         });
 
         selectControl = new OpenLayers.Control.SelectFeature(mapMarkerLayer,
-            { onSelect: onOLFeatureSelect, onUnselect: onOLFeatureUnselect, hover: false });
+            { onSelect: onFeatureSelect, onUnselect: onFeatureUnselect, hover: false });
 
         hoverControl = new OpenLayers.Control.SelectFeature(mapMarkerLayer, 
             { hover: true, highlightOnly: true, renderIntent: "temporary" });
@@ -310,7 +309,6 @@ jQuery(document).ready(function($) {
         var countCats =  Object.keys(markerValues).length; 
 
         for(i=0;i<countTerms;i++) {         // for all category values
-            // var thisCatID = parseInt(catFilterSelect[i].id);
             var thisCatID = catFilterSelect[i].id;
 
             for(j=0;j<countCats;j++) {      // for all marker values
@@ -372,7 +370,7 @@ jQuery(document).ready(function($) {
     // }
 
         // PURPOSE: Create HTML for all of the legends for this visualization
-        // INPUT:   legendList = array of legends to display; each element has field "name" and array "terms" of [id, name, icon_url ]
+        // INPUT:   legendList = array of legends to display
     function createLegends(legendList) {
             // Custom event types bound to the document to be triggered elsewhere
         $(document).bind('order.findSelectedCats',function(){ catFilterSelect= findSelectedCats();});
@@ -459,20 +457,20 @@ jQuery(document).ready(function($) {
         });
 
             //$('#legends').css({'left':0, 'top':50,'z-index':19});
-            // Handle resizing Legend (min/max)
+            // ?? What does all of this do??
         $('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="icon-resize-small"></i></a>');
         $('.legend-resize').hide();
         $('#legends').hover(function(){
-                $('.legend-resize').fadeIn(100);
-            },
-            function() {
-                $('.legend-resize').fadeOut(100);
+            $('.legend-resize').fadeIn(100);
+        },
+        function() {
+            $('.legend-resize').fadeOut(100);
         });
         $('.legend-resize').click(function(){
             if($('#legends').hasClass('mini')) {
                 $('.terms .value').show();
-                $('#legends').animate({width: legendWidth}, 500 );
-                $('#legends').removeClass('mini');
+            $('#legends').animate({width: legendWidth}, 500 );
+            $('#legends').removeClass('mini');
             }
             else {
                 //console.log($('#legends').width())
@@ -595,6 +593,7 @@ jQuery(document).ready(function($) {
 
         // PURPOSE: Create UI controls for opacity of each layer; called by createLegends
         // ASSUMES: map has been initialized
+
     function buildLayerControls() {
         //console.log(map.layers);
         _.each(map.layers,function(thisLayer,index){
@@ -655,32 +654,21 @@ jQuery(document).ready(function($) {
         //categoryTree = catFilterSelect;
         var newFeatures = {type: "FeatureCollection", features: []};        // marker set resulting from current selection
         var allCategoryIDs = [];                                            // list of selected IDs
-        var overlap;
-
             // Flatten out categories (and their children) as IDs
         _.each(catFilterSelect,function(theCategory){
-            // allCategoryIDs.push(parseInt(theCategory.id));
             allCategoryIDs.push(theCategory.id);
             if (theCategory.children) {
                 _.each(theCategory.children, function(catChild) {
-                    // allCategoryIDs.push(parseInt(catChild['term_id']));
                     allCategoryIDs.push(catChild['term_id']);
                 });
             }
         });
-        // console.log("Update: allCategoryIDs = " + allCategoryIDs);
-
             // Go through all markers and find just those which have values matching current categories
         newFeatures.features = _.filter(allMarkers.features, function(theMarker){
-            // console.log("Update: theMarker.categories = " + theMarker.properties.categories);
-            overlap = _.intersection(theMarker.properties.categories, allCategoryIDs);
-            // console.log("Update: overlap = " + overlap);
-            if(overlap.length > 0) {
+            if(_.intersection(theMarker.properties.categories, allCategoryIDs).length > 0) {
                return theMarker;
             }
         });
-        // console.log("Update: size newFeatures = " + newFeatures.features.length);
-
         var reader = new OpenLayers.Format.GeoJSON({
             'externalProjection': gg,
             'internalProjection': sm
@@ -695,22 +683,22 @@ jQuery(document).ready(function($) {
 
 
         // PURPOSE: Handle user selection of a legend value, so that only markers with that value shown
-        // INPUT:   singleID = ID of the Legend value to select
+        // INPUT:   single = name/value of the legend value if known (otherwise get current selected items)
         // RETURNS: Array of term objects from catFilter that match current UI selection based on ID
         // TO DO:   Rewrite this to eliminate loop
         // ASSUMES: catFilter is null or contains lists of terms for current Legend/Filter
-    function findSelectedCats(singleID) {
+    function findSelectedCats(single) {
         var selCatFilter = [];
-        var countTerms = 0;
+        var countTerms = 0; 
         if(catFilter) {
             countTerms = Object.keys(catFilter.terms).length;
         }
 
-        if(singleID) {
-            var i, tempFilter;
+        if(single) {
+            var tempFilter;
             for(i=0;i<countTerms;i++) {
                 tempFilter = catFilter.terms[i];
-                if(tempFilter.id==singleID) {
+                if(tempFilter.id==single) {
                     selCatFilter[0] = tempFilter;
                     break;
                 }
@@ -718,7 +706,7 @@ jQuery(document).ready(function($) {
 
             // unknown, or multiple selection from legend
         } else {
-            var i, tempSelCat, tempFilter;
+            var tempSelCat, tempFilter;
             $('#legends .active-legend li.compare input:checked').each(function(index){
                 tempSelCat = $(this).parent().find('.value').data( 'id' );
                 //console.log(tempSelCat+' :'+index)
@@ -775,7 +763,7 @@ jQuery(document).ready(function($) {
         // SIDE-FX: Modifies DOM for modal dialog window
         // TO DO:   Put code to create modal in another function, as it will be called by other
         //              visualization types
-    function onOLFeatureSelect(feature) {
+    function onFeatureSelect(feature) {
     	// if not cluster
 
     	//if(!feature.cluster||(feature.attributes.count==1)) {
@@ -912,10 +900,9 @@ jQuery(document).ready(function($) {
                 }
             });
         }//end audio/transcript player
-    } // onOLFeatureSelect()
+    } // onFeatureSelect()
 
-        // RETURNS: entry in the modal-ep array whose name is modalName
-        // TO DO:   Put into Project object class
+        // RETURNS: true if there is an name in the modal-ep array whose name is modalName
     function findModalEpSettings(modalName) {
         return (_.find(dhpSettings['views']['modal-ep'],
                         function(theName) { return (theName == modalName); }) != undefined);
@@ -948,7 +935,7 @@ jQuery(document).ready(function($) {
     }
 
         // PURPOSE: Handle unselection of a map feature
-    function onOLFeatureUnselect(feature) {
+    function onFeatureUnselect(feature) {
     	feature.attributes.poppedup = false;
     }
 
@@ -1077,12 +1064,12 @@ jQuery(document).ready(function($) {
         // console.log(rawAjaxData);
 
         var featureObject;
-        var legends = [];
+        var legends = new Object();
 
             //split the filter and feature object
         _.each(rawAjaxData, function(val,index){
             if(val.type =='filter') {
-                legends.push(val);
+                legends[index] = val;
                 // var countTerms = Object.keys(legends[i].terms).length; 
                 // for(k=0;k<countTerms;k++) {
                 //     legends[i].terms[k].name = _.unescape(legends[i].terms[k].name);
