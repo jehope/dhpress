@@ -910,10 +910,6 @@ function createMarkerArray($project_id)
 		//$categories = get_post_meta($marker_id,'Concepts');
 		$args = array('fields' => 'ids');
 		$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
-		//Convert term ids to Integers
-		foreach( $post_terms as $term) {
-			$term = intval($term);
-		}
 
 		$viewsContent = $project_settings['views']['content'];
 		$json_string['debug'] = $viewsContent;
@@ -960,10 +956,15 @@ function createMarkerArray($project_id)
 				$term_links2 = dhp_get_term_by_parent($child_terms2, $post_terms, $project_tax);
 			}			
 		}
+		//Convert term ids
+		$term_array = array();
+		foreach( $post_terms as $term) {
+			array_push($term_array,intval($term));
+		}
 
 		$tempProperties = array();
 		$tempProperties["title"]       = $title;
-		$tempProperties["categories"]  = $post_terms;
+		$tempProperties["categories"]  = $term_array;
 		$tempProperties["content"]     = $content_att;
 
 		//OPTIONAL values
