@@ -18,6 +18,8 @@ jQuery(document).ready(function($) {
 
         // Time-Code array -- stores series of timecodes in milliseconds, computed by formatTranscript()
     var tcArray = null;
+        // Holds index of current row in transcript being played by audio
+    var rowIndex = null;
 
     init_interface();
 
@@ -58,12 +60,20 @@ jQuery(document).ready(function($) {
         var seekTimeout       = null;
 
         widget2.bind(SC.Widget.Events.READY, function() {
+            widget2.play();
+
+            widget2.bind(SC.Widget.Events.PLAY, function() {
+                    WIDGET_PLAYING = true;             
+                });
+            widget2.bind(SC.Widget.Events.PAUSE, function() {
+                WIDGET_PLAYING = false;
+            });
                 // Move playhead along as play happens
-            widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
-                hightlightTranscriptLine(e.currentPosition);
-                if(e.currentPosition>10){
-                    clearTimeout(seekTimeout);
+            widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {             
+                if(e.currentPosition<500){
+                    widget2.pause();
                 }
+                hightlightTranscriptLine(e.currentPosition);
             });
             widget2.bind(SC.Widget.Events.SEEK, function() {
 
@@ -75,33 +85,51 @@ jQuery(document).ready(function($) {
             // Allow user to click on a timecode to go to it
         $('.transcript-list').on('click', function(evt){
             var tempSeekTo = null;
-            if($(evt.target).closest('.type-timecode').data('timecode')) {
+            if($(evt.target).hasClass('type-timecode')) {
                 tempSeekTo = $(evt.target).closest('.type-timecode').data('timecode');
-            } else {
-                tempSeekTo = $(evt.target.previousSibling).data('timecode');
-            }
-            widget2.play();
-            widget2.seekTo(tempSeekTo);
-            seekTimeout = setTimeout(function() {
                 widget2.seekTo(tempSeekTo);
-            }, 500);          
+                if(!WIDGET_PLAYING) {
+                    widget2.play();
+                }
+            }     
         });
     }
 
         // PURPOSE: Given position in milliseconds, find and highlight tag corresponding to play position
         // ASSUMES: tcArray has been compiled, contains 1 entry at end beyond # of "playheads"
     function hightlightTranscriptLine(millisecond){
-        var checkIndex=1;
-        _.find(tcArray, function(val) {
-            var match = (millisecond>=val&&millisecond<tcArray[checkIndex++]);
+        var match;
+        _.find(tcArray, function(val,index){
+            match = (millisecond>=val&&millisecond<tcArray[index+1]);
             if (match) {
-                $('.transcript-list li.type-timecode').removeClass('current-clip');
-                $('.transcript-list li.type-timecode').eq(index).addClass('current-clip');
+                if(rowIndex!==index) {
+                    rowIndex = index;
+                    var topDiff = $('.transcript-list div.type-timecode').eq(index).offset().top - $('.transcript-list').offset().top;
+                    var scrollPos = $('.transcript-list').scrollTop() +topDiff;
+                    $('.transcript-list').animate({
+                       scrollTop: scrollPos
+                    }, 500);
+                }
+                $('.transcript-list div.type-timecode').removeClass('current-clip');
+                $('.transcript-list div.type-timecode').eq(index).addClass('current-clip');
+
             }
             return match;
         });
-    } 
+        //$('.type-timecode').attr('data-timecode');
+    }
 
+    
+    // find tallest div.row in transcript and set container max-height 40px larger. Default is max 300px
+    function searchForMaxHeight(elements) {
+        var maxHeight = 0;
+        _.each(elements, function(val){ 
+            if($(val).height()>maxHeight){
+                maxHeight = $(val).height();
+            }
+        });
+        $('.transcript-list').css({'max-height': maxHeight+40});
+    }
     // function categoryColors(element,color){
     //     _.each($('.type-timecode'), function(val,index) {
     // 		var someText = $(val).html().replace(/(\r\n|\n|\r)/gm,"");
@@ -119,6 +147,7 @@ jQuery(document).ready(function($) {
     	var audioLink = jsonData['audio'];
     	console.log(audioLink);
     	$('#transcript-div').append(beautiful_transcript);
+        searchForMaxHeight($('.transcript-list .row'));
     	loadAudio(audioLink);
     }
 
@@ -128,30 +157,40 @@ jQuery(document).ready(function($) {
         // TO DO:   Does this handle dual-language??
     function formatTranscript(dirty_transcript) {
         // split into array by line
-        var split_transcript = dirty_transcript.split('\n');
-        var transcript_html = $('<ul class="transcript-list"/>');
-            // Initialize timecode array
+        var transcript_html='';
+        // split into array by line
+        var split_transcript = dirty_transcript.trim().split(/\r\n|\r|\n/g);
         tcArray = [];
+        // console.log(split_transcript)
         if(split_transcript) {
-            _.each(split_transcript, function(val){
-                //skip values with line breaks...basically empty items
-                if(val.length>1) {
-                        // Does it begin with timecode?
-                    if(val[0]=='[') {
-                        var trimmedVal = val.trim();
-                        var milliSec = convertToMilliSeconds(trimmedVal);
-                        tcArray.push(milliSec);
-                        transcript_html.append('<li class="type-timecode" data-timecode="'+milliSec+'">'+trimmedVal+'</li>');
+            transcript_html = $('<div class="transcript-list"/>');
 
-                        // Just plain text
-                    } else {
-                        transcript_html.append('<li class="type-text">'+val+'</li>'); 
+            var index = 0;
+            _.each(split_transcript, function(val){
+                val = val.trim();
+                var lineClass = '';
+                var oddEven = index % 4;
+                if(oddEven==0||oddEven==1) {
+                    lineClass = 'odd-line';
+                }
+                //skip values with line breaks...basically empty items
+                if(val.length>1) {       
+                    var row = parseInt(index / 2);
+                    if(val[0]=='['){            
+                        transcript_html.append('<div class="row"></div>');
+                        tcArray.push(convertToMilliSeconds(val));
+                        $('.row',transcript_html).eq(row).append('<div class="type-timecode '+lineClass+'" data-timecode="'+convertToMilliSeconds(val)+'">'+val+'</div>'); 
                     }
+                    else {
+                        $('.row',transcript_html).eq(row).append('<div class="type-text '+lineClass+'">'+val+'</div>'); 
+                    }
+                    index++;
                 }
             });
         }
         return transcript_html;
     }
+
 
         // PURPOSE: ??
     function createMoteValue(moteName){
