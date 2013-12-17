@@ -631,7 +631,8 @@ function getIconsForTerms($parent_term, $taxonomy)
 		$children_terms2 = get_terms( $taxonomy, $childArgs );
 		$children_names2 = array();
 		foreach ($children_terms2 as $child2) {
-			$child2->term_id = intval($child2->term_id);  
+			$child2->term_id = intval($child2->term_id);
+			$child2->parent = intval($child2->parent);
 			array_push($children_names2, $child2->name);
 		}
 		$icon_url = get_term_meta($child->term_id,'icon_url',true);
