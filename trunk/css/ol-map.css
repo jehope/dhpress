@@ -261,6 +261,7 @@ filter: alpha(opacity=60);
 	width: 20%;
 	display: table-cell;
 	padding: 2%;
+	cursor: pointer;
 }
 .type-timecode.odd-line,
 .type-text.odd-line {
@@ -268,6 +269,11 @@ filter: alpha(opacity=60);
 }
 .type-timecode.odd-line.current-clip,
 .type-timecode.current-clip {
+	background-color: #007fff;
+	font-weight: bold;
+	color: #fff;
+}
+.type-timecode:hover {
 	background-color: #007fff;
 	font-weight: bold;
 	color: #fff;
@@ -286,7 +292,7 @@ filter: alpha(opacity=60);
 }
 
 .transcript-list {
-	height: 300px;
+	max-height: 300px;
 	overflow-y: scroll;
 }
 .legend-resize {

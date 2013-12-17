@@ -20,7 +20,7 @@ jQuery(document).ready(function($) {
     var map, dhpMap, gg, sm, olMarkerInterface, selectControl, hoverControl;
 
         // A/V player variables
-    var tcArray, player, clipPosition, videoHasPlayed;
+    var tcArray, player, clipPosition, videoHasPlayed, rowIndex;
 
         // dead variables
     // var lookupParents;
@@ -865,32 +865,44 @@ jQuery(document).ready(function($) {
         if(findModalEpSettings('transcript')) {
             //build function to load transcript clip and load media player
             var iframeElement   = document.querySelector('.player');
-            var soundUrl = 'http://soundcloud.com/sohp/u0490-audio';
+            var soundUrl = '';
             var iframeElementID = iframeElement.id;
             //var widget         = SC.Widget(iframeElement);
             var widget2         = SC.Widget(iframeElementID);
             var WIDGET_PLAYING = false;
             widget2.bind(SC.Widget.Events.READY, function() {
                   // load new widget
-                  //widget2.play()
-                 widget2.bind(SC.Widget.Events.PLAY, function() {
-                    WIDGET_PLAYING = true;
-                    widget2.seekTo(startTime);
-                 });
-                 widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
+                widget2.play();
+                
+                widget2.bind(SC.Widget.Events.PLAY, function() {
+                    WIDGET_PLAYING = true;             
+                });
+                widget2.bind(SC.Widget.Events.PAUSE, function() {
+                    WIDGET_PLAYING = false;
+                });
+                widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
                     if(e.currentPosition<startTime){
+                        widget2.pause();
                         widget2.seekTo(startTime);
                     }
                     if(e.currentPosition>endTime){
                         widget2.pause();
                     }
                     hightlightTranscriptLine(e.currentPosition);
-                 });
+                });
                 widget2.bind(SC.Widget.Events.SEEK, function() {});
                 widget2.bind(SC.Widget.Events.FINISH, function() {});
-                $('.seek-override').on('click',function(){
-                    widget2.seekTo(startTime);
-                });
+            });
+                // Allow user to click on a timecode to go to it
+            $('.transcript-ep').on('click', function(evt){
+                var tempSeekTo = null;
+                if($(evt.target).hasClass('type-timecode')) {
+                    tempSeekTo = $(evt.target).closest('.type-timecode').data('timecode');
+                    widget2.seekTo(tempSeekTo);
+                    if(!WIDGET_PLAYING) {
+                        widget2.play();
+                    }
+                }
             });
 
             $('#markerModal').on('hidden', function () {            
@@ -927,6 +939,14 @@ jQuery(document).ready(function($) {
         _.find(tcArray, function(val,index){
             match = (millisecond>=val&&millisecond<tcArray[index+1]);
             if (match) {
+                if(rowIndex!==index) {
+                    rowIndex = index;
+                    var topDiff = $('.transcript-list div.type-timecode').eq(index).offset().top - $('.transcript-list').offset().top;
+                    var scrollPos = $('.transcript-list').scrollTop() +topDiff;
+                    $('.transcript-list').animate({
+                       scrollTop: scrollPos
+                    }, 500);
+                }
                 $('.transcript-list div.type-timecode').removeClass('current-clip');
                 $('.transcript-list div.type-timecode').eq(index).addClass('current-clip');
             }
