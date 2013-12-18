@@ -255,11 +255,11 @@ jQuery(document).ready(function($) {
 
         // PURPOSE: Called by olMarkerInterface to determine icon to use for marker
         // RETURNS: First match on URL to use for icon, or else ""
-        // INPUT:   markerValues = one or more values associated with a feature/marker
+        // INPUT:   markerValues = array of IDs (integers) associated with a feature/marker
         // ASSUMES: catFilterSelect has been loaded
         // TO DO:   Make recursive function?
     function getHighestParentIcon(markerValues) {
-        var countTerms = Object.keys(catFilterSelect).length; 
+        var countTerms = catFilterSelect.length; 
         var countCats = markerValues.length;
 
         for(i=0;i<countTerms;i++) {         // for all category values
@@ -299,14 +299,14 @@ jQuery(document).ready(function($) {
 
         // PURPOSE: Called by olMarkerInterface to determine color to use for marker
         // RETURNS: First match on color to use for icon, or else ""
-        // INPUT:   markerValues = one or more values associated with a feature/marker
+        // INPUT:   markerValues = array of IDs (integers) associated with a feature/marker
         // ASSUMES: catFilterSelect has been loaded
-        // TO DO:   Make recursive function
+        // TO DO:   Make recursive function?
     function getHighestParentColor(markerValues) {
-        var countTerms = Object.keys(catFilterSelect).length; 
+        var countTerms = catFilterSelect.length; 
 
         //current marker values
-        var countCats =  Object.keys(markerValues).length; 
+        var countCats =  markerValues.length; 
 
         for(i=0;i<countTerms;i++) {         // for all category values
             var thisCatID = catFilterSelect[i].id;

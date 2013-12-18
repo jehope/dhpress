@@ -622,20 +622,6 @@ function invertLatLon($latlon)
 			// 			]
 			// 		  }, ...
 			// 		],
-			// 		"children" :				// Just 1st level terms
-			// 		[
-			// 		  {	"name" : String,
-			// 			"term_id" : String,
-			// 			"parent" : String,
-			// 			"count" : String,
-			// 			"slug" : String,
-			// 			"description" : String,
-			// 			"term_taxonomy_id" : String,
-			// 			"taxonomy" : String,
-			// 			"term_group" : String
-			// 		  }, ...
-			// 		],
-			// 		"children_names" : [ String ... ]	// Just 1st level term names
 			// 	}
 
 function getIconsForTerms($parent_term, $taxonomy)
@@ -685,6 +671,7 @@ function getIconsForTerms($parent_term, $taxonomy)
 
 		array_push($filter_object['terms'], $temp_child_filter);
 	}
+		// Update top-level mote pushed near top of function
 	$filter_parent['children_names'] = $children_names;
 	$filter_parent['children'] = $children_terms;
 
@@ -845,7 +832,7 @@ function dhp_get_group_feed($tax_name,$term_name)
 //			That is, return array describing all markers based on filter and visualization
 // INPUT:	$project_id = ID of Project to view
 // RETURNS: JSON object describing all markers associated with Project
-//			[0] is as getIconsForTerms above; [1] is as follows:
+//			[0..n] is as getIconsForTerms above; [n+1] is as follows:
 			// {	"type": "FeatureCollection",
 			// 	 	"features" :
 			// 		[
@@ -866,6 +853,8 @@ function dhp_get_group_feed($tax_name,$term_name)
 			// 			}, ...
 			// 		]
 			// 	}
+// TO DO:   Do not need to create and pass values in "content" that have corresponding IDs in "categories";
+//			We should eliminate this and lookup corresponding feature in filter data acc. to ID
 
 function createMarkerArray($project_id)
 {
@@ -1717,6 +1706,7 @@ function getTranscriptClip($transcript, $clip)
 	$clipArray        = split("-", $clip);
 	$clipStart        = mb_strpos($codedTransctript, $clipArray[0]);
 	$clipEnd          = mb_strpos($codedTransctript, $clipArray[1]);
+		// ?? why 13 ??
 	$clipLength       = $clipEnd - $clipStart + 13;
 
 	if( $clipStart && $clipEnd ) {		
@@ -2127,12 +2117,13 @@ add_action( 'wp_ajax_dhpCreateTaxTerms', 'dhpCreateTaxTerms' );
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['mote_name'] = name of mote
 //			$_POST['terms'] = array of mote/legend values
-// RETURNS:	JSON Object of 
+// RETURNS:	JSON Object version of loopTermHeirarchy() result
 
 function dhpCreateTaxTerms()
 {
 	$mote_parent = $_POST['mote_name'];
 	$dhp_projectID = $_POST['project'];
+		// ?? Why is this done ??
 	$dhp_project_terms = str_replace('\\', '', $_POST['terms']);
 
 	$dhp_project_terms1 = json_decode($dhp_project_terms);
