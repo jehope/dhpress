@@ -1176,7 +1176,8 @@ jQuery(document).ready(function($) {
                     // Remove Loading modal
                 $('#loading').modal('hide');
                     // Enable joyride help tips
-                $("#dhpress-tips").joyride({'tipLocation': 'right', autoStart : true,});
+                $("#dhpress-tips").joyride({'tipLocation': 'right'});
+                $('.dhp-nav .tips').removeClass('active');
                 $('.joyride-close-tip').click(function(){
                     $('.dhp-nav .tips').removeClass('active');
                 });
