@@ -1822,6 +1822,14 @@ function dhpGetTranscript()
 	$dhp_object['settings'] = $dhp_settings_ep;
 	$dhp_object['audio'] = $marker_meta[$dhp_audio_field['custom-fields']][0];
 	$dhp_object['transcript'] = $dhp_transcript;
+
+		//if project has two transcripts
+	if($dhp_settings_ep['settings']['transcript2']) {
+		$dhp_transcript2_field = getMoteFromName($dhp_settings,$dhp_settings_ep['settings']['transcript2']);
+		$dhp_transcript2_cfield = $dhp_transcript2_field['custom-fields'];//$marker_meta['transcript_url'])
+		$dhp_transcript2 = loadTranscriptFromFile($marker_meta[$dhp_transcript2_cfield][0]);
+		$dhp_object['transcript2'] = $dhp_transcript2;
+	}
 	
 	die(json_encode($dhp_object));	
 } // dhpGetTranscript()
