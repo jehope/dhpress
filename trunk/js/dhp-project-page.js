@@ -852,10 +852,10 @@ jQuery(document).ready(function($) {
         $('#markerModal .modal-body').empty().append(tempModalHtml);          
         
             // setup links
-        if(link1!='no-link') {
+        if(link1 && link1!='no-link') {
             $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link1+'">'+dhpSettings['views']['link-label']+'</a>');
         }
-        if(link2!='no-link') {
+        if(link2 && link2 !='no-link') {
             $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link2+'">'+dhpSettings['views']['link2-label']+'</a>');
         }
 
