@@ -588,7 +588,7 @@ function invertLatLon($latlon)
 	}
 
 	if($latlon&&$latlon!=',') {
-		$tempLonLat = split(',',$latlon);	
+		$tempLonLat = split(',',$latlon);
 		return array($tempLonLat[1],$tempLonLat[0]);
 	}
 
@@ -985,14 +985,13 @@ function createMarkerArray($project_id)
 			// Map visualization features?
 		if (!is_null($map_pointsMote)) {
 			if(count($cordMote)==2) {
-				$temp_lat = get_post_meta($marker_id,$cordMote[0]);
-				$temp_lon = get_post_meta($marker_id,$cordMote[1]);
-				$temp_latlon = $temp_lat[0].','.$temp_lon[0];
+				$temp_lat = get_post_meta($marker_id, $cordMote[0], true);
+				$temp_lon = get_post_meta($marker_id, $cordMote[1], true);
 
+				$lonlat = array($temp_lon,$temp_lat);
+			} elseif(count($cordMote)==1) {
+				$temp_latlon = get_post_meta($marker_id, $cordMote[0], true);
 				$lonlat = invertLatLon($temp_latlon);
-			} else if(count($cordMote)==1) {
-				$temp_latlon = get_post_meta($marker_id,$cordMote[0]);
-				$lonlat = invertLatLon($temp_latlon[0]);
 			}
 			//$json_string .= $cordMote;
 			//$lonlat = invertLatLon($latlon[0]);
@@ -2609,7 +2608,7 @@ function dhp_tax_template( $page_template )
 	    	// Get the name of the term, which is also the name of the custom field
 	    $term->parent_name = $term_parent->name;
 
-	    $page_template = dirname( __FILE__ ) . '/dhp-archive.php';
+	    // $page_template = dirname( __FILE__ ) . '/dhp-archive.php';
 	    //get mp3 url from first term marker
 	    //get transcript url
 

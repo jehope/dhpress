@@ -20,7 +20,7 @@ jQuery(document).ready(function($) {
     var map, dhpMap, gg, sm, olMarkerInterface, selectControl, hoverControl;
 
         // A/V player variables
-    var tcArray, player, clipPosition, videoHasPlayed, rowIndex;
+    var tcArray, player, videoHasPlayed, rowIndex;
 
         // dead variables
     // var lookupParents;
@@ -37,7 +37,7 @@ jQuery(document).ready(function($) {
 
     dhpMap = dhpData.map;
 
-    $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
+    // $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
 
         // insert navigational controls
     $('#secondary').prepend('<div id="legends" class="span4"><div class="legend-row row-fluid"></div></div>');
@@ -167,7 +167,7 @@ jQuery(document).ready(function($) {
                 break;
             case 'type-Google':
                 tempLayer = new OpenLayers.Layer.Google(theLayer['name'],
-                                { type: theLayer['mapTypeId'], numZoomLevels: 20, opacity: tempOpacity});
+                                { type: theLayer['mapTypeId'], numZoomLevels: 20, opacity: tempOpacity,animationEnabled: true});
                 dhp_layers.push(tempLayer);
                 break;
             case 'type-CDLA':
@@ -776,17 +776,18 @@ jQuery(document).ready(function($) {
             selectedFeature = feature;
 
         // console.log(dhpSettings)
-        tempModalHtml = $('<div><ul/></div>');
+        tempModalHtml = $('<div><div class="modal-content"/></div>');
 
-		 var link1 = selectedFeature.attributes.link;
-         var link2 = selectedFeature.attributes.link2;
-		 var titleAtt;
-         var tagAtt =  selectedFeature.attributes.categories;
-         var audio =  selectedFeature.attributes.audio;
-         var transcript =  selectedFeature.attributes.transcript;
-         var transcript2 =  selectedFeature.attributes.transcript2; ///change php to send transcript2 link
-         var timecode =  selectedFeature.attributes.timecode;
-         var time_codes = null; 
+         var link1       = selectedFeature.attributes.link;
+         var link2       = selectedFeature.attributes.link2;
+         var titleAtt;
+         var tagAtt      =  selectedFeature.attributes.categories;
+         var audio       =  selectedFeature.attributes.audio;
+         var transcript  =  selectedFeature.attributes.transcript;
+         var transcript2 =  selectedFeature.attributes.transcript2;
+         var timecode    =  selectedFeature.attributes.timecode;
+         var time_codes  = null; 
+         var thumbHtml;
 
          if(dhpSettings['views']['title']) {
             titleAtt =  selectedFeature.attributes['title'];
@@ -795,46 +796,43 @@ jQuery(document).ready(function($) {
          //need to check for transcript here. TODO: check for 2nd transcript and load next to first without timestamps(should match first transcript)
          if(findModalEpSettings('transcript')) {
             time_codes = timecode.split('-');
-            clipPosition = time_codes[0];
-            var thumb;
-
-             if(timecode) { 
+            
+            if(timecode) { 
                 var startTime = convertToMilliSeconds(time_codes[0]);
-                var endTime = convertToMilliSeconds(time_codes[1]);
-
+                var endTime   = convertToMilliSeconds(time_codes[1]);
             }
             $('#markerModal').addClass('transcript');
+            
             _.each(dhpSettings['views']['modal-ep'],function(val,key) {
                 rawAjaxData['transcriptData'] = [];
                 loadTranscriptClip(projectID,transcript,timecode,1);
                 if(transcript2&&transcript2!=='none') {
                     loadTranscriptClip(projectID,transcript2,timecode,2);
                 }    
-                $('ul', tempModalHtml).append('<li class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></li>');
+                $('.modal-content', tempModalHtml).append('<div class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></div>');
             });
          }
          if(dhpSettings['views']['content']) {
-            $('ul', tempModalHtml).append('<li><h3>Details:</h3></li>');
+            $('.modal-content', tempModalHtml).append('<div><h3>Details:</h3></div>');
             _.each(selectedFeature.attributes.content,function(val,key) {
                  _.each(val,function(val1,key1) {
                     if(val=='Thumbnail Right') {
-                        $('ul', tempModalHtml).append('<li class="thumb-right">'+$("<div/>").html(val1).text()+'</li>');
+                        $('.modal-content', tempModalHtml).append('<div class="thumb-right">'+$("<div/>").html(val1).text()+'</div>');
                     }
                     else if(val=='Thumbnail Left') {
-                        $('ul', tempModalHtml).append('<li class="thumb-left">'+$("<div/>").html(val1).text()+'</li>');
+                        $('.modal-content', tempModalHtml).append('<div class="thumb-left">'+$("<div/>").html(val1).text()+'</div>');
                     }
                     else {
                         if(val1) {
-                            $('ul', tempModalHtml).append('<li>'+key1+': '+$("<div/>").html(val1).html()+'</li>');                       
+                            $('.modal-content', tempModalHtml).append('<div>'+key1+': '+$("<div/>").html(val1).html()+'</div>');                       
                         }
                     }
                 });
             });
         }
 
-		if(selectedFeature.attributes.thumb){
-			thumb = selectedFeature.attributes.thumb;
-			var thumbHtml = '<img src="'+thumb+'"/><br/>';
+		if(selectedFeature.attributes.thumb) {
+			thumbHtml = '<img src="'+selectedFeature.attributes.thumb+'"/><br/>';
 		}
 		var li = '<b>'+titleAtt+'</b>';
 
@@ -864,43 +862,43 @@ jQuery(document).ready(function($) {
             // Setup audio/transcript player
         if(findModalEpSettings('transcript')) {
             //build function to load transcript clip and load media player
-            var iframeElement   = document.querySelector('.player');
-            var soundUrl = '';
-            var iframeElementID = iframeElement.id;
-            //var widget         = SC.Widget(iframeElement);
-            var widget2         = SC.Widget(iframeElementID);
-            var WIDGET_PLAYING = false;
-            widget2.bind(SC.Widget.Events.READY, function() {
+            var iframeElement    = document.querySelector('.player');
+            var soundUrl         = '';
+            var iframeElementID  = iframeElement.id;
+            var soundCloudWidget = SC.Widget(iframeElementID);
+            var WIDGET_PLAYING   = false;
+
+            soundCloudWidget.bind(SC.Widget.Events.READY, function() {
                   // load new widget
-                widget2.play();
+                soundCloudWidget.play();
                 
-                widget2.bind(SC.Widget.Events.PLAY, function() {
+                soundCloudWidget.bind(SC.Widget.Events.PLAY, function() {
                     WIDGET_PLAYING = true;             
                 });
-                widget2.bind(SC.Widget.Events.PAUSE, function() {
+                soundCloudWidget.bind(SC.Widget.Events.PAUSE, function() {
                     WIDGET_PLAYING = false;
                 });
-                widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
-                    if(e.currentPosition<startTime){
-                        widget2.pause();
-                        widget2.seekTo(startTime);
+                soundCloudWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
+                    if(e.currentPosition < startTime){
+                        soundCloudWidget.pause();
+                        soundCloudWidget.seekTo(startTime);
                     }
-                    if(e.currentPosition>endTime){
-                        widget2.pause();
+                    if(e.currentPosition > endTime){
+                        soundCloudWidget.pause();
                     }
                     hightlightTranscriptLine(e.currentPosition);
                 });
-                widget2.bind(SC.Widget.Events.SEEK, function() {});
-                widget2.bind(SC.Widget.Events.FINISH, function() {});
+                soundCloudWidget.bind(SC.Widget.Events.SEEK, function() {});
+                soundCloudWidget.bind(SC.Widget.Events.FINISH, function() {});
             });
                 // Allow user to click on a timecode to go to it
             $('.transcript-ep').on('click', function(evt){
                 var tempSeekTo = null;
                 if($(evt.target).hasClass('type-timecode')) {
                     tempSeekTo = $(evt.target).closest('.type-timecode').data('timecode');
-                    widget2.seekTo(tempSeekTo);
+                    soundCloudWidget.seekTo(tempSeekTo);
                     if(!WIDGET_PLAYING) {
-                        widget2.play();
+                        soundCloudWidget.play();
                     }
                 }
             });
