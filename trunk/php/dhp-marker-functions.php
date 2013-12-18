@@ -75,7 +75,7 @@ function add_dhp_marker_admin_scripts( $hook )
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
-		// Editing a marker?
+ 		// Editing a specific Marker in admin panel
     if ( $hook == 'post-new.php' || $hook == 'post.php' )
     {
         if ( 'dhp-markers' === $post->post_type ) {     
@@ -91,8 +91,7 @@ function add_dhp_marker_admin_scripts( $hook )
 			) );
         }
 
- 		// Viewing a marker?  ?? why would $hook = 'edit.php' for viewing?
-        //  Is this code dead because superceded by logic in dhp_page_template in dhp-project-functions.php?
+        // Shows list of all Markers in admin panel
     } else if ( $hook == 'edit.php'  ) {
         if ( 'dhp-markers' === $post->post_type ) { 
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
@@ -292,31 +291,28 @@ function show_dhp_marker_settings_box()
 	echo buildMarkerMetaFields($markerMeta);
 } // show_dhp_marker_settings_box()
 
+
 // buildMarkerMetaFields($theMeta)
 // PURPOSE: Create HTML to display all custom field values of Marker
-// INPUT:	$theMeta = array of ??
-// RETURNS:	HTML string for the edit boxes to edit the data in $theMeta ??
-// NOTE:	CSS class <delete-mote> is used by JavaScript ??
+// INPUT:	$theMeta = array (provided by WP) of key-pairs: [ field-name, field-value ]
+// RETURNS:	HTML string the data in $theMeta as unordered list
+// NOTE:	CSS class delete-mote was used by (now dead) JavaScript code
 
 function buildMarkerMetaFields($theMeta)
 {
 	$markerHtml ='<ul class="marker-fields">';
 	foreach ($theMeta as $key => $value) {
-
-		if($key=="_edit_lock"||$key=="_edit_last") {
-			
-		}
-		else {
+		if(($key!="_edit_lock") && ($key!="_edit_last")) {
 			$markerHtml .='<li id="'.createIDfromName($key).'" class="motes"><label>'.$key.' </label><textarea class="mote-value">'.$value[0].'</textarea><a class="delete-mote">X</a></li>';			
 		}
-		
 	}
 	$markerHtml .='</ul>';
 	//return $markerHtml;
 } // buildMarkerMetaFields()
 
+
 // createIDfromName($theName)
-// PURPOSE:	Create slug corresonding custom field
+// PURPOSE:	Create WP slug corresonding custom field
 // INPUT:	$theName = string for name of mote
 // RETURNS:	WP-style slug form of mote name
 // TO DO:	Rename and encapsulate in Marker class?
@@ -522,7 +518,7 @@ function dhpAddUpdateMetaField()
 add_action( 'wp_ajax_dhpDeleteMoteMeta', 'dhpDeleteMoteMeta' );
 
 // dhpDeleteMoteMeta()
-// PURPOSE: Handle deleting Mote?? or custom value ?? from a Marker post
+// PURPOSE: Handle deleting custom value/mote from a Marker post
 // INPUT:	$_POST['post_id'] = ID of Marker post
 //			$_POST['post_id'] = ID of custom field to remove
 

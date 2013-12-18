@@ -598,39 +598,79 @@ function invertLatLon($latlon)
 // PURPOSE: Get all of the visual features associated via metadata with the taxonomic terms associated with 1 Mote
 // INPUT:	$parent_term = Object for mote/top-level term
 //			$taxonomy = name of taxonomy for Project (dhp_tax_<pID>)
-// RETURNS: Description of Legends to appear on Map
-//			Fields describing this Legend and array ['children'] of mote values, icon, subvalues
+// RETURNS: Description of Legends to appear on Map in the following format:
+			// {	"type" : "filter",
+			// 		"name" : String (top-level-mote-name),
+			// 		"terms" :				// 1st level terms & their children
+			// 		[
+			// 		  {	"name" :  String (inc. top-level-mote-name),
+			// 			"id" : integer,
+			// 			"icon_url": URL,
+			// 			"children_names" : [ Strings of names ],
+			// 			"children" :
+			// 			[
+			// 			  {	"name" : String,
+			// 				"term_id" : integer,
+			// 				"parent" : integer,
+			// 				"count" : String,
+			// 				"slug" : String,
+			// 				"description" : String,
+			// 				"term_taxonomy_id" : String,
+			// 				"taxonomy" : String,
+			// 				"term_group" : String
+			//			  }, ...
+			// 			]
+			// 		  }, ...
+			// 		],
+			// 		"children" :				// Just 1st level terms
+			// 		[
+			// 		  {	"name" : String,
+			// 			"term_id" : String,
+			// 			"parent" : String,
+			// 			"count" : String,
+			// 			"slug" : String,
+			// 			"description" : String,
+			// 			"term_taxonomy_id" : String,
+			// 			"taxonomy" : String,
+			// 			"term_group" : String
+			// 		  }, ...
+			// 		],
+			// 		"children_names" : [ String ... ]	// Just 1st level term names
+			// 	}
 
 function getIconsForTerms($parent_term, $taxonomy)
 {
-		// begin by 
-	$myargs = array( 'orderby'       => 'term_group',
-		 			 'hide_empty'    => false, 
-					 'parent'        => $parent_term->term_id );
-
-	$children_terms  = get_terms( $taxonomy, $myargs );
 	$children_names  = array();
 	$filter_children = array();
 	$icon_url        = get_term_meta($parent_term->term_id,'icon_url',true);
-	
+
 	$filter_object['type']  = "filter";
 	$filter_object['name']  = $parent_term->name;
 	$filter_object['terms'] = array();
-	
+
+		// Begin with top-level mote name
 	$filter_parent['name']     = $parent_term->name;
 	$filter_parent['id']       = intval($parent_term->term_id);
 	$filter_parent['icon_url'] = $icon_url;
-
 	array_push($filter_object['terms'], $filter_parent);
 
+	$myargs = array( 'orderby'       => 'term_group',
+		 			 'hide_empty'    => false, 
+					 'parent'        => $parent_term->term_id );
+	$children_terms  = get_terms( $taxonomy, $myargs );
+
+		// Go through each of the values in the category
 	foreach ($children_terms as $child) {
 		array_push($children_names, $child->name);
+			// Get any children of this category
 		$childArgs = array( 'orderby' 		=> 'term_group',
-		 					'hide_empty'    => false, 
+		 					'hide_empty'    => false,
 							'parent'        => $child->term_id );
 		$children_terms2 = get_terms( $taxonomy, $childArgs );
 		$children_names2 = array();
 		foreach ($children_terms2 as $child2) {
+				// convert IDs from String to Integer
+				// ?? does a change to "as" get copied into original array??
 			$child2->term_id = intval($child2->term_id);
 			$child2->parent = intval($child2->parent);
 			array_push($children_names2, $child2->name);
@@ -644,7 +684,7 @@ function getIconsForTerms($parent_term, $taxonomy)
 		$temp_child_filter['children']    = $children_terms2;
 
 		array_push($filter_object['terms'], $temp_child_filter);
-	}	
+	}
 	$filter_parent['children_names'] = $children_names;
 	$filter_parent['children'] = $children_terms;
 
@@ -662,11 +702,11 @@ function getMoteFromName($settings,$moteName)
 } // getMoteFromName()
 
 // dhp_get_term_by_parent($link_terms, $terms, $tax)
-// PURPOSE:	??
+// PURPOSE:	Get link to category page based on category value, if one of $terms appears in $link_terms
 // INPUT:	$link_terms = array of taxonomic terms
 //			$terms = array of terms associated with a particular Marker
 //			$tax = "dhp_tax_"<pID>
-// RETURNS: If $link_terms appears in the list of $terms, then return PLink for that term
+// RETURNS: PermaLink for marker's term (from $terms) that appears in $link_terms
 // ASSUMES:	That strings in $terms have been HTML-escaped
 
 function dhp_get_term_by_parent($link_terms, $terms, $tax)
@@ -698,12 +738,10 @@ add_action( 'wp_ajax_nopriv_dhp_get_group_feed', 'dhp_get_group_feed' );
 
 function dhp_get_group_feed($tax_name,$term_name)
 {
-//return feed for map, icon color, audio file
 	$pieces = explode("dhp_tax_", $tax_name);
     $projectID = get_page($pieces[1],OBJECT,'project');
     $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
     $the_term = get_term_by('name', $term_name, $tax_name);
-    //$test_string =  $pieces;
 
     	// Initialize settings in case not used
 	$map_pointsMote = $cordMote = $audio = $transcript = $timecode = null;
@@ -736,6 +774,7 @@ function dhp_get_group_feed($tax_name,$term_name)
 
 	$feature_collection['type'] = "FeatureCollection";
 	$feature_collection['features'] = array();
+
 	$args = array(
 	    'post_type'=> 'dhp-markers',
 	    'posts_per_page' => '-1',
@@ -757,6 +796,7 @@ function dhp_get_group_feed($tax_name,$term_name)
 		$post_terms = wp_get_post_terms( $marker_id, $tax_name, $args1 );
 
 		$this_feature = array();
+		$this_feature['properties']= array();
 		$this_feature['properties']['title'] = get_the_title();
 		$this_feature['properties']['categories'] = json_encode($post_terms);
 
@@ -786,7 +826,6 @@ function dhp_get_group_feed($tax_name,$term_name)
 
 			$this_feature['type'] = 'Feature';
 			$this_feature['geometry'] = array();
-			$this_feature['properties']= array();
 
 			$this_feature['geometry']['type'] = 'Point';
 			$this_feature['geometry']['coordinates'] = $lonlat;
@@ -804,19 +843,37 @@ function dhp_get_group_feed($tax_name,$term_name)
 // createMarkerArray($project_id)
 // PURPOSE:	Creates Legends and Feature Collections Object (as per OpenLayer) when looking at a project page;
 //			That is, return array describing all markers based on filter and visualization
-// RETURNS: JSON object describing all markers associated with Project
 // INPUT:	$project_id = ID of Project to view
-// TO DO:   Document the exact form of the complex return results!
+// RETURNS: JSON object describing all markers associated with Project
+//			[0] is as getIconsForTerms above; [1] is as follows:
+			// {	"type": "FeatureCollection",
+			// 	 	"features" :
+			// 		[
+			// 			{ "type" : "Feature",
+			// 			  "geometry" : {"type" : "Point", "coordinates" : longlat}, 
+			// 			  "properties" :
+			// 				[
+			// 					"title" : String,
+			// 					"categories" : [ integer IDs of category terms ],
+			// 					"content" : [ { moteName : moteValue }, ... ],
+			// 					"audio" : String,
+			// 					"transcript" : String,
+			// 					"transcript2" : String,
+			// 					"timecode" : String,
+			// 					"link" : URL,
+			// 					"link2" : URL
+			// 				],
+			// 			}, ...
+			// 		]
+			// 	}
 
 function createMarkerArray($project_id)
 {
-	//loop through all markers in project -add to array
+		// initialize result array
 	$json_Object = array();
+		// get Project info
 	$project_object = get_post($project_id);
 	$project_tax = 'dhp_tax_'.$project_object->ID;
-
-	//LOAD PROJECT SETTINGS
-	//-get primary category parent
 	$project_settingsA = get_post_meta($project_id,'project_settings');
 		// ?? What is the str_replace doing here??
 	$project_settings = json_decode(str_replace('\\','',$project_settingsA[0]),true);
@@ -875,7 +932,7 @@ function createMarkerArray($project_id)
 		else {
 				// translate into category/term ID
 			$parent_id = get_term_by('name', $link_parent, $project_tax);
-				// find any subcategories ??
+				// find all category terms
 			$child_terms = get_term_children($parent_id->term_id, $project_tax);
 		}
 	}
@@ -913,10 +970,10 @@ function createMarkerArray($project_id)
 		// $tempMarkerValue = get_post_meta($marker_id,$mote_name);
 		// $tempMoteArray = split(';',$tempMoteValue[0]);
 
-			// Most data goes into properties field
-		$tempProperties = array();
 			// Feature will hold properties and some other values for each marker
 		$temp_feature = array();
+			// Most data goes into properties field
+		$tempProperties = array();
 
 		if($title_mote=='the_title') {
 			$title = get_the_title();
@@ -989,8 +1046,8 @@ function createMarkerArray($project_id)
 				}
 				array_push($content_att, array($contentMote => $content_val));
 			}
+			$tempProperties["content"]     = $content_att;
 		}
-		$tempProperties["content"]     = $content_att;
 
 		if ($link_parent && $child_terms && $child_terms != 'no-link') {
 			if ($child_terms=='marker')
@@ -1331,7 +1388,6 @@ function createParentTerm($term_name, $dhp_tax_name)
 	else {
 		wp_insert_term( $term_name, $dhp_tax_name );
 	}
-
 } // createParentTerm()
 
 

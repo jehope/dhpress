@@ -12,9 +12,9 @@
 jQuery(document).ready(function($) {
         // Project variables
     var projectID, ajax_url, rawAjaxData, dhpSettings;
-    var catFilter;          // Contains all values for currently selected Legend; field "terms" is array of objects, each having name, id and children (array of same)
-    var catFilterSelect;     // Array indicating current selection of Legend values; each object has fields: name, id, icon_url, and children (array of term_id)
-    var allMarkers;         // All possible marker posts assoc. w/ Project; field "features" is an array of objects which contain field "categories" which is array of IDs
+    var catFilter;          // All values for currently selected Legend; see data desc in getIconsForTerms() of dhp-project-functions.php
+    var catFilterSelect;     // Current selection of legend/categories; Subset of catFilter.terms
+    var allMarkers;         // All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
 
         // Map visualization variables 
     var map, dhpMap, gg, sm, olMarkerInterface, selectControl, hoverControl;
@@ -758,7 +758,7 @@ jQuery(document).ready(function($) {
     // }
 
         // PURPOSE: Handle user selection of a marker on a map to bring up modal
-        // INPUT:   feature = the feature selected on map ?? format??
+        // INPUT:   feature = the feature selected on map
         // ASSUMES: Can use only first feature if a cluster of features is passed
         // SIDE-FX: Modifies DOM for modal dialog window
         // TO DO:   Put code to create modal in another function, as it will be called by other
