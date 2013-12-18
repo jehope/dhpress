@@ -147,6 +147,10 @@ jQuery(document).ready(function($) {
     	$('#transcript-div').append(beautiful_transcript);
         searchForMaxHeight($('.transcript-list .row'));
     	loadAudio(audioLink);
+
+        if(jsonData['transcript2'] && jsonData['transcript2']!=='none') {
+           attachSecondTranscript(jsonData['transcript2']);
+        }
     }
 
         // PURPOSE: Take a QuickTime text format transcription and turn into list
@@ -174,7 +178,7 @@ jQuery(document).ready(function($) {
                 //skip values with line breaks...basically empty items
                 if(val.length>1) {       
                     var row = parseInt(index / 2);
-                    if(val[0]=='['){            
+                    if(val[0]==='['&&val[1]==='0'){  
                         transcript_html.append('<div class="row"></div>');
                         tcArray.push(convertToMilliSeconds(val));
                         $('.row',transcript_html).eq(row).append('<div class="type-timecode '+lineClass+'" data-timecode="'+convertToMilliSeconds(val)+'">'+val+'</div>'); 
@@ -187,6 +191,37 @@ jQuery(document).ready(function($) {
             });
         }
         return transcript_html;
+    }
+
+    function attachSecondTranscript(transcriptData){
+        //target $('.transcript-list')
+        var split_transcript = transcriptData.trim().split(/\r\n|\r|\n/g);
+         $('.transcript-list').addClass('two-column');
+        var first_transcriptHTML = $('.transcript-list .type-text');
+        // console.log(split_transcript)
+        var textArray = [];
+        if(split_transcript) {
+            _.each(split_transcript, function(val,index){ 
+                //skip values with line breaks...basically empty items
+                val = val.trim();
+                if(val.length>1) {
+                    if(val[0]==='['&&val[1]==='0'){
+                    }
+                    else {
+                        textArray.push(val);
+                        // $transcript_html.append('<li class="type-text">'+val+'</li>'); 
+                    }
+                }       
+            });
+        }
+        //loop thru original transcript and add second lines
+         _.each(textArray, function(val,index){
+            var lineClass = '';
+            if($(first_transcriptHTML).eq(index).hasClass('odd-line')) {
+                lineClass = 'odd-line';
+            }
+            $(first_transcriptHTML).eq(index).after('<div class="type-text '+lineClass+'">'+val+'</div>')
+         });
     }
 
 
@@ -270,7 +305,7 @@ jQuery(document).ready(function($) {
                 //createTimeline(JSON.parse(data));
                 buildTranscriptHtml(JSON.parse(data));
                 //$('#transcript-div').append(JSON.parse(data));
-                $("#dhpress-tips").joyride({ autoStart : true});
+                $("#dhpress-tips").joyride({ });
                 
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
