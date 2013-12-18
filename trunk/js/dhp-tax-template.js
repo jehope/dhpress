@@ -52,33 +52,32 @@ jQuery(document).ready(function($) {
         //          Connect timer (for advancing timecode "playhead") and event handling (for seeking to timecodes)
     function loadAudio(url) {
     	$('#transcript-div').prepend('<div class="info"></div><div class="av-transcript"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+url+'&show_artwork=true"></iframe></div>');
-     	var iframeElement     = document.querySelector('.player');
-        var iframeElementID   = iframeElement.id;
-        var widget            = SC.Widget(iframeElement);
-        var widget2           = SC.Widget(iframeElementID);
-        var WIDGET_PLAYING    = false;
-        var seekTimeout       = null;
+        var iframeElement    = document.querySelector('.player');
+        var iframeElementID  = iframeElement.id;
+        var soundCloudWidget = SC.Widget(iframeElementID);
+        var WIDGET_PLAYING   = false;
+        var seekTimeout      = null;
 
-        widget2.bind(SC.Widget.Events.READY, function() {
-            widget2.play();
+        soundCloudWidget.bind(SC.Widget.Events.READY, function() {
+            soundCloudWidget.play();
 
-            widget2.bind(SC.Widget.Events.PLAY, function() {
+            soundCloudWidget.bind(SC.Widget.Events.PLAY, function() {
                     WIDGET_PLAYING = true;             
                 });
-            widget2.bind(SC.Widget.Events.PAUSE, function() {
+            soundCloudWidget.bind(SC.Widget.Events.PAUSE, function() {
                 WIDGET_PLAYING = false;
             });
                 // Move playhead along as play happens
-            widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {             
+            soundCloudWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {             
                 if(e.currentPosition<500){
-                    widget2.pause();
+                    soundCloudWidget.pause();
                 }
                 hightlightTranscriptLine(e.currentPosition);
             });
-            widget2.bind(SC.Widget.Events.SEEK, function() {
+            soundCloudWidget.bind(SC.Widget.Events.SEEK, function() {
 
             });
-            widget2.bind(SC.Widget.Events.FINISH, function() {
+            soundCloudWidget.bind(SC.Widget.Events.FINISH, function() {
             
             });       
         });
@@ -87,9 +86,9 @@ jQuery(document).ready(function($) {
             var tempSeekTo = null;
             if($(evt.target).hasClass('type-timecode')) {
                 tempSeekTo = $(evt.target).closest('.type-timecode').data('timecode');
-                widget2.seekTo(tempSeekTo);
+                soundCloudWidget.seekTo(tempSeekTo);
                 if(!WIDGET_PLAYING) {
-                    widget2.play();
+                    soundCloudWidget.play();
                 }
             }     
         });
@@ -99,24 +98,23 @@ jQuery(document).ready(function($) {
         // ASSUMES: tcArray has been compiled, contains 1 entry at end beyond # of "playheads"
     function hightlightTranscriptLine(millisecond){
         var match;
-        _.find(tcArray, function(val,index){
-            match = (millisecond>=val&&millisecond<tcArray[index+1]);
+        _.find(tcArray, function(val, index){
+            match = (millisecond >= val && millisecond < tcArray[index+1]);
             if (match) {
                 if(rowIndex!==index) {
-                    rowIndex = index;
-                    var topDiff = $('.transcript-list div.type-timecode').eq(index).offset().top - $('.transcript-list').offset().top;
+                    rowIndex      = index;
+                    var topDiff   = $('.transcript-list div.type-timecode').eq(index).offset().top - $('.transcript-list').offset().top;
                     var scrollPos = $('.transcript-list').scrollTop() +topDiff;
+                    
                     $('.transcript-list').animate({
                        scrollTop: scrollPos
                     }, 500);
+                    $('.transcript-list div.type-timecode').removeClass('current-clip');
+                    $('.transcript-list div.type-timecode').eq(index).addClass('current-clip');
                 }
-                $('.transcript-list div.type-timecode').removeClass('current-clip');
-                $('.transcript-list div.type-timecode').eq(index).addClass('current-clip');
-
+                
             }
-            return match;
         });
-        //$('.type-timecode').attr('data-timecode');
     }
 
     
