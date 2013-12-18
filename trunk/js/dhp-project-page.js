@@ -991,7 +991,7 @@ jQuery(document).ready(function($) {
                 //skip values with line breaks...basically empty items
                 if(val.length>1) {       
                     var row = parseInt(index / 2);
-                    if(val[0]=='['){            
+                    if(val[0]==='['&&val[1]==='0'){            
                         transcript_html.append('<div class="row"></div>');
                         tcArray.push(convertToMilliSeconds(val));
                         $('.row',transcript_html).eq(row).append('<div class="type-timecode '+lineClass+'" data-timecode="'+convertToMilliSeconds(val)+'">'+val+'</div>'); 
