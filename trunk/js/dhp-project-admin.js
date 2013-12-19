@@ -1624,10 +1624,11 @@ jQuery(document).ready(function($) {
   	//console.log(lis.length);
   	var i = 0;
   	var treeParent = $('.cat-list h2').attr('id');
-
+    var treeObject = [];
       // Create a JSON string to represent category terms in format usable by WP
   	$(lis).each(function(index){
-      console.log(lis.length)
+      var tempTermObject = new Object();
+
   		var tempParent = $(this).parents('li').attr('id');
   		if(!tempParent){tempParent = '';}
   		var tempName = $(this).children().find('.term-name').eq(0).text();
@@ -1640,15 +1641,21 @@ jQuery(document).ready(function($) {
   			//console.log(tempIcon);
   		}
 
-  		if(i<1) { termTree +='{'; }
-  		else { termTree +=',{';}
-
-  		termTree +='"term_id":"'+this.id+'","name":"'+tempName+'","term_order":"'+i+'","parent":"'+tempParent+'","count":"'+tempCount+'","icon_url":"'+tempIcon+'"}';
-  		i++;
+      tempTermObject['term_id'] = this.id;
+      tempTermObject['name'] = tempName;
+      tempTermObject['term_order'] = i;
+      tempTermObject['parent'] = tempParent;
+      tempTermObject['count'] = tempCount;
+      tempTermObject['icon_url'] = tempIcon;
+      // tempTermObject['count'] = tempCount;
+  		// termTree +='"term_id":"'+this.id+'","name":"'+tempName+'","term_order":"'+i+'","parent":"'+tempParent+'","count":"'+tempCount+'","icon_url":"'+tempIcon+'"}';
+  		treeObject.push(tempTermObject);
+      i++;
+      
   	});
-  	termTree += ']';
-  	console.log(termTree);
-  	createTaxTerms(treeParent,postID,termTree);	
+  	
+  	console.log(JSON.stringify(treeObject));
+  	createTaxTerms(treeParent,postID,JSON.stringify(treeObject));	
   } // saveArrayTree()
 
 
