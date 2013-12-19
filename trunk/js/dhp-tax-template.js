@@ -35,14 +35,9 @@ jQuery(document).ready(function($) {
     	var transcriptObject = settingsHas('entry-points','transcript');
 
     	if(transcriptObject){
-    		// console.log(transcriptObject['settings']);
-
-            if(dhpData.tax.parent_name === 'Interviewee') {
-                $('#content').prepend('<div id="transcript-div"></div>');
-                loadTranscript(dhpData.project_id,dhpData.tax.slug,dhpData.tax.taxonomy);
-                //loadAudio(transcriptObject['settings']['audio']);
-                createMoteValue(transcriptObject['settings']['transcript']);
-            }
+            $('#content').prepend('<div id="transcript-div"></div>');
+            loadTranscript(dhpData.project_id,dhpData.tax.slug,dhpData.tax.taxonomy);
+            createMoteValue(transcriptObject['settings']['transcript']);
     	}
     	//if tax view has map
     	// console.log("get markers for map: "+dhpData.tax['name'])
@@ -126,7 +121,10 @@ jQuery(document).ready(function($) {
                 maxHeight = $(val).height();
             }
         });
-        $('.transcript-list').css({'max-height': maxHeight+40});
+        if(maxHeight>400) {
+            maxHeight = 400;
+        }
+        $('.transcript-list').css({'min-height': maxHeight+40});
     }
     // function categoryColors(element,color){
     //     _.each($('.type-timecode'), function(val,index) {
@@ -140,17 +138,26 @@ jQuery(document).ready(function($) {
         // PURPOSE: Handle AJAX return for audio -- append HTML for transcript and playheads and handle events
     function buildTranscriptHtml(jsonData){
     	//formatTranscript
-    	var beautiful_transcript = formatTranscript(jsonData['transcript']);
+            
+        
+        if(jsonData['transcript'] && jsonData['transcript']!=='none') {
 
-    	var audioLink = jsonData['audio'];
-    	console.log(audioLink);
-    	$('#transcript-div').append(beautiful_transcript);
-        searchForMaxHeight($('.transcript-list .row'));
-    	loadAudio(audioLink);
+        	var beautiful_transcript = formatTranscript(jsonData['transcript']);
+            $('#transcript-div').append(beautiful_transcript);
+        }
 
-        if(jsonData['transcript2'] && jsonData['transcript2']!=='none') {
+        if(jsonData['transcript']==='none' && jsonData['transcript2'] && jsonData['transcript2']!=='none') {
+            var beautiful_transcript = formatTranscript(jsonData['transcript2']);
+            $('#transcript-div').append(beautiful_transcript);
+        }
+        else if(jsonData['transcript']!=='none' && jsonData['transcript2'] && jsonData['transcript2']!=='none') {
            attachSecondTranscript(jsonData['transcript2']);
         }
+
+        searchForMaxHeight($('.transcript-list .row'));
+
+        var audioLink = jsonData['audio'];
+        loadAudio(audioLink);  
     }
 
         // PURPOSE: Take a QuickTime text format transcription and turn into list
