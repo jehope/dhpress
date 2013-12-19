@@ -1804,8 +1804,11 @@ function dhpGetTranscript()
 
 	$dhp_transcript_field = getMoteFromName($dhp_settings,$dhp_settings_ep['settings']['transcript']);
 	$dhp_transcript_cfield = $dhp_transcript_field['custom-fields'];//$marker_meta['transcript_url'])
-	$dhp_transcript = loadTranscriptFromFile($marker_meta[$dhp_transcript_cfield][0]);
-
+	
+	$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
+	if($dhp_transcript!='none') {
+		$dhp_transcript = loadTranscriptFromFile($marker_meta[$dhp_transcript_cfield][0]);
+	}
 	$dhp_object;
 	//'"'.$dhp_tax_name.','.$dhp_tax_term.'"';//
 	$dhp_object['feed'] = dhp_get_group_feed($dhp_tax_name,$dhp_tax_term);
@@ -2639,7 +2642,7 @@ function dhp_tax_template( $page_template )
 		wp_enqueue_script( 'underscore' );
 		wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
 			
-		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__) ),'mediaelement');
+		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__) ));
 		
 		wp_localize_script( 'dhp-tax-script', 'dhpData', array(
 				'project_id' => __($projectID->ID,'dhp'),
