@@ -805,8 +805,14 @@ jQuery(document).ready(function($) {
             
             _.each(dhpSettings['views']['modal-ep'],function(val,key) {
                 rawAjaxData['transcriptData'] = [];
-                loadTranscriptClip(projectID,transcript,timecode,1);
-                if(transcript2&&transcript2!=='none') {
+                if(transcript&&transcript!=='none') {
+                    loadTranscriptClip(projectID,transcript,timecode,1);
+                }
+                
+                if(transcript==='none' && transcript2 && transcript2!=='none'){
+                    loadTranscriptClip(projectID,transcript2,timecode,1);
+                }
+                else if(transcript!=='none' && transcript2 && transcript2!=='none') {
                     loadTranscriptClip(projectID,transcript2,timecode,2);
                 }    
                 $('.modal-content', tempModalHtml).append('<div class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></div>');
