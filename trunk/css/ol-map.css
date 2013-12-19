@@ -19,7 +19,6 @@
 #legends {
 	position:relative;	
 	margin-left:0;
-	height: 90%;
 	overflow: auto;
 	background: #fff;
 	background-color: rgba(255, 255, 255, .7);
@@ -29,7 +28,8 @@
 	min-width:none;
 	top: 50px;
 	left: 20px;
-
+	bottom: 20px;
+	overflow: auto;
 }
 .dhp-nav {
 	z-index: 3000;
@@ -47,6 +47,23 @@
 #map_div div.olControlZoom {
 	top:10px;
 }
+.olControlZoom .reset-map {
+	margin-top: 5px;
+	padding: 5px;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	width: 14px;
+	/* Fallback for web browsers that doesn't support RGBa */
+    background: rgb(0, 60, 136);
+    /* RGBa with 0.6 opacity */
+    background: rgba(0, 60, 136, 0.5);
+   	cursor: pointer;
+}
+.olControlZoom .reset-map:hover {
+    background: rgba(0, 60, 136, 0.7);
+}
+
 .logged-in.fullscreen #map_div div.olControlZoom {
 	
 top:80px;
@@ -101,6 +118,11 @@ top: 30px;
 }
 .legend-row .legend-div {
 	margin-left: 0px;
+}
+.legend-div h1 {
+	margin-left: 10px;
+	border-bottom: 1px solid #111;
+	margin-right: 10px;
 }
 .legend-div ul {
 list-style: none;
@@ -193,9 +215,7 @@ left: 50%;
 width: 90%;
 margin-left: -45%;
 }
-.current-clip {
-	background-color: #999;
-}
+
 .modal-backdrop {
 	z-index: 1140;
 }
@@ -234,18 +254,48 @@ filter: alpha(opacity=60);
 	line-height: 1.7;
 	margin-bottom: 10px;
 }
-
+.transcript-list .row {
+	display: table-row;
+}
 .type-timecode {
 	width: 20%;
-	float: left;
+	display: table-cell;
+	padding: 2%;
+	cursor: pointer;
+}
+.odd-line .type-timecode,
+.odd-line .type-text,
+.type-timecode.odd-line,
+.type-text.odd-line {
+	background: #ddd;
+}
+.type-timecode.odd-line.current-clip,
+.type-timecode.current-clip {
+	background-color: #007fff;
+	font-weight: bold;
+	color: #fff;
+}
+.type-timecode:hover {
+	background-color: #007fff;
+	font-weight: bold;
+	color: #fff;
 }
 .transcript-list .type-text {
-	width: 80%;
-	display: inline-block;
+	width: 76%;
+	display: table-cell;
+	vertical-align: top;
+	padding: 2%;
 }
 .transcript-list.two-column .type-text {
 	width: 40%;
-	display: inline-block;
+	display: table-cell;
+	vertical-align: top;
+	padding: 2%;
+}
+
+.transcript-list {
+	max-height: 300px;
+	overflow-y: scroll;
 }
 .legend-resize {
 	padding: 2px 5px;

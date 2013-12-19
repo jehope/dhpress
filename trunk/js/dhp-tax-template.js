@@ -1,18 +1,25 @@
-// PURPOSE: ??
+// PURPOSE: Used for displaying posts based on a taxonomic term
+//          (i.e., results of searching on Legend)
 //          Loaded by dhp_tax_template() in dhp-project-functions.php
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
-// USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
+//              These parameters are: ajax_url, project_id, project_settings
+// USES:    JavaScript libraries jQuery, Underscore, Bootstrap, OpenLayers, CDLA maps, SoundCloud
+// TO DO:   Should we not hardcode Interviewee as special taxonomic name??
 
 jQuery(document).ready(function($) {
 
     var ajax_url = dhpData.ajax_url;
-    console.log(ajax_url);
-    console.log(dhpData.tax.name);
-    console.log(dhpData);
+    // console.log(ajax_url);
+    // console.log(dhpData.tax.name);
+    // console.log(dhpData);
     var project_id = dhpData.project_id;
-    console.log(dhpData.project['motes']);
-    var projectObject = JSON.parse(dhpData.project);
+    // console.log(dhpData.project['motes']);
+    var projectSettings = JSON.parse(dhpData.project_settings);
+
+        // Time-Code array -- stores series of timecodes in milliseconds, computed by formatTranscript()
     var tcArray = null;
+        // Holds index of current row in transcript being played by audio
+    var rowIndex = null;
 
     init_interface();
 
@@ -20,137 +27,233 @@ jQuery(document).ready(function($) {
     function init_interface() {
     	//getTaxObject
     	//$('#content').empty();
-    	
+
+            // Insert name of taxonomy on page
     	$('#content').prepend('<h1>'+dhpData.tax['name']+'</h1>');
-    	console.log(location.hash);
-    	
+    	// console.log(location.hash);
+
     	var transcriptObject = settingsHas('entry-points','transcript');
 
     	if(transcriptObject){
-    		console.log(transcriptObject['settings'])
-
-            if(dhpData.tax.parent_name === 'Interviewee') {
-                $('#content').prepend('<div id="transcript-div"></div>');
+            $('#content').prepend('<div id="transcript-div"></div>');
             loadTranscript(dhpData.project_id,dhpData.tax.slug,dhpData.tax.taxonomy);
-            //loadAudio(transcriptObject['settings']['audio']);
             createMoteValue(transcriptObject['settings']['transcript']);
-
-            }
     	}
     	//if tax view has map
-    	console.log("get markers for map: "+dhpData.tax['name'])
+    	// console.log("get markers for map: "+dhpData.tax['name'])
     }
 
+        // PURPOSE: Load audio for transcription and HTML elements
+        //          Connect timer (for advancing timecode "playhead") and event handling (for seeking to timecodes)
     function loadAudio(url) {
     	$('#transcript-div').prepend('<div class="info"></div><div class="av-transcript"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+url+'&show_artwork=true"></iframe></div>');
-     	var iframeElement     = document.querySelector('.player');
-        var iframeElementID   = iframeElement.id;
-        var widget            = SC.Widget(iframeElement);
-        var widget2           = SC.Widget(iframeElementID);
-        var WIDGET_PLAYING    = false;
-        var seekTimeout       = null;
-        widget2.bind(SC.Widget.Events.READY, function() {
-            widget2.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
-                hightlightTranscriptLine(e.currentPosition);
-                if(e.currentPosition>10){
-                    clearTimeout(seekTimeout);
-                }
+        var iframeElement    = document.querySelector('.player');
+        var iframeElementID  = iframeElement.id;
+        var soundCloudWidget = SC.Widget(iframeElementID);
+        var WIDGET_PLAYING   = false;
+        var seekTimeout      = null;
+
+        soundCloudWidget.bind(SC.Widget.Events.READY, function() {
+            soundCloudWidget.play();
+
+            soundCloudWidget.bind(SC.Widget.Events.PLAY, function() {
+                    WIDGET_PLAYING = true;             
+                });
+            soundCloudWidget.bind(SC.Widget.Events.PAUSE, function() {
+                WIDGET_PLAYING = false;
             });
-            widget2.bind(SC.Widget.Events.SEEK, function() {
+                // Move playhead along as play happens
+            soundCloudWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {             
+                if(e.currentPosition<500){
+                    soundCloudWidget.pause();
+                }
+                hightlightTranscriptLine(e.currentPosition);
+            });
+            soundCloudWidget.bind(SC.Widget.Events.SEEK, function() {
 
             });
-            widget2.bind(SC.Widget.Events.FINISH, function() {
+            soundCloudWidget.bind(SC.Widget.Events.FINISH, function() {
             
             });       
-        });  
+        });
+            // Allow user to click on a timecode to go to it
         $('.transcript-list').on('click', function(evt){
             var tempSeekTo = null;
-            if($(evt.target).closest('.type-timecode').data('timecode')) {
-                tempSeekTo = $(evt.target).closest('.type-timecode').data('timecode')
-            }
-            else {
-                tempSeekTo = $(evt.target.previousSibling).data('timecode');
-            }       
-            widget2.play();
-            widget2.seekTo(tempSeekTo);
-            seekTimeout = setTimeout(function() {
-                widget2.seekTo(tempSeekTo);
-            }, 500);          
+            if($(evt.target).hasClass('type-timecode')) {
+                tempSeekTo = $(evt.target).closest('.type-timecode').data('timecode');
+                soundCloudWidget.seekTo(tempSeekTo);
+                if(!WIDGET_PLAYING) {
+                    soundCloudWidget.play();
+                }
+            }     
         });
     }
 
+        // PURPOSE: Given position in milliseconds, find and highlight tag corresponding to play position
+        // ASSUMES: tcArray has been compiled, contains 1 entry at end beyond # of "playheads"
     function hightlightTranscriptLine(millisecond){
-        var foundIndex;
-        _.map(tcArray, function(val,index){
-            if(millisecond>=val&&millisecond<tcArray[index+1]){
-                $('.transcript-list li.type-timecode').removeClass('current-clip');
-                $('.transcript-list li.type-timecode').eq(index).addClass('current-clip');
+        var match;
+        _.find(tcArray, function(val, index){
+            match = (millisecond >= val && millisecond < tcArray[index+1]);
+            if (match) {
+                if(rowIndex!==index) {
+                    rowIndex      = index;
+                    var topDiff   = $('.transcript-list div.type-timecode').eq(index).offset().top - $('.transcript-list').offset().top;
+                    var scrollPos = $('.transcript-list').scrollTop() +topDiff;
+                    
+                    $('.transcript-list').animate({
+                       scrollTop: scrollPos
+                    }, 500);
+                    $('.transcript-list div.type-timecode').removeClass('current-clip');
+                    $('.transcript-list div.type-timecode').eq(index).addClass('current-clip');
+                }
+                
             }
         });
-    } 
-
-    function categoryColors(element,color){
-        _.each($('.type-timecode'), function(val,index) {
-    		var someText = $(val).html().replace(/(\r\n|\n|\r)/gm,"");
-    		if(someText=='[00:00:16.19]') {
-    		
-    			$(val).css('background-color', '#ccc');
-    		}
-    	});
     }
 
+    
+    // find tallest div.row in transcript and set container max-height 40px larger. Default is max 300px
+    function searchForMaxHeight(elements) {
+        var maxHeight = 0;
+        _.each(elements, function(val){ 
+            if($(val).height()>maxHeight){
+                maxHeight = $(val).height();
+            }
+        });
+        if(maxHeight>400) {
+            maxHeight = 400;
+        }
+        $('.transcript-list').css({'min-height': maxHeight+40});
+    }
+    // function categoryColors(element,color){
+    //     _.each($('.type-timecode'), function(val,index) {
+    // 		var someText = $(val).html().replace(/(\r\n|\n|\r)/gm,"");
+    // 		if(someText=='[00:00:16.19]') {
+    // 			$(val).css('background-color', '#ccc');
+    // 		}
+    // 	});
+    // }
+
+        // PURPOSE: Handle AJAX return for audio -- append HTML for transcript and playheads and handle events
     function buildTranscriptHtml(jsonData){
     	//formatTranscript
-    	var beautiful_transcript = formatTranscript(jsonData['transcript']);
+            
+        
+        if(jsonData['transcript'] && jsonData['transcript']!=='none') {
 
-    	var audioLink = jsonData['audio'];
-    	console.log(audioLink);
-    	$('#transcript-div').append(beautiful_transcript);
-    	loadAudio(audioLink);
+        	var beautiful_transcript = formatTranscript(jsonData['transcript']);
+            $('#transcript-div').append(beautiful_transcript);
+        }
+
+        if(jsonData['transcript']==='none' && jsonData['transcript2'] && jsonData['transcript2']!=='none') {
+            var beautiful_transcript = formatTranscript(jsonData['transcript2']);
+            $('#transcript-div').append(beautiful_transcript);
+        }
+        else if(jsonData['transcript']!=='none' && jsonData['transcript2'] && jsonData['transcript2']!=='none') {
+           attachSecondTranscript(jsonData['transcript2']);
+        }
+
+        searchForMaxHeight($('.transcript-list .row'));
+
+        var audioLink = jsonData['audio'];
+        loadAudio(audioLink);  
     }
 
-    /**
-     * [formatTranscript: cleans up quicktime text format transcript and puts it in a list]
-     * @author  joeehope
-     * @version version
-     * @param   {string} dirty_transcript [quicktime text format]
-     * @return  {html}  $transcript_html  [html unordered list]
-     */
+        // PURPOSE: Take a QuickTime text format transcription and turn into list
+        // INPUT:   dirty_transcript = long text string
+        // RETURNS: HTML string for timecode heads and text itself
+        // TO DO:   Does this handle dual-language??
     function formatTranscript(dirty_transcript) {
         // split into array by line
-        var split_transcript = dirty_transcript.split('\n');
+        var transcript_html='';
+        // split into array by line
+        var split_transcript = dirty_transcript.trim().split(/\r\n|\r|\n/g);
         tcArray = [];
+        // console.log(split_transcript)
         if(split_transcript) {
-            var $transcript_html = $('<ul class="transcript-list"/>');
-            _.map(split_transcript, function(val){ 
+            transcript_html = $('<div class="transcript-list"/>');
+
+            var index = 0;
+            var textBlock;
+            var lineClass = ['','odd-line'];
+            _.each(split_transcript, function(val){
+                val = val.trim();
+                var oddEven = index % 2; 
                 //skip values with line breaks...basically empty items
-                if(val.length>1) {
-                    if(val[0]=='['){
-                        tcArray.push(convertToMilliSeconds(val.trim()));
-                        $transcript_html.append('<li class="type-timecode" data-timecode="'+convertToMilliSeconds(val.trim())+'">'+val.trim()+'</li>'); 
+                if(val.length>1) {       
+                    
+                    if(val[0]==='['&&val[1]==='0'){                  
+                        if(index>0) {
+                            $('.row', transcript_html).eq(index-1).append('<div class="type-text">'+textBlock+'</div>');
+                        }
+                        index++;
+                        textBlock = ''; 
+                        transcript_html.append('<div class="row '+lineClass[oddEven]+'"><div class="type-timecode" data-timecode="'+convertToMilliSeconds(val)+'">'+val+'</div></div>');
+                        tcArray.push(convertToMilliSeconds(val));
                     }
                     else {
-                        $transcript_html.append('<li class="type-text">'+val+'</li>'); 
-                    }
-                }       
+                        textBlock += val;                       
+                    }                   
+                }
             });
-        }   
-        return $transcript_html;
+        }
+        return transcript_html;
     }
 
+    function attachSecondTranscript(transcriptData){
+        //target $('.transcript-list')
+        var split_transcript = transcriptData.trim().split(/\r\n|\r|\n/g);
+         $('.transcript-list').addClass('two-column');
+        var first_transcriptHTML = $('.transcript-list .type-text');
+        // console.log(split_transcript)
+        var textArray = [];
+        var textBlock;
+        var index = 0;
+        if(split_transcript) {
+            _.each(split_transcript, function(val){
+                //skip values with line breaks...basically empty items
+                val = val.trim();
+                if(val.length>1) {
+                    if(val[0]==='['&&val[1]==='0'){
+                        if(index>0) {
+                            textArray.push(textBlock);
+                        }
+                        textBlock='';
+                    }
+                    else {
+                        textBlock += val;
+                    }
+                    index++;
+                }
+            });
+        }
+        //loop thru original transcript and add second lines
+         _.each(textArray, function(val,index){
+            var lineClass = '';
+            if($(first_transcriptHTML).eq(index).hasClass('odd-line')) {
+                lineClass = 'odd-line';
+            }
+            $(first_transcriptHTML).eq(index).after('<div class="type-text '+lineClass+'">'+val+'</div>')
+         });
+    }
+
+
+        // PURPOSE: ??
     function createMoteValue(moteName){
-    	var motes = _.flatten(projectObject['motes'], true);
+    	var motes = _.flatten(projectSettings['motes'], true);
     	//console.log(_.flatten(motes, true) )
     	var moteFound = _.where(motes, {name: moteName});
 
     	if(dhpData.tax['parent_name']==moteFound[0]['custom-fields']) {
-    		console.log('mote created')
-    		console.log(moteFound[0]['delim']+dhpData.tax['name'])
+    		console.log('mote created');
+    		console.log(moteFound[0]['delim']+dhpData.tax['name']);
     		var transcriptVal = moteFound[0]['delim']+dhpData.tax['name'];
     		loadTranscript(project_id,transcriptVal,dhpData.tax['name']);
     	}
     }
 
+        // RETURNS: timecode as # of seconds
     function convertToSeconds(timecode) {
     	var tempN = timecode.replace("[","");
     	var tempM = tempN.replace("]","");
@@ -160,6 +263,7 @@ jQuery(document).ready(function($) {
     	return secondsCode;
     }
 
+        // RETURNS: timecode as # of milliseconds
     function convertToMilliSeconds(timecode) {
         var tempN = timecode.replace("[","");
         var tempM = tempN.replace("]","");
@@ -172,7 +276,7 @@ jQuery(document).ready(function($) {
     }
 
     function settingsHas(settingArea,typeName) {
-    	var settings = projectObject;
+    	var settings = projectSettings;
     	var hasIt = _.where(settings[settingArea], {type: typeName});
     	return hasIt[0];
     	//console.log(hasIt)
@@ -215,7 +319,7 @@ jQuery(document).ready(function($) {
                 //createTimeline(JSON.parse(data));
                 buildTranscriptHtml(JSON.parse(data));
                 //$('#transcript-div').append(JSON.parse(data));
-                $("#dhpress-tips").joyride({ autoStart : true});
+                $("#dhpress-tips").joyride({ });
                 
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
