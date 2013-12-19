@@ -1056,7 +1056,10 @@ function createMarkerArray($project_id)
 			// Store all of the properties
 		$temp_feature['properties'] = $tempProperties;
 			// Save this marker
-		array_push($feature_array,$temp_feature);
+		if($lonlat) {
+			array_push($feature_array,$temp_feature);
+		}
+		
 		
 	endwhile;
 	//$json_string .= ']';
@@ -2132,7 +2135,7 @@ function dhpCreateTaxTerms()
 {
 	$mote_parent = $_POST['mote_name'];
 	$dhp_projectID = $_POST['project'];
-	$dhp_project_terms = $_POST['terms'];
+	$dhp_project_terms = stripslashes($_POST['terms']);
 
 	$dhp_project_terms1 = json_decode($dhp_project_terms);
 	$termDetailsArray = array('parentTerm'=>$mote_parent, 'projectID' => $dhp_projectID, 'termsArray'=>$dhp_project_terms1);
