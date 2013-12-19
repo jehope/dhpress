@@ -94,7 +94,7 @@ jQuery(document).ready(function($) {
     function hightlightTranscriptLine(millisecond){
         var match;
         _.find(tcArray, function(val, index){
-            match = (millisecond >= val && millisecond < tcArray[index+1]);
+            match = (millisecond < tcArray[index+1]);
             if (match) {
                 if(rowIndex!==index) {
                     rowIndex      = index;
@@ -107,8 +107,8 @@ jQuery(document).ready(function($) {
                     $('.transcript-list div.type-timecode').removeClass('current-clip');
                     $('.transcript-list div.type-timecode').eq(index).addClass('current-clip');
                 }
-                
-            }
+                return match;
+            } 
         });
     }
 
