@@ -30,12 +30,12 @@ jQuery(document).ready(function($) {
 
             // Insert name of taxonomy on page
     	$('#content').prepend('<h1>'+dhpData.tax['name']+'</h1>');
-    	console.log(location.hash);
+    	// console.log(location.hash);
 
     	var transcriptObject = settingsHas('entry-points','transcript');
 
     	if(transcriptObject){
-    		console.log(transcriptObject['settings']);
+    		// console.log(transcriptObject['settings']);
 
             if(dhpData.tax.parent_name === 'Interviewee') {
                 $('#content').prepend('<div id="transcript-div"></div>');
@@ -168,25 +168,26 @@ jQuery(document).ready(function($) {
             transcript_html = $('<div class="transcript-list"/>');
 
             var index = 0;
+            var textBlock;
+            var lineClass = ['','odd-line'];
             _.each(split_transcript, function(val){
                 val = val.trim();
-                var lineClass = '';
-                var oddEven = index % 4;
-                if(oddEven==0||oddEven==1) {
-                    lineClass = 'odd-line';
-                }
+                var oddEven = index % 2; 
                 //skip values with line breaks...basically empty items
                 if(val.length>1) {       
-                    var row = parseInt(index / 2);
-                    if(val[0]==='['&&val[1]==='0'){  
-                        transcript_html.append('<div class="row"></div>');
+                    
+                    if(val[0]==='['&&val[1]==='0'){                  
+                        if(index>0) {
+                            $('.row', transcript_html).eq(index-1).append('<div class="type-text">'+textBlock+'</div>');
+                        }
+                        index++;
+                        textBlock = ''; 
+                        transcript_html.append('<div class="row '+lineClass[oddEven]+'"><div class="type-timecode" data-timecode="'+convertToMilliSeconds(val)+'">'+val+'</div></div>');
                         tcArray.push(convertToMilliSeconds(val));
-                        $('.row',transcript_html).eq(row).append('<div class="type-timecode '+lineClass+'" data-timecode="'+convertToMilliSeconds(val)+'">'+val+'</div>'); 
                     }
                     else {
-                        $('.row',transcript_html).eq(row).append('<div class="type-text '+lineClass+'">'+val+'</div>'); 
-                    }
-                    index++;
+                        textBlock += val;                       
+                    }                   
                 }
             });
         }
@@ -200,18 +201,24 @@ jQuery(document).ready(function($) {
         var first_transcriptHTML = $('.transcript-list .type-text');
         // console.log(split_transcript)
         var textArray = [];
+        var textBlock;
+        var index = 0;
         if(split_transcript) {
-            _.each(split_transcript, function(val,index){ 
+            _.each(split_transcript, function(val){
                 //skip values with line breaks...basically empty items
                 val = val.trim();
                 if(val.length>1) {
                     if(val[0]==='['&&val[1]==='0'){
+                        if(index>0) {
+                            textArray.push(textBlock);
+                        }
+                        textBlock='';
                     }
                     else {
-                        textArray.push(val);
-                        // $transcript_html.append('<li class="type-text">'+val+'</li>'); 
+                        textBlock += val;
                     }
-                }       
+                    index++;
+                }
             });
         }
         //loop thru original transcript and add second lines

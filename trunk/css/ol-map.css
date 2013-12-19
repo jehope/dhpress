@@ -263,6 +263,8 @@ filter: alpha(opacity=60);
 	padding: 2%;
 	cursor: pointer;
 }
+.odd-line .type-timecode,
+.odd-line .type-text,
 .type-timecode.odd-line,
 .type-text.odd-line {
 	background: #ddd;
