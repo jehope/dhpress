@@ -1715,7 +1715,7 @@ function getTranscriptClip($transcript, $clip)
 		$returnClip = utf8_decode($codedClip);
 	}
 	else {
-		$returnClip = 'incorrect timestamp or transcript not found';
+		$returnClip = json_encode(array('clipStart'=> $clipStart,'clipEnd'=> $clipEnd, 'clipArrayend' => $clipArray[1]));
 	}
 	return $returnClip;
 } // getTranscriptClip()
