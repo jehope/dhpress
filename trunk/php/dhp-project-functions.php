@@ -656,7 +656,6 @@ function getIconsForTerms($parent_term, $taxonomy)
 		$children_names2 = array();
 		foreach ($children_terms2 as $child2) {
 				// convert IDs from String to Integer
-				// ?? does a change to "as" get copied into original array??
 			$child2->term_id = intval($child2->term_id);
 			$child2->parent = intval($child2->parent);
 			array_push($children_names2, $child2->name);
@@ -863,9 +862,8 @@ function createMarkerArray($project_id)
 		// get Project info
 	$project_object = get_post($project_id);
 	$project_tax = 'dhp_tax_'.$project_object->ID;
-	$project_settingsA = get_post_meta($project_id,'project_settings');
-		// ?? What is the str_replace doing here??
-	$project_settings = json_decode(str_replace('\\','',$project_settingsA[0]),true);
+	$project_settingsA = get_post_meta($project_id,'project_settings', true);
+	$project_settings = json_decode($project_settingsA,true);
 
     	// Initialize settings in case not used
 	$map_pointsMote = $cordMote = $filters = $audio = $transcript = $timecode = null;
@@ -969,8 +967,9 @@ function createMarkerArray($project_id)
 		} else {
 			$title = get_post_meta($marker_id,$title_mote,true);
 		}
-		$tempProperties["title"]       = $title;
-
+		$tempProperties["title"] = $title;
+		$temp_feature['type']    = 'Feature';
+		
 			// Map visualization features?
 		if (!is_null($map_pointsMote)) {
 			if(count($cordMote)==2) {
@@ -984,7 +983,6 @@ function createMarkerArray($project_id)
 			}
 			//$json_string .= $cordMote;
 			//$lonlat = invertLatLon($latlon[0]);
-			$temp_feature['type'] = 'Feature';
 			$temp_feature['geometry'] = array("type"=>"Point","coordinates"=> $lonlat);
 		}
 
@@ -1706,7 +1704,7 @@ function getTranscriptClip($transcript, $clip)
 	$clipArray        = split("-", $clip);
 	$clipStart        = mb_strpos($codedTransctript, $clipArray[0]);
 	$clipEnd          = mb_strpos($codedTransctript, $clipArray[1]);
-		// ?? why 13 ??
+		// timecode is always 13 characters
 	$clipLength       = $clipEnd - $clipStart + 13;
 
 	if( $clipStart && $clipEnd ) {		
@@ -2134,8 +2132,7 @@ function dhpCreateTaxTerms()
 {
 	$mote_parent = $_POST['mote_name'];
 	$dhp_projectID = $_POST['project'];
-		// ?? Why is this done ??
-	$dhp_project_terms = str_replace('\\', '', $_POST['terms']);
+	$dhp_project_terms = $_POST['terms'];
 
 	$dhp_project_terms1 = json_decode($dhp_project_terms);
 	$termDetailsArray = array('parentTerm'=>$mote_parent, 'projectID' => $dhp_projectID, 'termsArray'=>$dhp_project_terms1);
@@ -2591,8 +2588,7 @@ add_filter( 'archive_template', 'dhp_tax_template' );
 // PURPOSE: Set template to be used to show results of top-level custom taxonomy display
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
-// TO DO:   Replace use of get_page() for finding Project ID!
-//			Only enqueue the styles/scripts actually used for the visualization/interface
+// TO DO:   Only enqueue the styles/scripts actually used for the visualization/interface
 
 function dhp_tax_template( $page_template )
 {
@@ -2617,9 +2613,9 @@ function dhp_tax_template( $page_template )
 	    	// Get Project name by removing prefix from taxonomy name
 	    $pieces = explode("dhp_tax_", $title);
 	    	// Retrieve ID from Project post
-	    $projectID = get_page($pieces[1],OBJECT,'project');
+	    $projectID = $pieces[1];
 	    	// Retrieve Project's settings
-	    $project_settings = get_post_meta($projectID->ID,'project_settings',true);
+	    $project_settings = get_post_meta($projectID,'project_settings',true);
 
 	    	// mediaelement for timelines -- not currently used
 		// wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
@@ -2645,7 +2641,7 @@ function dhp_tax_template( $page_template )
 		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__) ));
 		
 		wp_localize_script( 'dhp-tax-script', 'dhpData', array(
-				'project_id' => __($projectID->ID,'dhp'),
+				'project_id' => __($projectID,'dhp'),
 				'ajax_url' => __($dev_url, 'dhp'),
 				'tax' => __($term,'dhp'), 
 				'project_settings' => __($project_settings)
