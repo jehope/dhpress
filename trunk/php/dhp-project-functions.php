@@ -1526,16 +1526,13 @@ function dhpCreateLegendTax()
 	$custom_field = $mote['custom-fields'];
 	$dhp_projectID = $_POST['project'];
 
-	$dhp_project = get_post($dhp_projectID);
-	$dhp_project_slug = $dhp_project->post_name;
-	$dhp_tax_name = 'dhp_tax_'.$dhp_project->ID;
+	$dhp_tax_name = 'dhp_tax_'.$dhp_projectID;
 
 	createParentTerm($mote['name'],$dhp_tax_name);
 	//get fresh terms from meta feild 
 
 	//returns unique array of values
 	$mArray = createMoteValueArrays($custom_field,$mote_delim,$dhp_projectID);
-
 	//create/update terms with mArray
 	$terms_loaded = dhpUpdateTaxonomy($mArray, $mote['name'], $dhp_tax_name);
 
