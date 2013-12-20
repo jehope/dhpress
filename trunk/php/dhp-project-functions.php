@@ -971,14 +971,20 @@ function createMarkerArray($project_id)
 		$temp_feature['type']    = 'Feature';
 		
 			// Map visualization features?
+			// Skip marker if missing necessary LatLong data
 		if (!is_null($map_pointsMote)) {
 			if(count($cordMote)==2) {
 				$temp_lat = get_post_meta($marker_id, $cordMote[0], true);
 				$temp_lon = get_post_meta($marker_id, $cordMote[1], true);
-
+				if ($temp_lat=="" || $temp_long=="") {
+					continue;
+				}
 				$lonlat = array($temp_lon,$temp_lat);
 			} elseif(count($cordMote)==1) {
 				$temp_latlon = get_post_meta($marker_id, $cordMote[0], true);
+				if ($temp_latlon=="") {
+					continue;
+				}
 				$lonlat = invertLatLon($temp_latlon);
 			}
 			//$json_string .= $cordMote;
@@ -1056,10 +1062,7 @@ function createMarkerArray($project_id)
 			// Store all of the properties
 		$temp_feature['properties'] = $tempProperties;
 			// Save this marker
-		if($lonlat) {
-			array_push($feature_array,$temp_feature);
-		}
-		
+		array_push($feature_array,$temp_feature);
 		
 	endwhile;
 	//$json_string .= ']';
