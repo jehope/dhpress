@@ -211,7 +211,7 @@ function dhp_project_updated_messages( $messages )
 add_action( 'init', 'create_tax_for_projects', 0 );
 
 // create_tax_for_projects()
-// PURPOSE: Create custom types for all existing projects if they don't exist
+// PURPOSE: Create custom types for all existing DHP Projects if they don't exist (head term for Project)
 //			Taxonomy "head" name for each project is 'dhp_tax_<project_id>'
 
 function create_tax_for_projects()
@@ -219,6 +219,7 @@ function create_tax_for_projects()
 	$args = array( 'post_type' => 'project', 'posts_per_page' => -1 );
 	$projects = get_posts($args);
 	if ($projects) {
+			// Go through all currently existing Projects
 		foreach ( $projects as $project ) {
 			$projectTax = 'dhp_tax_'.$project->ID;
 			$projectName = $project->post_title;
@@ -382,14 +383,11 @@ function add_dhp_project_settings_box()
 //					for auto-save
 // ASSUMPTIONS:	Global $post is set to point to post for current project
 //				Global $dhp_project_settings_fields is set to array of strings describing HTML controls
-// SIDE-FX:		Sets _PROJECT_ID_ global to ID of project post
-// TO DO:		Don't use _PROJECT_ID_ global! tried removing logic but didn't work!
-//				Put all HTML producing logic into special generalized function
+// TO DO:		Put all HTML producing logic into special generalized function
 
 function show_dhp_project_settings_box()
 {
 	global $dhp_project_settings_fields, $post;
-	define("_PROJECT_ID_", $post->ID);
 
 	// Load post id for project settings
 	echo '<input type="hidden" id="dhp-projectid" value="'.$post->ID.'"/>';
@@ -454,7 +452,7 @@ function show_dhp_project_settings_box()
 	} // end foreach
 	echo '</table>'; // end table
 	
-	print_new_bootstrap_html();
+	print_new_bootstrap_html($post->ID);
 } // show_dhp_project_settings_box()
 
 // 'save_post' is called after post is created or updated
@@ -484,7 +482,7 @@ function save_dhp_project_settings($post_id)
 		return $post_id;
 
 	// check permissions
-	if ('page' == $_POST['post_type']) {
+	if ($_POST['post_type'] == 'page') {
 		if (!current_user_can('edit_page', $post_id))
 			return $post_id;
 		} elseif (!current_user_can('edit_post', $post_id)) {
@@ -500,7 +498,7 @@ function save_dhp_project_settings($post_id)
 			$new = $_POST[$field['id']];
 			if ($new && $new != $old) {
 				update_metadata( 'post', $post_id, $field['id'], $new);
-			} elseif ('' == $new && $old) {
+			} elseif ($new == '' && $old) {
 				delete_metadata( 'post', $post_id, $field['id'], $old);
 			}
 		} // end foreach
@@ -511,20 +509,20 @@ function save_dhp_project_settings($post_id)
 			$new = $_POST[$field['id']];
 			if ($new && $new != $old) {
 				update_post_meta($post_id, $field['id'], $new);
-			} elseif ('' == $new && $old) {
+			} elseif ($new == '' && $old) {
 				delete_post_meta($post_id, $field['id'], $old);
 			}
 		} // end foreach
 	}
 } // save_dhp_project_settings()
 
-// createMetaValueArray($custom_name,$project_id)
-// PURPOSE: Calculate the unique values for a field in all markers of a project
+// getCustomFieldUniqueValues($custom_field_name,$project_id)
+// PURPOSE: Calculate the unique values for a custom field in all markers of a project
 // INPUT:	$custom_name = the field name within a marker; $project_id = ID of the Project (post)
 // RETURNS:	Array of unique values
 // TO DO:	A faster way to do this? Create a sorted array/list?
 
-function createMetaValueArray($custom_name,$project_id)
+function getCustomFieldUniqueValues($custom_field_name,$project_id)
 {
 		//loop through all markers in project & add to array
 	$moteArray = array();
@@ -535,21 +533,21 @@ function createMetaValueArray($custom_name,$project_id)
 	$tempMetaArray = array();
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
-		$tempMetaValue = get_post_meta(get_the_ID(), $custom_name, true);
+		$tempMetaValue = get_post_meta(get_the_ID(), $custom_field_name, true);
 
 		array_push($tempMetaArray, $tempMetaValue);
 	endwhile;
 
 	$result = array_unique($tempMetaArray);
 	return $result;
-} // createMetaValueArray()
+} // getCustomFieldUniqueValues()
 
-// createUniqueCustomFieldArray($the_id)
+// getProjectCustomFields($the_id)
 // PURPOSE:	To determine all of the custom fields associated with the Project
 // RETURNS: Array of all unique custom fields of all marker posts associated with the Project
 // TO DO:	A faster way to do this? Create a sorted array/list?
 
-function createUniqueCustomFieldArray($project_id)
+function getProjectCustomFields($project_id)
 {
 		//loop through all markers in project adding to array
 	$custom_field_array = array();
@@ -573,7 +571,7 @@ function createUniqueCustomFieldArray($project_id)
 	$unique_custom_fields = array_unique($custom_field_array);
 
 	return $unique_custom_fields;
-} // createUniqueCustomFieldArray()
+} // getProjectCustomFields()
 
 
 // invertLatLon($latlon)
@@ -586,12 +584,10 @@ function invertLatLon($latlon)
 	if($lonlat==','){
 		return '';
 	}
-
-	if($latlon&&$latlon!=',') {
+	if($latlon) {
 		$tempLonLat = split(',',$latlon);
 		return array($tempLonLat[1],$tempLonLat[0]);
 	}
-
 } // invertLatLon()
 
 // getIconsForTerms($parent_term, $taxonomy)
@@ -710,11 +706,11 @@ function dhp_get_term_by_parent($link_terms, $terms, $tax)
 
 // ========================================= AJAX calls ======================================
 
-add_action( 'wp_ajax_dhp_get_group_feed', 'dhp_get_group_feed' );
-add_action( 'wp_ajax_nopriv_dhp_get_group_feed', 'dhp_get_group_feed' );
+// add_action( 'wp_ajax_dhp_get_group_feed', 'dhp_get_group_feed' );
+// add_action( 'wp_ajax_nopriv_dhp_get_group_feed', 'dhp_get_group_feed' );
 
 // dhp_get_group_feed($tax_name,$term_name)
-// PURPOSE: Ajax hook that will return all Markers in this Project associated with a specific term
+// PURPOSE: Determine all Markers in this Project associated with a specific term
 //				and their associated data (as configured in project settings)
 // INPUT:	$tax_name = "dhp_tax_"<pID>
 // 			$term_name = taxonomic term created for Mote value
@@ -724,9 +720,12 @@ add_action( 'wp_ajax_nopriv_dhp_get_group_feed', 'dhp_get_group_feed' );
 
 function dhp_get_group_feed($tax_name,$term_name)
 {
+		// Get ProjectID from taxonomy root name
 	$pieces = explode("dhp_tax_", $tax_name);
-    $projectID = get_page($pieces[1],OBJECT,'project');
-    $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
+    // $projectID = get_page($pieces[1],OBJECT,'project');
+    // $project_settings = json_decode(get_post_meta($projectID->ID,'project_settings',true),true);
+    $projectID = $pieces[1];
+    $project_settings = json_decode(get_post_meta($projectID,'project_settings',true),true);
     $the_term = get_term_by('name', $term_name, $tax_name);
 
     	// Initialize settings in case not used
@@ -787,6 +786,7 @@ function dhp_get_group_feed($tax_name,$term_name)
 		$this_feature['properties']['categories'] = json_encode($post_terms);
 
 			// Get all potential visualization features
+			// Abort feature if missing required field
 
 			// Get audio transcripts features
 		if (!is_null($audio)) {
@@ -800,14 +800,20 @@ function dhp_get_group_feed($tax_name,$term_name)
 		if (!is_null($map_pointsMote)) {
 				// retrieve coordinate data
 			if(count($cordMote)==2) {
-				$temp_lat = get_post_meta($marker_id,$cordMote[0]);
-				$temp_lon = get_post_meta($marker_id,$cordMote[1]);
-				$temp_latlon = $temp_lat[0].','.$temp_lon[0];
+				$temp_lat = get_post_meta($marker_id,$cordMote[0], true);
+				$temp_lon = get_post_meta($marker_id,$cordMote[1], true);
+				if ($temp_lat=="" || $temp_lon=="") {
+					continue;
+				}
+				$temp_latlon = $temp_lat.','.$temp_lon;
 
 				$lonlat = invertLatLon($temp_latlon);
 			} else if(count($cordMote)==1) {
-				$temp_latlon = get_post_meta($marker_id,$cordMote[0]);
-				$lonlat = invertLatLon($temp_latlon[0]);
+				$temp_latlon = get_post_meta($marker_id,$cordMote[0], true);
+				if ($temp_latlon=="") {
+					continue;
+				}
+				$lonlat = invertLatLon($temp_latlon);
 			}
 
 			$this_feature['type'] = 'Feature';
@@ -880,8 +886,7 @@ function createMarkerArray($project_id)
 				//array of custom fields
 				//$cordMote = $map_pointsMote['custom-fields'];
 			}
-
-				// Find all possible legends for this map -- each marker needs these fields
+				// Find all possible legends/filters for this map -- each marker needs these fields
 			$filters = $eps['settings']['filter-data'];
 				// Collect all possible category values/tax names for each mote in all filters
 			foreach( $filters as $legend ) {
@@ -1184,19 +1189,17 @@ function create_custom_field_option_list($cf_array)
 
 // print_new_bootstrap_html()
 // PURPOSE:	Create the HTML for DHP admin panel for editing a Project
-// ASSUMES:	_PROJECT_ID_ global has been set
-// TO DO:	Remove use of _PROJECT_ID_  global !
 
-function print_new_bootstrap_html()
+function print_new_bootstrap_html($project_id)
 {
 	// global $dhp_custom_fields, $post;
 	global $dhp_custom_fields;
 
 	// $projectPage = get_page($post->ID);
-	$projectPage = get_page(_PROJECT_ID_);
-	$projectTax_slug = $projectPage->post_name;
-//	$dhp_custom_fields = createUniqueCustomFieldArray($post->ID);
-	$dhp_custom_fields = createUniqueCustomFieldArray(_PROJECT_ID_);
+	// $projectPage = get_page($project_id);
+	// $projectTax_slug = $projectPage->post_name;
+//	$dhp_custom_fields = getProjectCustomFields($post->ID);
+	$dhp_custom_fields = getProjectCustomFields($project_id);
 	echo '<div class="new-bootstrap">
     <div class="row-fluid"> 	
     	<div class="span12">
@@ -1213,8 +1216,8 @@ function print_new_bootstrap_html()
 
           	<div id="info" class="tab-pane fade in active">
               <h4>Project Info</h4>
-              <p>Project ID: '._PROJECT_ID_.'</p>
-              <p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=dhp_tax_'._PROJECT_ID_.'" >Category Manager</a></p>
+              <p>Project ID: '.$project_id.'</p>
+              <p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=dhp_tax_'.$project_id.'" >Category Manager</a></p>
           	</div>
 
             <div id="motes" class="tab-pane fade in">
@@ -1441,7 +1444,6 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 		// now concatenate all parent terms (except current parent) in string
 	foreach ( $parent_terms_to_exclude as $term ) {
 		if($term->term_id != $parent_id) {
-			
 			if($exclude_count >0) {
 				$exclude_string.=',';
 			}
@@ -1468,15 +1470,15 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 } // dhpUpdateTaxonomy()
 
 
-// createMoteValueArrays($custom_name, $delim, $project_id)
-// PURPOSE: Create arrays of custom field values associated with a project
+// getCustomFieldUniqueDelimValues($custom_name, $delim, $project_id)
+// PURPOSE: Get unique values of a custom field (w/delimiter) associated with a project
 // INPUT:	$custom_name = name of the custom field (specified by mote) for which we are creating values
 //			$delim = character separator for values in field (if any), or null if none
 //			$project_id = ID of the Project
 // RETURNS:	Array of unique values for the custom field
 // TO DO:	A more efficient way of doing this? Sorted array?
 
-function createMoteValueArrays($custom_name, $delim, $project_id)
+function getCustomFieldUniqueDelimValues($custom_name, $delim, $project_id)
 {
 		// Loop through all markers in project
 	$moteArray = array();
@@ -1485,7 +1487,6 @@ function createMoteValueArrays($custom_name, $delim, $project_id)
 	
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
-
 		$marker_id = get_the_ID();
 		//$temp_post = get_post($marker_id);
 
@@ -1494,8 +1495,7 @@ function createMoteValueArrays($custom_name, $delim, $project_id)
 
 		if($delim) {
 			$tempMoteArray = split($delim,$tempMoteValue);
-		}
-		else {
+		} else {
 			$tempMoteArray = array($tempMoteValue);
 		}
 
@@ -1506,9 +1506,8 @@ function createMoteValueArrays($custom_name, $delim, $project_id)
 	endwhile;
 
 	$result = array_unique($moteArray);
-
 	return $result;
-} // createMoteValueArrays()
+} // getCustomFieldUniqueDelimValues()
 
 
 // creates terms in taxonomy when a legend is created
@@ -1537,7 +1536,7 @@ function dhpCreateLegendTax()
 	//get fresh terms from meta feild 
 
 	//returns unique array of values
-	$mArray = createMoteValueArrays($custom_field,$mote_delim,$dhp_projectID);
+	$mArray = getCustomFieldUniqueDelimValues($custom_field,$mote_delim,$dhp_projectID);
 
 	//create/update terms with mArray
 	$terms_loaded = dhpUpdateTaxonomy($mArray, $mote['name'], $dhp_tax_name);
@@ -1835,7 +1834,7 @@ function dhpGetTranscript()
 add_action( 'wp_ajax_dhpAddCustomField', 'dhpAddCustomField' );
 
 // dhpAddCustomField()
-// PURPOSE:	Handle Ajax call to create new custom field for Project
+// PURPOSE:	Handle Ajax call to create new custom field with particular value for all Markers in Project
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['field_name'] = name of new custom field to add
 //			$_POST['field_value'] = default value to set in all markers belonging to Project
@@ -1852,7 +1851,7 @@ function dhpAddCustomField()
 
 		$marker_id = get_the_ID();
 		add_post_meta($marker_id, $dhp_custom_field_name, $dhp_custom_field_value, true);
-				
+
 	endwhile;
 	
 	die();
@@ -2046,7 +2045,7 @@ function dhpGetFieldValues()
 {
 	$dhp_project 			= $_POST['project'];
 	$dhp_custom_field_name 	= $_POST['field_name'];
-	$tempValues = createMetaValueArray($dhp_custom_field_name, $dhp_project);
+	$tempValues = getCustomFieldUniqueValues($dhp_custom_field_name, $dhp_project);
 
 	die(json_encode($tempValues));
 } // dhpGetFieldValues()
@@ -2264,7 +2263,7 @@ function dhpGetCustomFields()
 {
 	$dhp_projectID = $_POST['project'];	
 	
-	$dhp_custom_fields = createUniqueCustomFieldArray($dhp_projectID);
+	$dhp_custom_fields = getProjectCustomFields($dhp_projectID);
 	die(json_encode($dhp_custom_fields));
 } // dhpGetCustomFields()
 
@@ -2355,7 +2354,7 @@ function add_dhp_project_admin_scripts( $hook )
     $blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
-    //$dhp_custom_fields = createUniqueCustomFieldArray($post->ID);
+    //$dhp_custom_fields = getProjectCustomFields($post->ID);
 
  		// Editing a specific project in admin panel
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
