@@ -945,7 +945,7 @@ jQuery(document).ready(function($) {
         var mote = getMote(moteName);
         var projectID = projectObj['project-details']['id'];
         //console.log(projectObj['motes'])
-        dhpGetMoteValues(mote,projectID,true);
+        dhpGetMoteValues(mote,projectID);
     });
     $('.delete-legend').unbind('click');
     $('.delete-legend').click(function() {
@@ -1476,27 +1476,7 @@ jQuery(document).ready(function($) {
     // INPUT:   title = name of mote (unused!)
     //          data = JSON Object of all of the unique values of the Mote
   function createConfigureLegendModal(title,data){
-    //create modal
-    $('#taxModal').remove();
-    $('body').append('<!-- Modal -->\
-          <div id="taxModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
-            <div class="modal-header">\
-              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
-              <h3 id="myModalLabel">Legend Configure</h3>\
-            </div>\
-            <div class="modal-body">\
-            </div>\
-            <div class="modal-footer">\
-            </div>\
-          </div>');
-      $('#taxModal').modal('show');
 
-  	//console.log('fire how many times?');
-  	//$('#filter_legend_builder').append(data);
-  	//$('#filter_legend_builder').append($('.icons'));
-  	// tb_show('Create Legend', '#TB_inline?&inlineId=filter_legend_builder' );
-  	
-  	// resizeTB();
     $('#taxModal .modal-body').empty();
   	$('#taxModal .modal-body').append(builtHTMLForLegendValues(data));
   	
@@ -1728,6 +1708,9 @@ jQuery(document).ready(function($) {
 
   //=================================== AJAX functions ==================================
 
+    // PURPOSE: Saves project settings data object
+    // RETURNS: Saved date
+    
   function updateProjectSettings(){
   	projectID = postID;
   	var settingsData = $('#project_settings').val();
@@ -1740,9 +1723,31 @@ jQuery(document).ready(function($) {
               settings: settingsData
           },
           success: function(data, textStatus, XMLHttpRequest){
-              //console.log(textStatus);
-              console.log(data);
-          
+              console.log(data);         
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown){
+             alert(errorThrown);
+          }
+      });
+  }
+    // PURPOSE: Create terms for new legend
+    // RETURNS: Object with terms
+    // INPUT:   treeParentID = Top level term id(legend name)
+    //          projectID = id
+    //          taxTerms = termObject to be created in wordpress
+  function dhpCreateLegendTax(mote,projectID,loadLegend) {
+
+    jQuery.ajax({
+          type: 'POST',
+          url: ajax_url,
+          data: {
+              action: 'dhpCreateLegendTax',
+              project: projectID,
+              mote_name: mote
+          },
+          success: function(data, textStatus, XMLHttpRequest){
+              $('#createModal').modal('hide');
+              changeToLoadBtn();
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1750,9 +1755,53 @@ jQuery(document).ready(function($) {
       });
   }
 
+    // PURPOSE: Get term object for legend editor and open modal
+    // RETURNS: Object with terms
+    // INPUT:   mote = Top level term id(legend name)
+    //          projectID = id for project
+  function dhpGetMoteValues(mote,projectID) {
+
+      //create modal here to hold users attention. Data will be rendered on response
+    $('#taxModal').remove();
+    $('body').append('<!-- Modal -->\
+          <div id="taxModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
+            <div class="modal-header">\
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+              <h3 id="myModalLabel">Legend Configure</h3>\
+            </div>\
+            <div class="modal-body">\
+            </div>\
+            <div class="modal-footer">\
+            </div>\
+          </div>');
+    $('#taxModal').modal('show');
+
+    jQuery.ajax({
+          type: 'POST',
+          url: ajax_url,
+          data: {
+              action: 'dhpGetMoteValues',
+              project: projectID,
+              mote_name: mote
+          },
+          success: function(data, textStatus, XMLHttpRequest){
+              createConfigureLegendModal(mote['name'],data); 
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown){
+             alert(errorThrown);
+          }
+      });
+  } 
+
+    // PURPOSE: Update term structure for legend(introduces icon_url field)
+    // RETURNS: Object with terms
+    // INPUT:   treeParentID = Top level term id(legend name)
+    //          projectID = id
+    //          taxTerms = termObject to update terms in wordpress(introduces icon_url)
+
   function createTaxTerms(treeParentID,projectID,taxTerms) {
-  	var termData = taxTerms;
-  	jQuery.ajax({
+    var termData = taxTerms;
+    jQuery.ajax({
           type: 'POST',
           url: ajax_url,
           data: {
@@ -1762,15 +1811,14 @@ jQuery(document).ready(function($) {
               terms: termData
           },
           success: function(data, textStatus, XMLHttpRequest){
-              console.log('dhpCreateTaxTerms');
-              console.log(JSON.parse(data));
               $('#taxModal').modal('hide');
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
           }
       });
-  }	
+  } 
+
   /**
    * [createCustomFieldFilter create a custom field using a subset of markers filtered by a custom field and value]
    * @param  {[int]} projectID   [project id that marker is associated to]
@@ -1996,54 +2044,5 @@ jQuery(document).ready(function($) {
       });
   }
 
-  function dhpCreateLegendTax(mote,projectID,loadLegend) {
-    //console.log(moteName);
-
-    jQuery.ajax({
-          type: 'POST',
-          url: ajax_url,
-          data: {
-              action: 'dhpCreateLegendTax',
-              project: projectID,
-              mote_name: mote
-          },
-          success: function(data, textStatus, XMLHttpRequest){
-              console.log('dhpCreateLegendTax');
-              console.log(JSON.parse(data));
-              $('#createModal').modal('hide');
-              changeToLoadBtn();
-              // if(loadLegend && data) { 
-              //   //createConfigureLegendModal(mote['name'],data); 
-              // }
-          },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
-             alert(errorThrown);
-          }
-      });
-  }
-
-  function dhpGetMoteValues(mote,projectID,loadLegend) {
-  	//console.log(moteName);
-
-  	jQuery.ajax({
-          type: 'POST',
-          url: ajax_url,
-          data: {
-              action: 'dhpGetMoteValues',
-              project: projectID,
-              mote_name: mote
-          },
-          success: function(data, textStatus, XMLHttpRequest){
-              console.log('dhpGetMoteValues');
-              console.log(JSON.parse(data));
-              
-              if(loadLegend && data) { 
-                createConfigureLegendModal(mote['name'],data); 
-              }
-          },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
-             alert(errorThrown);
-          }
-      });
-  }	
+  
 });

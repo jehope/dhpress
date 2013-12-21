@@ -907,6 +907,7 @@ function createMarkerArray($project_id)
 
 	//$json_string = '{"type": "FeatureCollection","features": [';
 	$json_string['type'] = 'FeatureCollection';
+	$json_string['debug'] = array();
 	$feature_array = array();
 	//$feature_collection['type'] = "FeatureCollection";
 	//$feature_collection['features'] = array();
@@ -978,17 +979,19 @@ function createMarkerArray($project_id)
 			// Map visualization features?
 			// Skip marker if missing necessary LatLong data
 		if (!is_null($map_pointsMote)) {
+
 			if(count($cordMote)==2) {
 				$temp_lat = get_post_meta($marker_id, $cordMote[0], true);
 				$temp_lon = get_post_meta($marker_id, $cordMote[1], true);
+				// array_push($json_string['debug'], $temp_lat);
 				if ($temp_lat=="" || $temp_long=="") {
-					continue;
+					// continue; //these kick out of the whole loop, not just the one marker
 				}
 				$lonlat = array($temp_lon,$temp_lat);
 			} elseif(count($cordMote)==1) {
 				$temp_latlon = get_post_meta($marker_id, $cordMote[0], true);
 				if ($temp_latlon=="") {
-					continue;
+					// continue;
 				}
 				$lonlat = invertLatLon($temp_latlon);
 			}
@@ -1402,7 +1405,7 @@ function dhpSaveProjectSettings()
 	update_post_meta($dhp_projectID, 'project_settings', $settings);
 
 		// Ajax call must terminate with "die"
-	die('working... '. $settings);
+	die('saving... '. $settings);
 } // dhpSaveProjectSettings()
 
 
@@ -1421,19 +1424,24 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 	$parent_id = $parent_term->term_id;
 	$args = array('parent' => $parent_id);
 
-
+	$updateTaxObject['debug']['tax'] = $dhp_tax_name;
+	$updateTaxObject['debug']['parent'] = $args;
+	$updateTaxObject['debug']['mArrayLoop'] = array();
 	//loop through array and create terms with parent(mote_name)
-
-	foreach ($mArray as &$value) {
-   		$termIs = term_exists( $value, $dhp_tax_name, $parent_id ); 	
-   		
+	
+	foreach ($mArray as $value) {
+		//escape value and search
+   		$termIs = term_exists( addslashes($value), $dhp_tax_name, $parent_id );
+   		//debug
+   		// array_push($updateTaxObject['debug']['mArrayLoop'], addslashes($value));
+   		// array_push($updateTaxObject['debug']['mArrayLoop'], $termIs);
    		if(!$termIs) {
+   			//if term doesn't exist, create
    			wp_insert_term( $value, $dhp_tax_name, $args );
    		}
    		else {
-   			$termName = get_term($termIs->term_id, $dhp_tax_name);
-   			// $args = array('parent' => $parent_id, 'alias_of'=>$termName->slug);
-   			wp_update_term( $value, $dhp_tax_name, $args );
+   			//update term using id
+   			wp_update_term( $termIs->term_id, $dhp_tax_name, $args );
    		}
 	}
 
@@ -1465,8 +1473,12 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 			$term ->icon_url = $term_url;
 		}
 	}
+	//testing return
+	// $updateTaxObject['debug'] = 'test';
+	$updateTaxObject['terms'] = $terms_loaded;
+	return $updateTaxObject;
 
-	return $terms_loaded;
+	//return $terms_loaded;
 } // dhpUpdateTaxonomy()
 
 
@@ -1528,9 +1540,7 @@ function dhpCreateLegendTax()
 	$custom_field = $mote['custom-fields'];
 	$dhp_projectID = $_POST['project'];
 
-	$dhp_project = get_post($dhp_projectID);
-	$dhp_project_slug = $dhp_project->post_name;
-	$dhp_tax_name = 'dhp_tax_'.$dhp_project->ID;
+	$dhp_tax_name = 'dhp_tax_'.$dhp_projectID;
 
 	createParentTerm($mote['name'],$dhp_tax_name);
 	//get fresh terms from meta feild 
@@ -1539,11 +1549,13 @@ function dhpCreateLegendTax()
 	$mArray = getCustomFieldUniqueDelimValues($custom_field,$mote_delim,$dhp_projectID);
 
 	//create/update terms with mArray
-	$terms_loaded = dhpUpdateTaxonomy($mArray, $mote['name'], $dhp_tax_name);
+	$legendObject = dhpUpdateTaxonomy($mArray, $mote['name'], $dhp_tax_name);
 
+	//testing returns
 	//die(json_encode($mArray));
-	die(json_encode($terms_loaded));
-	//die(json_encode($exclude_string));
+	die(json_encode($legendObject));
+
+	// die(json_encode($legendObject['terms']));
 } // dhpCreateLegendTax()
 
 
