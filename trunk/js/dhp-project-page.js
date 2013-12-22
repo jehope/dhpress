@@ -1096,7 +1096,7 @@ jQuery(document).ready(function($) {
         rawAjaxData = data;
         // console.log(rawAjaxData);
 
-        var featureObject;
+        var featureObject = new Object();
         var legends = [];
 
             //split the filter and feature object
@@ -1112,10 +1112,19 @@ jQuery(document).ready(function($) {
                 //     }
                 // }
             } else if(val.type =='FeatureCollection') {
-                featureObject = val;
-                allMarkers = val;
+                allMarkers = val;              
             }
         });
+        featureObject.features = [];
+
+        _.each(allMarkers.features, function(val,index){
+            //check for coordinates
+            if(checkForCoordinates(val)) {
+                featureObject.features.push(val);
+            }
+            featureObject.type = 'FeatureCollection';
+        });
+        allMarkers = featureObject;
         // for(i=0;i<Object.keys(rawAjaxData).length;i++) {
         //     if(rawAjaxData[i].type =='filter') {
         //         legends[i] = (rawAjaxData[i]);
@@ -1136,7 +1145,6 @@ jQuery(document).ready(function($) {
 
         catFilter  = legends[0];        //rawAjaxData[0];
         createLegends(legends);
-        //allMarkers = rawAjaxData[2];
         //var featureObject = rawAjaxData[2];
 
     	var reader = new OpenLayers.Format.GeoJSON({
@@ -1145,12 +1153,26 @@ jQuery(document).ready(function($) {
         });
 
     	var featureData = reader.read(featureObject);
-
-        var  myLayer = mLayer;
+        var myLayer = mLayer;
         myLayer.addFeatures(featureData);
     //player.pause();
     } // createMapMarkers()
 
+        //PURPOSE: To check a map feature for coordinates
+        //RETURNS: Boolean
+        //TODO: Refine coordinate check
+    function checkForCoordinates(feature) {
+        //if cordinate values length is greater than 1 return true
+        var tempFeature = feature;
+        var check = false;
+        if(tempFeature.geometry) {
+            if(tempFeature.geometry.coordinates&&tempFeature.geometry.coordinates[0]&&tempFeature.geometry.coordinates[1]) {
+                if(tempFeature.geometry.coordinates[0].length>1&&tempFeature.geometry.coordinates[1].length>1&&tempFeature.geometry.coordinates[0]!==null,tempFeature.geometry.coordinates[1]!==null)
+                    check = true;
+            }
+        }
+        return check;
+    }
 
         // TO DO:  Everything; get size from EP paraemters…
     function createTimeline(data) {
