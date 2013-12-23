@@ -575,20 +575,22 @@ function getProjectCustomFields($project_id)
 
 
 // invertLatLon($latlon)
-// RETURNS:	New comma separated string with elements reversed
+// RETURNS:	New comma separated string with elements reversed, or null if incorrect format
 // INPUT:	String with 2 comma-separated numbers
-// TO DO:	Better error checking? Move to Map class?
+// TO DO:	Move to Map class?
 
 function invertLatLon($latlon)
 {
-	if($lonlat==','){
-		return '';
+	if(is_null($latlon) || $lonlat==','){
+		return null;
 	}
-	if($latlon) {
-		$tempLonLat = split(',',$latlon);
-		return array($tempLonLat[1],$tempLonLat[0]);
+	$tempLonLat = split(',',$latlon);
+	if (!is_numeric($tempLonLat[0]) || !is_numeric($tempLonLat[1])) {
+		return null;
 	}
+	return array($tempLonLat[1],$tempLonLat[0]);
 } // invertLatLon()
+
 
 // getIconsForTerms($parent_term, $taxonomy)
 // PURPOSE: Get all of the visual features associated via metadata with the taxonomic terms associated with 1 Mote
@@ -715,6 +717,7 @@ function dhp_get_term_by_parent($link_terms, $terms, $tax)
 // INPUT:	$tax_name = "dhp_tax_"<pID>
 // 			$term_name = taxonomic term created for Mote value
 // RETURNS:	Feature collection containing Markers associated with term
+// ASSUMES: Should retain marker even if missing visualization data
 // NOTE:    Which specific features will be returned in results will depend upon visualization; that is,
 //				category/legend MUST be augmented by visual features
 
@@ -735,8 +738,6 @@ function dhp_get_group_feed($tax_name,$term_name)
 	foreach( $project_settings['entry-points'] as $eps) {
 		switch ($eps['type']) {
 		case "map":
-			// $filter_parentMote = getMoteFromName( $project_settings, $eps['settings']['filter-data'] );
-			// $mapFilter = $eps['settings']['filter-data'];
 				// Get mote responsible for setting Lat/Lon on map
 			$map_pointsMote = getMoteFromName( $project_settings, $eps['settings']['marker-layer'] );
 				// Ensure type is Lat/Lon
@@ -744,9 +745,7 @@ function dhp_get_group_feed($tax_name,$term_name)
 					// use "," as default delimiter
 				if(!$map_pointsMote['delim']) { $map_pointsMote['delim']=','; }
 					// Is custom-fields a concatenation of two other fields?
-				$cordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
-				//array of custom fields
-				//$cordMote = $map_pointsMote['custom-fields'];
+				$coordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
 			}
 			break;
 		case "transcript":
@@ -786,7 +785,6 @@ function dhp_get_group_feed($tax_name,$term_name)
 		$this_feature['properties']['categories'] = json_encode($post_terms);
 
 			// Get all potential visualization features
-			// Abort feature if missing required field
 
 			// Get audio transcripts features
 		if (!is_null($audio)) {
@@ -799,21 +797,25 @@ function dhp_get_group_feed($tax_name,$term_name)
 			// Get map visualization features
 		if (!is_null($map_pointsMote)) {
 				// retrieve coordinate data
-			if(count($cordMote)==2) {
-				$temp_lat = get_post_meta($marker_id,$cordMote[0], true);
-				$temp_lon = get_post_meta($marker_id,$cordMote[1], true);
-				if ($temp_lat=="" || $temp_lon=="") {
-					continue;
-				}
-				$temp_latlon = $temp_lat.','.$temp_lon;
-
+			if(count($coordMote)==2) {
+				$temp_lat = get_post_meta($marker_id,$coordMote[0], true);
+				$temp_lon = get_post_meta($marker_id,$coordMote[1], true);
+				// if ($temp_lat=="" || $temp_lon=="" || !is_numeric($temp_lat) || !is_numeric($temp_lon)) {
+				// 	continue;
+				// }
+				$lonlat = $temp_lon.','.$temp_lat;
+				// if (is_null($lonlat)) {
+				// 	continue;
+				// }
+			} else if(count($coordMote)==1) {
+				$temp_latlon = get_post_meta($marker_id,$coordMote[0], true);
+				// if ($temp_latlon=="" || !is_numeric($temp_latlon)) {
+				// 	continue;
+				// }
 				$lonlat = invertLatLon($temp_latlon);
-			} else if(count($cordMote)==1) {
-				$temp_latlon = get_post_meta($marker_id,$cordMote[0], true);
-				if ($temp_latlon=="") {
-					continue;
-				}
-				$lonlat = invertLatLon($temp_latlon);
+				// if (is_null($lonlat)) {
+				// 	continue;
+				// }
 			}
 
 			$this_feature['type'] = 'Feature';
@@ -882,9 +884,9 @@ function createMarkerArray($project_id)
 			$map_pointsMote = getMoteFromName( $project_settings, $eps['settings']['marker-layer'] );
 			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
 				if(!$map_pointsMote['delim']) { $map_pointsMote['delim']=','; }
-				$cordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
+				$coordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
 				//array of custom fields
-				//$cordMote = $map_pointsMote['custom-fields'];
+				//$coordMote = $map_pointsMote['custom-fields'];
 			}
 				// Find all possible legends/filters for this map -- each marker needs these fields
 			$filters = $eps['settings']['filter-data'];
@@ -905,9 +907,10 @@ function createMarkerArray($project_id)
 		}
 	}
 
+	$feature_collection = array();
 	//$json_string = '{"type": "FeatureCollection","features": [';
-	$json_string['type'] = 'FeatureCollection';
-	$json_string['debug'] = array();
+	$feature_collection['type'] = 'FeatureCollection';
+
 	$feature_array = array();
 	//$feature_collection['type'] = "FeatureCollection";
 	//$feature_collection['features'] = array();
@@ -953,6 +956,9 @@ function createMarkerArray($project_id)
 		$title_mote = $temp_mote['custom-fields'];
 	}
 
+	// $feature_collection['debugmsg'] = "coordMote count = ".count($coordMote)." moteName = ".$map_pointsMote["name"];
+	// $feature_collection['debug'] = array();
+
 		// Run query to return all marker posts belonging to this Project
 	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
 	$loop = new WP_Query( $args );
@@ -960,43 +966,37 @@ function createMarkerArray($project_id)
 	while ( $loop->have_posts() ) : $loop->the_post();
 
 		$marker_id = get_the_ID();
-		// $tempMarkerValue = get_post_meta($marker_id,$mote_name);
-		// $tempMoteArray = split(';',$tempMoteValue[0]);
 
 			// Feature will hold properties and some other values for each marker
 		$temp_feature = array();
 			// Most data goes into properties field
 		$tempProperties = array();
 
-		if($title_mote=='the_title') {
-			$title = get_the_title();
-		} else {
-			$title = get_post_meta($marker_id,$title_mote,true);
-		}
-		$tempProperties["title"] = $title;
-		$temp_feature['type']    = 'Feature';
-		
-			// Map visualization features?
-			// Skip marker if missing necessary LatLong data
-		if (!is_null($map_pointsMote)) {
+			// First set up fields required by visualizations, abandon marker if missing
 
-			if(count($cordMote)==2) {
-				$temp_lat = get_post_meta($marker_id, $cordMote[0], true);
-				$temp_lon = get_post_meta($marker_id, $cordMote[1], true);
-				// array_push($json_string['debug'], $temp_lat);
-				if ($temp_lat=="" || $temp_long=="") {
-					// continue; //these kick out of the whole loop, not just the one marker
+			// Map visualization features?
+			// Skip marker if missing necessary LatLong data or not valid numbers
+		if (!is_null($map_pointsMote)) {
+			if(count($coordMote)==2) {
+				$temp_lat = get_post_meta($marker_id, $coordMote[0], true);
+				$temp_lon = get_post_meta($marker_id, $coordMote[1], true);
+				// array_push($feature_collection['debug'], $temp_lat);
+				if ($temp_lat=="" || $temp_lon=="" || !is_numeric($temp_lat) || !is_numeric($temp_lon)) {
+					continue;
 				}
 				$lonlat = array($temp_lon,$temp_lat);
-			} elseif(count($cordMote)==1) {
-				$temp_latlon = get_post_meta($marker_id, $cordMote[0], true);
+			} elseif(count($coordMote)==1) {
+				$temp_latlon = get_post_meta($marker_id, $coordMote[0], true);
+				// array_push($feature_collection['debug'], $temp_latlon);
 				if ($temp_latlon=="") {
-					// continue;
+					continue;
 				}
+					// invertLatLon will return null if non-numeric entries found!
 				$lonlat = invertLatLon($temp_latlon);
+				if (is_null($lonlat)) {
+					continue;
+				}
 			}
-			//$json_string .= $cordMote;
-			//$lonlat = invertLatLon($latlon[0]);
 			$temp_feature['geometry'] = array("type"=>"Point","coordinates"=> $lonlat);
 		}
 
@@ -1015,6 +1015,15 @@ function createMarkerArray($project_id)
 			$tempProperties["timecode"]    = $timecode_val;
 		}
 
+			// Now begin saving data about this marker
+		if($title_mote=='the_title') {
+			$title = get_the_title();
+		} else {
+			$title = get_post_meta($marker_id,$title_mote,true);
+		}
+		$tempProperties["title"] = $title;
+		$temp_feature['type']    = 'Feature';
+
 			// Get all of the legend/category values associated with this marker post
 		$args = array('fields' => 'ids');
 		$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
@@ -1025,7 +1034,7 @@ function createMarkerArray($project_id)
 		}
 		$tempProperties["categories"]  = $term_array;
 
-		// $json_string['debug'] = $viewsContent;
+		// $feature_collection['debug'] = $viewsContent;
 		$content_att = array();
 
 			// For each of the legends/categories defined for the View, gather values for this Marker
@@ -1071,11 +1080,11 @@ function createMarkerArray($project_id)
 		$temp_feature['properties'] = $tempProperties;
 			// Save this marker
 		array_push($feature_array,$temp_feature);
-		
 	endwhile;
-	//$json_string .= ']';
-	$json_string['features'] = $feature_array;
-	array_push($json_Object, $json_string);	
+
+	//$feature_collection .= ']';
+	$feature_collection['features'] = $feature_array;
+	array_push($json_Object, $feature_collection);
 	 //$result = array_unique($array)
 	return $json_Object;
 } // createMarkerArray()
@@ -1430,7 +1439,7 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 	//loop through array and create terms with parent(mote_name)
 	
 	foreach ($mArray as $value) {
-		//escape value and search
+			// WP's term_exists() function doesn't escape slash characters!  Unlike wp_insert_term() and wp_update_term()!
    		$termIs = term_exists( addslashes($value), $dhp_tax_name, $parent_id );
    		//debug
    		// array_push($updateTaxObject['debug']['mArrayLoop'], addslashes($value));
@@ -1591,7 +1600,6 @@ function dhpGetMoteValues()
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$marker_id = get_the_ID();
 		$tempMoteValue = get_post_meta($marker_id, $mote['custom-fields'], true);
-		
 
 		$tempMoteArray = array();
 		if($mote['delim']) {
@@ -1614,7 +1622,6 @@ function dhpGetMoteValues()
 	endwhile;
 
 		// Create comma-separated string listing terms derived from other motes
-		// TO DO: Push terms to an array rather than form taxonomic string
 	$exclude_string;
 	$exclude_count = 0;
 	foreach ( $parent_terms_to_exclude as $term ) {
