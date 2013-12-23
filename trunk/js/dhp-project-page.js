@@ -1090,18 +1090,19 @@ jQuery(document).ready(function($) {
         // PURPOSE: Create marker objects for map visualization; called by loadMapMarkers()
         // INPUT:   data = data as JSON object: Array of ["type", ...]
         //          mLayer = map layer into which the markers inserted 
-        // SIDE-FX: allMarkers will be assigned to the map markers
+        // SIDE-FX: assigns variables allMarkers, catFilter, rawAjaxData
         // TO DO:   Generalize visualization types
     function createMapMarkers(data,mLayer) {
         rawAjaxData = data;
         // console.log(rawAjaxData);
 
-        var featureObject = new Object();
+        // var featureObject = new Object();
         var legends = [];
 
-            //split the filter and feature object
-        _.each(rawAjaxData, function(val,index){
-            if(val.type =='filter') {
+            // Assign data to appropriate objects
+        _.each(rawAjaxData, function(val){
+            switch(val.type) {
+            case 'filter':
                 legends.push(val);
                 // var countTerms = Object.keys(legends[i].terms).length; 
                 // for(k=0;k<countTerms;k++) {
@@ -1111,20 +1112,24 @@ jQuery(document).ready(function($) {
                 //         legends[i].terms[k].children[j] = _.unescape(legends[i].terms[k].children[j]);
                 //     }
                 // }
-            } else if(val.type =='FeatureCollection') {
-                allMarkers = val;              
+                break;
+            case 'FeatureCollection':
+                allMarkers = val;
+                break;
             }
         });
-        featureObject.features = [];
 
-        _.each(allMarkers.features, function(val,index){
-            //check for coordinates
-            if(checkForCoordinates(val)) {
-                featureObject.features.push(val);
-            }
-            featureObject.type = 'FeatureCollection';
-        });
-        allMarkers = featureObject;
+        // featureObject.features = [];
+
+        // _.each(allMarkers.features, function(val,index){
+        //     //check for coordinates
+        //     if(checkForCoordinates(val)) {
+        //         featureObject.features.push(val);
+        //     }
+        //     featureObject.type = 'FeatureCollection';
+        // });
+        // allMarkers = featureObject;
+
         // for(i=0;i<Object.keys(rawAjaxData).length;i++) {
         //     if(rawAjaxData[i].type =='filter') {
         //         legends[i] = (rawAjaxData[i]);
@@ -1143,16 +1148,16 @@ jQuery(document).ready(function($) {
         //     }
         //}
 
-        catFilter  = legends[0];        //rawAjaxData[0];
+            // Set current filter to the first legend by default
+        catFilter  = legends[0];
         createLegends(legends);
-        //var featureObject = rawAjaxData[2];
 
     	var reader = new OpenLayers.Format.GeoJSON({
                 'externalProjection': gg,
                 'internalProjection': sm
         });
 
-    	var featureData = reader.read(featureObject);
+    	var featureData = reader.read(allMarkers);
         var myLayer = mLayer;
         myLayer.addFeatures(featureData);
     //player.pause();
