@@ -10,8 +10,10 @@
 jQuery(document).ready(function($) { 
 
 	var ajax_url = dhpData.ajax_url;
-	var dhpSettings = JSON.parse(dhpData.settings);
+	// var dhpSettings = JSON.parse(dhpData.settings);
+	var dhpSettings = dhpData.settings;
 	//console.log(dhpSettings)
+
 	var entry_html;
 	var save_entry_content = new Object();		// Marker settings were saved in this object -- now just title
 
