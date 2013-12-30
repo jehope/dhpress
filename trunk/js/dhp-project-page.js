@@ -5,7 +5,7 @@
 // NOTES:   Legends data is in the format: Array [ name, terms: Array [ name, id, icon_url, children: Array [ name ] ] ]
 //          If icon_url starts with #, it is a color in hex; otherwise a URL
 //          The class active-legend is added to whichever legend is currently visible and selected
-// TO DO:   Generalize visualization types better (don't assume maps)
+// TO DO:   Generalize visualization types better (don't assume maps) -- don't pass map or layers settings
 //          Change computation of tcArray so that it contains the endtime of the clip rather than
 //              beginning -- this will speed up search in hightlightTranscriptLine()
 
@@ -29,13 +29,16 @@ jQuery(document).ready(function($) {
 
     videoHasPlayed = false;
     ajax_url = dhpData.ajax_url;
-    dhpSettings = JSON.parse(dhpData.settings);
+
+    // dhpSettings = JSON.parse(dhpData.settings);
+    dhpSettings = dhpData.settings;
 
     // lookupParents = new Object();
     allMarkers = [];
     catFilter = new Object();
 
-    dhpMap = dhpData.map;
+    // dhpMap = JSON.parse(dhpData.map);
+    dhpMap = dhpData.map.settings;
 
     // $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
 
@@ -149,16 +152,21 @@ jQuery(document).ready(function($) {
         var dhp_layers = [];
         var olStyle, olClusterStrategy;
         var mapMarkerLayer;
+        var sourceLayers;
 
         // layerCount = Object.keys(dhpData.layers).length;
         // for(i=0;i<layerCount;i++) {
 
-        _.each(dhpData.layers, function(theLayer) {
+        sourceLayers = dhpData.layers;
+        // sourceLayers = JSON.parse(dhpData.layers);
+
+        _.each(sourceLayers, function(theLayer) {
             var tempLayer;
             var tempOpacity = 1;
             if(theLayer['opacity']) {
                 tempOpacity = theLayer['opacity'];
             }
+// console.log("Map layer type: " + theLayer['mapType'] + "; Opacity: " + tempOpacity);
             switch (theLayer['mapType']) {
             case 'type-OSM':
                 tempLayer = new OpenLayers.Layer.OSM();
@@ -196,7 +204,9 @@ jQuery(document).ready(function($) {
 
         //map.addControl(new OpenLayers.Control.LayerSwitcher());
 
+// console.log("dhpMap settings: " + dhpMap['lon'] + ", " + dhpMap['lat'] + ", " + dhpMap['zoom']);
         resetMap(dhpMap['lon'],dhpMap['lat'],dhpMap['zoom']);
+
 
         olMapTemplate = {
             fillColor: "${getColor}",
@@ -255,18 +265,18 @@ jQuery(document).ready(function($) {
 
         // PURPOSE: Called by olMarkerInterface to determine icon to use for marker
         // RETURNS: First match on URL to use for icon, or else ""
-        // INPUT:   markerValues = array of IDs (integers) associated with a feature/marker
+        // INPUT:   catValues = array of IDs (integers) associated with a feature/marker
         // ASSUMES: catFilterSelect has been loaded
         // TO DO:   Make recursive function?
-    function getHighestParentIcon(markerValues) {
+    function getHighestParentIcon(catValues) {
         var countTerms = catFilterSelect.length; 
-        var countCats = markerValues.length;
+        var countCats = catValues.length;
 
         for(i=0;i<countTerms;i++) {         // for all category values
             var thisCatID = catFilterSelect[i].id;
 
             for(j=0;j<countCats;j++) {      // for all marker values
-                var thisMarkerValue = markerValues[j];
+                var thisMarkerValue = catValues[j];
 
                     // Have we matched this item itself?
                 if (thisCatID==thisMarkerValue) {
@@ -299,21 +309,21 @@ jQuery(document).ready(function($) {
 
         // PURPOSE: Called by olMarkerInterface to determine color to use for marker
         // RETURNS: First match on color to use for icon, or else ""
-        // INPUT:   markerValues = array of IDs (integers) associated with a feature/marker
+        // INPUT:   catValues = array of category IDs (integers) associated with a feature/marker
         // ASSUMES: catFilterSelect has been loaded
         // TO DO:   Make recursive function?
-    function getHighestParentColor(markerValues) {
+    function getHighestParentColor(catValues) {
         var countTerms = catFilterSelect.length; 
 
         //current marker values
-        var countCats =  markerValues.length; 
+        var countCats =  catValues.length; 
 
         for(i=0;i<countTerms;i++) {         // for all category values
             var thisCatID = catFilterSelect[i].id;
 
             for(j=0;j<countCats;j++) {      // for all marker values
                 // legend categories
-                var thisMarkerValue = markerValues[j];
+                var thisMarkerValue = catValues[j];
 
                     // have we matched this element?
                 if (thisCatID===thisMarkerValue) {
@@ -322,7 +332,6 @@ jQuery(document).ready(function($) {
                     } else {
                         return '';
                     }
-
                     // check for matches on its children
                 } else {
                     var tempChildCount = Object.keys(catFilterSelect[i].children).length;
@@ -593,6 +602,7 @@ jQuery(document).ready(function($) {
 
         // PURPOSE: Create UI controls for opacity of each layer; called by createLegends
         // ASSUMES: map has been initialized
+        // TO DO:   Complete implementation of _.each(thisLayer) -- no need to do dhpData.layers
 
     function buildLayerControls() {
         //console.log(map.layers);
@@ -722,6 +732,7 @@ jQuery(document).ready(function($) {
         return selCatFilter;
     } // findSelectedCats()
 
+
         // PURPOSE: Convert timecode string into # of milliseconds
         // INPUT:   timecode in format [HH:MM:SS], SS can be in floating point format SS.ss
         // TO DO:   Use RegEx to parse
@@ -735,6 +746,7 @@ jQuery(document).ready(function($) {
 
         return milliSecondsCode;
     }
+
 
     // function geocodeAddress(addy){
     // 	//http://maps.google.com/maps/api/geocode/json?address=Pizzeria+Da+Vittorio,+Rome&sensor=false
