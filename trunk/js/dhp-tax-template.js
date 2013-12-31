@@ -4,17 +4,20 @@
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //              These parameters are: ajax_url, project_id, project_settings
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap, OpenLayers, CDLA maps, SoundCloud
-// TO DO:   Should we not hardcode Interviewee as special taxonomic name??
+// TO DO:   Remove redundant functions (e.g., transcripts), put into specialized objects
 
 jQuery(document).ready(function($) {
 
-    var ajax_url = dhpData.ajax_url;
+    var ajax_url        = dhpData.ajax_url;
+    var project_id      = dhpData.project_id;
+    var projectSettings = dhpData.project_settings;
+    var taxTerm         = dhpData.tax;
+
+    // console.log(dhpData.project['motes']);
+    // var projectSettings = JSON.parse(dhpData.project_settings);
     // console.log(ajax_url);
     // console.log(dhpData.tax.name);
     // console.log(dhpData);
-    var project_id = dhpData.project_id;
-    // console.log(dhpData.project['motes']);
-    var projectSettings = JSON.parse(dhpData.project_settings);
 
         // Time-Code array -- stores series of timecodes in milliseconds, computed by formatTranscript()
     var tcArray = null;
@@ -29,14 +32,14 @@ jQuery(document).ready(function($) {
     	//$('#content').empty();
 
             // Insert name of taxonomy on page
-    	$('#content').prepend('<h1>'+dhpData.tax['name']+'</h1>');
+    	$('#content').prepend('<h1>'+taxTerm.name+'</h1>');
     	// console.log(location.hash);
 
     	var transcriptObject = settingsHas('entry-points','transcript');
 
     	if(transcriptObject){
             $('#content').prepend('<div id="transcript-div"></div>');
-            loadTranscript(dhpData.project_id,dhpData.tax.slug,dhpData.tax.taxonomy);
+            loadTranscript(project_id, taxTerm.slug, taxTerm.taxonomy);
             createMoteValue(transcriptObject['settings']['transcript']);
     	}
     	//if tax view has map
@@ -74,7 +77,7 @@ jQuery(document).ready(function($) {
             });
             soundCloudWidget.bind(SC.Widget.Events.FINISH, function() {
             
-            });       
+            });
         });
             // Allow user to click on a timecode to go to it
         $('.transcript-list').on('click', function(evt){
@@ -100,7 +103,7 @@ jQuery(document).ready(function($) {
                     rowIndex      = index;
                     var topDiff   = $('.transcript-list div.type-timecode').eq(index).offset().top - $('.transcript-list').offset().top;
                     var scrollPos = $('.transcript-list').scrollTop() +topDiff;
-                    
+
                     $('.transcript-list').animate({
                        scrollTop: scrollPos
                     }, 500);
@@ -112,8 +115,8 @@ jQuery(document).ready(function($) {
         });
     }
 
-    
-    // find tallest div.row in transcript and set container max-height 40px larger. Default is max 300px
+        // find tallest div.row in transcript and set container max-height 40px larger. Default is max 300px
+        // TO DO:  Replace _.each() with _.find()
     function searchForMaxHeight(elements) {
         var maxHeight = 0;
         _.each(elements, function(val){ 
@@ -126,6 +129,7 @@ jQuery(document).ready(function($) {
         }
         $('.transcript-list').css({'min-height': maxHeight+40});
     }
+
     // function categoryColors(element,color){
     //     _.each($('.type-timecode'), function(val,index) {
     // 		var someText = $(val).html().replace(/(\r\n|\n|\r)/gm,"");
@@ -138,10 +142,7 @@ jQuery(document).ready(function($) {
         // PURPOSE: Handle AJAX return for audio -- append HTML for transcript and playheads and handle events
     function buildTranscriptHtml(jsonData){
     	//formatTranscript
-            
-        
         if(jsonData['transcript'] && jsonData['transcript']!=='none') {
-
         	var beautiful_transcript = formatTranscript(jsonData['transcript']);
             $('#transcript-div').append(beautiful_transcript);
         }

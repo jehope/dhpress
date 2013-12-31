@@ -2379,10 +2379,6 @@ function dhp_page_template( $page_template )
 
 		// Viewing a Project?
     if ( $post_type == 'project' ) {
-    	// $projectSettings_get = get_post_meta($post->ID, 'project_settings');
-    	// $projectSettings = json_decode($projectSettings_get[0],true);
-    	// $projectSettings_map = dhp_get_type_settings('map',$projectSettings['entry-points']);
-
     	$projObj = new DHPressProject($post->ID);
 
         $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
@@ -2422,23 +2418,14 @@ function dhp_page_template( $page_template )
 	    }
 
 		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
-			'ajax_url' => __($dev_url, 'dhp'),
-			'settings' => __($projObj->getAllSettings(), 'dhp'),
-			'map'      => __($projectSettings_map, 'dhp'),
-			'layers'   => __($projMapLayers, 'dhp')
-			// 'ajax_url' => $dev_url,
-			// 'settings' => json_encode($projObj->getAllSettings()),
-			// 'map'      => json_encode($projectSettings_map),
-			// 'layers'   => json_encode($projMapLayers)
+			'ajax_url' => $dev_url,
+			'settings' => $projObj->getAllSettings()
 		) );
 
 		// Looking at a Marker/Data entry?
     } else if ( $post_type == 'dhp-markers' ) {
 		$project_id = get_post_meta($post->ID, 'project_id',true);
 		$projObj = new DHPressProject($project_id);
-		// $projectSettings_get = get_post_meta($projectSettings_id, 'project_settings');
-		// $projectSettings = json_decode($projectSettings_get[0],true);
-    	// $projectSettings_map = dhp_get_type_settings('map',$projectSettings['entry-points']);
 
         $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
 
@@ -2467,14 +2454,8 @@ function dhp_page_template( $page_template )
     	}
 
 		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
-			'ajax_url' => __($dev_url, 'dhp'),
-			'settings' => __($projObj->getAllSettings(), 'dhp'),
-			'map'      => __($projectSettings_map, 'dhp'),
-			'layers'   => __($projMapLayers, 'dhp')
-			// 'ajax_url' => $dev_url,
-			// 'settings' => json_encode($projObj->getAllSettings()),
-			// 'map'      => json_encode($projectSettings_map),
-			// 'layers'   => json_encode($projMapLayers)
+			'ajax_url' => $dev_url,
+			'settings' => $projObj->getAllSettings()
 		) );
     } // else if ($post_type == 'dhp-markers')
 
@@ -2506,17 +2487,9 @@ function dhp_tax_template( $page_template )
 	    	// Get the name of the term, which is also the name of the custom field
 	    $term->parent_name = $term_parent->name;
 
-	    // $page_template = dirname( __FILE__ ) . '/dhp-archive.php';
-	    //get mp3 url from first term marker
-	    //get transcript url
-
 	    $projectID = DHPressProject::RootTaxNameToProjectID($title);
 	    $projObj = new DHPressProject($projectID);
 	    $project_settings = $projObj->getAllSettings();
-
-	    // $pieces = explode("dhp_tax_", $title);
-	    // $projectID = $pieces[1];
-	    // $project_settings = get_post_meta($projectID,'project_settings',true);
 
 	    	// mediaelement for timelines -- not currently used
 		// wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
@@ -2545,14 +2518,10 @@ function dhp_tax_template( $page_template )
 		}
 
 		wp_localize_script( 'dhp-tax-script', 'dhpData', array(
-				// 'project_id' => $projectID,
-				// 'ajax_url' => $dev_url,
-				// 'tax' => json_encode($term),
-				// 'project_settings' => json_encode($project_settings)
-				'project_id' => __($projectID,'dhp'),
-				'ajax_url' => __($dev_url,'dhp'),
-				'tax' => __($term,'dhp'),
-				'project_settings' => __($project_settings,'dhp')
+				'project_id' => $projectID,
+				'ajax_url' => $dev_url,
+				'tax' => $term,
+				'project_settings' => $project_settings
 			) );
 	}
 	return $page_template;

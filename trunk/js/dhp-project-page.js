@@ -1,44 +1,40 @@
 // PURPOSE: Handle viewing Project content visualizations
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
-//          Some other parameters passed by being embedded in HTML: .post.id
+//          Project ID is embedded in HTML as .post.id
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 // NOTES:   Legends data is in the format: Array [ name, terms: Array [ name, id, icon_url, children: Array [ name ] ] ]
 //          If icon_url starts with #, it is a color in hex; otherwise a URL
 //          The class active-legend is added to whichever legend is currently visible and selected
 // TO DO:   Generalize visualization types better (don't assume maps) -- don't pass map or layers settings
-//          Change computation of tcArray so that it contains the endtime of the clip rather than
-//              beginning -- this will speed up search in hightlightTranscriptLine()
+//          Seperate loading of markers from building of legends and other screen components
 
 jQuery(document).ready(function($) {
         // Project variables
-    var projectID, ajax_url, rawAjaxData, dhpSettings;
+    var projectID, ajaxURL, rawAjaxData, dhpSettings;
     var catFilter;          // All values for currently selected Legend; see data desc in getIconsForTerms() of dhp-project-functions.php
     var catFilterSelect;     // Current selection of legend/categories; Subset of catFilter.terms
     var allMarkers;         // All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
 
-        // Map visualization variables 
-    var map, dhpMap, gg, sm, olMarkerInterface, selectControl, hoverControl;
+        // Map visualization variables
+        // TO DO: make gg, sm, etc fields of map
+    var map, gg, sm, olMarkerInterface, selectControl, hoverControl, mapMarkerLayer;
+    // var dhpMap;
 
         // A/V player variables
-    var tcArray, player, videoHasPlayed, rowIndex;
-
-        // dead variables
-    // var lookupParents;
+        // TO DO: make tcarray, etc, fields of avPlayer (which is not currently used!!)
+    // var avPlayer;
+    var tcArray, videoHasPlayed, rowIndex;
 
     projectID = $('.post').attr('id');
 
     videoHasPlayed = false;
-    ajax_url = dhpData.ajax_url;
+    ajaxURL = dhpData.ajax_url;
 
     // dhpSettings = JSON.parse(dhpData.settings);
     dhpSettings = dhpData.settings;
 
-    // lookupParents = new Object();
     allMarkers = [];
     catFilter = new Object();
-
-    // dhpMap = JSON.parse(dhpData.map);
-    dhpMap = dhpData.map.settings;
 
     // $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
 
@@ -105,12 +101,12 @@ jQuery(document).ready(function($) {
         }
     };
 
-    initializeMap();
+    mapMarkerLayer = initializeMap();
 
         // Handle reset button
     $('.olControlZoom').append('<div class="reset-map"><i class="icon-white icon-refresh"></i></div>');
     $('.olControlZoom .reset-map').click(function(){
-        resetMap(dhpMap['lon'],dhpMap['lat'],dhpMap['zoom']);
+        resetMap();
     });
         // handle toggling fullscreen mode
     $('.dhp-nav .fullscreen').click(function(){
@@ -136,57 +132,90 @@ jQuery(document).ready(function($) {
         }
     });
 
-        // PURPOSE: Reset center and scale of map
-        // ASSUMES: gg has been initialized and is accessible
-    function resetMap(lon, lat, zoomL) {
-        var lonlat = new OpenLayers.LonLat(lon,lat);
-        lonlat.transform(gg, map.getProjectionObject());
-        map.setCenter(lonlat, zoomL);
+
+    loadMapMarkers(projectID,mapMarkerLayer);
+
+
+    // ========================= DEFINED FUNCTIONS
+
+        // RETURNS: Entry point of dhpSettings array whose type is theType
+        // ASSUMES: dhpSettings loaded, in correct format
+    function getEntryPointByType(theType) {
+        var theEP;
+        theEP = _.find(dhpSettings['entry-points'],
+                        function(thisEP) { return (thisEP["type"] == theType); });
+        return theEP["settings"];
     }
 
-        // PURPOSE: Initialize map layers, map controls, etc.
+        // RETURNS: Mote in dhpSettings array whose name is theName
+        // ASSUMES: dhpSettings loaded, in correct format
+    function getMoteByName(theName) {
+        return (_.find(dhpSettings['motes'],
+                        function(thisMote) { return (thisMote["name"] == theName); }));
+    }
+
+        // RETURNS: entry in the modal-ep array whose name is modalName
+        // TO DO:   Put into Project object class??
+    function findModalEpSettings(modalName) {
+        return (_.find(dhpSettings['views']['modal-ep'],
+                        function(theName) { return (theName == modalName); }) != undefined);
+    }
+
+        // PURPOSE: Reset center and scale of map
+        // ASSUMES: gg has been initialized and is accessible; dhpSettings loaded
+    function resetMap()
+    {
+        var mapSettings;
+
+        mapSettings = getEntryPointByType('map');
+
+        var lonlat = new OpenLayers.LonLat(mapSettings["lon"],mapSettings["lat"]);
+        lonlat.transform(gg, map.getProjectionObject());
+        map.setCenter(lonlat, mapSettings["zoom"]);
+    }
+
+        // PURPOSE: Initialize map viewing area with controls and layers
+        // RETURNS: Layer in which markers to be added
     function initializeMap()
     {
-        var layerCount;
         var olMapTemplate;
-        var dhp_layers = [];
+        var mapLayers = [];
         var olStyle, olClusterStrategy;
         var mapMarkerLayer;
+        var mapSettings;
         var sourceLayers;
+        var opacity;
+        var newLayer;
 
-        // layerCount = Object.keys(dhpData.layers).length;
-        // for(i=0;i<layerCount;i++) {
+            // Initialize each map layer
+        mapSettings = getEntryPointByType('map');
+        sourceLayers = mapSettings.layers;
 
-        sourceLayers = dhpData.layers;
-        // sourceLayers = JSON.parse(dhpData.layers);
-
-        _.each(sourceLayers, function(theLayer) {
-            var tempLayer;
-            var tempOpacity = 1;
+            // Create layers for maps as well as controls for each
+        _.each(sourceLayers, function(theLayer, index) {
+            opacity = 1;
             if(theLayer['opacity']) {
-                tempOpacity = theLayer['opacity'];
+                opacity = theLayer['opacity'];
             }
-// console.log("Map layer type: " + theLayer['mapType'] + "; Opacity: " + tempOpacity);
             switch (theLayer['mapType']) {
             case 'type-OSM':
-                tempLayer = new OpenLayers.Layer.OSM();
-                tempLayer.setOpacity(tempOpacity);
-                dhp_layers.push(tempLayer);
+                newLayer = new OpenLayers.Layer.OSM();
+                newLayer.setOpacity(opacity);
                 break;
             case 'type-Google':
-                tempLayer = new OpenLayers.Layer.Google(theLayer['name'],
-                                { type: theLayer['mapTypeId'], numZoomLevels: 20, opacity: tempOpacity,animationEnabled: true});
-                dhp_layers.push(tempLayer);
+                newLayer = new OpenLayers.Layer.Google(theLayer['name'],
+                                { type: theLayer['mapTypeId'], numZoomLevels: 20, opacity: opacity, animationEnabled: true});
                 break;
             case 'type-CDLA':
                 cdla.maps.defaultAPI(cdla.maps.API_OPENLAYERS);
                 var cdlaObj = new cdla.maps.Map(theLayer['mapTypeId']);
-                tempLayer = cdlaObj.layer();
-                tempLayer.setOpacity(tempOpacity);
-                dhp_layers.push(tempLayer);
+                newLayer = cdlaObj.layer();
+                newLayer.setOpacity(opacity);
                 break;
-            }
-        });
+            } // switch
+            mapLayers.push(newLayer);
+        }); // each sourceLayers
+
 
         gg = new OpenLayers.Projection("EPSG:4326");
         sm = new OpenLayers.Projection("EPSG:900913");
@@ -199,14 +228,11 @@ jQuery(document).ready(function($) {
             displayProjection: gg
             
         });
-        map.addLayers(dhp_layers);
-        //load layers here
+        map.addLayers(mapLayers);
 
         //map.addControl(new OpenLayers.Control.LayerSwitcher());
 
-// console.log("dhpMap settings: " + dhpMap['lon'] + ", " + dhpMap['lat'] + ", " + dhpMap['zoom']);
-        resetMap(dhpMap['lon'],dhpMap['lat'],dhpMap['zoom']);
-
+        resetMap();
 
         olMapTemplate = {
             fillColor: "${getColor}",
@@ -222,7 +248,7 @@ jQuery(document).ready(function($) {
         olClusterStrategy = new OpenLayers.Strategy.Cluster();
         olClusterStrategy.distance = 1;
 
-        mapMarkerLayer = new OpenLayers.Layer.Vector(dhpMap['marker-layer'],{
+        mapMarkerLayer = new OpenLayers.Layer.Vector(mapSettings['marker-layer'],{
             strategies: [olClusterStrategy],
             rendererOptions: { zIndexing: true }, 
             styleMap: new OpenLayers.StyleMap(olStyle)
@@ -234,8 +260,6 @@ jQuery(document).ready(function($) {
         hoverControl = new OpenLayers.Control.SelectFeature(mapMarkerLayer, 
             { hover: true, highlightOnly: true, renderIntent: "temporary" });
 
-        loadMapMarkers(projectID,mapMarkerLayer);
-
         //mapMarkerLayer.id = "Markers";
         map.addLayer(mapMarkerLayer);
         map.addControl(hoverControl);
@@ -243,6 +267,8 @@ jQuery(document).ready(function($) {
 
         hoverControl.activate();  
         selectControl.activate();
+
+        return mapMarkerLayer;
     } // initializeMap()
 
 
@@ -441,8 +467,9 @@ jQuery(document).ready(function($) {
             var legendName = theLegend.name;
             var countTerms = 0; 
 
-                // Create for all of the terms (do not represent children of terms)
+                // "Root" DIV for this particular Legend
             legendHtml = $('<div class="'+legendName+' legend-div span12 row" id="term-legend-'+legIndex+'"><h1>'+legendName+'</h1><ul class="terms"></ul></div>');
+                // Create entries for all of the terms (do not represent children of terms)
             _.each(filterTerms, function(theTerm) {
                 if(legendName!=theTerm.name) {
                     var firstIconChar = theTerm.icon_url.substring(0,1);
@@ -595,52 +622,51 @@ jQuery(document).ready(function($) {
         //     loadTimeline('4233');  
         // });
         catFilterSelect = findSelectedCats();
-
-        buildLayerControls(map.layers);
     } // createLegends()
 
 
-        // PURPOSE: Create UI controls for opacity of each layer; called by createLegends
-        // ASSUMES: map has been initialized
-        // TO DO:   Complete implementation of _.each(thisLayer) -- no need to do dhpData.layers
+        // PURPOSE: Create UI controls for opacity of each layer in right (Legend) area
+        // ASSUMES: map.layers has been initialized, settings are loaded
+        //          HTML element "layers-panel" has been inserted into document
+        // NOTE:    The final map layer is for Markers, so has no corresponding user settings
 
     function buildLayerControls() {
-        //console.log(map.layers);
+        var layerSettings;
+        var layerOpacity;
+
+        layerSettings = getEntryPointByType('map');
+        layerSettings = layerSettings.layers;
+
         _.each(map.layers,function(thisLayer,index){
             //console.log(layer.name)
-            if(index>=0) {
-                var layerOpacity = 1;
-                if(dhpData.layers[index]) {
-                    layerOpacity = dhpData.layers[index]['opacity'];
-                    if(!layerOpacity){
-                        layerOpacity = 1;
-                    }
+            layerOpacity = 1;
+            if(layerSettings[index]) {
+                layerOpacity = layerSettings[index]['opacity'];
+                if(!layerOpacity){
+                    layerOpacity = 1;
                 }
-                $('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+thisLayer.id+'">'+thisLayer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
-
-                //slider for layer opacity
-                $( '.layer'+index+' .layer-opacity').slider({
-                    range: false,
-                    min: 0,
-                    max: 1,
-                    step:.05,
-                    values: [ layerOpacity ],
-                    slide: function( event, ui ) {    
-                      map.layers[index].setOpacity(ui.values[ 0 ]);                
-                    }
-                });
-                //click
-                $( '.layer'+index+' input').click(function(){
-                    if($(this).attr('checked')) {
-                        //console.log('check')
-                        map.layers[index].setVisibility(true);
-                    } else {
-                    //console.log('uncheck')
-                        map.layers[index].setVisibility(false);
-                    }
-                });
-
             }
+            $('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+thisLayer.id+'">'+thisLayer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
+
+                // Create slider to control layer opacity
+            $( '.layer'+index+' .layer-opacity').slider({
+                range: false,
+                min: 0,
+                max: 1,
+                step:.05,
+                values: [ layerOpacity ],
+                slide: function( event, ui ) {    
+                  thisLayer.setOpacity(ui.values[ 0 ]);                
+                }
+            });
+                // Handle turning on and off map layer
+            $( '.layer'+index+' input').click(function(){
+                if($(this).attr('checked')) {
+                    thisLayer.setVisibility(true);
+                } else {
+                    thisLayer.setVisibility(false);
+                }
+            });
         });
     } // buildLayerControls()
 
@@ -655,6 +681,7 @@ jQuery(document).ready(function($) {
         $(document).trigger('order.findSelectedCats').trigger('order.updateLayerFeatures');
         selectControl.activate(); 
     }
+
 
         // PURPOSE: Update map's feature layer after user chooses a new legend acc. to values in catFilterSelect
         // ASSUMES: allMarkers contains all of the possible marker objects; catFilterSelect set to current legend selection
@@ -930,26 +957,7 @@ jQuery(document).ready(function($) {
         }//end audio/transcript player
     } // onOLFeatureSelect()
 
-        // RETURNS: entry in the modal-ep array whose name is modalName
-        // TO DO:   Put into Project object class
-    function findModalEpSettings(modalName) {
-        return (_.find(dhpSettings['views']['modal-ep'],
-                        function(theName) { return (theName == modalName); }) != undefined);
-        //console.log(dhpSettings['views']['modal-ep'])
-        // var isFound = false;
-
-        // if(dhpSettings['views']['modal-ep']) {
-        //     _.each(dhpSettings['views']['modal-ep'],function(val,key) {
-        //         if(val===modalName) {
-        //             isFound = true;
-        //         }
-        //     });
-        // }
-        // return isFound;
-    }
-
         // PURPOSE: Given a millisecond reading, unhighlight any previous "playhead" and highlight new one
-        // TO DO:   Change tcArray entry to end of timestamp
     function hightlightTranscriptLine(millisecond){
         var match;
         _.find(tcArray, function(val,index){
@@ -981,14 +989,10 @@ jQuery(document).ready(function($) {
     //     // console.log(transcriptArray)
     // }
 
-    /**
-     * [formatTranscript: cleans up quicktime text, formats transcript and puts it in a list]
-     * @author  joeehope
-     * @version version
-     * @param   {string} dirty_transcript [quicktime text format]
-     * @return  {html}  $transcript_html  [html unordered list]
-     */
-        // TO DO: Use RegEx to parse timestamps; change tcArray entry to end of timestamp (shift left?)
+        // PURPOSE: Clean up quicktime text, format transcript and put it in a list
+        // INPUT:   dirty_transcript = quicktime text format
+        // RETURNS: html unordered list
+        // TO DO:   Use RegEx to parse timestamps; change tcArray entry to end of timestamp (shift left?)
     function formatTranscript(dirty_transcript) {
         var transcript_html='';
         // split into array by line
@@ -1103,7 +1107,7 @@ jQuery(document).ready(function($) {
         // INPUT:   data = data as JSON object: Array of ["type", ...]
         //          mLayer = map layer into which the markers inserted 
         // SIDE-FX: assigns variables allMarkers, catFilter, rawAjaxData
-        // TO DO:   Generalize visualization types
+        // TO DO:   Generalize visualization types; should createLegends() be called elsewhere?
     function createMapMarkers(data,mLayer) {
         rawAjaxData = data;
         // console.log(rawAjaxData);
@@ -1116,14 +1120,6 @@ jQuery(document).ready(function($) {
             switch(val.type) {
             case 'filter':
                 legends.push(val);
-                // var countTerms = Object.keys(legends[i].terms).length; 
-                // for(k=0;k<countTerms;k++) {
-                //     legends[i].terms[k].name = _.unescape(legends[i].terms[k].name);
-                //     var tempChildCount = Object.keys(legends[i].terms[k].children).length
-                //     for(j=0;j<tempChildCount;j++) {
-                //         legends[i].terms[k].children[j] = _.unescape(legends[i].terms[k].children[j]);
-                //     }
-                // }
                 break;
             case 'FeatureCollection':
                 allMarkers = val;
@@ -1131,38 +1127,11 @@ jQuery(document).ready(function($) {
             }
         });
 
-        // featureObject.features = [];
-
-        // _.each(allMarkers.features, function(val,index){
-        //     //check for coordinates
-        //     if(checkForCoordinates(val)) {
-        //         featureObject.features.push(val);
-        //     }
-        //     featureObject.type = 'FeatureCollection';
-        // });
-        // allMarkers = featureObject;
-
-        // for(i=0;i<Object.keys(rawAjaxData).length;i++) {
-        //     if(rawAjaxData[i].type =='filter') {
-        //         legends[i] = (rawAjaxData[i]);
-        //         var countTerms = Object.keys(legends[i].terms).length; 
-        //         for(k=0;k<countTerms;k++) {
-        //             legends[i].terms[k].name = _.unescape(legends[i].terms[k].name);
-        //             var tempChildCount = Object.keys(legends[i].terms[k].children).length
-        //             for(j=0;j<tempChildCount;j++) {
-        //                 legends[i].terms[k].children[j] = _.unescape(legends[i].terms[k].children[j]);
-        //             }
-        //         }
-        //     }
-        //     if(rawAjaxData[i].type =='FeatureCollection') {
-        //         featureObject = rawAjaxData[i];
-        //         allMarkers = rawAjaxData[i];
-        //     }
-        //}
-
             // Set current filter to the first legend by default
         catFilter  = legends[0];
         createLegends(legends);
+
+        buildLayerControls();
 
     	var reader = new OpenLayers.Format.GeoJSON({
                 'externalProjection': gg,
@@ -1175,21 +1144,22 @@ jQuery(document).ready(function($) {
     //player.pause();
     } // createMapMarkers()
 
+
         //PURPOSE: To check a map feature for coordinates
         //RETURNS: Boolean
         //TODO: Refine coordinate check
-    function checkForCoordinates(feature) {
-        //if cordinate values length is greater than 1 return true
-        var tempFeature = feature;
-        var check = false;
-        if(tempFeature.geometry) {
-            if(tempFeature.geometry.coordinates&&tempFeature.geometry.coordinates[0]&&tempFeature.geometry.coordinates[1]) {
-                if(tempFeature.geometry.coordinates[0].length>1&&tempFeature.geometry.coordinates[1].length>1&&tempFeature.geometry.coordinates[0]!==null,tempFeature.geometry.coordinates[1]!==null)
-                    check = true;
-            }
-        }
-        return check;
-    }
+    // function checkForCoordinates(feature) {
+    //     //if cordinate values length is greater than 1 return true
+    //     var tempFeature = feature;
+    //     var check = false;
+    //     if(tempFeature.geometry) {
+    //         if(tempFeature.geometry.coordinates&&tempFeature.geometry.coordinates[0]&&tempFeature.geometry.coordinates[1]) {
+    //             if(tempFeature.geometry.coordinates[0].length>1&&tempFeature.geometry.coordinates[1].length>1&&tempFeature.geometry.coordinates[0]!==null,tempFeature.geometry.coordinates[1]!==null)
+    //                 check = true;
+    //         }
+    //     }
+    //     return check;
+    // }
 
         // TO DO:  Everything; get size from EP paraemters…
     function createTimeline(data) {
@@ -1218,7 +1188,7 @@ jQuery(document).ready(function($) {
         //$('.modal-backdrop').css({'opacity':0.1});
     	jQuery.ajax({
             type: 'POST',
-            url: ajax_url,
+            url: ajaxURL,
             data: {
                 action: 'dhpGetMarkers',
                 project: projectID
@@ -1245,7 +1215,7 @@ jQuery(document).ready(function($) {
     function loadTimeline(projectID){
         jQuery.ajax({
             type: 'POST',
-            url: ajax_url,
+            url: ajaxURL,
             data: {
                 action: 'dhpGetTimeline',
                 project: projectID
@@ -1263,7 +1233,7 @@ jQuery(document).ready(function($) {
     function loadTranscriptClip(projectID,transcriptName,clip,order){
         jQuery.ajax({
             type: 'POST',
-            url: ajax_url,
+            url: ajaxURL,
             data: {
                 action: 'dhpGetTranscriptClip',
                 project: projectID,
