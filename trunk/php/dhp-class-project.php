@@ -8,7 +8,7 @@
  **			"project-details": {
 		        "id": Integer,
 		        "name": String,
-		        "marker-custom-fields": [ String ... ]
+		        "marker-custom-fields": [ String, ... ]
 		    },
 		    "motes": [
 		        Index: {
@@ -25,6 +25,7 @@
 		                "lat": Number,
 		                "lon": Number,
 		                "zoom": Number,
+		                "opacity": Number,
 		                "layers": [
 		                    Index: {
 		                        "id": Number,
