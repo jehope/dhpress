@@ -10,31 +10,27 @@
 
 jQuery(document).ready(function($) {
         // Project variables
-    var projectID, ajaxURL, rawAjaxData, dhpSettings;
-    var catFilter;          // All values for currently selected Legend; see data desc in getIconsForTerms() of dhp-project-functions.php
-    var catFilterSelect;     // Current selection of legend/categories; Subset of catFilter.terms
-    var allMarkers;         // All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
+    var dhpSettings, rawAjaxData, projectID, ajaxURL;
+    var allMarkers = [];    // All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
+
+        // Variables specific to particular visualizations
+        // ===============================================
 
         // Map visualization variables
-        // TO DO: make gg, sm, etc fields of map
-    var map, gg, sm, olMarkerInterface, selectControl, hoverControl, mapMarkerLayer;
-    // var dhpMap;
+    var viewMap = [];
+        // Contains fields: olMap, gg, sm, selectControl, hoverControl, mapMarkerLayer
+        //                  catFilter = All values for currently selected Legend; see data desc in getIconsForTerms() of dhp-project-functions.php
+        //                  catFilterSelect = Current selection of legend/categories; Subset of catFilter.terms
 
-        // A/V player variables
-        // TO DO: make tcarray, etc, fields of avPlayer (which is not currently used!!)
-    // var avPlayer;
-    var tcArray, videoHasPlayed, rowIndex;
+        // Transcription variables
+    var viewTranscript = [];
+        // Contains fields: tcArray, rowIndex, transcriptData[2], parseTimeCode
 
-    projectID = $('.post').attr('id');
 
-    videoHasPlayed = false;
-    ajaxURL = dhpData.ajax_url;
+    projectID      = $('.post').attr('id');
+    ajaxURL        = dhpData.ajax_url;
+    dhpSettings    = dhpData.settings;
 
-    // dhpSettings = JSON.parse(dhpData.settings);
-    dhpSettings = dhpData.settings;
-
-    allMarkers = [];
-    catFilter = new Object();
 
     // $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
 
@@ -60,48 +56,10 @@ jQuery(document).ready(function($) {
 
     $('<style type="text/css"> @media screen and (min-width: 600px) { #map_div{ width:'+dhpSettings['views']['map-width']+'px; height:'+dhpSettings['views']['map-height']+'px;}} </style>').appendTo('head');
 
-        // Interface for OpenLayers to determine visual features of a map marker
-    olMarkerInterface = {
-        getIcon: function(feature) {
-            var cats;
-            if(feature.cluster) {
-                cats = feature.cluster[0].attributes.categories;
-            } else {    
-                cats = feature.attributes["categories"];
-            }
-            var highParentI ='';
-            if(cats) {
-                highParentI = getHighestParentIcon(cats);
-            }
-            if(!highParentI){
-                return '';
-            } else {
-                return highParentI;
-            }
-        },
-        getColor: function(feature) {
-            var cats;
-            if(feature.cluster) {
-                cats = feature.cluster[0].attributes.categories;
-            } else {    
-                cats = feature.attributes["categories"];
-            }
-            var highParentI ='';
-            if(cats) {
-                highParentI = getHighestParentColor(cats);
-            }
-            return highParentI;
-        },
-        getLabel: function(feature) {
-            if(feature.cluster.length>1) {
-                return feature.cluster.length;
-            } else {
-                return '';
-            }
-        }
-    };
-
-    mapMarkerLayer = initializeMap();
+        // Map visualization?
+    if (getEntryPointByType('map')) {
+        initializeMap();
+    }
 
         // Handle reset button
     $('.olControlZoom').append('<div class="reset-map"><i class="icon-white icon-refresh"></i></div>');
@@ -113,11 +71,11 @@ jQuery(document).ready(function($) {
         if($('body').hasClass('fullscreen')) {
             $('body').removeClass('fullscreen');
             $('.dhp-nav .fullscreen').removeClass('active');
-            map.updateSize();
+            viewMap.olMap.updateSize();
         } else {
             $('body').addClass('fullscreen');
             $('.dhp-nav .fullscreen').addClass('active');
-            map.updateSize();
+            viewMap.olMap.updateSize();
         }
     });
 
@@ -132,11 +90,18 @@ jQuery(document).ready(function($) {
         }
     });
 
+        // Map visualization?
+    if (getEntryPointByType('map')) {
+        loadMapMarkers();
+    }
 
-    loadMapMarkers(projectID,mapMarkerLayer);
+        // Transcription views?
+    // if (getEntryPointByType('transcript')) {
+    //     viewTranscript['parseTimeCode'] = new RegExp("\[(\d{2})\:(\d{2})\:(\d{2}\.\d{2})\]");
+    // }
 
 
-    // ========================= DEFINED FUNCTIONS
+    // ========================= FUNCTIONS
 
         // RETURNS: Entry point of dhpSettings array whose type is theType
         // ASSUMES: dhpSettings loaded, in correct format
@@ -147,18 +112,13 @@ jQuery(document).ready(function($) {
         return theEP["settings"];
     }
 
-        // RETURNS: Mote in dhpSettings array whose name is theName
-        // ASSUMES: dhpSettings loaded, in correct format
-    function getMoteByName(theName) {
-        return (_.find(dhpSettings['motes'],
-                        function(thisMote) { return (thisMote["name"] == theName); }));
-    }
-
         // RETURNS: entry in the modal-ep array whose name is modalName
         // TO DO:   Put into Project object class??
     function findModalEpSettings(modalName) {
         return (_.find(dhpSettings['views']['modal-ep'],
-                        function(theName) { return (theName == modalName); }) != undefined);
+                        function(theName) {
+                            return (theName == modalName); })
+                != undefined);
     }
 
         // PURPOSE: Reset center and scale of map
@@ -170,29 +130,70 @@ jQuery(document).ready(function($) {
         mapSettings = getEntryPointByType('map');
 
         var lonlat = new OpenLayers.LonLat(mapSettings["lon"],mapSettings["lat"]);
-        lonlat.transform(gg, map.getProjectionObject());
-        map.setCenter(lonlat, mapSettings["zoom"]);
+        lonlat.transform(viewMap.gg, viewMap.olMap.getProjectionObject());
+        viewMap.olMap.setCenter(lonlat, mapSettings["zoom"]);
     }
 
         // PURPOSE: Initialize map viewing area with controls and layers
         // RETURNS: Layer in which markers to be added
     function initializeMap()
     {
+        var olMarkerInterface;
         var olMapTemplate;
         var mapLayers = [];
         var olStyle, olClusterStrategy;
-        var mapMarkerLayer;
         var mapSettings;
-        var sourceLayers;
         var opacity;
         var newLayer;
 
+            // Interface for OpenLayers to determine visual features of a map marker
+        olMarkerInterface = {
+            getIcon: function(feature) {
+                var cats;
+                if(feature.cluster) {
+                    cats = feature.cluster[0].attributes.categories;
+                } else {    
+                    cats = feature.attributes["categories"];
+                }
+                var highParentI ='';
+                if(cats) {
+                    highParentI = getHighestParentIcon(cats);
+                }
+                if(!highParentI){
+                    return '';
+                } else {
+                    return highParentI;
+                }
+            },
+            getColor: function(feature) {
+                var cats;
+                if(feature.cluster) {
+                    cats = feature.cluster[0].attributes.categories;
+                } else {    
+                    cats = feature.attributes["categories"];
+                }
+                var highParentI ='';
+                if(cats) {
+                    highParentI = getHighestParentColor(cats);
+                }
+                return highParentI;
+            },
+            getLabel: function(feature) {
+                if(feature.cluster.length>1) {
+                    return feature.cluster.length;
+                } else {
+                    return '';
+                }
+            }
+        };
+
+        viewMap.catFilter = new Object();
+
             // Initialize each map layer
         mapSettings = getEntryPointByType('map');
-        sourceLayers = mapSettings.layers;
 
             // Create layers for maps as well as controls for each
-        _.each(sourceLayers, function(theLayer, index) {
+        _.each(mapSettings.layers, function(theLayer, index) {
             opacity = 1;
             if(theLayer['opacity']) {
                 opacity = theLayer['opacity'];
@@ -216,19 +217,18 @@ jQuery(document).ready(function($) {
             mapLayers.push(newLayer);
         }); // each sourceLayers
 
-
-        gg = new OpenLayers.Projection("EPSG:4326");
-        sm = new OpenLayers.Projection("EPSG:900913");
+        viewMap.gg = new OpenLayers.Projection("EPSG:4326");
+        viewMap.sm = new OpenLayers.Projection("EPSG:900913");
 
         //var osm = new OpenLayers.Layer.OSM(); 
 
-        map = new OpenLayers.Map({
+        viewMap.olMap = new OpenLayers.Map({
             div: "map_div",
-            projection: sm,
-            displayProjection: gg
+            projection: viewMap.sm,
+            displayProjection: viewMap.gg
             
         });
-        map.addLayers(mapLayers);
+        viewMap.olMap.addLayers(mapLayers);
 
         //map.addControl(new OpenLayers.Control.LayerSwitcher());
 
@@ -248,35 +248,33 @@ jQuery(document).ready(function($) {
         olClusterStrategy = new OpenLayers.Strategy.Cluster();
         olClusterStrategy.distance = 1;
 
-        mapMarkerLayer = new OpenLayers.Layer.Vector(mapSettings['marker-layer'],{
+        viewMap.mapMarkerLayer = new OpenLayers.Layer.Vector(mapSettings['marker-layer'],{
             strategies: [olClusterStrategy],
             rendererOptions: { zIndexing: true }, 
             styleMap: new OpenLayers.StyleMap(olStyle)
         });
 
-        selectControl = new OpenLayers.Control.SelectFeature(mapMarkerLayer,
+        viewMap.selectControl = new OpenLayers.Control.SelectFeature(viewMap.mapMarkerLayer,
             { onSelect: onOLFeatureSelect, onUnselect: onOLFeatureUnselect, hover: false });
 
-        hoverControl = new OpenLayers.Control.SelectFeature(mapMarkerLayer, 
+        viewMap.hoverControl = new OpenLayers.Control.SelectFeature(viewMap.mapMarkerLayer, 
             { hover: true, highlightOnly: true, renderIntent: "temporary" });
 
         //mapMarkerLayer.id = "Markers";
-        map.addLayer(mapMarkerLayer);
-        map.addControl(hoverControl);
-        map.addControl(selectControl);
+        viewMap.olMap.addLayer(viewMap.mapMarkerLayer);
+        viewMap.olMap.addControl(viewMap.hoverControl);
+        viewMap.olMap.addControl(viewMap.selectControl);
 
-        hoverControl.activate();  
-        selectControl.activate();
-
-        return mapMarkerLayer;
+        viewMap.hoverControl.activate();  
+        viewMap.selectControl.activate();
     } // initializeMap()
 
 
     // function createLookup(filter){
-    //     catFilter = filter;
+    //     viewMap.catFilter = filter;
 
     //     var catFilterSelect = filter.terms;
-    //     var countTerms = Object.keys(catFilterSelect).length; 
+    //     var countTerms = Object.keys(viewMap.catFilterSelect).length; 
       
     //     for(i=0;i<countTerms;i++) {
     //         var tempName = catFilterSelect[i].id;
@@ -295,32 +293,35 @@ jQuery(document).ready(function($) {
         // ASSUMES: catFilterSelect has been loaded
         // TO DO:   Make recursive function?
     function getHighestParentIcon(catValues) {
-        var countTerms = catFilterSelect.length; 
+        var countTerms = viewMap.catFilterSelect.length; 
         var countCats = catValues.length;
+        var thisCat, thisCatID;
+        var thisMarkerID;
+        var catChildren;
 
         for(i=0;i<countTerms;i++) {         // for all category values
-            var thisCatID = catFilterSelect[i].id;
+            thisCat = viewMap.catFilterSelect[i];
+            thisCatID = thisCat.id;
 
             for(j=0;j<countCats;j++) {      // for all marker values
-                var thisMarkerValue = catValues[j];
+                thisMarkerID = catValues[j];
 
                     // Have we matched this item itself?
-                if (thisCatID==thisMarkerValue) {
+                if (thisCatID==thisMarkerID) {
                         // Confirm that it looks like a URL (http://...)
-                    if(catFilterSelect[i].icon_url.substring(0,1) == 'h') {
-                        return catFilterSelect[i].icon_url;
+                    if(thisCat.icon_url.substring(0,1) == 'h') {
+                        return thisCat.icon_url;
                     } else {
                         return '';
                     }
                 }
                     // Check for matches amongst its children
                 else {
-                    var tempChildren = catFilterSelect[i].children;
-                    var tempChildCount = tempChildren.length;
-                    for (k=0;k<tempChildCount;k++) {
-                        if(tempChildren[k].term_id==thisMarkerValue) {
-                           if(catFilterSelect[i].icon_url.substring(0,1) == 'h') {
-                                return catFilterSelect[i].icon_url;
+                    catChildren = thisCat.children;
+                    for (k=0;k<catChildren.length;k++) {
+                        if(catChildren[k].term_id==thisMarkerID) {
+                           if(thisCat.icon_url.substring(0,1) == 'h') {
+                                return thisCat.icon_url;
                             }
                             else {
                                 return '';
@@ -339,38 +340,36 @@ jQuery(document).ready(function($) {
         // ASSUMES: catFilterSelect has been loaded
         // TO DO:   Make recursive function?
     function getHighestParentColor(catValues) {
-        var countTerms = catFilterSelect.length; 
-
-        //current marker values
-        var countCats =  catValues.length; 
+        var countTerms = viewMap.catFilterSelect.length; 
+        var countCats = catValues.length;
+        var thisCat, thisCatID;
+        var thisMarkerID;
+        var catChildren;
 
         for(i=0;i<countTerms;i++) {         // for all category values
-            var thisCatID = catFilterSelect[i].id;
+            thisCat = viewMap.catFilterSelect[i];
+            thisCatID = thisCat.id;
 
             for(j=0;j<countCats;j++) {      // for all marker values
                 // legend categories
-                var thisMarkerValue = catValues[j];
+                thisMarkerID = catValues[j];
 
                     // have we matched this element?
-                if (thisCatID===thisMarkerValue) {
-                    if(catFilterSelect[i].icon_url.substring(0,1) == '#') {
-                        return catFilterSelect[i].icon_url;
+                if (thisCatID===thisMarkerID) {
+                    if(thisCat.icon_url.substring(0,1) == '#') {
+                        return thisCat.icon_url;
                     } else {
                         return '';
                     }
                     // check for matches on its children
                 } else {
-                    var tempChildCount = Object.keys(catFilterSelect[i].children).length;
-                    if(tempChildCount>0) {
-                        var tempChildren = catFilterSelect[i].children;
-
-                        for (k=0;k<tempChildCount;k++) {
-                            if(tempChildren[k].term_id==thisMarkerValue) {
-                               if(catFilterSelect[i].icon_url.substring(0,1) == '#') {
-                                    return catFilterSelect[i].icon_url;
-                                } else {
-                                    return '';
-                                }
+                    catChildren = thisCat.children;
+                    for (k=0;k<catChildren.length;k++) {
+                        if(catChildren[k].term_id==thisMarkerID) {
+                           if(thisCat.icon_url.substring(0,1) == '#') {
+                                return thisCat.icon_url;
+                            } else {
+                                return '';
                             }
                         }
                     }
@@ -381,18 +380,18 @@ jQuery(document).ready(function($) {
 
 
     // function getHighestParentDisplay(categories) {
-    //     var catFilterSelect = catFilter.terms;
-    //     var countTerms = Object.keys(catFilterSelect).length; 
+    //     var catFilterSelect = viewMap.catFilter.terms;
+    //     var countTerms = Object.keys(viewMap.catFilterSelect).length; 
     //     var countCats = categories.length;
 
     //     for(i=0;i<countTerms;i++) {
     //         for(j=0;j<countCats;j++) {
-    //             var tempName = catFilterSelect[i].id;
+    //             var tempName = viewMap.catFilterSelect[i].id;
     //             if (tempName==categories[j]) {              
     //                 return true;
     //             } else {
     //                 //for each child cat
-    //                 var tempChildren = catFilterSelect[i].children;
+    //                 var tempChildren = viewMap.catFilterSelect[i].children;
     //                 var tempChildCount = tempChildren.length;
     //                 for (k=0;k<tempChildCount;k++) {
     //                     if(tempChildren[k]==categories[j]) {
@@ -408,7 +407,7 @@ jQuery(document).ready(function($) {
         // INPUT:   legendList = array of legends to display; each element has field "name" and array "terms" of [id, name, icon_url ]
     function createLegends(legendList) {
             // Custom event types bound to the document to be triggered elsewhere
-        $(document).bind('order.findSelectedCats',function(){ catFilterSelect= findSelectedCats();});
+        $(document).bind('order.findSelectedCats',function(){ viewMap.catFilterSelect= findSelectedCats();});
         $(document).bind('order.updateLayerFeatures',function(){ updateLayerFeatures();});
 
         //console.log('here'+_.size(legendList));
@@ -535,7 +534,7 @@ jQuery(document).ready(function($) {
                     // Should legend values now be checked or unchecked?
                 var boxState = $(this).closest('li').find('input').prop('checked');
                 $('.active-legend ul li').find('input').prop('checked',!boxState);
-                catFilterSelect = findSelectedCats();
+                viewMap.catFilterSelect = findSelectedCats();
                 updateLayerFeatures();
             }
                 // a specific legend/category value (ID#)
@@ -546,7 +545,7 @@ jQuery(document).ready(function($) {
                     // select just this item
                 $(this).closest('li').addClass('selected');
                 $(this).closest('li').find('input').prop('checked',true);
-                catFilterSelect = findSelectedCats(spanName);
+                viewMap.catFilterSelect = findSelectedCats(spanName);
                 updateLayerFeatures();
             }
         });
@@ -568,17 +567,17 @@ jQuery(document).ready(function($) {
             var spanName = $(event.target).parent().find('a').data('id');
             if( spanName==='all' && $(this).prop('checked') === true ) {
                 $('.active-legend ul li').find('input').prop('checked',true);
-                catFilterSelect = findSelectedCats();
+                viewMap.catFilterSelect = findSelectedCats();
                 updateLayerFeatures();
             }
             else if(spanName==='all'&& $(this).prop('checked') === false ) {
                 $('.active-legend ul li').find('input').prop('checked',false);
-                catFilterSelect = findSelectedCats();
+                viewMap.catFilterSelect = findSelectedCats();
                 updateLayerFeatures();
             }
             else {
                 $('.active-legend ul li.check-all').find('input').prop('checked',false);                  
-                catFilterSelect = findSelectedCats();
+                viewMap.catFilterSelect = findSelectedCats();
                 updateLayerFeatures();
             }
         });
@@ -621,7 +620,7 @@ jQuery(document).ready(function($) {
         // $('.launch-timeline').click(function(){
         //     loadTimeline('4233');  
         // });
-        catFilterSelect = findSelectedCats();
+        viewMap.catFilterSelect = findSelectedCats();
     } // createLegends()
 
 
@@ -637,7 +636,7 @@ jQuery(document).ready(function($) {
         layerSettings = getEntryPointByType('map');
         layerSettings = layerSettings.layers;
 
-        _.each(map.layers,function(thisLayer,index){
+        _.each(viewMap.olMap.layers,function(thisLayer,index){
             //console.log(layer.name)
             layerOpacity = 1;
             if(layerSettings[index]) {
@@ -677,22 +676,20 @@ jQuery(document).ready(function($) {
         // SIDE-FX: Changes catFilter
     function switchFilter(filterName) {
         var filterObj = _.where(rawAjaxData, {type: "filter", name: filterName});
-        catFilter = filterObj[0];
+        viewMap.catFilter = filterObj[0];
         $(document).trigger('order.findSelectedCats').trigger('order.updateLayerFeatures');
-        selectControl.activate(); 
+        viewMap.selectControl.activate(); 
     }
 
 
         // PURPOSE: Update map's feature layer after user chooses a new legend acc. to values in catFilterSelect
         // ASSUMES: allMarkers contains all of the possible marker objects; catFilterSelect set to current legend selection
     function updateLayerFeatures(){
-        //find all features with cat
-        //catFilterSelect = findSelectedCats(); 
-        //categoryTree = catFilterSelect;
         var newFeatures = {type: "FeatureCollection", features: []};        // marker set resulting from current selection
         var allCategoryIDs = [];                                            // list of selected IDs
+
             // Flatten out categories (and their children) as IDs
-        _.each(catFilterSelect,function(theCategory){
+        _.each(viewMap.catFilterSelect,function(theCategory){
             allCategoryIDs.push(theCategory.id);
             if (theCategory.children) {
                 _.each(theCategory.children, function(catChild) {
@@ -707,13 +704,13 @@ jQuery(document).ready(function($) {
             }
         });
         var reader = new OpenLayers.Format.GeoJSON({
-            'externalProjection': gg,
-            'internalProjection': sm
+            'externalProjection': viewMap.gg,
+            'internalProjection': viewMap.sm
         });
 
         var featureData = reader.read(newFeatures);
-        //marker layer should be the last layer on the map(length-1)
-        var myLayer = map.layers[map.layers.length-1];
+            // Marker layer must be the last layer on the array!
+        var myLayer = viewMap.olMap.layers[viewMap.olMap.layers.length-1];
         myLayer.removeAllFeatures();
         myLayer.addFeatures(featureData);
     } // updateLayerFeatures()
@@ -727,14 +724,14 @@ jQuery(document).ready(function($) {
     function findSelectedCats(singleID) {
         var selCatFilter = [];
         var countTerms = 0; 
-        if(catFilter) {
-            countTerms = Object.keys(catFilter.terms).length;
+        if(viewMap.catFilter) {
+            countTerms = Object.keys(viewMap.catFilter.terms).length;
         }
 
         if(singleID) {
             var i, tempFilter;
             for(i=0;i<countTerms;i++) {
-                tempFilter = catFilter.terms[i];
+                tempFilter = viewMap.catFilter.terms[i];
                 if(tempFilter.id==singleID) {
                     selCatFilter[0] = tempFilter;
                     break;
@@ -748,7 +745,7 @@ jQuery(document).ready(function($) {
                 tempSelCat = $(this).parent().find('.value').data( 'id' );
                 //console.log(tempSelCat+' :'+index)
                 for(i=0;i<countTerms;i++) {
-                    tempFilter = catFilter.terms[i];
+                    tempFilter = viewMap.catFilter.terms[i];
                     if(tempFilter.id==tempSelCat) {
                         selCatFilter[index] = tempFilter;
                         // console.log(tempFilter, tempSelCat);
@@ -761,18 +758,26 @@ jQuery(document).ready(function($) {
 
 
         // PURPOSE: Convert timecode string into # of milliseconds
-        // INPUT:   timecode in format [HH:MM:SS], SS can be in floating point format SS.ss
+        // INPUT:   timecode must be in format [HH:MM:SS.ss]
+        // ASSUMES: timecode in correct format, viewTranscript['parseTimeCode'] contains compiled RegEx
         // TO DO:   Use RegEx to parse
     function convertToMilliSeconds(timecode) {
         var tempN = timecode.replace("[","");
         var tempM = tempN.replace("]","");
         var tempArr = tempM.split(":");
-
         var secondsCode = parseInt(tempArr[0])*3600 + parseInt(tempArr[1])*60 + parseFloat(tempArr[2]);
         var milliSecondsCode = secondsCode*1000;
 
+//         var milliSecondsCode = new Number();
+//         if (viewTranscript['parseTimeCode'].exec(timecode)) {
+// console.log("Parsed " + RegExp.$1 + ":" + RegExp.$2 + ":" + RegExp.$3);
+//             milliSecondsCode = (parseInt(RegExp.$1)*3600 + parseInt(RegExp.$2)*60 + parseFloat(RegExp.$3)) * 1000;
+//         } else {
+//             milliSecondsCode = 0;
+//         }
+// console.log("Timecode parse = " + milliSecondsCode);
         return milliSecondsCode;
-    }
+    } // convertToMilliSeconds()
 
 
     // function geocodeAddress(addy){
@@ -799,9 +804,7 @@ jQuery(document).ready(function($) {
         // PURPOSE: Handle user selection of a marker on a map to bring up modal
         // INPUT:   feature = the feature selected on map
         // ASSUMES: Can use only first feature if a cluster of features is passed
-        // SIDE-FX: Modifies DOM for modal dialog window
-        // TO DO:   Put code to create modal in another function, as it will be called by other
-        //              visualization types
+        // SIDE-FX: Modifies DOM to create modal dialog window
     function onOLFeatureSelect(feature) {
     	// if not cluster
 
@@ -814,12 +817,11 @@ jQuery(document).ready(function($) {
         else
             selectedFeature = feature;
 
-        // console.log(dhpSettings)
         tempModalHtml = $('<div><div class="modal-content"/></div>');
 
+         var titleAtt;
          var link1       = selectedFeature.attributes.link;
          var link2       = selectedFeature.attributes.link2;
-         var titleAtt;
          var tagAtt      =  selectedFeature.attributes.categories;
          var audio       =  selectedFeature.attributes.audio;
          var transcript  =  selectedFeature.attributes.transcript;
@@ -827,36 +829,40 @@ jQuery(document).ready(function($) {
          var timecode    =  selectedFeature.attributes.timecode;
          var time_codes  = null; 
          var thumbHtml;
+         var startTime, endTime;
+
 
          if(dhpSettings['views']['title']) {
             titleAtt =  selectedFeature.attributes['title'];
          }
 
-         //need to check for transcript here. TODO: check for 2nd transcript and load next to first without timestamps(should match first transcript)
+            // Does feature lead to transcript window? Set up transcript variables
          if(findModalEpSettings('transcript')) {
             time_codes = timecode.split('-');
-            
+
             if(timecode) { 
-                var startTime = convertToMilliSeconds(time_codes[0]);
-                var endTime   = convertToMilliSeconds(time_codes[1]);
+                startTime = convertToMilliSeconds(time_codes[0]);
+                endTime   = convertToMilliSeconds(time_codes[1]);
             }
             $('#markerModal').addClass('transcript');
-            
-            _.each(dhpSettings['views']['modal-ep'],function(val,key) {
-                rawAjaxData['transcriptData'] = [];
-                if(transcript&&transcript!=='none') {
-                    loadTranscriptClip(projectID,transcript,timecode,1);
-                }
-                
-                if(transcript==='none' && transcript2 && transcript2!=='none'){
-                    loadTranscriptClip(projectID,transcript2,timecode,1);
-                }
-                else if(transcript!=='none' && transcript2 && transcript2!=='none') {
-                    loadTranscriptClip(projectID,transcript2,timecode,2);
-                }    
-                $('.modal-content', tempModalHtml).append('<div class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></div>');
-            });
+
+            viewTranscript['transcriptData'] = [];
+
+                // Is there any primary transcript data?
+            if(transcript&&transcript!=='none') {
+                loadTranscriptClip(projectID,transcript,timecode,0);
+            }
+                // Is there 2ndary transcript data? If only 2nd, treat as 1st
+            if(transcript==='none' && transcript2 && transcript2!=='none'){
+                loadTranscriptClip(projectID,transcript2,timecode,0);
+            }
+                // Otherwise, add 2nd to 1st
+            else if(transcript!=='none' && transcript2 && transcript2!=='none') {
+                loadTranscriptClip(projectID,transcript2,timecode,1);
+            }
+            $('.modal-content', tempModalHtml).append('<div class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></div>');
          }
+
          if(dhpSettings['views']['content']) {
             $('.modal-content', tempModalHtml).append('<div><h3>Details:</h3></div>');
             _.each(selectedFeature.attributes.content,function(val,key) {
@@ -892,8 +898,8 @@ jQuery(document).ready(function($) {
         $('#markerModal .modal-footer .btn-success').remove();
 
         $('#markerModal #markerModalLabel').empty().append(titleAtt);
-        $('#markerModal .modal-body').empty().append(tempModalHtml);          
-        
+        $('#markerModal .modal-body').empty().append(tempModalHtml);
+
             // setup links
         if(link1 && link1!='no-link') {
             $('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link1+'">'+dhpSettings['views']['link-label']+'</a>');
@@ -958,13 +964,14 @@ jQuery(document).ready(function($) {
     } // onOLFeatureSelect()
 
         // PURPOSE: Given a millisecond reading, unhighlight any previous "playhead" and highlight new one
+        // TO DO:   Change use of tcArray
     function hightlightTranscriptLine(millisecond){
         var match;
-        _.find(tcArray, function(val,index){
-            match = (millisecond<tcArray[index+1]);
+        _.find(viewTranscript.tcArray, function(timecode,index){
+            match = (millisecond<timecode);
             if (match) {
-                if(rowIndex!==index) {
-                    rowIndex = index;
+                if(viewTranscript.rowIndex!==index) {
+                    viewTranscript.rowIndex = index;
                     var topDiff = $('.transcript-list div.type-timecode').eq(index).offset().top - $('.transcript-list').offset().top;
                     var scrollPos = $('.transcript-list').scrollTop() +topDiff;
                     $('.transcript-list').animate({
@@ -989,36 +996,39 @@ jQuery(document).ready(function($) {
     //     // console.log(transcriptArray)
     // }
 
-        // PURPOSE: Clean up quicktime text, format transcript and put it in a list
+        // PURPOSE: Clean up quicktime text, format transcript (left-side specific) and put it in a list
         // INPUT:   dirty_transcript = quicktime text format
-        // RETURNS: html unordered list
-        // TO DO:   Use RegEx to parse timestamps; change tcArray entry to end of timestamp (shift left?)
+        // RETURNS: HTML for transcription 
+        // TO DO:   Use RegEx to parse timestamps
     function formatTranscript(dirty_transcript) {
         var transcript_html='';
-        // split into array by line
+            // split transcript text into array by line
         var split_transcript = dirty_transcript.trim().split(/\r\n|\r|\n/g);
-        tcArray = [];
+            // empty time code array
+        viewTranscript.tcArray = [];
         // console.log(split_transcript)
         if(split_transcript) {
             transcript_html = $('<div class="transcript-list"/>');
 
             var index = 0;
+            var timecode;
             var textBlock;
             var lineClass = ['','odd-line'];
             _.each(split_transcript, function(val){
                 val = val.trim();
                 var oddEven = index % 2; 
-                //skip values with line breaks...basically empty items
-                if(val.length>1) {       
-                    
+                    // Skip values with line breaks...basically empty items
+                if(val.length>1) {
+                        // Does it begin with a timecode?
                     if(val[0]==='['&&val[1]==='0'){                  
                         if(index>0) {
                             $('.row', transcript_html).eq(index-1).append('<div class="type-text">'+textBlock+'</div>');
                         }
                         index++;
                         textBlock = ''; 
-                        transcript_html.append('<div class="row '+lineClass[oddEven]+'"><div class="type-timecode" data-timecode="'+convertToMilliSeconds(val)+'">'+val+'</div></div>');
-                        tcArray.push(convertToMilliSeconds(val));
+                        timecode = convertToMilliSeconds(val);
+                        transcript_html.append('<div class="row '+lineClass[oddEven]+'"><div class="type-timecode" data-timecode="'+timecode+'">'+val+'</div></div>');
+                        viewTranscript.tcArray.push(timecode);
                     }
                     else {
                         textBlock += val;                       
@@ -1026,21 +1036,28 @@ jQuery(document).ready(function($) {
                 }
             });
         }
+            // Shift array of timecodes so that entry is end-time rather than start-time of associated item
+        viewTranscript.tcArray.shift();
+            // Append very large number to end to ensure can't go past last item! 9 hours * 60 minutes * 60 seconds * 1000 milliseconds = 
+        viewTranscript.tcArray.push(32400000);
         return transcript_html;
-    }
+    } // formatTranscript()
+
 
     function attachSecondTranscript(transcriptData){
         //target $('.transcript-list')
         var split_transcript = transcriptData.split(/\r\n|\r|\n/g);
-         $('.transcript-list').addClass('two-column');
+        $('.transcript-list').addClass('two-column');
         var first_transcriptHTML = $('.transcript-list .type-text');
         // console.log(split_transcript)
         var textArray = [];
         var textBlock;
         var index = 0;
+        var lineClass;
+
         if(split_transcript) {
             _.each(split_transcript, function(val){
-                //skip values with line breaks...basically empty items
+                    // Skip values with line breaks...basically empty items
                 val = val.trim();
                 if(val.length>1) {
                     if(val[0]==='['&&val[1]==='0'){
@@ -1056,36 +1073,41 @@ jQuery(document).ready(function($) {
                 }
             });
         }
-        //loop thru original transcript and add second lines
+            // Loop thru HTML for left-side transcript and add right-side text
          _.each(textArray, function(val,index){
-            var lineClass = '';
+            lineClass = '';
             if($(first_transcriptHTML).eq(index).hasClass('odd-line')) {
                 lineClass = 'odd-line';
             }
             $(first_transcriptHTML).eq(index).after('<div class="type-text '+lineClass+'">'+val+'</div>')
          });
-    }
+    } // attachSecondTranscript()
 
+
+        // INPUT: order = 0 (left-side) or 1 (right-side)
+        // NOTES: Need to buffer transcript data in viewTranscript['transcriptData'] because we cannot assume
+        //          when AJAX call will complete (2nd call may complete before 1st)
     function attachTranscript(transcriptData,order){
-        //hold second transcript until first is loaded and attached. 
-        if(order==2) {
-            rawAjaxData['transcriptData'][1] = transcriptData;
-            if(rawAjaxData['transcriptData'][0]) {
+        viewTranscript['transcriptData'][order] = transcriptData;
+
+            // Don't process 2nd transcript unless 1st is loaded and attached
+        if(order==1) {
+            if(viewTranscript['transcriptData'][0]) {
                 attachSecondTranscript(transcriptData);
             }
         }
         else {
-            rawAjaxData['transcriptData'][0] = transcriptData;
             $('.transcript-ep p').append(formatTranscript(transcriptData));
-            if(rawAjaxData['transcriptData'][1]) {
-                attachSecondTranscript(rawAjaxData['transcriptData'][1]);
+                // Now, if right-side exists, attach it to left!
+            if(viewTranscript['transcriptData'][1]) {
+                attachSecondTranscript(viewTranscript['transcriptData'][1]);
             }
         }
     }
 
     // function zoomCluster(){
     //     var displayedFeatures = [];
-    //     var lay = map.layers[1];
+    //     var lay = olMap.layers[1];
     //     for (var i=0, len=lay.features.length; i<len; i++) {
     //         var featC = lay.features[i];
     //         if (featC.onScreen()) {
@@ -1108,11 +1130,10 @@ jQuery(document).ready(function($) {
         //          mLayer = map layer into which the markers inserted 
         // SIDE-FX: assigns variables allMarkers, catFilter, rawAjaxData
         // TO DO:   Generalize visualization types; should createLegends() be called elsewhere?
-    function createMapMarkers(data,mLayer) {
+    function createMapMarkers(data) {
         rawAjaxData = data;
         // console.log(rawAjaxData);
 
-        // var featureObject = new Object();
         var legends = [];
 
             // Assign data to appropriate objects
@@ -1128,19 +1149,18 @@ jQuery(document).ready(function($) {
         });
 
             // Set current filter to the first legend by default
-        catFilter  = legends[0];
+        viewMap.catFilter  = legends[0];
         createLegends(legends);
 
         buildLayerControls();
 
     	var reader = new OpenLayers.Format.GeoJSON({
-                'externalProjection': gg,
-                'internalProjection': sm
+                'externalProjection': viewMap.gg,
+                'internalProjection': viewMap.sm
         });
 
     	var featureData = reader.read(allMarkers);
-        var myLayer = mLayer;
-        myLayer.addFeatures(featureData);
+        viewMap.mapMarkerLayer.addFeatures(featureData);
     //player.pause();
     } // createMapMarkers()
 
@@ -1174,7 +1194,7 @@ jQuery(document).ready(function($) {
     }
 
         // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
-    function loadMapMarkers(projectID,mLayer){
+    function loadMapMarkers(){
         //console.log('loading');
             // Initially bring up Loading pop-box modal dialog -- hide after Ajax returns
         $('body').append('<div id="loading" class="modal hide fade">\
@@ -1194,7 +1214,7 @@ jQuery(document).ready(function($) {
                 project: projectID
             },
             success: function(data, textStatus, XMLHttpRequest){
-                createMapMarkers(JSON.parse(data),mLayer);
+                createMapMarkers(JSON.parse(data));
                 //$('#markerModal').modal({backdrop:true});
                     // Remove Loading modal
                 $('#loading').modal('hide');

@@ -2391,7 +2391,6 @@ function dhp_page_template( $page_template )
 		wp_enqueue_script('underscore');
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('jquery-ui' );
-			// ??  Does this exist??
 		wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__) ));
  		wp_enqueue_script('jquery-ui-slider' );
 		wp_enqueue_script('dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');

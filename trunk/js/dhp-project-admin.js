@@ -750,10 +750,10 @@ jQuery(document).ready(function($) {
       <div class="modal-body">\
         <p>Pick the entry points to display in the modal.</p>\
         <ul id="modal-body-ep">\
-        </ul><button class="btn btn-success add-modal-ep" type="button">Add</button>\
+        </ul><button class="btn btn-success add-modal-ep" type="button">Add Entry Point</button>\
         <p>Pick the motes to display in the modal.</p>\
         <ul id="modal-body-content">\
-        </ul><button class="btn btn-success add-modal-content" type="button">Add</button>\
+        </ul><button class="btn btn-success add-modal-content" type="button">Add Mote</button>\
         <p>Setup Links</p>\
         <span class="pull-left" >Link 1: <input type="text" name="link-legends-label" class="link-legends-label" placeholder="Label" '+linkTargetLabel+'/><select name="link-legends" class="link-legends">'+buildHTMLForSetupLinks(linkTarget)+'</select></span>\
         <span class="pull-left" >Link 2: <input type="text" name="link-legends2-label" class="link-legends2-label" placeholder="Label" '+linkTarget2Label+'/><select name="link-legends2" class="link-legends2">'+buildHTMLForSetupLinks(linkTarget2)+'</select></span>\

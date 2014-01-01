@@ -48,7 +48,9 @@
 		        "map-height": Integer,
 		        "post-view-title": String,
 		        "title": String (name of mote),
-		        "modal-ep": {},
+		        "modal-ep": [			// Entry-point(s) to dispay in selected Marker modal
+		        	Integer (index) : 'transcript' | 'map'
+		        ],
 		        "content": [
 		            Integer (index): String (mote name), ...
 		        ],
