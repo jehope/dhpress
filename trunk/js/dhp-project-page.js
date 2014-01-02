@@ -2,8 +2,8 @@
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //          Project ID is embedded in HTML as .post.id
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
-// NOTES:   Legends data is in the format: Array [ name, terms: Array [ name, id, icon_url, children: Array [ name ] ] ]
-//          If icon_url starts with #, it is a color in hex; otherwise a URL
+// NOTES:   Format of Marker and Legend data is commented in dhp-project-functions.php
+//          Format of project settings is documented in dhp-class-project.php
 //          The class active-legend is added to whichever legend is currently visible and selected
 // TO DO:   Generalize visualization types better (don't assume maps) -- don't pass map or layers settings
 //          Seperate loading of markers from building of legends and other screen components
@@ -108,7 +108,11 @@ jQuery(document).ready(function($) {
         var theEP;
         theEP = _.find(dhpSettings['entry-points'],
                         function(thisEP) { return (thisEP["type"] == theType); });
-        return theEP["settings"];
+        if (theEP !== undefined && theEP !== null) {
+            return theEP["settings"];
+        } else {
+            return null;
+        }
     }
 
         // RETURNS: entry in the modal-ep array whose name is modalName
@@ -1016,7 +1020,7 @@ jQuery(document).ready(function($) {
                     // Skip values with line breaks...basically empty items
                 if(val.length>1) {
                         // Does it begin with a timecode?
-                    if(val[0]==='['&&val[1]==='0'){                  
+                    if(val[0]==='['&&val[1]==='0'){
                         if(index>0) {
                             $('.row', transcript_html).eq(index-1).append('<div class="type-text">'+textBlock+'</div>');
                         }
