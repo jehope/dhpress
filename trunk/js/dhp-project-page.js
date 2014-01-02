@@ -1,8 +1,11 @@
 // PURPOSE: Handle viewing Project content visualizations
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //          Project ID is embedded in HTML as .post.id
+//          The sidebar is marked with HTML div as "secondary"
+//          Section for marker modal is marked with HTML div as "markerModal"
+//          An area for the map has been marked with HTML div as "map_div" (currently in dhp-project-template.php)
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
-// NOTES:   Format of Marker and Legend data is commented in dhp-project-functions.php
+// NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
 //          Format of project settings is documented in dhp-class-project.php
 //          The class active-legend is added to whichever legend is currently visible and selected
 // TO DO:   Generalize visualization types better (don't assume maps) -- don't pass map or layers settings
@@ -31,21 +34,24 @@ jQuery(document).ready(function($) {
     ajaxURL        = dhpData.ajax_url;
     dhpSettings    = dhpData.settings;
 
-    // $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
-
-        // insert navigational controls
-    $('#secondary').prepend('<div id="legends" class="span4"><div class="legend-row row-fluid"></div></div>');
+        // insert top navigational bar and controls
     $('body').prepend('<div class="dhp-nav nav-fixed-top navbar"><div class="navbar-inner"><ul class="nav nav-pills ">\
-          <li class="dropdown">\
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-list"></i>  Legends<b class="caret"></b></a>\
-            <ul class="dropdown-menu">\
-                  <!-- links -->\
-            </ul>\
-          </li>\
-          <li class="layers"><a href="#layers-panel"><i class="icon-tasks"></i> Layers </a></li>\
           <li class="fullscreen" ><a href="#"><i class="icon-fullscreen"></i> Fullscreen map </a></li>\
           <li class="tips active" ><a href="#"><i class="icon-info-sign"></i> Tips </a></li>\
         </ul></div>');
+
+        // Insert Marker modal window HTML
+    $('body').append('<div id="markerModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="markerModalLabel" aria-hidden="true">\
+          <div class="modal-header">\
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+            <h3 id="markerModalLabel">Map Setup</h3>\
+          </div>\
+          <div class="modal-body">\
+          </div>\
+          <div class="modal-footer">\
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\
+          </div>\
+        </div>');
 
         // initialize fullscreen mode settings
     if(dhpSettings['views']['map-fullscreen']==true){
@@ -53,23 +59,6 @@ jQuery(document).ready(function($) {
         $('.dhp-nav .fullscreen').addClass('active');
     }
 
-    $('<style type="text/css"> @media screen and (min-width: 600px) { #map_div{ width:'+dhpSettings['views']['map-width']+'px; height:'+dhpSettings['views']['map-height']+'px;}} </style>').appendTo('head');
-
-        // Map visualization?
-    if (getEntryPointByType('map')) {
-        initializeMap();
-    }
-
-        // Transcription views?
-    if (getEntryPointByType('transcript')) {
-        viewTranscript['parseTimeCode'] = /(\d{2})\:(\d{2})\:([\d\.]+)/;
-    }
-
-        // Handle reset button
-    $('.olControlZoom').append('<div class="reset-map"><i class="icon-white icon-refresh"></i></div>');
-    $('.olControlZoom .reset-map').click(function(){
-        resetMap();
-    });
         // handle toggling fullscreen mode
     $('.dhp-nav .fullscreen').click(function(){
         if($('body').hasClass('fullscreen')) {
@@ -93,6 +82,59 @@ jQuery(document).ready(function($) {
             $('.dhp-nav .tips').addClass('active');
         }
     });
+
+    $('<style type="text/css"> @media screen and (min-width: 600px) { #map_div{ width:'+dhpSettings['views']['map-width']+'px; height:'+dhpSettings['views']['map-height']+'px;}} </style>').appendTo('head');
+
+        // Map visualization?
+    if (getEntryPointByType('map')) {
+            // Add map elements to top nav bar
+        $('.dhp-nav .nav-pills').append('<li class="dropdown">\
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-list"></i>  Legends<b class="caret"></b></a>\
+            <ul class="dropdown-menu">\
+                  <!-- links -->\
+            </ul>\
+          </li>\
+          <li class="layers"><a href="#layers-panel"><i class="icon-tasks"></i> Layers </a></li>');
+
+            // Insert Legend area on right sidebar
+        $('#secondary').prepend('<div id="legends" class="span4"><div class="legend-row row-fluid"></div></div>');
+        initializeMap();
+
+            // Handle reset button
+        $('.olControlZoom').append('<div class="reset-map"><i class="icon-white icon-refresh"></i></div>');
+        $('.olControlZoom .reset-map').click(function(){
+            resetMap();
+        });
+
+            // Add user tips for map
+        $('body').append('<ol id="dhpress-tips" class="joyRideTipContent">\
+          <li data-id="legends" data-options="tipLocation:right">Legends allow you to change (or filter) what you see on the map. By clicking on different options in the legend, you can see related markers by themselves or in combination with each other. Click on the check box or name to narrow the display of markers on the map. You can click on multiple check boxes. Refreshing the browser page will restore all markers on the map.</li>\
+          <li data-class="dropdown" data-options="tipLocation:bottom">A DH Press project may have multiple legends which allow you to explore the project content in different ways. To toggle, or switch, between different legends, click the arrow. A drop-down menu showing all existing legends will appear. Move your mouse to the one you want and click the name to activate that legend. </li>\
+          <li data-id="legends" data-options="tipLocation:right">Decrease the size of the legend by clicking on the arrows in the top right corner of the legend. This will shrink the legend, allowing you to see more of the map. Click the arrows again to restore the full size of the legend.\
+          </li>\
+          <li data-class="layers" data-options="tipLocation:bottom"><p>Some DH Press projects layer different maps on top of each other to highlight different things about the built environment or landscape. You can turn each map layer on and off, change the transparency level of each map, and turn all markers off/on. </p>\
+            <ul>\
+              <li>1) Turning maps on/off: click the checkbox next to a map to hide it.</li>\
+              <li>2) Changing transparency: move the slider to the left to make the map layer more transparent. Move it to the right to increase opacity. This action can be performed on any individual map, whether a base map (such as Google Street view) or a map overlay.</li>\
+              <li>3) Turn markers off: click the checkbox next to the markers to turn all markers off. Click again to restore all markers. You can also change the transparency of the markers by dragging the slider.</li>\
+            </ul>\
+          </li>\
+          <li data-class="icon-fullscreen" data-options="tipLocation:bottom" class="custom-class">Click the “Fullscreen map” button to switch between a smaller view of the map and one that takes up the browser’s entire window. All of the map’s interactivity is functional in both views. When in the smaller map view, you will see the rest of the project site, including the navigation bar at the top and any additional content on the sidebar.\
+          </li>\
+          <li data-class="icon-legend" data-options="tipLocation:bottom" class="custom-class">Click on the check box or name to narrow the display of markers on the map to that category. Check multiple boxes to see markers from multiple categories at the same time.\
+        </li>\
+          <li>To reposition the map in any cardinal direction, click and hold the mouse down while moving the mouse. This will allow you to pan, or drag, the map to see areas not currently visible in the browser. Panning will not affect the zoom level of the map.</li>\
+          <li data-class="olControlZoom" class="custom-class" data-options="tipLocation:left">To change the scale (magnification value) of the map, zoom in or out. There are several ways to zoom: click the plus sign on the map, double click the mouse, or move the mouse wheel away from you. Hitting the minus button, or moving the mouse wheel towards you, makes the map smaller (zoom out). To reset the map’s original zoom level (scale) completely, refresh the browser.\
+        </li>\
+          <li>Clicking on a marker opens up a lightbox (or popup window) with more information about that marker. Depending on the amount of content in the lightbox, you may need to scroll down to see everything. Click the green link button (when enabled) at the bottom to open up a new tab in the browser. This allows you either to navigate to more information about the selected marker, or to a page of related markers. </li>\
+          <li>Firefox and Chrome are the recommended browsers for DH Press. Some users may experience difficulty viewing all of a project’s features in their browser, particularly those using ad blockers and other browser plugins. Mac users experiencing problems with Flash should use Safari. </li>\
+        </ol>');
+    }
+
+        // Transcription views?
+    if (getEntryPointByType('transcript')) {
+        viewTranscript['parseTimeCode'] = /(\d{2})\:(\d{2})\:([\d\.]+)/;
+    }
 
         // Map visualization?
     if (getEntryPointByType('map')) {
@@ -123,6 +165,20 @@ jQuery(document).ready(function($) {
                             return (theName == modalName); })
                 != undefined);
     }
+
+        // PURPOSE: Bring up Loading pop-box modal dialog -- must be hidden by caller
+    function createLoadingMessage()
+    {
+        $('body').append('<div id="loading" class="modal hide fade">\
+            <div class="modal-body">\
+            <div class="loading-content" style="font-size:56px; ">\
+            <i class="icon-spinner icon-spin"> </i> loading </div>\
+            </div>\
+            </div>');   
+        $('#loading').modal({backdrop:false});
+        $('#loading').modal('show');
+    } // createLoadingMessage()
+
 
         // PURPOSE: Reset center and scale of map
         // ASSUMES: gg has been initialized and is accessible; dhpSettings loaded
@@ -1036,7 +1092,7 @@ jQuery(document).ready(function($) {
                 }
             });
         }
-            // Shift array of timecodes so that entry is end-time rather than start-time of associated item
+            // Shift array of timecodes so that entry is end-time rather than start-time of associated section
         viewTranscript.tcArray.shift();
             // Append very large number to end to ensure can't go past last item! 9 hours * 60 minutes * 60 seconds * 1000 milliseconds = 
         viewTranscript.tcArray.push(32400000);
@@ -1194,18 +1250,11 @@ jQuery(document).ready(function($) {
     }
 
         // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
-    function loadMapMarkers(){
+    function loadMapMarkers()
+    {
         //console.log('loading');
-            // Initially bring up Loading pop-box modal dialog -- hide after Ajax returns
-        $('body').append('<div id="loading" class="modal hide fade">\
-            <div class="modal-body">\
-            <div class="loading-content" style="font-size:56px; ">\
-            <i class="icon-spinner icon-spin"> </i> loading </div>\
-            </div>\
-            </div>');   
-        $('#loading').modal({backdrop:false});
-        $('#loading').modal('show');
         //$('.modal-backdrop').css({'opacity':0.1});
+        createLoadingMessage();
     	jQuery.ajax({
             type: 'POST',
             url: ajaxURL,
@@ -1230,7 +1279,7 @@ jQuery(document).ready(function($) {
                alert(errorThrown);
             }
         });
-    }
+    } // loadMapMarkers()
 
     function loadTimeline(projectID){
         jQuery.ajax({
