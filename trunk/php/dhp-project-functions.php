@@ -2304,10 +2304,8 @@ function add_dhp_project_admin_scripts( $hook )
 
 			wp_enqueue_script('dhp-project-script', plugins_url('/js/dhp-project-admin.js', dirname(__FILE__) ));
 			wp_localize_script('dhp-project-script', 'dhpDataLib', array(
-				'ajax_url' => __($dev_url,'dhp'),
-				'layers' => __($tempLayers,'dhp')
-				// 'ajax_url' => $dev_url,
-				// 'layers' => json_encode($tempLayers)
+				'ajax_url' => $dev_url
+				// 'layers' => $tempLayers
 			) );
         }
 

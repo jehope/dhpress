@@ -31,7 +31,6 @@ jQuery(document).ready(function($) {
     ajaxURL        = dhpData.ajax_url;
     dhpSettings    = dhpData.settings;
 
-
     // $('#map_marker').append('<div class="info"></div><div class="av-transcript"></div>');
 
         // insert navigational controls
@@ -59,6 +58,11 @@ jQuery(document).ready(function($) {
         // Map visualization?
     if (getEntryPointByType('map')) {
         initializeMap();
+    }
+
+        // Transcription views?
+    if (getEntryPointByType('transcript')) {
+        viewTranscript['parseTimeCode'] = /(\d{2})\:(\d{2})\:([\d\.]+)/;
     }
 
         // Handle reset button
@@ -94,11 +98,6 @@ jQuery(document).ready(function($) {
     if (getEntryPointByType('map')) {
         loadMapMarkers();
     }
-
-        // Transcription views?
-    // if (getEntryPointByType('transcript')) {
-    //     viewTranscript['parseTimeCode'] = new RegExp("\[(\d{2})\:(\d{2})\:(\d{2}\.\d{2})\]");
-    // }
 
 
     // ========================= FUNCTIONS
@@ -298,6 +297,7 @@ jQuery(document).ready(function($) {
         var thisCat, thisCatID;
         var thisMarkerID;
         var catChildren;
+        var i,j,k;
 
         for(i=0;i<countTerms;i++) {         // for all category values
             thisCat = viewMap.catFilterSelect[i];
@@ -345,6 +345,7 @@ jQuery(document).ready(function($) {
         var thisCat, thisCatID;
         var thisMarkerID;
         var catChildren;
+        var i,j,k;
 
         for(i=0;i<countTerms;i++) {         // for all category values
             thisCat = viewMap.catFilterSelect[i];
@@ -758,24 +759,20 @@ jQuery(document).ready(function($) {
 
 
         // PURPOSE: Convert timecode string into # of milliseconds
-        // INPUT:   timecode must be in format [HH:MM:SS.ss]
+        // INPUT:   timecode must be in format [HH:MM:SS] or [HH:MM:SS.ss]
         // ASSUMES: timecode in correct format, viewTranscript['parseTimeCode'] contains compiled RegEx
-        // TO DO:   Use RegEx to parse
     function convertToMilliSeconds(timecode) {
-        var tempN = timecode.replace("[","");
-        var tempM = tempN.replace("]","");
-        var tempArr = tempM.split(":");
-        var secondsCode = parseInt(tempArr[0])*3600 + parseInt(tempArr[1])*60 + parseFloat(tempArr[2]);
-        var milliSecondsCode = secondsCode*1000;
+        var milliSecondsCode = new Number();
+        var matchResults;
 
-//         var milliSecondsCode = new Number();
-//         if (viewTranscript['parseTimeCode'].exec(timecode)) {
-// console.log("Parsed " + RegExp.$1 + ":" + RegExp.$2 + ":" + RegExp.$3);
-//             milliSecondsCode = (parseInt(RegExp.$1)*3600 + parseInt(RegExp.$2)*60 + parseFloat(RegExp.$3)) * 1000;
-//         } else {
-//             milliSecondsCode = 0;
-//         }
-// console.log("Timecode parse = " + milliSecondsCode);
+        matchResults = viewTranscript['parseTimeCode'].exec(timecode);
+        if (matchResults !== null) {
+            // console.log("Parsed " + matchResults[1] + ":" + matchResults[2] + ":" + matchResults[3]);
+            milliSecondsCode = (parseInt(matchResults[1])*3600 + parseInt(matchResults[2])*60 + parseFloat(matchResults[3])) * 1000;
+        } else {
+            console.log("Error in transcript file: Cannot parse " + timecode + " as timecode.");
+            milliSecondsCode = 0;
+        }
         return milliSecondsCode;
     } // convertToMilliSeconds()
 
@@ -999,7 +996,6 @@ jQuery(document).ready(function($) {
         // PURPOSE: Clean up quicktime text, format transcript (left-side specific) and put it in a list
         // INPUT:   dirty_transcript = quicktime text format
         // RETURNS: HTML for transcription 
-        // TO DO:   Use RegEx to parse timestamps
     function formatTranscript(dirty_transcript) {
         var transcript_html='';
             // split transcript text into array by line
@@ -1016,7 +1012,7 @@ jQuery(document).ready(function($) {
             var lineClass = ['','odd-line'];
             _.each(split_transcript, function(val){
                 val = val.trim();
-                var oddEven = index % 2; 
+                var oddEven = index % 2;
                     // Skip values with line breaks...basically empty items
                 if(val.length>1) {
                         // Does it begin with a timecode?
