@@ -220,7 +220,6 @@ function create_tax_for_projects()
 	if ($projects) {
 			// Go through all currently existing Projects
 		foreach ( $projects as $project ) {
-			// $projectTax = 'dhp_tax_'.$project->ID;
 			$projectTax = DHPressProject::ProjectIDToRootTaxName($project->ID);
 			$projectName = $project->post_title;
 			$projectSlug = $project->post_name;
@@ -281,7 +280,6 @@ function show_tax_on_project_markers()
 	$projectID = get_post_meta($post->ID,'project_id');
 	$project = get_post($projectID[0]);
 	$projectRootTaxName = DHPressProject::ProjectIDToRootTaxName($project->ID);
-	// $projectTaxSlug = 'dhp_tax_'.$project->ID;
 	$dhpTaxs = get_taxonomies();
 
 	foreach ($dhpTaxs as $key => $value) {
@@ -316,7 +314,6 @@ function show_dhp_project_icons_box()
 } // show_dhp_project_icons_box()
 
 
-// bdw_get_images()
 // PURPOSE: Create HTML icon box on right sidebox
 // SIDE FX:	Outputs HTML of thumbnail images of images associated with post
 // ASSUMES:	$post global is set to Project post
@@ -364,7 +361,6 @@ function bdw_get_images()
 // add_meta_boxes called when Edit Post runs
 add_action('add_meta_boxes', 'add_dhp_project_settings_box');
 
-// add_dhp_project_settings_box()
 // PURPOSE: Called when Project is edited in admin panel to create Project-specific GUI
 
 function add_dhp_project_settings_box()
@@ -378,7 +374,6 @@ function add_dhp_project_settings_box()
 		'high'); 						// priority
 } // add_dhp_project_settings_box()
 
-// show_dhp_project_settings_box()
 // PURPOSE:		Called by WP to create HTML for hidden fields (in admin panel) which save Project state
 //					for auto-save
 // ASSUMPTIONS:	Global $post is set to point to post for current project
@@ -458,7 +453,6 @@ function show_dhp_project_settings_box()
 // 'save_post' is called after post is created or updated
 add_action('save_post', 'save_dhp_project_settings');
 
-// save_dhp_project_settings($post_id)
 // PURPOSE: Save data posted to WP for project based on project_settings_fields
 //				(Could also be invoked by Auto-Save feature of WP)
 // INPUT:	$post_id is the id of the post updated
@@ -773,7 +767,6 @@ function dhp_get_group_feed($rootTaxName,$term_name)
 } // dhp_get_group_feed()
 
 
-// createMarkerArray($project_id)
 // PURPOSE:	Creates Legends and Feature Collections Object (as per OpenLayer) when looking at a project page;
 //			That is, return array describing all markers based on filter and visualization
 // INPUT:	$project_id = ID of Project to view
@@ -805,10 +798,6 @@ function createMarkerArray($project_id)
 		// initialize result array
 	$json_Object = array();
 		// get Project info
-	// $project_object = get_post($project_id);
-	// $project_tax = 'dhp_tax_'.$project_object->ID;
-	// $project_settingsA = get_post_meta($project_id,'project_settings', true);
-	// $project_settings = json_decode($project_settingsA,true);
 	$projObj      = new DHPressProject($project_id);
 	$rootTaxName  = $projObj->getRootTaxName();
 	$projSettings = $projObj->getAllSettings();
@@ -1033,7 +1022,6 @@ function createMarkerArray($project_id)
 } // createMarkerArray()
 
 
-// dateFormatSplit($date_range)
 // PURPOSE:	Parse date range into from and to fields in format
 //			DATE1-DATE2 = 
 // INPUT:	Date as String in format 
@@ -1063,7 +1051,6 @@ function dateFormatSplit($date_range)
 } // dateFormatSplit()
 
 
-// createTimelineArray($project_id)
 // PURPOSE: Prepare for timeline view
 // INPUT:	$project_id = ID of project
 // TO DO:	Not currently used -- Incorporate logic into createMarkerArray
@@ -1073,7 +1060,7 @@ function createTimelineArray($project_id)
 	//loop through all markers in project -add to array
 	$timelineArray = array();
 	$project_object = get_post($project_id);
-	$project_tax = 'dhp_tax_'.$project_object->ID;
+	$project_tax = DHPressProject::ProjectIDToRootTaxName($project_object->ID);
 
 	//LOAD PROJECT SETTINGS
 	//-get primary category parent
@@ -1127,7 +1114,6 @@ function createTimelineArray($project_id)
 } // createTimelineArray()
 
 
-// create_custom_field_option_list($cf_array)
 // PURPOSE:	Create HTML for option buttons for listing custom fields in print_new_bootstrap_html()
 // INPUT:	$cf_array = list of custom fields
 // RETURNS:	String containing HTML
@@ -1142,7 +1128,6 @@ function create_custom_field_option_list($cf_array)
 } // create_custom_field_option_list()
 
 
-// print_new_bootstrap_html()
 // PURPOSE:	Create the HTML for DHP admin panel for editing a Project
 
 function print_new_bootstrap_html($project_id)
@@ -1175,7 +1160,7 @@ function print_new_bootstrap_html($project_id)
           	<div id="info" class="tab-pane fade in active">
               <h4>Project Info</h4>
               <p>Project ID: '.$project_id.'</p>
-              <p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy=dhp_tax_'.$project_id.'" >Category Manager</a></p>
+              <p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy='.$projObj->getRootTaxName().'" >Category Manager</a></p>
           	</div>
 
             <div id="motes" class="tab-pane fade in">
@@ -1362,7 +1347,6 @@ function dhpSaveProjectSettings()
 } // dhpSaveProjectSettings()
 
 
-// dhpUpdateTaxonomy($mArray, $mote_name, $dhp_tax_name)
 // PURPOSE:	Update the taxonomy 
 // INPUT:	$mArray = array of unique values for mote
 //			$mote_name = name of mote itself (parent term)
@@ -1438,7 +1422,6 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $projRootTaxName)
 // creates terms in taxonomy when a legend is created
 add_action( 'wp_ajax_dhpCreateLegendTax', 'dhpCreateLegendTax' );
 
-// dhpCreateLegendTax()
 // PURPOSE:	Handle Ajax call to create a taxonomy when a Legend is created
 // INPUT:	Through $_POST['mote_name'] array: ['type', 'delim', 'custom-fields', 'name']
 //			$_POST['project'] = ID of Project
@@ -1455,7 +1438,6 @@ function dhpCreateLegendTax()
 	$projectID    = $_POST['project'];
 	$projObj      = new DHPressProject($projectID);
 	$rootTaxName  = $projObj->getRootTaxName();
-	// $dhp_tax_name = 'dhp_tax_'.$dhp_projectID;
 
 	createParentTerm($mote_name,$rootTaxName);
 	//get fresh terms from meta feild 
@@ -1475,7 +1457,6 @@ function dhpCreateLegendTax()
 //Lists all the terms in taxonomies(already created)
 add_action( 'wp_ajax_dhpGetMoteValues', 'dhpGetMoteValues' );
 
-// dhpGetMoteValues()
 // PURPOSE:	Handle Ajax call to get the unique values for a mote and associate these as
 //			taxonomy terms with each Marker post
 // INPUT:	$_POST['project'] global is ID of Project
@@ -1489,7 +1470,6 @@ function dhpGetMoteValues()
 	$projectID   = $_POST['project'];
 	$projObj     = new DHPressProject($projectID);
 	$rootTaxName = $projObj->getRootTaxName();
-	// $dhp_tax_name = 'dhp_tax_'.$dhp_projectID;
 
 	// $debugArray = array();
 	// $debugArray['name'] = $mote['name'];
@@ -1692,7 +1672,6 @@ function dhpGetTranscriptClip()
 add_action( 'wp_ajax_dhpGetTranscript', 'dhpGetTranscript' );
 add_action( 'wp_ajax_nopriv_dhpGetTranscript', 'dhpGetTranscript');
 
-// dhpGetTranscript()
 // PURPOSE: AJAX function to retrieve entire transcript
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['transcript'] = URL to file containing contents of transcript
@@ -1709,9 +1688,6 @@ function dhpGetTranscript()
 
 	$projObj      = new DHPressProject($projectID);
 	$rootTaxName  = $projObj->getRootTaxName();
-	// $projectObj = get_post($projectID);
-	// $dhp_tax_name = 'dhp_tax_'.$projectObj->ID;
-	// $dhp_settings = json_decode(get_post_meta( $projectID, 'project_settings', true),true);
 
 	$dhp_transcript_ep = $projObj->getEntryPointByType("transcript");
 	$dhp_audio_mote = $projObj->getMoteByName($dhp_transcript_ep['settings']['audio']);
@@ -2094,10 +2070,7 @@ function dhpCreateTaxTerms()
 
 function loopTermHierarchy($mote_parent, $projectID, $dhp_project_terms)
 {
-	// $mote_parent = $argArray['parentTerm'];
 	//convert mote_parent to id
-	// $dhp_project_terms = $argArray['termsArray'];
-	// $dhp_tax_name = 'dhp_tax_'.$argArray['projectID'];
 	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
 	$mote_parentID = get_term_by('name', $mote_parent, $projRootTaxName);
 	$meta_key = 'icon_url';
@@ -2145,7 +2118,6 @@ function dhpCreateTermInTax()
 	$parent_term_name	= $_POST['parent_term_name'];
 
 	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-	// $dhp_tax_name = 'dhp_tax_'.$dhp_projectID;
 	$parent_term = term_exists( $parent_term_name, $projRootTaxName );
 		// TO DO: Check and handle non-existing term?
 
@@ -2174,7 +2146,6 @@ function dhpDeleteTerms()
 	$dhp_project_slug = $dhp_project->post_name;
 
 	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-	// $dhp_tax = 'dhp_tax_'.$dhp_projectID;
 	//get term id, get children term ids
 	$dhp_delete_parent_term = get_term_by('name',$dhp_term_name,$projRootTaxName);
 	$dhp_delete_parent_id = $dhp_delete_parent_term->term_id;
@@ -2257,7 +2228,7 @@ add_action( 'admin_enqueue_scripts', 'add_dhp_project_admin_scripts', 10, 1 );
 function add_dhp_project_admin_scripts( $hook )
 {
     global $post;
-    global $layers_global;
+    // global $layers_global;
 
     $blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
@@ -2267,7 +2238,7 @@ function add_dhp_project_admin_scripts( $hook )
  		// Editing a specific project in admin panel
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( 'project' === $post->post_type ) {    
-        	$tempLayers = 'layers '.$layers_global;
+        	// $tempLayers = 'layers '.$layers_global;
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			//wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 
@@ -2462,11 +2433,9 @@ function dhp_page_template( $page_template )
 
 add_filter( 'archive_template', 'dhp_tax_template' );
 
-// dhp_tax_template( $page_template )
 // PURPOSE: Set template to be used to show results of top-level custom taxonomy display
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
-// TO DO:   Only enqueue the styles/scripts actually used for the visualization/interface
 
 function dhp_tax_template( $page_template )
 {

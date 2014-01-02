@@ -15,7 +15,6 @@ Template Name: Project Template
  </div>
  
  <div id="map_div"></div>
- <div id="map_div2"></div>
  </div>
  <!-- Modal -->
 <div id="markerModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="markerModalLabel" aria-hidden="true">
