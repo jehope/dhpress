@@ -1,9 +1,8 @@
 // PURPOSE: Handle viewing Project content visualizations
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
-//          Project ID is embedded in HTML as .post.id
 //          The sidebar is marked with HTML div as "secondary"
 //          Section for marker modal is marked with HTML div as "markerModal"
-//          An area for the map has been marked with HTML div as "map_div" (currently in dhp-project-template.php)
+//          An area for the map has been marked with HTML div as "dhp-visual"
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 // NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
 //          Format of project settings is documented in dhp-class-project.php
@@ -30,9 +29,10 @@ jQuery(document).ready(function($) {
         // Contains fields: tcArray, rowIndex, transcriptData[2], parseTimeCode
 
 
-    projectID      = $('.post').attr('id');
+    // projectID      = $('.post').attr('id');
     ajaxURL        = dhpData.ajax_url;
     dhpSettings    = dhpData.settings;
+    projectID      = dhpSettings["project-details"]["id"];
 
         // insert top navigational bar and controls
     $('body').prepend('<div class="dhp-nav nav-fixed-top navbar"><div class="navbar-inner"><ul class="nav nav-pills ">\
@@ -83,7 +83,7 @@ jQuery(document).ready(function($) {
         }
     });
 
-    $('<style type="text/css"> @media screen and (min-width: 600px) { #map_div{ width:'+dhpSettings['views']['map-width']+'px; height:'+dhpSettings['views']['map-height']+'px;}} </style>').appendTo('head');
+    $('<style type="text/css"> @media screen and (min-width: 600px) { #dhp-visual{ width:'+dhpSettings['views']['map-width']+'px; height:'+dhpSettings['views']['map-height']+'px;}} </style>').appendTo('head');
 
         // Map visualization?
     if (getEntryPointByType('map')) {
@@ -282,10 +282,9 @@ jQuery(document).ready(function($) {
         //var osm = new OpenLayers.Layer.OSM(); 
 
         viewMap.olMap = new OpenLayers.Map({
-            div: "map_div",
+            div: "dhp-visual",
             projection: viewMap.sm,
             displayProjection: viewMap.gg
-            
         });
         viewMap.olMap.addLayers(mapLayers);
 
@@ -474,8 +473,8 @@ jQuery(document).ready(function($) {
         //console.log('here'+_.size(legendList));
         var legendHtml;
         var legendWidth;
-        var mapPosition = $('#map_div').position();
-        var mapWidth = $('#map_div').width();
+        var mapPosition = $('#dhp-visual').position();
+        var mapWidth = $('#dhp-visual').width();
         var pageWidth = $('body').width();
         var pageHeight = $('body').height();
         var spaceRemaining = pageWidth-mapWidth;
@@ -862,6 +861,7 @@ jQuery(document).ready(function($) {
         // INPUT:   feature = the feature selected on map
         // ASSUMES: Can use only first feature if a cluster of features is passed
         // SIDE-FX: Modifies DOM to create modal dialog window
+        // TO DO:   Create separate, general function for opening modal on Marker (as will be needed by all visualizations)
     function onOLFeatureSelect(feature) {
     	// if not cluster
 

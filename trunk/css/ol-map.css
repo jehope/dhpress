@@ -2,12 +2,12 @@
 /* CSS Document */
 
 
-#map_div {
+#dhp-visual {
 	width:100%;
 	height:400px;
 	background: #fff;
 }
-.fullscreen #map_div {
+.fullscreen #dhp-visual {
 	width:100%;
 	min-width: 100%;
 	height:100%;
@@ -40,11 +40,11 @@
 	left: 0px;
 	top: 0px;
 }
-.fullscreen #map_div div.olControlZoom {
+.fullscreen #dhp-visual div.olControlZoom {
 	top:50px;
 	left: 95%;
 }
-#map_div div.olControlZoom {
+#dhp-visual div.olControlZoom {
 	top:10px;
 }
 .olControlZoom .reset-map {
@@ -64,10 +64,10 @@
     background: rgba(0, 60, 136, 0.7);
 }
 
-.logged-in.fullscreen #map_div div.olControlZoom {
-	
+.logged-in.fullscreen #dhp-visual div.olControlZoom {
 top:80px;
 }
+
 .logged-in.fullscreen .dhp-nav {
 top: 30px; 
 }
@@ -161,7 +161,7 @@ list-style: none;
 
 }
 /*
- #map_div2 {
+ #dhp-visual2 {
  	width:30%;
  	float: left;
  	height:400px;
@@ -250,7 +250,7 @@ filter: alpha(opacity=60);
 	padding-right: 5px;
 	padding-bottom: 5px;
 }
-.entrytext p {
+.dhp-entrytext p {
 	line-height: 1.7;
 	margin-bottom: 10px;
 }

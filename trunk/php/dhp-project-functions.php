@@ -1233,12 +1233,12 @@ function print_new_bootstrap_html($project_id)
 				      <div class="accordion-inner">
 				       <p>
 				       <label class="checkbox">
-                    	<input class="save-view map-fullscreen" type="checkbox" name="map-fullscreen" value="fullscreen"> Map Fullscreen
+                    	<input class="save-view map-fullscreen" type="checkbox" name="map-fullscreen" value="fullscreen"> Visualization takes Fullscreen
                   		</label>
                   		</p>
                   		<p>
-				       <input class="span3 save-view map-width" name="map-width" type="text" placeholder="Width" />             
-				       <input class="span3 save-view map-height" name="map-height" type="text" placeholder="Height" />
+				       <input class="span3 save-view map-width" name="map-width" type="text" placeholder="Viz Width" />             
+				       <input class="span3 save-view map-height" name="map-height" type="text" placeholder="Viz Height" />
 				       </p>
 				       <!--<p>
 				       <select name="legend-pos" class="legend-pos save-view">                          
@@ -2246,7 +2246,6 @@ function add_dhp_project_admin_scripts( $hook )
 			wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 			wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
 			wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
-			//wp_enqueue_style( 'dhp-bootstrap-slider-style', plugins_url('/lib/bootstrap/css/slider.css',  dirname(__FILE__) ));
 			wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
 			
 			// wp_enqueue_script( 'jquery' );
@@ -2261,8 +2260,6 @@ function add_dhp_project_admin_scripts( $hook )
 
 	 		wp_enqueue_script('jquery-ui-slider' );
 			wp_enqueue_script('dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
-			//wp_enqueue_script(  'bootstrap-button-fix', plugins_url('/lib/bootstrap/js/bootstrap-button-fix.js', dirname(__FILE__) ),'dhp-bootstrap');
-			//wp_enqueue_script(  'dhp-bootstrap-slider', plugins_url('/lib/bootstrap/js/bootstrap-slider.js', dirname(__FILE__) ),'dhp-bootstrap');
            	
 			wp_enqueue_script('dhp-touch-punch', plugins_url('/lib/jquery.ui.touch-punch.js', dirname(__FILE__) ));
             wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
@@ -2330,13 +2327,32 @@ function dhpRegisterCDLAMaps($mapLayers)
 } // dhp_register_maps()
 
 
+add_filter( 'the_content', 'dhp_add_html_hook' );
+
+// PURPOSE:	Called by WP to modify content to be rendered for post page
+// INPUT:	$content = material to show on page
+// RETURNS:	$content with ID of this post and DH Press hooks for marker text and visualization
+
+function dhp_add_html_hook($content) {
+	$postID = get_the_ID();
+	$postType = get_query_var('post_type');
+		// Only produce dhp-visual div hook for Project posts
+	if ($postType == 'project') {
+		$visHook = '<div id="dhp-visual"></div>';
+	} else {
+		$visHook = '';
+	}
+	return $content.'<div class="post" id="'.$postID.'"></div/> <div class="dhp-entrytext"></div>'.$visHook;
+}
+
+
 add_filter( 'single_template', 'dhp_page_template' );
 
-// dhp_page_template( $page_template )
 // PURPOSE:	Called by WP to modify output for rendering page, inc template to be used, acc to Project
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
-// NOTE:    Use of Google maps dependent upon Open Layers code (so must be loaded regardless); CDLA uses both OL & Google
+// NOTES:   Use of Google maps dependent upon Open Layers code (so must be loaded regardless); CDLA uses both OL & Google
+// TO DO:   Add visualization to Marker pages??
 
 function dhp_page_template( $page_template )
 {
@@ -2350,7 +2366,7 @@ function dhp_page_template( $page_template )
     if ( $post_type == 'project' ) {
     	$projObj = new DHPressProject($post->ID);
 
-        $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
+        // $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
 
 		wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 		wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
@@ -2365,7 +2381,6 @@ function dhp_page_template( $page_template )
 		wp_enqueue_script('dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
 		wp_enqueue_script('joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
 		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__) ));
-		// wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__) ),'mediaelement');
 
     		// Map visualization specific
     	$projectSettings_map = $projObj->getEntryPointByName('map');
@@ -2376,8 +2391,6 @@ function dhp_page_template( $page_template )
     		$projMapLayers = $projectSettings_map['settings']['layers'];
 			dhpRegisterCDLAMaps($projMapLayers);
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-	    } else {
-    		$projMapLayers = null;
 	    }
 
 	    	// Transcript specific
@@ -2395,11 +2408,11 @@ function dhp_page_template( $page_template )
 		$project_id = get_post_meta($post->ID, 'project_id',true);
 		$projObj = new DHPressProject($project_id);
 
-        $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
+        // $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
 
 		wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 		wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
-		wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));	
+		// wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));	
 
 		wp_enqueue_script('jquery');
 		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
@@ -2409,17 +2422,15 @@ function dhp_page_template( $page_template )
 		wp_enqueue_script( 'dhp-public-project-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__) ),'jquery');
 
     		// Does the Project have map visualizations?
-    	$projectSettings_map = $projObj->getEntryPointByName('map');
-    	if (!is_null($projectSettings_map)) {
-			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
-			wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+   //  	$projectSettings_map = $projObj->getEntryPointByName('map');
+   //  	if (!is_null($projectSettings_map)) {
+			// wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			// wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 
-    		$projMapLayers = $projectSettings_map['settings']['layers'];
-			dhpRegisterCDLAMaps($projMapLayers);
-	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-    	} else {
-    		$projMapLayers = null;
-    	}
+   //  		$projMapLayers = $projectSettings_map['settings']['layers'];
+			// dhpRegisterCDLAMaps($projMapLayers);
+	  //   	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
+   //  	}
 
 		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
 			'ajax_url' => $dev_url,
@@ -2436,6 +2447,7 @@ add_filter( 'archive_template', 'dhp_tax_template' );
 // PURPOSE: Set template to be used to show results of top-level custom taxonomy display
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
+// TO DO:   Get visualizations to work??
 
 function dhp_tax_template( $page_template )
 {
@@ -2463,21 +2475,21 @@ function dhp_tax_template( $page_template )
 		wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
 		wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
 	    wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
-	    wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));
+	    // wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));
 
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');		
 		wp_enqueue_script( 'underscore' );
-		wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
+		// wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
 
 		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__) ));
 
 	    	// Is there a map visualization?
-	    if ($projObj->getEntryPointByName('map')) {
-		    wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-		    wp_enqueue_script( 'cdlaMaps' );
-		    wp_enqueue_script( 'cdla-layer-data' );
-		}
+	 //    if ($projObj->getEntryPointByName('map')) {
+		//     wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+		//     wp_enqueue_script( 'cdlaMaps' );
+		//     wp_enqueue_script( 'cdla-layer-data' );
+		// }
 			// Is there audio transcript?
 	    if ($projObj->getEntryPointByName('transcript')) {
 		    wp_enqueue_script( 'soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
