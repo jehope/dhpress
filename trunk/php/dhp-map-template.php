@@ -10,7 +10,7 @@ Template Name: Map Template
 
  <div class="post">
  <h2 id="post-<?php the_ID(); ?>"><?php the_title();?></h2>
- <div class="entrytext">
+ <div class="dhp-entrytext">
   <?php the_content('<p class="serif">Read the rest of this page &raquo;</p>'); ?>
   <?php
     $postid = get_the_ID();
@@ -95,7 +95,7 @@ Template Name: Map Template
         }
   ?>
  </div>
- <div id="map_div"></div>
+ <div id="dhp-visual"></div>
  <button id="hide">Hide</button>
  </div>
  <?php endwhile; endif; ?>

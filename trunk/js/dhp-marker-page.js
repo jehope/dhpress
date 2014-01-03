@@ -1,18 +1,16 @@
 // PURPOSE: Handle viewing Marker content pages
 //			Loaded by dhp_page_template() in dhp-project-functions.php
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
-//			ID of the embedded HTML element of class "post" has the ID of this Marker
-//			WP Marker page content begins with div named "entrytext" (immediately after page title)
-// SIDE-FX: Insert placeholder for AJAX content called "post-content"
+//			WP Marker page content begins with div of class "dhp-entrytext"
+// SIDE-FX: Insert placeholder for AJAX content of class "post-content"
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 
 
 jQuery(document).ready(function($) { 
 
 	var ajax_url = dhpData.ajax_url;
-	// var dhpSettings = JSON.parse(dhpData.settings);
 	var dhpSettings = dhpData.settings;
-	//console.log(dhpSettings)
+	//console.log(dhpSettings);
 
 	var entry_html;
 	var save_entry_content = new Object();		// Marker settings were saved in this object -- now just title
@@ -21,18 +19,17 @@ jQuery(document).ready(function($) {
 		// Get the ID of this Marker post
 	var post_id = $('.post').attr('id');
 
-		// Set Marker title, if given one
-	if(dhpSettings['views']['post-view-title']) {
-		save_entry_content['the_title'] = $('.post-title').html();
-		$('.post-title').empty();
-	}
+		// Set Marker title, if given one -- This has been removed to allow using Theme defaults
+	// if(dhpSettings['views']['post-view-title']) {
+	// 	save_entry_content['the_title'] = $('.post-title').html();
+	// 	$('.post-title').empty();
+	// }
 
 		// Is there any initial content? Make space, but don't load it yet
 	if(dhpSettings['views']['post-view-content']) {
 		if(dhpSettings['views']['post-view-content'].length>0) {
 				// Create placeholder for AJAX data
-			$('.entrytext').wrapInner('<div class="post-content" />');
-			//save_entry_content['the_content'] = $('.post-content');
+			$('.dhp-entrytext').wrapInner('<div class="post-content" />');
 				// Hide it initially
 			$('.post-content').hide();
 		}
@@ -44,36 +41,36 @@ jQuery(document).ready(function($) {
 		// PURPOSE: Add dynamic content to Marker page from AJAX response
 		// INPUT:   response = Hash of field name / value of Custom Fields read from Marker Page
 	function addContentToPage(response) {
-
 			// Title for view of Marker content Page
-		var tempTitle = dhpSettings['views']['post-view-title'];
+		// var markerTitle = dhpSettings['views']['post-view-title'];
 
 		entry_html = $('<div class="new-content"/>');
-		$('.entrytext').append(entry_html);
+		$('.dhp-entrytext').append(entry_html);
 
-			// default title is Marker post title
-		if(tempTitle=='the_title') {
-			$('.post-title').append(save_entry_content['the_title']);
+			// default title is Marker post title -- REDO THIS??
+		// if(markerTitle=='the_title') {
+		// 	$('.post-title').append(save_entry_content['the_title']);
 
-			// unless overridden by settings
-		} else {
-				// convert from Legend name to custom field name
-			var titleCF = getCField(tempTitle);
-			$('.post-title').append(response[titleCF]);
-		}
+		// 	// unless overridden by settings
+		// } else {
+		// 		// convert from Legend name to custom field name
+		// 	var titleCF = getCustomField(markerTitle);
+		// 	$('.post-title').append(response[titleCF]);
+		// }
 
 			// Go through each Legend and show corresponding values
 		_.each(dhpSettings['views']['post-view-content'], function(legName){
 				// Convert Legend name to custom field name
-			var cfName = getCField(legName);
+			var cfName = getCustomField(legName);
 				// Use custom field to retrieve value
 			var tempVal = response[cfName];
+
 			// console.log(cfName + " = " + tempVal);
 
 			// var tempResponse = $("<div/>").html(tempVal);
 			// var tempResponseText = $("<div/>").html(tempVal).text();
 
-				// Display the normal WP page content
+				// Display the normal WP page content if specified it should be shown
 			if (cfName=='the_content') {
 				$('.post-content').show();
 			}
@@ -99,8 +96,7 @@ jQuery(document).ready(function($) {
 	}
 
 		// PURPOSE: Convert from moteName to custom-field name
-		// TO DO:   More efficient search!
-	function getCField(moteName) {
+	function getCustomField(moteName) {
 		var theMote = _.find(dhpSettings['motes'], function(theMote) {
 			return moteName == theMote['name'];
 		});
@@ -120,7 +116,7 @@ jQuery(document).ready(function($) {
 	        },
 	        success: function(data, textStatus, XMLHttpRequest){
 	            //console.log(JSON.parse(data));
-	            addContentToPage(JSON.parse(data))
+	            addContentToPage(JSON.parse(data));
 	        },
 	        error: function(XMLHttpRequest, textStatus, errorThrown){
 	           alert(errorThrown);

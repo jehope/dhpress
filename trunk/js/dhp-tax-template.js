@@ -4,7 +4,7 @@
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //              These parameters are: ajax_url, project_id, project_settings
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap, OpenLayers, CDLA maps, SoundCloud
-// TO DO:   Remove redundant functions (e.g., transcripts), put into specialized objects
+// TO DO:   Remove transcripts functions, call JS library for transcripts
 
 jQuery(document).ready(function($) {
 
@@ -164,7 +164,6 @@ jQuery(document).ready(function($) {
         // PURPOSE: Take a QuickTime text format transcription and turn into list
         // INPUT:   dirty_transcript = long text string
         // RETURNS: HTML string for timecode heads and text itself
-        // TO DO:   Does this handle dual-language??
     function formatTranscript(dirty_transcript) {
         // split into array by line
         var transcript_html='';
