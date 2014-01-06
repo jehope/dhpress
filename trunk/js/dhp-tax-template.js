@@ -4,7 +4,7 @@
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //              These parameters are: ajax_url, project_id, project_settings
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap, OpenLayers, CDLA maps, SoundCloud
-// TO DO:   Remove transcripts functions, call JS library for transcripts
+// TO DO:   Remove transcripts functions to separate library, call it
 
 jQuery(document).ready(function($) {
 

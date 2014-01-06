@@ -1,97 +1,248 @@
+/** CSS styles specific to Project View in DH Press
+ **/
+
 @charset "UTF-8";
-/* CSS Document */
+
+	/* Navigation Bar at top of screen */
+.dhp-nav {
+	z-index: 3000;
+	width: 100%;
+}
+
+.fullscreen .dhp-nav {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+}
+
+.logged-in.fullscreen .dhp-nav {
+	top: 30px;
+}
+
+	/* Visualization frame */
+#dhp-visual {
+	width:100%;
+	height:400px;
+	background: #fff;
+}
+
+.fullscreen #dhp-visual {
+	width:100%;
+	min-width: 100%;
+	height:100%;
+	position:absolute;
+	top: 0px;
+	left: 0px;
+}
+
+	/* Viewing Project content */
+.entry-content .dhp-entrytext h3 {
+	clear: none;
+	line-height:1.1;
+	margin-top: 6px;
+	margin-bottom: 3px;
+}
+
+.entry-content .dhp-entrytext p {
+	line-height: 1.1;
+	margin-top: 3px;
+	margin-bottom: 6px;
+}
+
+.entry-content .dhp-entrytext p.thumb-right {
+	float: right;
+	padding-left: 5px;
+	padding-bottom: 5px; 	
+}
+
+.entry-content .dhp-entrytext p.thumb-left {
+	float: left;
+	padding-right: 5px;
+	padding-bottom: 5px;
+}
+
+
+	/* Modal Windows */
+.modal {
+	z-index: 1150;
+}
+
+.modal.transcript {
+	position: fixed;
+	top: 10%;
+	left: 50%;
+	width: 90%;
+	margin-left: -45%;
+}
+
+.modal-backdrop {
+	z-index: 1140;
+}
+
+.modal-header h3 {
+	clear: none;
+}
+
+.modal-body li.thumb-right img {
+	float: right;
+	padding-left: 5px;
+	padding-bottom: 5px; 
+}
+
+.modal-body li.thumb-left img {
+	float: left;
+	padding-right: 5px;
+	padding-bottom: 5px;
+}
+
+.modal-backdrop, .modal-backdrop.fade.in {
+	opacity: .6;
+	filter: alpha(opacity=60);
+}
+
+	/* ==== Other styles -- need to group and document */
 ul.wp-submenu {
 	margin-left: 0;
 }
+
 .entry-point {
 	min-height:200px;
 }
+
 .primary-entry, .secondary-entry {
 	width:300px;
 	margin-right:50px;
 	float:left;
 }
+
 .primary-entry li, .secondary-entry li {
 	padding:5px;
 	border:1px solid #000;
 	cursor:pointer;
 }
-#dhp_attrs li { }
+
+
+/*
+.new-content h3 {
+	clear: none;
+}
+
+.new-content p.thumb-right {
+	float: right;
+	padding-left: 5px;
+	padding-bottom: 5px; 	
+}
+
+.new-content p.thumb-left {
+	float: left;
+	padding-right: 5px;
+	padding-bottom: 5px;
+}
+
+.dhp-entrytext p {
+	line-height: 1.7;
+	margin-bottom: 10px;
+}
+*/
+
+/** dhp_attrs is Obsolete
+#dhp_attrs li {
+}
+
 #dhp_attrs li span {
-	padding-right: 20px; }
+	padding-right: 20px;
+}
+
 #dhp_attrs li .col1 {
 	float: left;
 	width:120px;
 }
+
 #dhp_attrs li input {
 	margin-left:5px;
 	margin-right: 20px;
 }
+
 #dhp_attrs li input[type="checkbox"] {
 	margin-top:2px;
 }
+
 #dhp_attrs li.sep {
 	padding-bottom: 4px;
 	border-bottom: 1px solid #333;
 }
+
 #dhp_attrs::after { 
    content: "";
    display: block; 
    visibility: hidden; 
    clear: both;
 }
+*/
+
 .marker-fields li label {
 	float: left;
 	width: 150px;
 }
+
 .dhp-icon-upload {
-text-align: right;
-float: right;
-line-height: 23px;
+	text-align: right;
+	float: right;
+	line-height: 23px;
 }
+
 #filter_legend_builder {
 	display:none;
 }
+
 .legend {
 	display:none;
 }
+
 .term-icon {
 	float: right;
 	cursor: pointer;
 }
+
 .term-icon img {
 	height: 20px;
 	width: auto;
 }
+
 .cat-list {
 	width: 400px;
 	float: left;
 }
+
 .save-array {
 	float: right;
 	margin-top: 10px;
 }
+
 #TB_ajaxContent .icons {
 	width:225px;
 	float: right;
 	margin-top: 10px;
-
-	
 }
+
 #TB_window {
 	overflow: hidden;
 }
+
 #dhp_icons_box .misc-pub-section, #TB_ajaxContent .misc-pub-section {
 	padding: 0px;
 	min-height: 34px;
 }
+
 #dhp_icons_box .misc-pub-section span {
 	padding-top: 10px;
 	float: left;
 }
+
 #dhp_icons_box .dhp-icon-upload {
 	margin-top: 5px;
 }
+
 input, textarea { 
 	padding: 5px;
 	border: solid 1px #E5E5E5;
@@ -103,20 +254,22 @@ input, textarea {
 	box-shadow: rgba(0,0,0, 0.1) 0px 0px 8px;
 	-moz-box-shadow: rgba(0,0,0, 0.1) 0px 0px 8px;
 	-webkit-box-shadow: rgba(0,0,0, 0.1) 0px 0px 8px;
-	}
+}
 
 textarea { 
-width: 96%;
-	}
+	width: 96%;
+}
 
 input:hover, textarea:hover,
 input:focus, textarea:focus { 
 	border-color: #C9C9C9; 
 	-webkit-box-shadow: rgba(0, 0, 0, 0.15) 0px 0px 8px;
-	}
+}
+
 .cords input {
 	width: 50px;
 }
+
 .locate {
 	text-indent: 100%;
 	width:20px;
@@ -125,102 +278,123 @@ input:focus, textarea:focus {
 	overflow: hidden;
 	background: url('geolocation_icon.png') no-repeat center;
 	cursor: pointer;
-
 }
+
 .locate a {
 	padding: 10px;
 	display: block;
-
 }
+
 .form label { 
 	margin-left: 10px; 
 	color: #999999; 
 }
+
 #titlediv input[type="text"] {
 	height: 40px;
 }
+
 #submitdiv label {
-display: inline-block;
+	display: inline-block;
 }
+
 #dhp_settings_box {
 	background: #fff;
 }
+
 .tab-content {
 	min-height: 150px;
 }
+
 .nav-tabs {
 	text-transform: capitalize;
 }
+
 .project-form-table {
 	display: none;
 }
+
 .checkbox.inline {
 	padding: 5px;
 	margin-left: 20px;
 	line-height: 1.3;
 }
+
 .help-inline {
 	line-height: 1.3;
 }
+
 #poststuff .modal h3 {
 	border: none;
 	background: none;
 }
+
 #entry-point .close {
 	position: absolute;
 	right:10px;
 	top: 85px;
 }
+
 #map_canvas {
 	width: 100%;
 	height: 100%;
 	min-height: 300px;
 }
-		
-#map_canvas img { max-width:none; }
+
+#map_canvas img {
+	max-width:none;
+}
 
 .jPicker {
 	float: right;
 }
+
 ul.legend-list, ul.layer-list {
 	margin-left: 0px;
 }
+
 .legend-list .btn, .layer-list .btn, .modal-body .btn {
 	margin-bottom: 10px;
 }
+
 #TB_ajaxContent p.default-marker {
 	padding-right: 10px;
 }
+
 .badge {
 	padding: 1px;
-padding-bottom: 0px;
-padding-top: 0px;
--webkit-border-radius: 9px;
--moz-border-radius: 9px;
-border-radius: 9px;
-line-height: 16px;
+	padding-bottom: 0px;
+	padding-top: 0px;
+	-webkit-border-radius: 9px;
+	-moz-border-radius: 9px;
+	border-radius: 9px;
+	line-height: 16px;
 }
+
 .layer-opacity {
 	width: 40%;
 	display: inline-block;
 }
+
 .slider-value {
 	display: inline-block;
 	margin-left: 10px;
 }
+
 .custom-field-editor .left {
 	width: 40%;
 	display: inline-block;
 }
+
 .custom-field-editor .right {
 	width: 60%;
 	display: inline-table;
 }
+
 .custom-field-editor select {
 	margin-top: 5px;
 }
+
 .custom-field-editor .add-update-meta {
 	margin-top: 5px;
 }
-
-
