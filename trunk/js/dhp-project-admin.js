@@ -1256,8 +1256,7 @@ jQuery(document).ready(function($) {
   //   return cflistHtml;
   // } 
 
-  // Load icons that are stored in custom field
-  // Where is tb_show defined?
+    // PURPOSE: Load icons that are stored in custom field
   function loadSelectedIcons(){
   	$('#dhp_icons_box .inside').append('<div class="misc-pub-section"><span >Add more icons</span><a class="dhp-icon-upload button-primary">Upload</a></div>');
   	$('.dhp-icon-upload').click(function(){
@@ -1265,7 +1264,7 @@ jQuery(document).ready(function($) {
   	});
   }
 
-  // function popupIcons(){      
+  // function popupIcons(){
   //     tb_show('Hayti Intro', '#TB_inline?height=350&width=400&inlineId=dhp_icons_box' );
   //     //$('#TB_window').css({'width':300});
   // }

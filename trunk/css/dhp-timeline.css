@@ -1,0 +1,10 @@
+/** CSS styles specific to Timelines in DH Press
+ **/
+
+
+#timeline {
+  	position: absolute;
+  	top: 320px;	
+  	width: 60%;
+  	z-index: 2200;
+}
