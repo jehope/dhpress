@@ -48,10 +48,10 @@
 		        "map-height": Integer,
 		        "post-view-title": String,
 		        "title": String (name of mote),
-		        "modal-ep": [			// Entry-point(s) to dispay in selected Marker modal
+		        "modal-ep": [			// Entry-point(s) to display in selected Marker modal
 		        	Integer (index) : 'transcript' | 'map'
 		        ],
-		        "content": [
+		        "content": [			// Motes to show when Marker selected in visualization
 		            Integer (index): String (mote name), ...
 		        ],
 		        "link": "no-link",

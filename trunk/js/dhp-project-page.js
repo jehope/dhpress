@@ -24,10 +24,6 @@ jQuery(document).ready(function($) {
         //                  catFilter = All values for currently selected Legend; see data desc in getIconsForTerms() of dhp-project-functions.php
         //                  catFilterSelect = Current selection of legend/categories; Subset of catFilter.terms
 
-        // Transcription variables
-    var viewTranscript = [];
-        // Contains fields: tcArray, rowIndex, transcriptData[2], parseTimeCode
-
 
     // projectID      = $('.post').attr('id');
     ajaxURL        = dhpData.ajax_url;
@@ -133,7 +129,7 @@ jQuery(document).ready(function($) {
 
         // Transcription views?
     if (getEntryPointByType('transcript')) {
-        viewTranscript['parseTimeCode'] = /(\d{2})\:(\d{2})\:([\d\.]+)/;
+        dhpTranscript.initialize();
     }
 
         // Map visualization?
@@ -714,7 +710,7 @@ jQuery(document).ready(function($) {
                 max: 1,
                 step:.05,
                 values: [ layerOpacity ],
-                slide: function( event, ui ) {    
+                slide: function( event, ui ) {
                   thisLayer.setOpacity(ui.values[ 0 ]);                
                 }
             });
@@ -817,25 +813,6 @@ jQuery(document).ready(function($) {
     } // findSelectedCats()
 
 
-        // PURPOSE: Convert timecode string into # of milliseconds
-        // INPUT:   timecode must be in format [HH:MM:SS] or [HH:MM:SS.ss]
-        // ASSUMES: timecode in correct format, viewTranscript['parseTimeCode'] contains compiled RegEx
-    function convertToMilliSeconds(timecode) {
-        var milliSecondsCode = new Number();
-        var matchResults;
-
-        matchResults = viewTranscript['parseTimeCode'].exec(timecode);
-        if (matchResults !== null) {
-            // console.log("Parsed " + matchResults[1] + ":" + matchResults[2] + ":" + matchResults[3]);
-            milliSecondsCode = (parseInt(matchResults[1])*3600 + parseInt(matchResults[2])*60 + parseFloat(matchResults[3])) * 1000;
-        } else {
-            console.log("Error in transcript file: Cannot parse " + timecode + " as timecode.");
-            milliSecondsCode = 0;
-        }
-        return milliSecondsCode;
-    } // convertToMilliSeconds()
-
-
     // function geocodeAddress(addy){
     // 	//http://maps.google.com/maps/api/geocode/json?address=Pizzeria+Da+Vittorio,+Rome&sensor=false
     // 	jQuery.ajax({
@@ -861,78 +838,69 @@ jQuery(document).ready(function($) {
         // INPUT:   feature = the feature selected on map
         // ASSUMES: Can use only first feature if a cluster of features is passed
         // SIDE-FX: Modifies DOM to create modal dialog window
-        // TO DO:   Create separate, general function for opening modal on Marker (as will be needed by all visualizations)
+        // TO DO:   Show category values for Marker by using them as indices into filters??
     function onOLFeatureSelect(feature) {
     	// if not cluster
 
     	//if(!feature.cluster||(feature.attributes.count==1)) {
-        var tempModalHtml;
         var selectedFeature;
+        var titleAtt='';
+        var builtHTML, thumbHtml='';
+        var link1, link2;
+        // var tagAtt;
 
         if (feature.cluster)
             selectedFeature = feature.cluster[0];
         else
             selectedFeature = feature;
 
-        tempModalHtml = $('<div><div class="modal-content"/></div>');
-
-         var titleAtt;
-         var link1       = selectedFeature.attributes.link;
-         var link2       = selectedFeature.attributes.link2;
-         var tagAtt      =  selectedFeature.attributes.categories;
-         var audio       =  selectedFeature.attributes.audio;
-         var transcript  =  selectedFeature.attributes.transcript;
-         var transcript2 =  selectedFeature.attributes.transcript2;
-         var timecode    =  selectedFeature.attributes.timecode;
-         var time_codes  = null; 
-         var thumbHtml;
-         var startTime, endTime;
-
-
-         if(dhpSettings['views']['title']) {
+        if(dhpSettings['views']['title']) {
             titleAtt =  selectedFeature.attributes['title'];
-         }
+        }
 
-            // Does feature lead to transcript window? Set up transcript variables
-         if(findModalEpSettings('transcript')) {
-            time_codes = timecode.split('-');
+        link1  = selectedFeature.attributes.link;
+        link2  = selectedFeature.attributes.link2;
+        // tagAtt = selectedFeature.attributes.categories;
 
-            if(timecode) { 
-                startTime = convertToMilliSeconds(time_codes[0]);
-                endTime   = convertToMilliSeconds(time_codes[1]);
-            }
+            // Remove anything currently in body -- will rebuild from scratch
+        $('.modal-body').empty();
+
+            // Does feature lead to transcript window? Build transcript controls in modal
+        if(findModalEpSettings('transcript')) {
             $('#markerModal').addClass('transcript');
 
-            viewTranscript['transcriptData'] = [];
+            var transcriptSettings = {
+                'audio'         : selectedFeature.attributes.audio,
+                'transcript'    : selectedFeature.attributes.transcript,
+                'transcript2'   : selectedFeature.attributes.transcript2,
+                'timecode'      : selectedFeature.attributes.timecode,
+                'startTime'     : -1,
+                'endTime'       : -1
+            };
 
-                // Is there any primary transcript data?
-            if(transcript&&transcript!=='none') {
-                loadTranscriptClip(projectID,transcript,timecode,0);
+            if(transcriptSettings.timecode) {
+                var time_codes = transcriptSettings.timecode.split('-');
+                transcriptSettings.startTime = dhpTranscript.convertToMilliSeconds(time_codes[0]);
+                transcriptSettings.endTime   = dhpTranscript.convertToMilliSeconds(time_codes[1]);
             }
-                // Is there 2ndary transcript data? If only 2nd, treat as 1st
-            if(transcript==='none' && transcript2 && transcript2!=='none'){
-                loadTranscriptClip(projectID,transcript2,timecode,0);
-            }
-                // Otherwise, add 2nd to 1st
-            else if(transcript!=='none' && transcript2 && transcript2!=='none') {
-                loadTranscriptClip(projectID,transcript2,timecode,1);
-            }
-            $('.modal-content', tempModalHtml).append('<div class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+audio+'&show_artwork=true"></iframe></p></div>');
+
+            dhpTranscript.prepareOneTranscript(ajaxURL, projectID, '#markerModal .modal-body', transcriptSettings);
          }
 
+            // Create HTML for all of the data related to the Marker
          if(dhpSettings['views']['content']) {
-            $('.modal-content', tempModalHtml).append('<div><h3>Details:</h3></div>');
-            _.each(selectedFeature.attributes.content,function(val,key) {
+            builtHTML = '<div><h3>Details:</h3></div>';
+            _.each(selectedFeature.attributes.content,function(val) {       // Array of (hash) pairs
                  _.each(val,function(val1,key1) {
                     if(val=='Thumbnail Right') {
-                        $('.modal-content', tempModalHtml).append('<div class="thumb-right">'+$("<div/>").html(val1).text()+'</div>');
+                        builtHTML += '<div class="thumb-right">'+val1+'</div>';
                     }
                     else if(val=='Thumbnail Left') {
-                        $('.modal-content', tempModalHtml).append('<div class="thumb-left">'+$("<div/>").html(val1).text()+'</div>');
+                        builtHTML += '<div class="thumb-left">'+val1+'</div>';
                     }
                     else {
                         if(val1) {
-                            $('.modal-content', tempModalHtml).append('<div>'+key1+': '+$("<div/>").html(val1).html()+'</div>');                       
+                            builtHTML += '<div><i>'+key1+'</i>: '+val1+'</div>';
                         }
                     }
                 });
@@ -942,20 +910,19 @@ jQuery(document).ready(function($) {
 		if(selectedFeature.attributes.thumb) {
 			thumbHtml = '<img src="'+selectedFeature.attributes.thumb+'"/><br/>';
 		}
-		var li = '<b>'+titleAtt+'</b>';
-
-		li += '<p>';
+		var li = '<b>'+titleAtt+'</b><p>';
 		if(thumbHtml){
 			li+= thumbHtml;
 		}
-
-		li += tagAtt+' '+audio+' '+transcript+' '+timecode+'</p>';
+        // builtHTML += li + tagAtt + ' ' + settings.audio + ' ' + settings.transcript + ' ' + settings.timecode + '</p>';
+        // builtHTML += li + tagAtt + '</p>';
+        builtHTML += li + '</p>';
+        $('.modal-body').append(builtHTML);
 
             // clear previous marker links
         $('#markerModal .modal-footer .btn-success').remove();
 
         $('#markerModal #markerModalLabel').empty().append(titleAtt);
-        $('#markerModal .modal-body').empty().append(tempModalHtml);
 
             // setup links
         if(link1 && link1!='no-link') {
@@ -966,200 +933,14 @@ jQuery(document).ready(function($) {
         }
 
         $('#markerModal').modal('show');
-
-            // Setup audio/transcript player
-        if(findModalEpSettings('transcript')) {
-            //build function to load transcript clip and load media player
-            var iframeElement    = document.querySelector('.player');
-            var soundUrl         = '';
-            var iframeElementID  = iframeElement.id;
-            var soundCloudWidget = SC.Widget(iframeElementID);
-            var WIDGET_PLAYING   = false;
-
-            soundCloudWidget.bind(SC.Widget.Events.READY, function() {
-                  // load new widget
-                soundCloudWidget.play();
-                
-                soundCloudWidget.bind(SC.Widget.Events.PLAY, function() {
-                    WIDGET_PLAYING = true;             
-                });
-                soundCloudWidget.bind(SC.Widget.Events.PAUSE, function() {
-                    WIDGET_PLAYING = false;
-                });
-                soundCloudWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
-                    if(e.currentPosition < startTime){
-                        soundCloudWidget.pause();
-                        soundCloudWidget.seekTo(startTime);
-                    }
-                    if(e.currentPosition > endTime){
-                        soundCloudWidget.pause();
-                    }
-                    hightlightTranscriptLine(e.currentPosition);
-                });
-                soundCloudWidget.bind(SC.Widget.Events.SEEK, function() {});
-                soundCloudWidget.bind(SC.Widget.Events.FINISH, function() {});
-            });
-                // Allow user to click on a timecode to go to it
-            $('.transcript-ep').on('click', function(evt){
-                var tempSeekTo = null;
-                if($(evt.target).hasClass('type-timecode')) {
-                    tempSeekTo = $(evt.target).closest('.type-timecode').data('timecode');
-                    soundCloudWidget.seekTo(tempSeekTo);
-                    if(!WIDGET_PLAYING) {
-                        soundCloudWidget.play();
-                    }
-                }
-            });
-
-            $('#markerModal').on('hidden', function () {            
-                if(WIDGET_PLAYING) {
-                    var tempWidget = SC.Widget(iframeElementID);
-                    tempWidget.pause();
-                }
-            });
-        }//end audio/transcript player
     } // onOLFeatureSelect()
 
-        // PURPOSE: Given a millisecond reading, unhighlight any previous "playhead" and highlight new one
-        // TO DO:   Change use of tcArray
-    function hightlightTranscriptLine(millisecond){
-        var match;
-        _.find(viewTranscript.tcArray, function(timecode,index){
-            match = (millisecond<timecode);
-            if (match) {
-                if(viewTranscript.rowIndex!==index) {
-                    viewTranscript.rowIndex = index;
-                    var topDiff = $('.transcript-list div.type-timecode').eq(index).offset().top - $('.transcript-list').offset().top;
-                    var scrollPos = $('.transcript-list').scrollTop() +topDiff;
-                    $('.transcript-list').animate({
-                       scrollTop: scrollPos
-                    }, 500);
-                }
-                $('.transcript-list div.type-timecode').removeClass('current-clip');
-                $('.transcript-list div.type-timecode').eq(index).addClass('current-clip');
-            }
-            return match;
-        });
-        //$('.type-timecode').attr('data-timecode');
-    }
 
         // PURPOSE: Handle unselection of a map feature
     function onOLFeatureUnselect(feature) {
     	feature.attributes.poppedup = false;
     }
 
-    // function splitTranscript(transcriptData) {
-    //     var transcriptArray = transcriptData.split('[');
-    //     // console.log(transcriptArray)
-    // }
-
-        // PURPOSE: Clean up quicktime text, format transcript (left-side specific) and put it in a list
-        // INPUT:   dirty_transcript = quicktime text format
-        // RETURNS: HTML for transcription 
-    function formatTranscript(dirty_transcript) {
-        var transcript_html='';
-            // split transcript text into array by line
-        var split_transcript = dirty_transcript.trim().split(/\r\n|\r|\n/g);
-            // empty time code array
-        viewTranscript.tcArray = [];
-        // console.log(split_transcript)
-        if(split_transcript) {
-            transcript_html = $('<div class="transcript-list"/>');
-
-            var index = 0;
-            var timecode;
-            var textBlock;
-            var lineClass = ['','odd-line'];
-            _.each(split_transcript, function(val){
-                val = val.trim();
-                var oddEven = index % 2;
-                    // Skip values with line breaks...basically empty items
-                if(val.length>1) {
-                        // Does it begin with a timecode?
-                    if(val[0]==='['&&val[1]==='0'){
-                        if(index>0) {
-                            $('.row', transcript_html).eq(index-1).append('<div class="type-text">'+textBlock+'</div>');
-                        }
-                        index++;
-                        textBlock = ''; 
-                        timecode = convertToMilliSeconds(val);
-                        transcript_html.append('<div class="row '+lineClass[oddEven]+'"><div class="type-timecode" data-timecode="'+timecode+'">'+val+'</div></div>');
-                        viewTranscript.tcArray.push(timecode);
-                    }
-                    else {
-                        textBlock += val;                       
-                    }                   
-                }
-            });
-        }
-            // Shift array of timecodes so that entry is end-time rather than start-time of associated section
-        viewTranscript.tcArray.shift();
-            // Append very large number to end to ensure can't go past last item! 9 hours * 60 minutes * 60 seconds * 1000 milliseconds = 
-        viewTranscript.tcArray.push(32400000);
-        return transcript_html;
-    } // formatTranscript()
-
-
-    function attachSecondTranscript(transcriptData){
-        //target $('.transcript-list')
-        var split_transcript = transcriptData.split(/\r\n|\r|\n/g);
-        $('.transcript-list').addClass('two-column');
-        var first_transcriptHTML = $('.transcript-list .type-text');
-        // console.log(split_transcript)
-        var textArray = [];
-        var textBlock;
-        var index = 0;
-        var lineClass;
-
-        if(split_transcript) {
-            _.each(split_transcript, function(val){
-                    // Skip values with line breaks...basically empty items
-                val = val.trim();
-                if(val.length>1) {
-                    if(val[0]==='['&&val[1]==='0'){
-                        if(index>0) {
-                            textArray.push(textBlock);
-                        }
-                        textBlock='';
-                    }
-                    else {
-                        textBlock += val;
-                    }
-                    index++;
-                }
-            });
-        }
-            // Loop thru HTML for left-side transcript and add right-side text
-         _.each(textArray, function(val,index){
-            lineClass = '';
-            if($(first_transcriptHTML).eq(index).hasClass('odd-line')) {
-                lineClass = 'odd-line';
-            }
-            $(first_transcriptHTML).eq(index).after('<div class="type-text '+lineClass+'">'+val+'</div>')
-         });
-    } // attachSecondTranscript()
-
-
-        // INPUT: order = 0 (left-side) or 1 (right-side)
-        // NOTES: Need to buffer transcript data in viewTranscript['transcriptData'] because we cannot assume
-        //          when AJAX call will complete (2nd call may complete before 1st)
-    function attachTranscript(transcriptData,order){
-        viewTranscript['transcriptData'][order] = transcriptData;
-
-            // Don't process 2nd transcript unless 1st is loaded and attached
-        if(order==1) {
-            if(viewTranscript['transcriptData'][0]) {
-                attachSecondTranscript(transcriptData);
-            }
-        }
-        else {
-            $('.transcript-ep p').append(formatTranscript(transcriptData));
-                // Now, if right-side exists, attach it to left!
-            if(viewTranscript['transcriptData'][1]) {
-                attachSecondTranscript(viewTranscript['transcriptData'][1]);
-            }
-        }
-    }
 
     // function zoomCluster(){
     //     var displayedFeatures = [];
@@ -1281,6 +1062,7 @@ jQuery(document).ready(function($) {
         });
     } // loadMapMarkers()
 
+
     function loadTimeline(projectID){
         jQuery.ajax({
             type: 'POST',
@@ -1292,26 +1074,6 @@ jQuery(document).ready(function($) {
             success: function(data, textStatus, XMLHttpRequest){
                 //console.log(textStatus);
                 createTimeline(JSON.parse(data));
-            },
-            error: function(XMLHttpRequest, textStatus, errorThrown){
-               alert(errorThrown);
-            }
-        });
-    }
-
-    function loadTranscriptClip(projectID,transcriptName,clip,order){
-        jQuery.ajax({
-            type: 'POST',
-            url: ajaxURL,
-            data: {
-                action: 'dhpGetTranscriptClip',
-                project: projectID,
-                transcript: transcriptName,
-                timecode: clip
-            },
-            success: function(data, textStatus, XMLHttpRequest){
-                //console.log(JSON.parse(data));
-                attachTranscript(JSON.parse(data),order);
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
                alert(errorThrown);
