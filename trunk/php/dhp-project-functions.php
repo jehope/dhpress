@@ -1057,60 +1057,60 @@ function dateFormatSplit($date_range)
 
 function createTimelineArray($project_id)
 {
-	//loop through all markers in project -add to array
-	$timelineArray = array();
-	$project_object = get_post($project_id);
-	$project_tax = DHPressProject::ProjectIDToRootTaxName($project_object->ID);
+	// //loop through all markers in project -add to array
+	// $timelineArray = array();
+	// $project_object = get_post($project_id);
+	// $project_tax = DHPressProject::ProjectIDToRootTaxName($project_object->ID);
 
-	//LOAD PROJECT SETTINGS
-	//-get primary category parent
+	// //LOAD PROJECT SETTINGS
+	// //-get primary category parent
 
-	$parent = get_term_by('name', "Primary Concept", $project_tax);
-	//$parent = get_terms($project_tax, array('parent=0&hierarchical=0&number=1'));
-	//print_r($parent);
-	$parent_term_id = $parent->term_id;
-	$parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group' ) );
+	// $parent = get_term_by('name', "Primary Concept", $project_tax);
+	// //$parent = get_terms($project_tax, array('parent=0&hierarchical=0&number=1'));
+	// //print_r($parent);
+	// $parent_term_id = $parent->term_id;
+	// $parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group' ) );
 
-	$term_icons = getIconsForTerms($parent_terms, $project_tax);
+	// $term_icons = getIconsForTerms($parent_terms, $project_tax);
 
-	$json_string = '{"timeline":{"headline":"Long Womens Movement","type":"default","text":"A journey","date":[';
-	$args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
-	$loop = new WP_Query( $args );
-	$i = 0;
-	while ( $loop->have_posts() ) : $loop->the_post();
+	// $json_string = '{"timeline":{"headline":"Long Womens Movement","type":"default","text":"A journey","date":[';
+	// $args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
+	// $loop = new WP_Query( $args );
+	// $i = 0;
+	// while ( $loop->have_posts() ) : $loop->the_post();
 
-		$marker_id = get_the_ID();
-		$tempMarkerValue = get_post_meta($marker_id,$mote_name);
-		$tempMoteArray = split(';',$tempMoteValue[0]);
-		$latlon = get_post_meta($marker_id,'Location0');
+	// 	$marker_id = get_the_ID();
+	// 	$tempMarkerValue = get_post_meta($marker_id,$mote_name);
+	// 	$tempMoteArray = split(';',$tempMoteValue[0]);
+	// 	$latlon = get_post_meta($marker_id,'Location0');
 
-		$lonlat = invertLatLon($latlon[0]);
-		$title = get_the_title();
-		$categories = get_post_meta($marker_id,'Primary Concept');
-		$date = get_post_meta($marker_id,'date_range');
-		$dateA = dateFormatSplit($date[0]);
+	// 	$lonlat = invertLatLon($latlon[0]);
+	// 	$title = get_the_title();
+	// 	$categories = get_post_meta($marker_id,'Primary Concept');
+	// 	$date = get_post_meta($marker_id,'date_range');
+	// 	$dateA = dateFormatSplit($date[0]);
 
-		$startDate = $dateA[0];
-		$endDate = $dateA[1];
-		$args = array("fields" => "names");
-		$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
-		$p_terms;
-		foreach ($post_terms as $term ) {
-			$p_terms .= $term.',';
-		}
-		if($i>0) {
-			$json_string .= ',';
-		}
-		else {$i++;}
+	// 	$startDate = $dateA[0];
+	// 	$endDate = $dateA[1];
+	// 	$args = array("fields" => "names");
+	// 	$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
+	// 	$p_terms;
+	// 	foreach ($post_terms as $term ) {
+	// 		$p_terms .= $term.',';
+	// 	}
+	// 	if($i>0) {
+	// 		$json_string .= ',';
+	// 	}
+	// 	else {$i++;}
 			
-		$json_string .= '{"startDate":"'.$startDate.'","endDate":"'.$endDate.'","headline":"'.$title.'","text":"'.$categories[0].'","asset":{"media":"","credit":"","caption":""}}';
+	// 	$json_string .= '{"startDate":"'.$startDate.'","endDate":"'.$endDate.'","headline":"'.$title.'","text":"'.$categories[0].'","asset":{"media":"","credit":"","caption":""}}';
 
-		//array_push($markerArray,$json_string);
-	endwhile;
+	// 	//array_push($markerArray,$json_string);
+	// endwhile;
 
-	$json_string .= ']}}';	
-	 //$result = array_unique($array)
-	return $json_string;
+	// $json_string .= ']}}';	
+	//  //$result = array_unique($array)
+	// return $json_string;
 } // createTimelineArray()
 
 
@@ -1206,9 +1206,9 @@ function print_new_bootstrap_html($project_id)
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Create Entry Point<b class="caret"></b></a>
                   <ul class="dropdown-menu">
                     <li><a id="add-map" >Map</a></li>
-                    <li><a id="add-timeline" >Timeline</a></li>
-                    <li class="disabled"><a >Topic Cards</a></li>
                     <li><a id="add-transcript" >A/V Transcript</a></li>
+                    <li class="disabled"><a id="add-timeline">Timeline</a></li>
+                    <li class="disabled"><a>Topic Cards</a></li>
                   </ul>
                 </li>
               </ul>
@@ -2232,6 +2232,7 @@ function add_dhp_project_admin_scripts( $hook )
 
     $blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
+	$postID  = get_the_ID();
 
     //$dhp_custom_fields = getProjectCustomFields($post->ID);
 
@@ -2272,7 +2273,8 @@ function add_dhp_project_admin_scripts( $hook )
 
 			wp_enqueue_script('dhp-project-script', plugins_url('/js/dhp-project-admin.js', dirname(__FILE__) ));
 			wp_localize_script('dhp-project-script', 'dhpDataLib', array(
-				'ajax_url' => $dev_url
+				'ajax_url' => $dev_url,
+				'projectID' => $postID
 				// 'layers' => $tempLayers
 			) );
         }
