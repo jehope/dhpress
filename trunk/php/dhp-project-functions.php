@@ -762,7 +762,7 @@ function dhp_get_group_feed($rootTaxName,$term_name)
 		array_push($feature_collection['features'],$this_feature);
 
 	endwhile;
-	
+
 	return $feature_collection;
 } // dhp_get_group_feed()
 
@@ -2357,6 +2357,8 @@ add_filter( 'single_template', 'dhp_page_template' );
 function dhp_page_template( $page_template )
 {
 	global $post;
+		// For building list of handles upon which page is dependent
+	$dependencies = array('jquery', 'underscore');
 
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
@@ -2368,37 +2370,43 @@ function dhp_page_template( $page_template )
 
         // $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
 
-		wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
-		wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
+		wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__)));
+		wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__)));
         wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
-		wp_enqueue_style('joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));
-		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
+		wp_enqueue_style('joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__)));
+		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)));
 
 		wp_enqueue_script('underscore');
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('jquery-ui' );
-		wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__) ));
+		wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__)));
  		wp_enqueue_script('jquery-ui-slider' );
-		wp_enqueue_script('dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
-		wp_enqueue_script('joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
-		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__) ));
+		wp_enqueue_script('dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
+		wp_enqueue_script('joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__)), 'jquery');
 
     		// Map visualization specific
     	$projectSettings_map = $projObj->getEntryPointByName('map');
     	if (!is_null($projectSettings_map)) {
-			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
-			wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+			wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)));
+			wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__)));
 
     		$projMapLayers = $projectSettings_map['settings']['layers'];
 			dhpRegisterCDLAMaps($projMapLayers);
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
+	    	array_push($dependencies, 'open-layers', 'dhp-google-map-script');
 	    }
 
 	    	// Transcript specific
 	    if (!is_null($projObj->getEntryPointByName('transcript'))) {
-			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__) ));
-	        wp_enqueue_script( 'soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
+			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)));
+			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
+				 array('jquery', 'underscore'));
+	        wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
+	    	array_push($dependencies, 'dhp-transcript', 'soundcloud-api');
 	    }
+
+	    	// Enqueue last, after we've determine what dependencies might be
+		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__)), $dependencies );
 
 		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
 			'ajax_url' => $dev_url,
@@ -2412,16 +2420,15 @@ function dhp_page_template( $page_template )
 
         // $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
 
-		wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
-		wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
+		wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__)));
+		wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__)));
 		// wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));	
-		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
+		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)));
 
 		wp_enqueue_script('jquery');
-		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
+		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
 		//wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
 		wp_enqueue_script('underscore');
-		wp_enqueue_script( 'dhp-public-project-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__) ),'jquery');
 
     		// Does the Project have map visualizations?
    //  	$projectSettings_map = $projObj->getEntryPointByName('map');
@@ -2433,6 +2440,8 @@ function dhp_page_template( $page_template )
 			// dhpRegisterCDLAMaps($projMapLayers);
 	  //   	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
    //  	}
+			// Enqueue last, after dependencies determined
+		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__)), $dependencies);
 
 		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
 			'ajax_url' => $dev_url,
@@ -2456,6 +2465,9 @@ function dhp_tax_template( $page_template )
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
+		// For building list of handles upon which page is dependent
+	$dependencies = array('jquery', 'underscore');
+
 		// ensure a Taxonomy archive page is being rendered
 	if( is_tax() ) {
 	    global $wp_query;
@@ -2474,17 +2486,15 @@ function dhp_tax_template( $page_template )
 	    	// mediaelement for timelines -- not currently used
 		// wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
 
-		wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
-		wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
+		wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__)));
+		wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__)));
 	    // wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));
-		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
+		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)));
 
 		wp_enqueue_script( 'jquery' );
-		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');		
+		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'underscore' );
 		// wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
-
-		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__) ));
 
 	    	// Is there a map visualization?
 	 //    if ($projObj->getEntryPointByName('map')) {
@@ -2495,9 +2505,13 @@ function dhp_tax_template( $page_template )
 		// }
 			// Is there audio transcript?
 	    if ($projObj->getEntryPointByName('transcript')) {
-			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__) ));
-		    wp_enqueue_script( 'soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
+			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)));
+		    wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
+		    array_push($dependencies, 'soundcloud-api');
 		}
+
+			// Enqueue last, after dependencies have been determined
+		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__)), $dependencies );
 
 		wp_localize_script( 'dhp-tax-script', 'dhpData', array(
 				'project_id' => $projectID,
