@@ -18,10 +18,10 @@
 		            "delim": String (containing a character or empty string)
 		        }, ...
 		    ],
-		    "entry-points": [
+		    "entry-points": [										// contents of settings depends on type of entry point
 		    	Integer (index) : {
 		            "type": String ("map" or "transcript"),
-		            "settings": {				// depends on type -- map is as follows
+		            "settings": {									// map settings are as follows
 		                "lat": Number,
 		                "lon": Number,
 		                "zoom": Number,
@@ -34,7 +34,7 @@
 		                        "mapTypeId": String,
 		                    }, ...
 		                ],
-		                "marker-layer": String (name of mote),
+		                "marker-layer": String (name of mote),		// Mote used for geo coord
 		                "filter-data": [
 		                    Index : String (name of note), ...
 		                ]

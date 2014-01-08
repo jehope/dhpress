@@ -152,7 +152,7 @@ var dhpTranscript = {
             // console.log("Parsed " + matchResults[1] + ":" + matchResults[2] + ":" + matchResults[3]);
             milliSecondsCode = (parseInt(matchResults[1])*3600 + parseInt(matchResults[2])*60 + parseFloat(matchResults[3])) * 1000;
         } else {
-            console.log("Error in transcript file: Cannot parse " + timecode + " as timecode.");
+            throw new Error("Error in transcript file: Cannot parse " + timecode + " as timecode.");
             milliSecondsCode = 0;
         }
         return milliSecondsCode;

@@ -78,22 +78,26 @@ function add_dhp_marker_admin_scripts( $hook )
  		// Editing a specific Marker in admin panel
     if ( $hook == 'post-new.php' || $hook == 'post.php' )
     {
-        if ( 'dhp-markers' === $post->post_type ) {     
+        if ( $post->post_type === 'dhp-markers' ) {
+            $project_id = get_post_meta( $post->ID, 'project_id', true );
+
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
 			wp_enqueue_script(  'jquery' );
+
              //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 			 wp_enqueue_script(  'dhp-marker-script', plugins_url('/js/dhp-marker-admin.js', dirname(__FILE__) ));
 			 wp_localize_script( 'dhp-marker-script', 'dhpDataLib', array(
-				'ajax_url' => __($dev_url, 'dhp')
-				//'dhp_custom_fields' => __($dhp_custom_fields, 'dhp'),				
+				'ajax_url' => $dev_url,
+                'projectID' => $project_id,
+                'markerID' => $post->ID
 			) );
         }
 
         // Shows list of all Markers in admin panel
     } else if ( $hook == 'edit.php'  ) {
-        if ( 'dhp-markers' === $post->post_type ) { 
+        if ($post->post_type === 'dhp-markers') {
 			//wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
 			wp_enqueue_style( 'dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
