@@ -374,11 +374,13 @@ function add_dhp_project_settings_box()
 		'high'); 						// priority
 } // add_dhp_project_settings_box()
 
-// PURPOSE:		Called by WP to create HTML for hidden fields (in admin panel) which save Project state
+
+// PURPOSE:	Called by WP to create HTML for hidden fields (in admin panel) which save Project state
 //					for auto-save
-// ASSUMPTIONS:	Global $post is set to point to post for current project
-//				Global $dhp_project_settings_fields is set to array of strings describing HTML controls
-// TO DO:		Put all HTML producing logic into special generalized function
+// ASSUMES:	Global $post is set to point to post for current project
+//			Global $dhp_project_settings_fields is set to array of strings describing HTML controls
+// SIDE-FX: Creates hidden fields for storing data   
+// TO DO:	Put all HTML producing logic into special generalized function
 
 function show_dhp_project_settings_box()
 {
@@ -449,6 +451,7 @@ function show_dhp_project_settings_box()
 	
 	print_new_bootstrap_html($post->ID);
 } // show_dhp_project_settings_box()
+
 
 // 'save_post' is called after post is created or updated
 add_action('save_post', 'save_dhp_project_settings');
@@ -1233,7 +1236,7 @@ function print_new_bootstrap_html($project_id)
 				      <div class="accordion-inner">
 				       <p>
 				       <label class="checkbox">
-                    	<input class="save-view map-fullscreen" type="checkbox" name="map-fullscreen" value="fullscreen"> Visualization takes Fullscreen
+                    	<input class="save-view map-fullscreen" type="checkbox" name="map-fullscreen" value="fullscreen">Visualization takes Fullscreen
                   		</label>
                   		</p>
                   		<p>

@@ -1,8 +1,6 @@
 // PURPOSE: Handle editing fields of Marker on admin panel
 //			Loaded by add_dhp_marker_admin_scripts() in dhp-marker-functions.php
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
-//			ID of dhp_marker_project is set to Project ID for this Marker
-//			ID of this Marker post itself is set in hidden input whose ID is post_ID
 //			dhp_marker_settings_meta_box is the topmost "metabox" titled "Marker Settings"
 //			custom-field-editor is the HTML div class that contains edit option list & editable value
 //			postcustom is the HTML div class for custom fields for Markers in this Project (titled "Custom Fields")
@@ -12,23 +10,30 @@
 
 jQuery(document).ready(function($) {
 
-	var markerObject;
-	var ajax_url = dhpDataLib.ajax_url;
+	var ajax_url  = dhpDataLib.ajax_url;
+	var markerID  = dhpDataLib.markerID;
+	var projectID = dhpDataLib.projectID;
+
+	// console.log("Preparing ProjectID "+projectID+" MarkerID "+markerID+" with AJAX URL "+ajax_url);
+
 	//move marker settings above content box
 	//$('#dhp_marker_settings_meta_box').remove().insertBefore('#post-body-content #titlediv');
 	//assign listeners and execute functions after settings box is moved(remove also removes listeners)
-	
+
 		// get embedded Project ID to which this Marker belongs
-	var marker_project = $('.dhp_marker_project').attr('id');
+	// var marker_project = $('.dhp_marker_project').attr('id');
+
+	var markerObject;
+
 		// Insert HTML code for option box to select which custom field to inspect/edit
 	$('#dhp_marker_settings_meta_box .inside').append('<div class="custom-field-editor"><div class="left">Choose the field from the dropdown to add/edit.<select></select><br/><a class="add-update-meta button button-primary">Add/Update</a></div><div class="right"><textarea class="edit-custom-field"></textarea></div></div>');
 
-	if(marker_project) {
+	if(projectID) {
 			// Create custom edit fields appropriate to the Project to which this Marker belongs
-		getProjectSettings(marker_project);
+		getProjectSettings(projectID);
 			// For each option under Project, select it if it indicates this project
 		// _.each($('#marker_project_id option'), function(option){
-		// 	if(marker_project == option.value)
+		// 	if(projectID == option.value)
 		// 		$(option).prop('selected','selected');
 		// });
 	}
@@ -124,7 +129,8 @@ jQuery(document).ready(function($) {
 			markerObject = JSON.parse(dhpData);
 			//console.log('data is loaded');
 			//console.log(markerObject);
-			
+
+console.log("Marker custom fields = "+markerObject['project-details']['marker-custom-fields']);
 			var custom_fields ='';
 			if(markerObject['project-details']['marker-custom-fields']) {
 				custom_fields = markerObject['project-details']['marker-custom-fields'];
@@ -317,8 +323,9 @@ jQuery(document).ready(function($) {
 	//     });
 	// }
 
-	function dhpAddUpdateMetaField(fieldName,fieldValue){
-		var postID = $('#post_ID').val();
+	function dhpAddUpdateMetaField(fieldName, fieldValue){
+console.log("Updating field "+fieldName+" in Marker ID "+markerID);
+		// var postID = $('#post_ID').val();
 		//console.log(fieldName)
 		//console.log(fieldValue)
 		$.ajax({
@@ -327,7 +334,7 @@ jQuery(document).ready(function($) {
 	            dataType: 'json',
 	            data: {
 	                action: 'dhpAddUpdateMetaField',
-	                post_id: postID,
+	                post_id: markerID,
 	                field_name: fieldName,
 	                field_value: fieldValue
 	            },
@@ -404,7 +411,9 @@ jQuery(document).ready(function($) {
 	//         });
 	// }
 
-	function getProjectSettings(projectID){
+	function getProjectSettings()
+	{
+console.log("Getting settings for ProjectID "+projectID);
 		$.ajax({
 	            type: 'POST',
 	            url: ajax_url,

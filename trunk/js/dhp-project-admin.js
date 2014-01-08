@@ -1,6 +1,7 @@
-// PURPOSE: Handle functions for Edit Project page
+// PURPOSE: Handle functions for Edit Project admin page
 //          Loaded by add_dhp_project_admin_scripts() in dhp-project-functions.php
 // ASSUMES: dhpDataLib is used to pass parameters to this function via wp_localize_script()
+//          WP edit code creates HTML DIV whose ID #project_settings which will contain that 
 // USES:    JavaScript libraries jQuery, jQuery UI (for drag-drop), Underscore, Bootstrap ...
 // TO DO:   Creates too many global variables -- put these within scope of this JS function
 
@@ -11,8 +12,12 @@ jQuery(document).ready(function($) {
   var ajax_url  = dhpDataLib.ajax_url;
   var projectID = dhpDataLib.projectID;
 
-  var projectObj = new Object();          // Stores Project fields: 'project-details', 'entry-points', 'motes', 'views'
-                                          // Initialized in initializeProjectObj() but only updated by saveProjectSettings() when user selects Save button
+  var projectObj = new Object();         // Initialized in initializeProjectObj() but only updated by saveProjectSettings() when user selects Save button
+    // Create new empty settings
+  projectObj['project-details'] = new Object();
+  projectObj['entry-points'] = new Object();
+  projectObj['motes'] = new Object();
+  projectObj['views'] = new Object();
 
      // Data types supported for motes
   var dataTypes = ['Text','Exact Date','Date Range','Lat/Lon Coordinates','File','Image'];
@@ -45,7 +50,7 @@ jQuery(document).ready(function($) {
   // 	resizeTB();
   //  });
 
-    // Create Bootstrap modal popover on Publish button
+    // Prepare Bootstrap modal popover on Publish button (called below if not saved)
   $('#publish').popover({
       title:'Project requires save',
       content:'Don\'t forget to save your project(red button on the left).',
@@ -93,31 +98,31 @@ jQuery(document).ready(function($) {
   });
 
     // Handle Create Entry Point > Timeline
-  $('#add-timeline').click(function(){
-    var timelineCount  = countEntryPoints('timeline') +1;
-    if(timelineCount==2) {
-      var options = { 
-        animation: true, 
-        placement:'right',
-        title:'Timeline limit reached',
-        content:'Maximum of one timeline are allowed currently.',
-        trigger:'manual',
-        delay: { show: 500, hide: 100 }
-      }
-      $('#timeline1-tab').popover(options);
-      $('#timeline1-tab').popover('show');
-      $('#timeline1-tab a').tab('show');
-      setTimeout(function () {
-        $('#timeline1-tab').popover('hide');
-      }, 3000);
-    } else {
-      projectNeedsToBeSaved();
-      epsettings = '';
-      buildHTMLForEntryPoint('timeline',epsettings);
-      //show tab/content after loading
-      $('#timeline'+timelineCount+'-tab a').tab('show');
-    }    
-  });
+  // $('#add-timeline').click(function(){
+  //   var timelineCount  = countEntryPoints('timeline') +1;
+  //   if(timelineCount==2) {
+  //     var options = { 
+  //       animation: true, 
+  //       placement:'right',
+  //       title:'Timeline limit reached',
+  //       content:'Maximum of one timeline are allowed currently.',
+  //       trigger:'manual',
+  //       delay: { show: 500, hide: 100 }
+  //     }
+  //     $('#timeline1-tab').popover(options);
+  //     $('#timeline1-tab').popover('show');
+  //     $('#timeline1-tab a').tab('show');
+  //     setTimeout(function () {
+  //       $('#timeline1-tab').popover('hide');
+  //     }, 3000);
+  //   } else {
+  //     projectNeedsToBeSaved();
+  //     epsettings = '';
+  //     buildHTMLForEntryPoint('timeline',epsettings);
+  //     //show tab/content after loading
+  //     $('#timeline'+timelineCount+'-tab a').tab('show');
+  //   }    
+  // });
 
     // Handle Create Entry Point > A/V Transcript
   $('#add-transcript').click(function(){
@@ -277,17 +282,13 @@ jQuery(document).ready(function($) {
   //console.log($('#project_settings').val());
 
     // Parse Project settings
-  if($('#project_settings').val()) {
-    initializeProjectObj(JSON.parse($('#project_settings').val()));
+  var settings = $('#project_settings').text();
+  if(settings) {
+    initializeProjectObj(settings);
 
     // Or else create empty settings for new Project
   } else {
-    projectObj['project-details'] = new Object();
-    projectObj['entry-points'] = new Object();
-    projectObj['motes'] = new Object();
-    projectObj['views'] = new Object();
-
-    initializeProjectObj(projectObj);
+    initializeProjectObj(null);
     saveProjectSettings();
   }
 
@@ -312,8 +313,8 @@ jQuery(document).ready(function($) {
   }
 
     // PURPOSE: Initialize all Project settings in projectObj
-    // INPUT:   pSettings = JSON object representing project settings string
-  function initializeProjectObj(pSettings) {
+    // INPUT:   settingString = String representing project settings (needs to be parsed), or null if none
+  function initializeProjectObj(settingString) {
     // $('#motes #create-mote .cf-type').change(function(){
     //     if($(this).find("option:selected").text()=='Dynamic Data Field'){
     //       //console.log($(this).find("option:selected").text());
@@ -321,27 +322,38 @@ jQuery(document).ready(function($) {
 
     //     }
     //   });
-    //if new project
-    projectObj['project-details'] = new Object();
-    if(pSettings.hasOwnProperty('project-details')) {
+    // console.log("settingString = " + settingString);
+
+    var pSettings;
+
+    if (settingString !== null) {
+      pSettings = JSON.parse(settingString);
+    } else {
+      pSettings = null;
+    }
+
+    if (pSettings && pSettings['project-details']) {
+        // Ensure project IDs match
+      if (pSettings['project-details']['id'] !== projectID) {
+          throw new Error("Project ID "+projectID+" sent by WP does not match ID "+pSettings['project-details']['id']+" in project settings");
+      }
       projectObj['project-details']['id'] = pSettings['project-details']['id'];
       projectObj['project-details']['name'] = pSettings['project-details']['name'];
       dhpGetCustomFields();
+    } else {
+      projectObj['project-details']['id'] = projectID;
     }
 
-    //create handlers to load data in order. Entry points are dependent on motes.
+      // Create handlers to load data in order. Entry points are dependent on motes.
     $('body').bind('load-motes', function(e) {
-      if(pSettings['motes']) {
-        projectObj['motes'] = new Object();
+      if(pSettings && pSettings['motes']) {
         insertHTMLForMoteList(pSettings['motes']);
       }
-      return;
     });
     $('body').bind('load-entry-points', function(e) {
-      if(pSettings['entry-points']) {
+      if(pSettings && pSettings['entry-points']) {
         buildEntryPoints(pSettings['entry-points']);
       }
-      return;
     });
 
     // $('body').bind('load-shared-motes', function(e) {
@@ -352,8 +364,10 @@ jQuery(document).ready(function($) {
     // });
     $('body').bind('load-views', function(e) {
       //console.log(data['views']);
-      projectObj['views'] = pSettings['views'];
-      builtHTMLForViewsTab(pSettings['views']);
+      if (pSettings && pSettings['views']) {
+        projectObj['views'] = pSettings['views'];
+      }
+      builtHTMLForViewsTab(projectObj['views']);
       return;
     });
     $('body').bind('add-save-alert', function(e) {
@@ -388,6 +402,7 @@ jQuery(document).ready(function($) {
     }); 
   } // initializeProjectObj()
 
+
     // PURPOSE: Create placeholder for new mote based on UI fields
   function createNewMote() {
     //console.log($('#create-mote #mote-name').val())
@@ -411,11 +426,13 @@ jQuery(document).ready(function($) {
     }
   }
 
+
   function countMotes(){
     var count = $('.accordion-group');
     //console.log(count.length);
     return count.length;
   }
+
 
     // PURPOSE: Clear out name and delim fields after new mote created
   function clearCreateMoteValues() {
@@ -423,6 +440,7 @@ jQuery(document).ready(function($) {
     $('#create-mote .delim').val('');
     //$('#create-mote .custom-fields option').eq(0).attr('selected','selected');
   }
+
 
     // PURPOSE: Save array of entry points, builds the html for them and preload the data
   function buildEntryPoints(entryPoints) {
@@ -442,8 +460,10 @@ jQuery(document).ready(function($) {
     // }
   }
 
+
     // PURPOSE: Build the HTML for a single Entry Point, given its type and settings
-  function buildHTMLForEntryPoint(type,settings){
+    // INPUT:   type = the name of a valid entry point type: 'map', 'transcript'
+  function buildHTMLForEntryPoint(type, settings){
     var epCount  = countEntryPoints(type) +1;
     if(!settings) {
       settings = new Object();
@@ -516,7 +536,7 @@ jQuery(document).ready(function($) {
     }
 
     $('#entryTabContent').append('<div class="tab-pane fade in ep map" id="'+type+'-'+epCount+'"><button type="button" class="close" >&times;</button>\<p>'+entryTabContent+'</p></div>');
-    
+
     //set sliders
     _.each($('.layer-list li'), function(layer) {
       var tempOpacity = 1;
@@ -535,7 +555,7 @@ jQuery(document).ready(function($) {
           }
         }); 
     });
-        
+
 
       // Handle Delete button for Entry Point
     $('#'+type+'-'+epCount+ ' .close').click(function(e){
@@ -722,7 +742,7 @@ jQuery(document).ready(function($) {
     // Setup layout for frontend modals
     $('.setup-modal-view').click(function(){
       var title = '';
-      console.log(viewObject)
+      console.log(viewObject);
 
       var content = [];
       var linkTarget,linkTarget2,linkTargetLabel,linkTarget2Label;
@@ -913,13 +933,13 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Bind all event listeners for Legend buttons on Entry Points tab (with EP selected)
   function bindLegendEventsInEPTab(){
-      // Remove all previous bindings for "Create Legend" buttons
+      // Create Legend buttons
     $('.create-legend').unbind('click');
-      // Rebind code to Create Legend buttons
     $('.create-legend').click(function() {
         var moteName = $(this).parent().find('#filter-mote option:selected').val();
         var mote = getMote(moteName);
         // var projectID = projectObj['project-details']['id'];
+    // console.log("Creating mote " + moteName + " for Project "+ projectID);
 
         $('body').append('<!-- Modal -->\
           <div id="createModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
@@ -933,10 +953,12 @@ jQuery(document).ready(function($) {
             <div class="modal-footer">\
             </div>\
           </div>');
-      $('#createModal').modal('show');
+        $('#createModal').modal('show');
         //console.log(projectObj['motes'])
         dhpCreateLegendTax(mote,true);
     });
+
+      // Configure Legend buttons
     $('.load-legend').unbind('click');
     $('.load-legend').click(function() {
         var moteName = $(this).parent().find('#filter-mote option:selected').val();
@@ -945,6 +967,8 @@ jQuery(document).ready(function($) {
         //console.log(projectObj['motes'])
         dhpGetMoteValues(mote);
     });
+
+      // Delete Legend buttons
     $('.delete-legend').unbind('click');
     $('.delete-legend').click(function() {
       var moteName = $(this).parent().find('#filter-mote option:selected').val();
@@ -1061,22 +1085,13 @@ jQuery(document).ready(function($) {
     //console.log(projectObj['motes']);
     var moteOptions = '', selectedTxt;
 
+      // Go through all of the Project's defined motes, find matches on type
     _.each(projectObj['motes'], function(theMote) {
       selectedTxt = (theMote['name'] == selected) ? 'selected="selected"' : '';
       if(!moteType||theMote['type']==moteType)
         moteOptions += '<option value="'+theMote['name']+'" '+selectedTxt+'>'+theMote['name']+'</option>';
     });
-    // for(var iKey in projectObj['motes']) {
-    //   var val = projectObj['motes'][iKey];
-    //   if(val['name']==selected) {
-    //     var selectedTxt = 'selected="selected"';
-    //   }  else {
-    //     var selectedTxt = '';
-    //   }
-    //   if(!type||val['type']==type) {
-    //     moteOptions += '<option value="'+val['name']+'" '+selectedTxt+'>'+val['name']+'</option>';
-    //   }
-    // }
+
     return moteOptions;
   } // buildHTMLForMotes()
 
@@ -1195,6 +1210,7 @@ jQuery(document).ready(function($) {
   function buildHTMLForCustomFields(selected){
     if(!selected) { selected = '';}
     var trimSelected = selected.split(',');
+
     cflistString = $('#create-mote').find('.custom-fields option').map(function() {
       return $(this).val();
     }).get().join();
@@ -1474,7 +1490,6 @@ jQuery(document).ready(function($) {
     // INPUT:   title = name of mote (unused!)
     //          data = JSON Object of all of the unique values of the Mote
   function createConfigureLegendModal(title,data){
-
     $('#taxModal .modal-body').empty();
   	$('#taxModal .modal-body').append(builtHTMLForLegendValues(data));
   	
@@ -1709,6 +1724,7 @@ jQuery(document).ready(function($) {
     // RETURNS: Saved date
     
   function updateProjectSettings(){
+    // console.log("Updating settings for project " + projectID);
   	var settingsData = $('#project_settings').val();
   	jQuery.ajax({
           type: 'POST',
@@ -1731,6 +1747,7 @@ jQuery(document).ready(function($) {
     // INPUT:   treeParentID = Top level term id(legend name)
     //          taxTerms = termObject to be created in wordpress
   function dhpCreateLegendTax(mote,loadLegend) {
+    // console.log("Create legend for mote " + mote + " for project " + projectID);
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1753,6 +1770,7 @@ jQuery(document).ready(function($) {
     // RETURNS: Object with terms
     // INPUT:   mote = Top level term id(legend name)
   function dhpGetMoteValues(mote) {
+    // console.log("Getting mote values for project " + projectID);
       //create modal here to hold users attention. Data will be rendered on response
     $('#taxModal').remove();
     $('body').append('<!-- Modal -->\
@@ -1787,10 +1805,11 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Update term structure for legend(introduces icon_url field)
     // RETURNS: Object with terms
-    // INPUT:   treeParentID = Top level term id(legend name)
+    // INPUT:   treeParentID = Top level term id (legend name)
     //          taxTerms = termObject to update terms in wordpress(introduces icon_url)
 
   function createTaxTerms(treeParentID,taxTerms) {
+    // console.log("Create legend for treeParentID " + treeParentID + " in Project ID " + projectID);
     var termData = taxTerms;
     jQuery.ajax({
           type: 'POST',
@@ -1952,7 +1971,7 @@ jQuery(document).ready(function($) {
       });
   }
 
-  function deleteTerms(termName) { 
+  function deleteTerms(termName) {
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
