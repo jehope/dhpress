@@ -189,11 +189,13 @@
 .olImageLoadError {
  	display: none;
 }
-
-img {
+/* Overrides most theme settings for img tags in the map only */
+.entry-content .olMap img,
+.widget .olMap img {
 	max-width: none;
+	border-radius: 0;
+	box-shadow: none;
 }
-
 .legend-resize {
 	padding: 2px 5px;
 	float: right;
