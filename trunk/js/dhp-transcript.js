@@ -9,43 +9,62 @@ var dhpTranscript = {
         // PURPOSE: Initialize transcript mechanisms
     initialize: function()
     {
-        this.parseTimeCode = /(\d{2})\:(\d{2})\:([\d\.]+)/;
+        this.parseTimeCode = /(\d+)\:(\d+)\:([\d\.]+)/;         // a very generous definition of timecode!
     }, // initialize()
 
 
-        // PURPOSE: Build all HTML and initialize controls for a specific transcript
-        // INPUT:   ajaxURL = URL to use for loading data
+        // PURPOSE: Build all HTML and initialize controls for a specific transcript associated with a Marker
+        // INPUT:   ajaxURL = URL to use for loading data (or null if already loaded)
         //          htmlID = jQuery selector to specify where resulting HTML should be appended
-        //          settings = object whose fields specify data about transcription
-    prepareOneTranscript: function (ajaxURL, projectID, htmlID, settings)
+        //          transParams = object whose fields specify data about transcription:
+        //              audio, transcript, transcript2, timecode, startTime, endTime
+        //              timecode = -1 if full transcript (not excerpt), transcript and transcript2 already loaded
+    prepareOneTranscript: function (ajaxURL, projectID, htmlID, transParams)
     {
-        var builtHtml;
-        var soundUrl         = '';
+        var appendPos;
         var WIDGET_PLAYING   = false;
+        var fullTranscript   = (transParams.timecode == -1);
+
+        console.log("Preparing transcript: Audio = "+transParams.audio);
 
             // Initialize this object's variables
         dhpTranscript.rowIndex = null;
         dhpTranscript.transcriptData = [];
 
-        jQuery(htmlID).append('<div class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+settings.audio+'&show_artwork=true"></iframe></p></div>');
+        appendPos = jQuery(htmlID);
+        if (appendPos == null) {
+            throw new Error("Cannot find HTML DIV at which to append transcript.");
+        }
+        appendPos.append('<div class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'&show_artwork=true"></iframe></p></div>');
 
             // Is there any primary transcript data?
-        if(settings.transcript && settings.transcript!=='none') {
-            dhpTranscript.loadTranscriptClip(ajaxURL, projectID, settings.transcript, settings.timecode, 0);
+        if(transParams.transcript && transParams.transcript!=='none') {
+            if (fullTranscript) {
+                dhpTranscript.attachTranscript(transParams.transcript, 0);
+            } else {
+                dhpTranscript.loadTranscriptClip(ajaxURL, projectID, transParams.transcript, transParams.timecode, 0);
+            }
         }
             // Is there 2ndary transcript data? If only 2nd, treat as 1st
-        if(settings.transcript==='none' && settings.transcript2 && settings.transcript2!=='none'){
-            dhpTranscript.loadTranscriptClip(ajaxURL, projectID, settings.transcript2, settings.timecode, 0);
+        if(transParams.transcript==='none' && transParams.transcript2 && transParams.transcript2!=='none') {
+            if (fullTranscript) {
+                dhpTranscript.attachTranscript(transParams.transcript2, 0);
+            } else {
+                dhpTranscript.loadTranscriptClip(ajaxURL, projectID, transParams.transcript2, transParams.timecode, 0);
+            }
         }
             // Otherwise, add 2nd to 1st
-        else if(settings.transcript!=='none' && settings.transcript2 && settings.transcript2!=='none') {
-            dhpTranscript.loadTranscriptClip(ajaxURL, projectID, settings.transcript2, settings.timecode, 1);
+        else if(transParams.transcript!=='none' && transParams.transcript2 && transParams.transcript2!=='none') {
+            if (fullTranscript) {
+                dhpTranscript.attachTranscript(transParams.transcript2, 1);
+            } else {
+                dhpTranscript.loadTranscriptClip(ajaxURL, projectID, transParams.transcript2, transParams.timecode, 1);
+            }
         }
 
             // Must wait to set these variables after HTML appended above
         var iframeElement    = document.querySelector('.player');
-        var iframeElementID  = iframeElement.id;
-        var soundCloudWidget = SC.Widget(iframeElementID);
+        var soundCloudWidget = SC.Widget(iframeElement.id);
 
             // Setup audio/transcript SoundClod player
         soundCloudWidget.bind(SC.Widget.Events.READY, function() {
@@ -58,11 +77,12 @@ var dhpTranscript = {
                 WIDGET_PLAYING = false;
             });
             soundCloudWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
-                if(e.currentPosition < settings.startTime){
+                    // Keep within bounds if only excerpt of longer transcript
+                if ((!fullTranscript) && (e.currentPosition < transParams.startTime)) {
                     soundCloudWidget.pause();
-                    soundCloudWidget.seekTo(settings.startTime);
+                    soundCloudWidget.seekTo(transParams.startTime);
                 }
-                if(e.currentPosition > settings.endTime){
+                if ((!fullTranscript) && (e.currentPosition > transParams.endTime)) {
                     soundCloudWidget.pause();
                 }
                 dhpTranscript.hightlightTranscriptLine(e.currentPosition);
@@ -89,8 +109,48 @@ var dhpTranscript = {
                 tempWidget.pause();
             }
         });
-    }, // buildOneTranscript()
+    }, // prepareOneTranscript()
 
+
+        // PURPOSE: Build all HTML and initialize controls for transcript associated with a Taxonomic Term
+        // INPUT:   ajaxURL = URL to use for loading data
+        //          htmlID = jQuery selector to specify where resulting HTML should be appended
+        //          taxTerm = head taxonomic term
+        //          transcript = end of URL for specific transcript
+    prepareTaxTranscript: function (ajaxURL, projectID, htmlID, taxTerm, transcript)
+    {
+        jQuery.ajax({
+            type: 'POST',
+            url: ajaxURL,
+            data: {
+                action: 'dhpGetTaxTranscript',
+                project: projectID,
+                transcript: transcript,
+                tax_term: taxTerm
+            },
+            success: function(data, textStatus, XMLHttpRequest){
+                console.log("Tax transcript = "+data);
+                if (data != null) {
+                    var results = JSON.parse(data);
+                    var transParams = {
+                        'audio'         : results.audio,
+                        'transcript'    : results.transcript,
+                        'transcript2'   : results.transcript2,
+                        'timecode'      : -1,
+                        'startTime'     : -1,
+                        'endTime'       : -1
+                    };
+                    dhpTranscript.prepareOneTranscript(null, projectID, htmlID, transParams);
+                }
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown){
+               alert(errorThrown);
+            }
+        });
+    }, // prepareTaxTranscript()
+
+
+// ==================== INTERNAL FUNCTIONS (only used by the functions above) ==============
 
     loadTranscriptClip: function(ajaxURL, projectID, transcriptName, clip, order)
     {

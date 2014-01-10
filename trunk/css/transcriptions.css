@@ -1,6 +1,11 @@
 /** CSS styles specific to rendering transcriptions in DH Press
  **/
 
+.transcript-list {
+	max-height: 300px;
+	overflow-y: scroll;
+}
+
 .transcript-list .row {
 	display: table-row;
 }
@@ -44,9 +49,4 @@
 	display: table-cell;
 	vertical-align: top;
 	padding: 2%;
-}
-
-.transcript-list {
-	max-height: 300px;
-	overflow-y: scroll;
 }
