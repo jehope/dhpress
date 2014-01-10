@@ -130,7 +130,7 @@ jQuery(document).ready(function($) {
 			//console.log('data is loaded');
 			//console.log(markerObject);
 
-console.log("Marker custom fields = "+markerObject['project-details']['marker-custom-fields']);
+			// console.log("Marker custom fields = "+markerObject['project-details']['marker-custom-fields']);
 			var custom_fields ='';
 			if(markerObject['project-details']['marker-custom-fields']) {
 				custom_fields = markerObject['project-details']['marker-custom-fields'];
@@ -324,10 +324,8 @@ console.log("Marker custom fields = "+markerObject['project-details']['marker-cu
 	// }
 
 	function dhpAddUpdateMetaField(fieldName, fieldValue){
-console.log("Updating field "+fieldName+" in Marker ID "+markerID);
+		// console.log("Updating field "+fieldName+" in Marker ID "+markerID);
 		// var postID = $('#post_ID').val();
-		//console.log(fieldName)
-		//console.log(fieldValue)
 		$.ajax({
 	            type: 'POST',
 	            url: ajax_url,
@@ -413,7 +411,7 @@ console.log("Updating field "+fieldName+" in Marker ID "+markerID);
 
 	function getProjectSettings()
 	{
-console.log("Getting settings for ProjectID "+projectID);
+		// console.log("Getting settings for ProjectID "+projectID);
 		$.ajax({
 	            type: 'POST',
 	            url: ajax_url,

@@ -1622,7 +1622,7 @@ function getTranscriptClip($transcript, $clip)
 		// timecode is always 13 characters
 	$clipLength       = $clipEnd - $clipStart + 13;
 
-	if( $clipStart && $clipEnd ) {		
+	if( $clipStart && $clipEnd ) {
 		$codedClip  = mb_substr($codedTransctript, $clipStart-1, $clipLength, 'UTF-8');
 		$returnClip = utf8_decode($codedClip);
 	}
@@ -1642,15 +1642,16 @@ function getTranscriptClip($transcript, $clip)
 function loadTranscriptFromFile($fileUrl)
 {
 	$content = @file_get_contents($fileUrl);
-	if ($content === false) { /* failure */ } 
-	
-	else { /* success */ 
+	if ($content === false) {
+		trigger_error("Cannot load transcript file ".$fileUrl);
+	} else {
 		return $content;
 	}
 } // loadTranscriptFromFile()
 
+
 // dhpGetTranscriptClip()
-// PURPOSE: AJAX function to retrieve section of transcript 
+// PURPOSE: AJAX function to retrieve section of transcript when viewing a Marker
 // INPUT:	$_POST['project'] = ID of Project post
 //			$_POST['transcript'] = URL to file containing contents of transcript
 //			$_POST['timecode'] = timestamp specifying part of transcript to return
@@ -1670,66 +1671,78 @@ function dhpGetTranscriptClip()
 	die(json_encode($dhp_transcript_clip));
 } // dhpGetTranscriptClip()
 
+
 // Enable for both editing and viewing
 
-add_action( 'wp_ajax_dhpGetTranscript', 'dhpGetTranscript' );
-add_action( 'wp_ajax_nopriv_dhpGetTranscript', 'dhpGetTranscript');
+add_action( 'wp_ajax_dhpGetTaxTranscript', 'dhpGetTaxTranscript' );
+add_action( 'wp_ajax_nopriv_dhpGetTaxTranscript', 'dhpGetTaxTranscript');
 
-// PURPOSE: AJAX function to retrieve entire transcript
+// PURPOSE: AJAX function to retrieve entire transcript when viewing a taxonomy archive page
 // INPUT:	$_POST['project'] = ID of Project
-//			$_POST['transcript'] = URL to file containing contents of transcript
-//			$_POST['tax_view'] = the taxonomic term that the marker matches
+//			$_POST['transcript'] = (end of URL) to file containing contents of transcript
+//			$_POST['tax_term'] = the taxonomic term that marker must match
 // ASSUMES: The transcript is only associated with one taxonomic term
-// RETURNS:	JSON-encoded complete transcript
+// RETURNS:	null if not found, or if not a note associated with transcript; otherwise, JSON-encoded complete transcript with fields:
+//				audio = data from custom field
+//				feed = array of Markers which match category (and their associated data)
+//				settings = entry-point settings for transcript
+//				transcript, transcript2 = transcript data itself for each of 2 possible transcripts
 
-function dhpGetTranscript()
+function dhpGetTaxTranscript()
 {
-	$projectID         = $_POST['project'];
-	$dhp_project_field = $_POST['transcript'];
-	$dhp_tax_term      = $_POST['tax_view'];
-	//$dhp_clip = $_POST['timecode'];
+	$projectID     = $_POST['project'];
+	$dhp_tax_term  = $_POST['tax_term'];
+	$transFile     = $_POST['transcript'];
 
-	$projObj      = new DHPressProject($projectID);
-	$rootTaxName  = $projObj->getRootTaxName();
-
-	$dhp_transcript_ep = $projObj->getEntryPointByType("transcript");
-	$dhp_audio_mote = $projObj->getMoteByName($dhp_transcript_ep['settings']['audio']);
-	// foreach ($projSettings['entry-points'] as $i => $ep) {
- // 		if (array_key_exists('type', $ep) && $ep['type'] == 'transcript') {
- //        	// $dhp_settings_ep = $dhp_settings['entry-points'][$i];
- //        	$dhp_settings_ep = $ep;
- //    		$dhp_audio_mote = $projObj->getMoteByName($dhp_settings_ep['settings']['audio']);
- //    		break;
-	// 	}
-	// }
-
+		// Search for Marker (which will have transaction data) matching taxonomic data
 	$args = array(
 		'posts_per_page' => 1,
 		'post_type' => 'dhp-markers',
 		'tax_query' => array(
 			array(
-				'taxonomy' => $dhp_tax_name,
+				'taxonomy' => $dhp_tax_term,
 				'field' => 'slug',
-				'terms' => $dhp_project_field
+				'terms' => $transFile
 			)
 		)
 	);
+		// Get the result and its metadata (fail if not found)
 	$first_marker = get_posts( $args );
+	if (is_null($first_marker) || (count($first_marker) == 0)) {
+		return null;
+	}
 	$marker_meta = get_post_meta( $first_marker[0]->ID );
 
-	$dhp_audio_field = $projObj->getMoteByName($dhp_transcript_ep['settings']['audio']);
-	$dhp_transcript_field = $projObj->getMoteByName($dhp_transcript_ep['settings']['transcript']);
-	$dhp_transcript_cfield = $dhp_transcript_field['custom-fields'];	//$marker_meta['transcript_url'])
+	$projObj      = new DHPressProject($projectID);
+	$rootTaxName  = $projObj->getRootTaxName();
 
-	$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
-	if($dhp_transcript!='none') {
-		$dhp_transcript = loadTranscriptFromFile($marker_meta[$dhp_transcript_cfield][0]);
-	}
+	$dhp_transcript_ep = $projObj->getEntryPointByName("transcript");
 
 	$dhp_object = array();
+
+		// What custom field holds appropriate data? Fetch it from Marker
+	$dhp_audio_mote = $projObj->getMoteByName($dhp_transcript_ep['settings']['audio']);
+	$dhp_transcript_mote = $projObj->getMoteByName($dhp_transcript_ep['settings']['transcript']);
+	$dhp_transcript_cfield = $dhp_transcript_mote['custom-fields'];
+
+	// $dhp_object['debug-dtn'] = $dhp_tax_term;
+	// $dhp_object['debug-filename'] = $transFile;
+	// $dhp_object['debug-count-1stm'] = count($first_marker);
+	// $dhp_object['debug-mID'] = $first_marker[0]->ID;
+	// $dhp_object['debug-sa'] = $dhp_transcript_ep['settings']['audio'];
+	// $dhp_object['debug-st'] = $dhp_transcript_ep['settings']['transcript'];
+	// $dhp_object['debug-tcf'] = $dhp_transcript_cfield;
+	// $dhp_object['debug-rtn'] = $rootTaxName;
+
+	$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
+	// $dhp_object['debug-ts'] = $dhp_transcript;
+	if($dhp_transcript!='none') {
+		$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
+	}
+
 	$dhp_object['feed'] = dhp_get_group_feed($rootTaxName, $dhp_tax_term);
 	$dhp_object['settings'] = $dhp_transcript_ep;
-	$dhp_object['audio'] = $marker_meta[$dhp_audio_field['custom-fields']][0];
+	$dhp_object['audio'] = $marker_meta[$dhp_audio_mote['custom-fields']][0];
 	$dhp_object['transcript'] = $dhp_transcript;
 
 		//if project has two transcripts
@@ -1741,7 +1754,7 @@ function dhpGetTranscript()
 	}
 
 	die(json_encode($dhp_object));	
-} // dhpGetTranscript()
+} // dhpGetTaxTranscript()
 
 
 add_action( 'wp_ajax_dhpAddCustomField', 'dhpAddCustomField' );
@@ -2404,10 +2417,10 @@ function dhp_page_template( $page_template )
 	    	// Transcript specific
 	    if (!is_null($projObj->getEntryPointByName('transcript'))) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)));
-			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
-				 array('jquery', 'underscore'));
 	        wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
-	    	array_push($dependencies, 'dhp-transcript', 'soundcloud-api');
+			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
+				 array('jquery', 'underscore', 'soundcloud-api'));
+	    	array_push($dependencies, 'dhp-transcript');
 	    }
 
 	    	// Enqueue last, after we've determine what dependencies might be
@@ -2512,7 +2525,9 @@ function dhp_tax_template( $page_template )
 	    if ($projObj->getEntryPointByName('transcript')) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)));
 		    wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
-		    array_push($dependencies, 'soundcloud-api');
+			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
+				 array('jquery', 'underscore', 'soundcloud-api'));
+		    array_push($dependencies, 'dhp-transcript');
 		}
 
 			// Enqueue last, after dependencies have been determined

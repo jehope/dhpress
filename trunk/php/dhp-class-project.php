@@ -38,6 +38,12 @@
 		                "filter-data": [
 		                    Index : String (name of note), ...
 		                ]
+		            } -- or --
+		            "settings": {									// transcript settings are
+						"audio" : Name of mote (that contains last part of URL to audio file)
+						"transcript" : Name of mote (that contains URL to textual transcription of original),
+						"transcript2" : Name of mote (that contains URL to textual transcription of any translation),
+						"timecode" : Name of mote (that contains the timecode)
 		            }
 		        }
 		    },
