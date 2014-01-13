@@ -1385,7 +1385,7 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $projRootTaxName)
    		}
 	}
 
-		// Gets all top-level parent terms; need "hide_empty=0" because parent terms not associated with any Marker
+		// Gets all top-level parent terms; need "hide_empty=0" for parent terms not associated with any Marker
 	$parent_terms_to_exclude = get_terms($projRootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
 	$exclude_string;
 	$exclude_count = 0;
@@ -2100,9 +2100,9 @@ function loopTermHierarchy($mote_parent, $projectID, $dhp_project_terms)
 		$meta_value     = $term->icon_url;
 
 		if($meta_value=='undefined') { $meta_value = '';}
-		
+
 		if( ($parent_term_id==0||$parent_term_id==""||$parent_term_id==null) && ($term_id!=$mote_parent) ) {
-			$parent_term_id = $mote_parent;
+			$parent_term_id = $mote_parentID;
 		}
 
 		$args = array( 'parent' => $parent_term_id,'term_group' =>  $term_order );
