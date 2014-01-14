@@ -25,7 +25,7 @@ var dhpTranscript = {
         var WIDGET_PLAYING   = false;
         var fullTranscript   = (transParams.timecode == -1);
 
-        console.log("Preparing transcript: Audio = "+transParams.audio);
+        // console.log("Preparing transcript: Audio = "+transParams.audio);
 
             // Initialize this object's variables
         dhpTranscript.rowIndex = null;

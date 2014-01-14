@@ -31,23 +31,10 @@ jQuery(document).ready(function($) {
     projectID      = dhpSettings["project-details"]["id"];
 
         // insert top navigational bar and controls
-    $('body').prepend('<div class="dhp-nav nav-fixed-top navbar"><div class="navbar-inner"><ul class="nav nav-pills ">\
-          <li class="fullscreen" ><a href="#"><i class="icon-fullscreen"></i> Fullscreen map </a></li>\
-          <li class="tips active" ><a href="#"><i class="icon-info-sign"></i> Tips </a></li>\
-        </ul></div>');
+    $('body').prepend(Handlebars.compile($("#dhp-script-nav-bar").html()));
 
         // Insert Marker modal window HTML
-    $('body').append('<div id="markerModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="markerModalLabel" aria-hidden="true">\
-          <div class="modal-header">\
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
-            <h3 id="markerModalLabel">Map Setup</h3>\
-          </div>\
-          <div class="modal-body">\
-          </div>\
-          <div class="modal-footer">\
-            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\
-          </div>\
-        </div>');
+    $('body').append(Handlebars.compile($("#dhp-script-markerModal").html()));
 
         // initialize fullscreen mode settings
     if(dhpSettings['views']['map-fullscreen']==true){
@@ -84,16 +71,10 @@ jQuery(document).ready(function($) {
         // Map visualization?
     if (getEntryPointByType('map')) {
             // Add map elements to top nav bar
-        $('.dhp-nav .nav-pills').append('<li class="dropdown">\
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-list"></i>  Legends<b class="caret"></b></a>\
-            <ul class="dropdown-menu">\
-                  <!-- links -->\
-            </ul>\
-          </li>\
-          <li class="layers"><a href="#layers-panel"><i class="icon-tasks"></i> Layers </a></li>');
+        $('.dhp-nav .nav-pills').append(Handlebars.compile($("#dhp-script-map-menus").html()));
 
             // Insert Legend area on right sidebar
-        $('#secondary').prepend('<div id="legends" class="span4"><div class="legend-row row-fluid"></div></div>');
+        $('#secondary').prepend(Handlebars.compile($("#dhp-script-map-legend-head").html()));
         initializeMap();
 
             // Handle reset button
@@ -103,28 +84,7 @@ jQuery(document).ready(function($) {
         });
 
             // Add user tips for map
-        $('body').append('<ol id="dhpress-tips" class="joyRideTipContent">\
-          <li data-id="legends" data-options="tipLocation:right">Legends allow you to change (or filter) what you see on the map. By clicking on different options in the legend, you can see related markers by themselves or in combination with each other. Click on the check box or name to narrow the display of markers on the map. You can click on multiple check boxes. Refreshing the browser page will restore all markers on the map.</li>\
-          <li data-class="dropdown" data-options="tipLocation:bottom">A DH Press project may have multiple legends which allow you to explore the project content in different ways. To toggle, or switch, between different legends, click the arrow. A drop-down menu showing all existing legends will appear. Move your mouse to the one you want and click the name to activate that legend. </li>\
-          <li data-id="legends" data-options="tipLocation:right">Decrease the size of the legend by clicking on the arrows in the top right corner of the legend. This will shrink the legend, allowing you to see more of the map. Click the arrows again to restore the full size of the legend.\
-          </li>\
-          <li data-class="layers" data-options="tipLocation:bottom"><p>Some DH Press projects layer different maps on top of each other to highlight different things about the built environment or landscape. You can turn each map layer on and off, change the transparency level of each map, and turn all markers off/on. </p>\
-            <ul>\
-              <li>1) Turning maps on/off: click the checkbox next to a map to hide it.</li>\
-              <li>2) Changing transparency: move the slider to the left to make the map layer more transparent. Move it to the right to increase opacity. This action can be performed on any individual map, whether a base map (such as Google Street view) or a map overlay.</li>\
-              <li>3) Turn markers off: click the checkbox next to the markers to turn all markers off. Click again to restore all markers. You can also change the transparency of the markers by dragging the slider.</li>\
-            </ul>\
-          </li>\
-          <li data-class="icon-fullscreen" data-options="tipLocation:bottom" class="custom-class">Click the “Fullscreen map” button to switch between a smaller view of the map and one that takes up the browser’s entire window. All of the map’s interactivity is functional in both views. When in the smaller map view, you will see the rest of the project site, including the navigation bar at the top and any additional content on the sidebar.\
-          </li>\
-          <li data-class="icon-legend" data-options="tipLocation:bottom" class="custom-class">Click on the check box or name to narrow the display of markers on the map to that category. Check multiple boxes to see markers from multiple categories at the same time.\
-        </li>\
-          <li>To reposition the map in any cardinal direction, click and hold the mouse down while moving the mouse. This will allow you to pan, or drag, the map to see areas not currently visible in the browser. Panning will not affect the zoom level of the map.</li>\
-          <li data-class="olControlZoom" class="custom-class" data-options="tipLocation:left">To change the scale (magnification value) of the map, zoom in or out. There are several ways to zoom: click the plus sign on the map, double click the mouse, or move the mouse wheel away from you. Hitting the minus button, or moving the mouse wheel towards you, makes the map smaller (zoom out). To reset the map’s original zoom level (scale) completely, refresh the browser.\
-        </li>\
-          <li>Clicking on a marker opens up a lightbox (or popup window) with more information about that marker. Depending on the amount of content in the lightbox, you may need to scroll down to see everything. Click the green link button (when enabled) at the bottom to open up a new tab in the browser. This allows you either to navigate to more information about the selected marker, or to a page of related markers. </li>\
-          <li>Firefox and Chrome are the recommended browsers for DH Press. Some users may experience difficulty viewing all of a project’s features in their browser, particularly those using ad blockers and other browser plugins. Mac users experiencing problems with Flash should use Safari. </li>\
-        </ol>');
+        $('body').append(Handlebars.compile($("#dhp-script-map-joyride").html()));
     }
 
         // Transcription views?
@@ -165,12 +125,7 @@ jQuery(document).ready(function($) {
         // PURPOSE: Bring up Loading pop-box modal dialog -- must be hidden by caller
     function createLoadingMessage()
     {
-        $('body').append('<div id="loading" class="modal hide fade">\
-            <div class="modal-body">\
-            <div class="loading-content" style="font-size:56px; ">\
-            <i class="icon-spinner icon-spin"> </i> loading </div>\
-            </div>\
-            </div>');   
+        $('body').append(Handlebars.compile($("#dhp-script-modal-loading").html()));   
         $('#loading').modal({backdrop:false});
         $('#loading').modal('show');
     } // createLoadingMessage()
@@ -435,30 +390,6 @@ jQuery(document).ready(function($) {
     } // getHighestParentColor()
 
 
-    // function getHighestParentDisplay(categories) {
-    //     var catFilterSelect = viewMap.catFilter.terms;
-    //     var countTerms = Object.keys(viewMap.catFilterSelect).length; 
-    //     var countCats = categories.length;
-
-    //     for(i=0;i<countTerms;i++) {
-    //         for(j=0;j<countCats;j++) {
-    //             var tempName = viewMap.catFilterSelect[i].id;
-    //             if (tempName==categories[j]) {              
-    //                 return true;
-    //             } else {
-    //                 //for each child cat
-    //                 var tempChildren = viewMap.catFilterSelect[i].children;
-    //                 var tempChildCount = tempChildren.length;
-    //                 for (k=0;k<tempChildCount;k++) {
-    //                     if(tempChildren[k]==categories[j]) {
-    //                         return 'none';
-    //                     }
-    //                 }
-    //             }
-    //         }        
-    //     }
-    // }
-
         // PURPOSE: Create HTML for all of the legends for this visualization
         // INPUT:   legendList = array of legends to display; each element has field "name" and array "terms" of [id, name, icon_url ]
     function createLegends(legendList) {
@@ -540,7 +471,7 @@ jQuery(document).ready(function($) {
                     }
                 }
             });
-            $('ul',legendHtml).prepend('<li class="check-all"><input type="checkbox" checked="checked"><a class="value" data-id="all">Hide/Show All</a></li>');
+            $('ul',legendHtml).prepend(Handlebars.compile($("#dhp-script-map-legend-hideshow").html()));
 
             $('#legends .legend-row').append(legendHtml);
                 // Add Legend title to dropdown menu above
@@ -1081,3 +1012,4 @@ jQuery(document).ready(function($) {
         });
     }
 });
+
