@@ -2449,11 +2449,12 @@ function dhp_page_template( $page_template )
     	if (!is_null($projectSettings_map)) {
 			wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)));
 			wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__)));
+			wp_enqueue_script('dhp-maps', plugins_url('/js/dhp-maps.js', dirname(__FILE__)), 'open-layers');
 
     		$projMapLayers = $projectSettings_map['settings']['layers'];
 			dhpRegisterCDLAMaps($projMapLayers);
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-	    	array_push($dependencies, 'open-layers', 'dhp-google-map-script');
+	    	array_push($dependencies, 'open-layers', 'dhp-google-map-script', 'dhp-maps');
 	    }
 
 	    	// Transcript specific
@@ -2489,7 +2490,7 @@ function dhp_page_template( $page_template )
 		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
 		//wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
 		wp_enqueue_script('underscore');
-		wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2', dirname(__FILE__)));
+		// wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
 
 			// Enqueue last, after dependencies determined
 		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__)), $dependencies);
@@ -2546,7 +2547,7 @@ function dhp_tax_template( $page_template )
 		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'underscore' );
 		// wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
-		wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2', dirname(__FILE__)));
+		// wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
 
 			// Is there audio transcript?
 	    if ($projObj->getEntryPointByName('transcript')) {

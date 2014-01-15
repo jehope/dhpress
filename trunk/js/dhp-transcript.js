@@ -1,5 +1,6 @@
-/** DHPressTranscript -- contains all data and functions
- **/
+// DHPressTranscript -- contains all data and functions dealing with transcriptions using SoundCloud
+
+// USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 
 var dhpTranscript = {
         // Fields created by this object:
