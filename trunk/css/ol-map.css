@@ -3,16 +3,49 @@
 
 @charset "UTF-8";
 
-	/* Legends in side-bar */
 
+
+	/* Controls on Map */
+#dhp-visual div.olControlZoom {
+	top:10px;
+}
+.fullscreen #dhp-visual div.olControlZoom {
+	top:50px;
+	left: 95%;
+}
+.logged-in.fullscreen #dhp-visual div.olControlZoom {
+	top:80px;
+}
+.olControlZoom .reset-map {
+	margin-top: 5px;
+	padding-top: 5px;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+   	cursor: pointer;
+}
+
+	/* OL error tiles */
+.olImageLoadError {
+ 	display: none;
+}
+
+	/* Overrides most theme settings for img tags in the map only */
+.entry-content .olMap img,
+.widget .olMap img {
+	max-width: none;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+	/* Current legend style */
 #legends {
 	position:relative;	
 	margin-left:0;
 	overflow: auto;
 	background: #fff;
-	background-color: rgba(255, 255, 255, .7);
+	background-color: rgba(255, 255, 255, .95);
 }
-
 .fullscreen #legends {
 	position:absolute;
 	min-width:none;
@@ -21,84 +54,14 @@
 	bottom: 20px;
 	overflow: auto;
 }
-
 .logged-in.fullscreen #legends {
 	top:80px;
 }
-
 .legend-row {
 	max-width: 270px;
 }
-
 .fullscreen .legend-row {
 	max-width: none;
-}
-
-#legends .nav a {
-}
-
-	/* Controls on Map */
-.fullscreen #dhp-visual div.olControlZoom {
-	top:50px;
-	left: 95%;
-}
-
-#dhp-visual div.olControlZoom {
-	top:10px;
-}
-
-.olControlZoom .reset-map {
-	margin-top: 5px;
-	padding: 5px;
-	-webkit-border-radius: 4px;
-	-moz-border-radius: 4px;
-	border-radius: 4px;
-	width: 14px;
-	/* Fallback for web browsers that doesn't support RGBa */
-    background: rgb(0, 60, 136);
-    /* RGBa with 0.6 opacity */
-    background: rgba(0, 60, 136, 0.5);
-   	cursor: pointer;
-}
-
-.olControlZoom .reset-map:hover {
-    background: rgba(0, 60, 136, 0.7);
-}
-
-.logged-in.fullscreen #dhp-visual div.olControlZoom {
-	top:80px;
-}
-
-.fullscreen aside {
-	display: none;
-}
-
-.post-title {
-	font-size: 24px;
-}
-
-#dhp_icon_cont {
-	min-height:50px;
-}
-
-.dhp_icon {
-	cursor:pointer;
-	float:left;
-	width:24px;
-	height:24px;
-}
-
-.dhp_icon img {
-	padding:2px
-}
-
-#dhp_icon_cont .selected {
-	background:#999;
-}
-
-#term-legend {
-	position:absolute;	
-	margin-left: 0px;
 }
 
 .legend-row .legend-div {
@@ -135,7 +98,9 @@
 
 .legend-div ul.terms a {
 	padding: 10px;
-	width:212px;
+	position: absolute;
+	right: 10px;
+	left: 50px;
 }
 .legend-div input[type='checkbox'] {
 	margin: 12px;
@@ -147,55 +112,7 @@
 	margin-top: 4px;
 }
 
-	/* Controls for opacity for each layer */
-#layers-panel {
-	margin-left:0px;
-}
-
-#layers-panel li a {
-}
-
-#TB_window {
- 	z-index: 2000;
- 	opacity: .8;
-}
-
-#TB_overlay {
- 	z-index: 1999;
- 	opacity: .5;
-}
-
-.dhp-post:after {
- 	content:" ";
- 	clear: both;
-
-}
-
-#child_legend {
- 	background: #e8f2e6;
- 	padding: 5px;
- 	border: 3px solid #ccc;
- 	display: none;
-}
-
-#child_legend h3 { 
- 	padding-bottom: 5px;
-}
-
-#child_legend ul li {
-  	padding-bottom: 5px;
-}
-
-.olImageLoadError {
- 	display: none;
-}
-/* Overrides most theme settings for img tags in the map only */
-.entry-content .olMap img,
-.widget .olMap img {
-	max-width: none;
-	border-radius: 0;
-	box-shadow: none;
-}
+	/* Little resize button on legends */
 .legend-resize {
 	padding: 2px 5px;
 	float: right;
@@ -203,16 +120,36 @@
 	right: 0px;
 }
 
-input[type="submit"] {
-	margin-bottom: 10px;
+	/* Controls for opacity for each layer */
+#layers-panel {
+	margin-left:0px;
 }
 
-.single-project .main-navigation li ul {
-	z-index: 750;
+	/* Legends for child terms TODO: add html to display child terms */
+#child_legend {
+ 	background: #e8f2e6;
+ 	padding: 5px;
+ 	border: 3px solid #ccc;
+ 	display: none;
+}
+#child_legend h3 { 
+ 	padding-bottom: 5px;
+}
+#child_legend ul li {
+  	padding-bottom: 5px;
 }
 
+/* Default map view */
+#map_canvas {
+	width: 100%;
+	height: 100%;
+	min-height: 300px;
+}
+
+
+/* enables mobile view TODO: take out when update to foundation is complete */
 @media (max-width: 767px) {
-[class*="span"], .uneditable-input[class*="span"], .row-fluid [class*="span"] {
-	width: 228px;
-}
+	[class*="span"], .uneditable-input[class*="span"], .row-fluid [class*="span"] {
+		width: 228px;
+	}
 }
