@@ -655,7 +655,7 @@ var dhpMaps = {
     {
         var selectedFeature;
         var titleAtt='';
-        var builtHTML, thumbHtml='';
+        var builtHTML;
         var link1, link2;
         // var tagAtt;
 
@@ -664,7 +664,7 @@ var dhpMaps = {
         else
             selectedFeature = feature;
 
-        if(dhpMaps.viewParams.post-view-title) {
+        if(dhpMaps.viewParams['post-view-title']) {
             titleAtt =  selectedFeature.attributes['title'];
         }
 
@@ -702,10 +702,11 @@ var dhpMaps = {
             builtHTML = '<div><h3>Details:</h3></div>';
             _.each(selectedFeature.attributes.content,function(val) {       // Array of (hash) pairs
                  _.each(val,function(val1, key1) {
-                    if (val=='Thumbnail Right') {
+
+                    if (key1==='Thumbnail Right') {
                         builtHTML += '<div class="thumb-right">'+val1+'</div>';
                     }
-                    else if (val=='Thumbnail Left') {
+                    else if (key1==='Thumbnail Left') {
                         builtHTML += '<div class="thumb-left">'+val1+'</div>';
                     }
                     else {
@@ -717,16 +718,7 @@ var dhpMaps = {
             });
         }
 
-		if (selectedFeature.attributes.thumb) {
-			thumbHtml = '<img src="'+selectedFeature.attributes.thumb+'"/><br/>';
-		}
-		var li = '<b>'+titleAtt+'</b><p>';
-		if (thumbHtml) {
-			li+= thumbHtml;
-		}
-        // builtHTML += li + tagAtt + ' ' + settings.audio + ' ' + settings.transcript + ' ' + settings.timecode + '</p>';
-        // builtHTML += li + tagAtt + '</p>';
-        builtHTML += li + '</p>';
+	
         jQuery('.modal-body').append(builtHTML);
 
             // clear previous marker links
