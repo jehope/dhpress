@@ -1142,14 +1142,18 @@ jQuery(document).ready(function($) {
                        	<input class="mote-name span12" type="text" placeholder="Mote Name" value="'+moteList[i]['name']+'" />\
                        	</div>\
                        	<div class="span8 layers">\
-                        <select name="cf-type" class="cf-type">\
-                           '+buildHTMLForDataTypes(moteList[i]['type'])+'\
-                        </select><span class="help-inline">data type</span>\
-                          '+buildHTMLForCustomFields(moteList[i]['custom-fields'])+'\
-                        <span class="help-inline">custom field</span>\
-                        <label class="checkbox inline">\
-                          <input type="checkbox" id="pickMultiple" value="multiple"> Multiple\
-                        </label>\
+                        <div class="control-group">\
+                          <select name="cf-type" class="cf-type">\
+                             '+buildHTMLForDataTypes(moteList[i]['type'])+'\
+                          </select><span class="help-inline">data type</span>\
+                        </div>\
+                        <div class="control-group">\
+                            '+buildHTMLForCustomFields(moteList[i]['custom-fields'])+'\
+                          <span class="help-inline">custom field</span>\
+                          <label class="checkbox inline">\
+                            <input type="checkbox" id="pickMultiple" value="multiple"> Multiple\
+                          </label>\
+                        </div>\
                         <p>\
                         <input class="span4 delim" type="text" name="delim" placeholder="Delimiter" value="'+moteList[i]['delim']+'"/>\
                         <span class="help-inline">If multiple text indicate the delimiter</span>\
@@ -1509,7 +1513,7 @@ jQuery(document).ready(function($) {
     $('#taxModal .modal-body').append('<div class="icons-color"><a class="use-icons">Icons</a> | <a class="use-colors">Colors</a></div>');
   	$('#taxModal .modal-body .icons-color').append($('.icons').clone());
     $('#taxModal .modal-footer').empty();
-    $('#taxModal .modal-footer').append('<a class="save-array btn btn-danger">Save</a>');
+    $('#taxModal .modal-footer').append('<a class="save-array btn btn-danger pull-right">Save</a>');
   	$('ol.sortable').nestedSortable({
         forcePlaceholderSize: true,
   			handle: 'div',
