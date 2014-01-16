@@ -1170,25 +1170,28 @@ function print_new_bootstrap_html($project_id)
               <p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy='.$projObj->getRootTaxName().'" >Category Manager</a></p>
           	</div>
 
-            <div id="motes" class="tab-pane fade in">
+            <div id="motes" class="tab-pane fade in form-inline">
               <h4>Motes</h4>
               <p>Create relational containers for the data in the custom fields</p>
               <div id="create-mote">
                 <p>
                   <input class="span4 mote-name" type="text" name="mote-name" placeholder="Mote Name" />
                 </p>
-                <p>
-                  <select name="custom-fields" class="custom-fields">'.create_custom_field_option_list($dhp_custom_fields).'
-                  </select><span class="help-inline">Choose a custom field</span>
-                  <label class="checkbox inline">
-                    <input type="checkbox" id="pickMultiple" value="multiple"> Multiple
-                  </label><div class="btn-group drag-right">
-              	<a class="btn btn-info" id="search-replace-btn" data-toggle="modal" href="#projectModal"><i class="icon-edit"></i></a>
-              	<a class="btn btn-info" id="delete-cf-btn" data-toggle="modal" href="#projectModal"><i class="icon-trash"></i></a>
-              	<a class="btn btn-info" id="create-new-custom" data-toggle="modal" href="#projectModal"><i class="icon-plus"></i></a> 
-              </div>                
-                </p>
-                <p>
+                <div class="control-group">
+	                Choose a custom field<br/>
+	                <select name="custom-fields" class="custom-fields">'.create_custom_field_option_list($dhp_custom_fields).'</select> 
+	                <label class="checkbox">
+	                  	<input type="checkbox" id="pickMultiple" value="multiple"> Multiple
+	                </label>
+                </div>
+                <div class="control-group">
+	                <div class="btn-group">
+	              		<a class="btn btn-info" id="search-replace-btn" data-toggle="modal" href="#projectModal"><i class="icon-edit"></i></a>
+	              		<a class="btn btn-info" id="delete-cf-btn" data-toggle="modal" href="#projectModal"><i class="icon-trash"></i></a>
+	              		<a class="btn btn-info" id="create-new-custom" data-toggle="modal" href="#projectModal"><i class="icon-plus"></i></a> 
+	              	</div>                
+                </div>
+                <div class="control-group">
                   <select name="cf-type" class="cf-type">                          
                     <option>Text</option>
                     <option>Exact Date</option>
@@ -1197,8 +1200,10 @@ function print_new_bootstrap_html($project_id)
                     <option>File</option>
                     <option>Image</option>
                   </select><span class="help-inline">Choose a data type</span>
-                </p>
-                <p><input class="delim" type="text" name="delim" placeholder="Delimiter" /> If multiple text indicate the delimiter</p>
+                </div>
+                <div class="control-group">
+                	<input class="delim" type="text" name="delim" placeholder="Delimiter" /> If multiple text indicate the delimiter
+                </div>
                 <p><a class="btn btn-success" id="create-btn">Create mote</a></p>
               </div>           
               <div class="accordion" id="mote-list">                
@@ -2106,7 +2111,7 @@ function loopTermHierarchy($mote_parent, $projectID, $dhp_project_terms)
 		if($meta_value=='undefined') { $meta_value = '';}
 
 		if( ($parent_term_id==0||$parent_term_id==""||$parent_term_id==null) && ($term_id!=$mote_parent) ) {
-			$parent_term_id = $mote_parentID;
+			$parent_term_id = $mote_parent;
 		}
 
 		$args = array( 'parent' => $parent_term_id,'term_group' =>  $term_order );
@@ -2265,9 +2270,9 @@ function add_dhp_project_admin_scripts( $hook )
 
 			wp_enqueue_style('dhp-sortable-style', plugins_url('/css/sortable.css',  dirname(__FILE__) ));
 			wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
-			wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
+			// wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
 			wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
-			wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
+			wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__) ));
 
 			// wp_enqueue_script( 'jquery' );
 			// wp_enqueue_script( 'jquery-ui' );
@@ -2297,6 +2302,11 @@ function add_dhp_project_admin_scripts( $hook )
 				'projectID' => $postID
 				// 'layers' => $tempLayers
 			) );
+        }
+
+        else if ( 'dhp-markers' === $post->post_type ) {
+        	wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__) ));
+
         }
 
         // Shows list of all Project in admin panel
@@ -2484,7 +2494,7 @@ function dhp_page_template( $page_template )
 		wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__)));
 		wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__)));
 		// wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));	
-		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)));
+		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)));
 
 		wp_enqueue_script('jquery');
 		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
