@@ -72,7 +72,7 @@ jQuery(document).ready(function($) {
         dhpMaps.initializeMap(ajaxURL, projectID, mapEP, transEP, dhpSettings['views']);
 
             // Handle reset button
-        $('.olControlZoom').append('<div class="reset-map"><i class="icon-white icon-refresh"></i></div>');
+        $('.olControlZoom').append('<a class="reset-map olButton"><i class="icon-white icon-refresh"></i></a');
         $('.olControlZoom .reset-map').click(function(){
             dhpMaps.resetMap();
         });
