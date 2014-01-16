@@ -1,16 +1,17 @@
 # DH Press - Digital Humanities Toolkit
 
-Contributors: jehope, gaelicmichael, bgaston
-Donate link: http://dhpress.org/
-Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours
-Requires at least: 3.4
-Tested up to: 3.8
-Stable tag: 1.7.0
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
-
-DHPress is a flexible, repurposable, fully extensible digital public humanities toolkit designed for non-technical users.
-
+Contributors: jehope, gaelicmichael, bgaston  
+Project Manager: Pamella Lach  
+Donate link: http://dhpress.org/  
+Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours  
+Requires at least: 3.4  
+Tested up to: 3.8  
+Stable tag: 1.7.0  
+License: GPLv2 or later  
+License URI: http://www.gnu.org/licenses/gpl-2.0.html  
+  
+DHPress is a flexible, repurposable, fully extensible digital public humanities toolkit designed for non-technical users.  
+  
 == Description ==
 
 The digital public humanities toolkit, DH Press (formerly, diPH) is built on the WordPress platform and its plugin-based architecture.
