@@ -405,26 +405,39 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Create placeholder for new mote based on UI fields
   function createNewMote() {
-    //console.log($('#create-mote #mote-name').val())
-    if($('#create-mote .mote-name').val()) {
-      var newMoteSettings = new Object();
-      newMoteSettings[0] = new Object();
-      newMoteSettings[0]["name"] = $('#create-mote .mote-name').val();
-      newMoteSettings[0]["type"] = $('#create-mote .cf-type').val();
-      newMoteSettings[0]["custom-fields"] = $('#create-mote .custom-fields option:selected').map(function() {
+      // get required parameters
+    var newMoteName = $('#create-mote .mote-name').val();
+    var newMoteType = $('#create-mote .cf-type').val();
+      // get all custom fields that make up -- could be multiple
+    var newMoteCFs  = $('#create-mote .custom-fields option:selected').map(function() {
         return $(this).val();
       }).get().join();
+
+    $('.mote-error').remove();
+
+      // ensure sufficient required params supplied
+    if (newMoteName === '')  {
+      //console.log();
+      $('#create-mote .mote-name').after('<span class="help-inline mote-error label label-important" >Missing name for mote</span>');
+
+    } else if (newMoteType === '') {
+      $('#create-mote .mote-name').after('<span class="help-inline mote-error label label-important" >Missing type for mote</span>');
+
+    } else if ((newMoteCFs == null) || (newMoteCFs.length == 0) || _.contains(newMoteCFs, "--") || _.contains(newMoteCFs, "")) {
+      $('#create-mote .mote-name').after('<span class="help-inline mote-error label label-important" >Missing custom field specification for mote</span>');
+
+    } else {
+      var newMoteSettings = new Object();
+      newMoteSettings[0] = new Object();
+      newMoteSettings[0]["name"] = newMoteName;
+      newMoteSettings[0]["type"] = newMoteType;
+      newMoteSettings[0]["custom-fields"] = newMoteCFs;
       newMoteSettings[0]["delim"] = $('#create-mote .delim').val();
-      $('.mote-error').remove();
 
       insertHTMLForMoteList(newMoteSettings);
       clearCreateMoteValues();
-
-      // Don't allow unless mote is given a name
-    } else {
-      $('#create-mote .mote-name').after('<span class="help-inline mote-error label label-important" >Name is required</span>');
     }
-  }
+  } // createNewMote()
 
 
   function countMotes(){
