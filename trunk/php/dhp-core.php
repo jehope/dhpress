@@ -4,6 +4,8 @@
 // Hook for adding admin menus
 add_action('admin_menu', 'dhp_add_pages');
 
+include_once( dirname(__FILE__) . '/dhp-class-project.php' );
+
 include_once( dirname(__FILE__) . '/dhp-project-functions.php' );
 
 include_once( dirname(__FILE__) . '/dhp-marker-functions.php' );

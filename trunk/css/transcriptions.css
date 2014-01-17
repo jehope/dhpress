@@ -1,0 +1,52 @@
+/** CSS styles specific to rendering transcriptions in DH Press
+ **/
+
+.transcript-list {
+	max-height: 300px;
+	overflow-y: scroll;
+}
+
+.transcript-list .row {
+	display: table-row;
+}
+
+.type-timecode {
+	width: 20%;
+	display: table-cell;
+	padding: 2%;
+	cursor: pointer;
+}
+
+.odd-line .type-timecode,
+.odd-line .type-text,
+.type-timecode.odd-line,
+.type-text.odd-line {
+	background: #ddd;
+}
+
+.type-timecode.odd-line.current-clip,
+.type-timecode.current-clip {
+	background-color: #007fff;
+	font-weight: bold;
+	color: #fff;
+}
+
+.type-timecode:hover {
+	background-color: #007fff;
+	font-weight: bold;
+	color: #fff;
+}
+
+.transcript-list .type-text {
+	width: 76%;
+	display: table-cell;
+	vertical-align: top;
+	padding: 2%;
+}
+
+.transcript-list.two-column .type-text {
+	width: 40%;
+	display: table-cell;
+	vertical-align: top;
+	padding: 2%;
+}

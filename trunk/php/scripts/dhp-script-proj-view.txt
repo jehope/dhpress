@@ -1,0 +1,36 @@
+    <!-- Handlebars Templates for Project View -->
+<script id="dhp-script-nav-bar" type="text/x-handlebars-template">
+  <div class="dhp-nav nav-fixed-top navbar">
+  	<div class="navbar-inner">
+  		<ul class="nav nav-pills ">
+          <li class="fullscreen" ><a href="#"><i class="icon-fullscreen"></i> Fullscreen map </a></li>
+          <li class="tips active" ><a href="#"><i class="icon-info-sign"></i> Tips </a></li>
+        </ul>
+    </div>
+</script>
+
+<script id="dhp-script-markerModal" type="text/x-handlebars-template">
+  <div id="markerModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="markerModalLabel" aria-hidden="true">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="markerModalLabel">Map Setup</h3>
+          </div>
+          <div class="modal-body">
+          </div>
+          <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+          </div>
+        </div>
+</script>
+
+
+<script id="dhp-script-modal-loading" type="text/x-handlebars-template">
+	<div id="loading" class="modal hide fade">
+		<div class="modal-body">
+			<div class="loading-content" style="font-size:56px; ">
+            	<i class="icon-spinner icon-spin">
+            	</i> loading
+            </div>
+		</div>
+	</div>
+</script>

@@ -1,4 +1,4 @@
-// PURPOSE: To render the map into the div marked "map_div"
+// PURPOSE: To render the map into the div marked "dhp-visual"
 //          Loaded by dhp_map_page_template() in dhp-map-library.php to show a Map view
 // ASSUMES: That the code in dhp-map-template.php has embedded parameters into the HTML about
 //            the map: post, category, etc.
@@ -21,7 +21,7 @@ jQuery(document).ready(function($) {
     var gg = new OpenLayers.Projection("EPSG:4326");
     var sm = new OpenLayers.Projection("EPSG:900913");
     var map = new OpenLayers.Map({
-        div: "map_div",
+        div: "dhp-visual",
         projection: sm,
     	displayProjection: gg,
     	numZoomLevels: 18
