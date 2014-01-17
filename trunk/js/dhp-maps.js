@@ -1,4 +1,8 @@
 // DH Press Maps -- contains all data and functions dealing with maps using OpenLayer
+// ASSUMES: The sidebar is marked with HTML div as "secondary"
+//          An area for the map has been marked with HTML div as "dhp-visual"
+// NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
+//          The class active-legend is added to whichever legend is currently visible and selected
 
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 
