@@ -15,18 +15,17 @@ define( 'DHP_SCRIPT_MAP_VIEW',   'dhp-script-map-view.txt' );
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
 
 	// HTML fields added to Custom Fields box in Edit Project admin panel
-$prefix = 'project_';
 $dhp_project_settings_fields = array (
 	array(
 		'label'=> 'Project Settings',
 		'desc'	=> 'Stores the project_settings string as a JSON object.',
-		'id'	=> $prefix.'settings',
+		'id'	=> 'project_settings',
 		'type'	=> 'textarea'
 	),
 	array(
 		'label'=> 'Icons',
 		'desc'	=> 'Icons for categories.',
-		'id'	=> $prefix.'icons',
+		'id'	=> 'project_icons',
 		'type'	=> 'hidden'
 	)
 );
@@ -1143,13 +1142,8 @@ function print_new_bootstrap_html($project_id)
 	global $dhp_custom_fields;
 
 	$projObj = new DHPressProject($project_id);
-
-	// $projectPage = get_page($post->ID);
-	// $projectPage = get_page($project_id);
-	// $projectTax_slug = $projectPage->post_name;
-//	$dhp_custom_fields = getProjectCustomFields($post->ID);
-	// $dhp_custom_fields = getProjectCustomFields($project_id);
 	$dhp_custom_fields = $projObj->getAllCustomFieldNames();
+
 	echo '<div class="new-bootstrap">
     <div class="row-fluid">
     	<div class="span12">
@@ -1168,6 +1162,9 @@ function print_new_bootstrap_html($project_id)
               <h4>Project Info</h4>
               <p>Project ID: '.$project_id.'</p>
               <p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy='.$projObj->getRootTaxName().'" >Category Manager</a></p>
+              <p>Label for Home Button: <input id="home-label" type="text" name="home-label" placeholder="Home" size="15"/></p>
+              <p>Home URL: <input id="home-url" type="text" name="home-url" placeholder="http://www." size="20" /></p>
+              <p>Return Home after minutes of inactivity: <input id="max-inactive" type="text" name="max-inactive" placeholder="5" size="2" /></p>
           	</div>
 
             <div id="motes" class="tab-pane fade in">
@@ -1278,7 +1275,6 @@ function print_new_bootstrap_html($project_id)
 				    </div>
 				    <div id="linkView" class="accordion-body collapse">
 				      <div class="accordion-inner marker-view">
-				      	
 				      </div>
 				    </div>
 				  </div>
@@ -1641,7 +1637,6 @@ function getTranscriptClip($transcript, $clip)
 // PURPOSE:	Load the contents of a transcript file
 // INPUT:	$fileUrl = the URL to the file
 // RETURNS:	The data in file, if successful
-// TO DO:	Handle i/o errors
 
 function loadTranscriptFromFile($fileUrl)
 {
