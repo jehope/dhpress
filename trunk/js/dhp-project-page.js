@@ -14,14 +14,12 @@ jQuery(document).ready(function($) {
         // Project variables
     var dhpSettings, projectID, ajaxURL;
 
-
     // projectID      = $('.post').attr('id');
     ajaxURL        = dhpData.ajax_url;
     dhpSettings    = dhpData.settings;
     projectID      = dhpSettings["project-details"]["id"];
 
-        // insert top navigational bar and controls
-    $('body').prepend(Handlebars.compile($("#dhp-script-nav-bar").html()));
+    createNavBar();
 
         // Insert Marker modal window HTML
     $('body').append(Handlebars.compile($("#dhp-script-markerModal").html()));
@@ -94,6 +92,21 @@ jQuery(document).ready(function($) {
 
 
     // ========================= FUNCTIONS
+
+    function createNavBar()
+    {
+        var homeBtnLabel = dhpSettings["project-details"]["home-label"];
+        var homeBtnURL   = dhpSettings["project-details"]["home-url"];
+
+            // insert top navigational bar and controls
+        $('body').prepend(Handlebars.compile($("#dhp-script-nav-bar").html()));
+
+            // If Home button defined, insert it
+        if ((homeBtnLabel !== null) && (homeBtnLabel !== '') && (homeBtnURL !== null) && (homeBtnURL !== '')) {
+            var homeBtnHTML = "<li ><a href=" + homeBtnURL + "> " + homeBtnLabel + " </a></li>";
+            $(".nav-pills").append(homeBtnHTML);
+        }
+    } // createNavBar()
 
         // RETURNS: Entry point of dhpSettings array whose type is theType
         // ASSUMES: dhpSettings loaded, in correct format

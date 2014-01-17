@@ -8,7 +8,10 @@
  **			"project-details": {
 		        "id": Integer,
 		        "name": String,
-		        "marker-custom-fields": [ String, ... ]
+		        "marker-custom-fields": [ String, ... ],
+		        "home-label": String,
+		        "home-url": String,
+		        "max-inactive": Number (in minutes)
 		    },
 		    "motes": [
 		        Index: {

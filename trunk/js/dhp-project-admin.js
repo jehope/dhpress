@@ -53,7 +53,7 @@ jQuery(document).ready(function($) {
     // Prepare Bootstrap modal popover on Publish button (called below if not saved)
   $('#publish').popover({
       title:'Project requires save',
-      content:'Don\'t forget to save your project(red button on the left).',
+      content:'Don\'t forget to save your project (red button on the left).',
       placement:'left',
       trigger: 'manual'
     });
@@ -282,7 +282,7 @@ jQuery(document).ready(function($) {
   //console.log($('#project_settings').val());
 
     // Parse Project settings
-  var settings = $('#project_settings').text();
+  var settings = $('#project_settings').val();
   if(settings) {
     initializeProjectObj(settings);
 
@@ -313,7 +313,7 @@ jQuery(document).ready(function($) {
   }
 
     // PURPOSE: Initialize all Project settings in projectObj
-    // INPUT:   settingString = String representing project settings (needs to be parsed), or null if none
+    // INPUT:   settingString = String representing project settings (needs to be parsed), or null if none (new)
   function initializeProjectObj(settingString) {
     // $('#motes #create-mote .cf-type').change(function(){
     //     if($(this).find("option:selected").text()=='Dynamic Data Field'){
@@ -332,17 +332,32 @@ jQuery(document).ready(function($) {
       pSettings = null;
     }
 
+      // Project settings exist, need to be read
     if (pSettings && pSettings['project-details']) {
         // Ensure project IDs match
       if (pSettings['project-details']['id'] !== projectID) {
           throw new Error("Project ID "+projectID+" sent by WP does not match ID "+pSettings['project-details']['id']+" in project settings");
       }
-      projectObj['project-details']['id'] = pSettings['project-details']['id'];
-      projectObj['project-details']['name'] = pSettings['project-details']['name'];
+      projectObj['project-details']['id']             = pSettings['project-details']['id'];
+      projectObj['project-details']['name']           = pSettings['project-details']['name'];
+      projectObj['project-details']['home-label']     = pSettings['project-details']['home-label'];
+      projectObj['project-details']['home-url']       = pSettings['project-details']['home-url'];
+      projectObj['project-details']['max-inactive']   = pSettings['project-details']['max-inactive'];
+
+        // Set values in GUI ##
+      $('#home-label').val(projectObj['project-details']['home-label']);
+      $('#home-url').val(projectObj['project-details']['home-url']);
+      $('#max-inactive').val(projectObj['project-details']['max-inactive']);
+
       dhpGetCustomFields();
     } else {
       projectObj['project-details']['id'] = projectID;
     }
+
+      // "Dirty" if Project settings fields change
+    $('#home-label, #home-url, #max-inactive').on('change',function(){
+      projectNeedsToBeSaved();
+    });
 
       // Create handlers to load data in order. Entry points are dependent on motes.
     $('body').bind('load-motes', function(e) {
@@ -1393,10 +1408,15 @@ jQuery(document).ready(function($) {
     // TO DO:   Make more efficient by minimizing use of indices
   function saveProjectSettings()	{
   	// console.log($('#dhp-projectid').val());
-  	projectObj['project-details']['name'] = $('#titlediv #title').val();
+  	projectObj['project-details']['name']         = $('#titlediv #title').val();
     // projectObj['project-details']['id'] = $('#dhp-projectid').val();
-    projectObj['project-details']['id'] = projectID;
+    projectObj['project-details']['id']           = projectID;
+    projectObj['project-details']['home-label']   = $('#home-label').val();
+    projectObj['project-details']['home-url']     = $('#home-url').val();
+    projectObj['project-details']['max-inactive'] = $('#max-inactive').val();
+
     //console.log(projectObj['project-details']['marker-custom-fields'])
+
   	//MOTES - clear old values...add fresh
   	projectObj['motes'] = new Object();
   	$('#mote-list .accordion-group').each(function(index){
