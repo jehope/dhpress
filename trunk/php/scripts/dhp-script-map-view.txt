@@ -1,22 +1,24 @@
     <!-- Handlebars Templates for Map View -->
 <script id="dhp-script-map-menus" type="text/x-handlebars-template">
-  <li class="dropdown">
-    <a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-list"></i>  Legends<b class="caret"></b></a>
-      <ul class="dropdown-menu">
-        <!-- links -->
-      </ul>
-  </li>
-  <li class="layers"><a href="#layers-panel"><i class="icon-tasks"></i> Layers </a></li>
+<li class="has-dropdown">
+        <a href="#">Legends</a>
+        <ul class="dropdown legend-dropdown"">
+          <!-- links -->
+        </ul>
+      </li>
+
+  <li class="layers"><a href="#layers-panel"> Layers </a></li>
 </script>
 
 <script id="dhp-script-map-legend-head" type="text/x-handlebars-template">
-  <div id="legends" class="span4"><div class="legend-row row-fluid"></div></div>
+  <div id="legends" ><div class="legend-row"></div></div>
 </script>
 
 <script id="dhp-script-map-legend-hideshow" type="text/x-handlebars-template">
-  <li class="check-all">
-    <input type="checkbox" checked="checked"><a class="value" data-id="all">Hide/Show All</a>
-  </li>
+  <div class="row check-all"> 
+    <div class="small-2 large-2 columns"><input type="checkbox" checked="checked"></div>
+    <div class="small-10 large-10 columns"><a class="value" data-id="all">Hide/Show All</a></div>
+  </div>
 </script>
 
 

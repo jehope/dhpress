@@ -16,9 +16,11 @@ jQuery(document).ready(function($) {
     ajaxURL        = dhpData.ajax_url;
     dhpSettings    = dhpData.settings;
     projectID      = dhpSettings["project-details"]["id"];
+    jQuery(document).foundation();
 
+    //Add project nav bar
     createNavBar();
-
+    
         // Insert Marker modal window HTML
     $('body').append(Handlebars.compile($("#dhp-script-markerModal").html()));
 
@@ -27,7 +29,7 @@ jQuery(document).ready(function($) {
         $('body').addClass('fullscreen');
         $('.dhp-nav .fullscreen').addClass('active');
     }
-
+    $('.dhp-nav .title-area .name h1 a').text($('.entry-title').text());
         // handle toggling fullscreen mode
     $('.dhp-nav .fullscreen').click(function(){
         if($('body').hasClass('fullscreen')) {
@@ -60,16 +62,21 @@ jQuery(document).ready(function($) {
 
     if (mapEP) {
             // Add map elements to top nav bar
-        $('.dhp-nav .nav-pills').append(Handlebars.compile($("#dhp-script-map-menus").html()));
+        $('.dhp-nav .top-bar-section .right').append(Handlebars.compile($("#dhp-script-map-menus").html()));
 
             // Insert Legend area on right sidebar
-        $('#secondary').prepend(Handlebars.compile($("#dhp-script-map-legend-head").html()));
+        $('#dhp-visual').after(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
         dhpMaps.initializeMap(ajaxURL, projectID, mapEP, transEP, dhpSettings['views']);
 
-            // Handle reset button
-        $('.olControlZoom').append('<a class="reset-map olButton"><i class="icon-white icon-refresh"></i></a');
-        $('.olControlZoom .reset-map').click(function(){
+            // Setup reset button and add foundation icons for zoom in/out
+        $('.olControlZoom').append('<a class="reset-map olButton"><i class="fi-refresh"></i></a');
+        $('.olControlZoomIn').empty().addClass('fi-plus');
+        $('.olControlZoomOut').empty().addClass('fi-minus');
+        $('.olControlZoom .reset-map').on('touchend',function(){
+            dhpMaps.resetMap();
+        });
+        $('.olControlZoom .reset-map').on('click',function(){
             dhpMaps.resetMap();
         });
 
@@ -129,14 +136,23 @@ jQuery(document).ready(function($) {
         var homeBtnLabel = dhpSettings["project-details"]["home-label"];
         var homeBtnURL   = dhpSettings["project-details"]["home-url"];
 
+            // Detect appropriate theme location to attach nav bar(header or body)
             // insert top navigational bar and controls
-        $('body').prepend(Handlebars.compile($("#dhp-script-nav-bar").html()));
+        if($('header.site-header')) {
+            $('header.site-header').append(Handlebars.compile($("#dhp-script-nav-bar").html()));
+        }
+        else {
+            $('#content').prepend(Handlebars.compile($("#dhp-script-nav-bar").html()));
+        }
+
+           
 
             // If Home button defined, insert it
         if ((homeBtnLabel !== null) && (homeBtnLabel !== '') && (homeBtnURL !== null) && (homeBtnURL !== '')) {
             var homeBtnHTML = "<li ><a href=" + homeBtnURL + "> " + homeBtnLabel + " </a></li>";
             $(".nav-pills").append(homeBtnHTML);
         }
+
     } // createNavBar()
 
 
@@ -165,9 +181,34 @@ jQuery(document).ready(function($) {
         // PURPOSE: Bring up Loading pop-box modal dialog -- must be hidden by caller
     function createLoadingMessage()
     {
-        $('body').append(Handlebars.compile($("#dhp-script-modal-loading").html()));   
-        $('#loading').modal({backdrop:false});
-        $('#loading').modal('show');
+        $('body').append(Handlebars.compile($("#dhp-script-modal-loading").html()));  
+        // FIX: Error in Foundation Reveal needs the following. 
+        // Link: http://foundation.zurb.com/forum/posts/375-foundation-5-reveal-options-not-working
+        $('#loading').foundation('reveal', {
+            animation: 'fadeAndPop',
+            animation_speed: 250,
+            close_on_background_click: false,
+            close_on_esc: false,
+            dismiss_modal_class: 'close-reveal-modal',
+            bg_class: 'loading-reveal-modal-bg',
+            bg : $('.loading-reveal-modal-bg'),
+            css : {
+                open : {
+                    'opacity': 0,
+                    'visibility': 'visible',
+                    'display' : 'block'
+                },
+                close : {
+                    'opacity': 1,
+                    'visibility': 'hidden',
+                    'display': 'none'
+                }
+            }
+        });
+        // $('#loading').modal({backdrop:false});
+        // $('#loading').modal('show');
+        $('#loading').foundation('reveal', 'open');
+        // $('.loading-reveal-modal-bg').remove();
     } // createLoadingMessage()
 
 

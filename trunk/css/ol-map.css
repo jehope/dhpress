@@ -3,8 +3,12 @@
 
 @charset "UTF-8";
 
-
-
+body.fullscreen {
+	overflow: hidden;
+}
+#dhp-visual {
+	z-index: 1000;
+}
 	/* Controls on Map */
 #dhp-visual div.olControlZoom {
 	top:10px;
@@ -18,11 +22,20 @@
 }
 .olControlZoom .reset-map {
 	margin-top: 5px;
-	padding-top: 5px;
+	padding-top: 2px;
 	-webkit-border-radius: 4px;
 	-moz-border-radius: 4px;
 	border-radius: 4px;
    	cursor: pointer;
+}
+	/* Foundation Icons required custom config */
+.olControlZoom a.olControlZoomIn {
+	padding-top: 2px;
+	font-size: 17px;
+}
+.olControlZoom a.olControlZoomOut {
+	font-size: 15px;
+	padding-top: 1px;
 }
 
 	/* OL error tiles */
@@ -48,20 +61,18 @@
 }
 .fullscreen #legends {
 	position:absolute;
-	min-width:none;
+	width: 320px;
 	top: 50px;
 	left: 20px;
 	bottom: 20px;
 	overflow: auto;
+	z-index: 1103;
 }
 .logged-in.fullscreen #legends {
 	top:80px;
 }
 .legend-row {
-	max-width: 270px;
-}
-.fullscreen .legend-row {
-	max-width: none;
+	max-width: 320px;
 }
 
 .legend-row .legend-div {
@@ -69,47 +80,49 @@
 }
 
 .legend-div h1 {
-	margin-left: 10px;
+	padding-left: 10px;
 	border-bottom: 1px solid #111;
 	margin-right: 10px;
+	font-size: 22px;
 }
 
 .legend-div ul {
 	list-style: none;
 }
 
-.legend-div ul li {
+.legend-div .terms .row {
 	width:100%;
-	display: inline-block;
 	cursor: pointer;
+	line-height: 15px;
 }
-
-.legend-div ul li:hover {
+.legend-div .terms .row:hover,
+.legend-div .terms .row.selected {
 	background: #e8f2e6;
 }
 
-.legend-div ul li.selected {
-	background: #e8f2e6;
-}
-
-.legend-div ul img {
+.legend-div .terms img {
 	float: left;
 }
 
-.legend-div ul.terms a {
-	padding: 10px;
-	position: absolute;
-	right: 10px;
-	left: 50px;
+.legend-div .terms a {
+	line-height: 15px;
+	width: 100%;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	overflow: hidden;
+	display: inherit;
 }
 .legend-div input[type='checkbox'] {
-	margin: 12px;
+	/*margin: 12px;*/
+	vertical-align: middle;
+	margin-top: 11px;
 }
 
-.legend-div p {
+.legend-div .icon-legend {
 	width: 15px;
 	height: 15px;
-	margin-top: 4px;
+	margin:0;
+	margin-top: 9px;
 }
 
 	/* Little resize button on legends */
