@@ -7,16 +7,16 @@ jQuery(document).ready(function($) {
 	
 	function showVizElements() {
 		switch ($("#dhp_map_type").val()) {
-		case "CDLA":
+		case "DHP":
 			$(".KML").hide();
-			$(".CDLA").show();
+			$(".DHP").show();
 			break;
 		case "KML":
-			$(".CDLA").hide();
+			$(".DHP").hide();
 			$(".KML").show();
 			break;
 		default:
-			$(".CDLA").hide();
+			$(".DHP").hide();
 			$(".KML").hide();
 			break;
 		}

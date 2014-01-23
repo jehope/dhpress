@@ -1,7 +1,7 @@
 // PURPOSE: Handle functions for Edit Project admin page
 //          Loaded by add_dhp_project_admin_scripts() in dhp-project-functions.php
 // ASSUMES: dhpDataLib is used to pass parameters to this function via wp_localize_script()
-//          WP edit code creates HTML DIV whose ID #project_settings which will contain that 
+//          WP code creates hidden data in with DIV ID hidden-layers for info about map layers
 // USES:    JavaScript libraries jQuery, jQuery UI (for drag-drop), Underscore, Bootstrap ...
 // TO DO:   Creates too many global variables -- put these within scope of this JS function
 
@@ -13,6 +13,7 @@ jQuery(document).ready(function($) {
   var projectID = dhpDataLib.projectID;
 
   var projectObj = new Object();         // Initialized in initializeProjectObj() but only updated by saveProjectSettings() when user selects Save button
+
     // Create new empty settings
   projectObj['project-details'] = new Object();
   projectObj['entry-points'] = new Object();
@@ -20,7 +21,8 @@ jQuery(document).ready(function($) {
   projectObj['views'] = new Object();
 
      // Data types supported for motes
-  var dataTypes = ['Text','Exact Date','Date Range','Lat/Lon Coordinates','File','Image'];
+  var dataTypes = ['Text','Lat/Lon Coordinates','File','Image'];
+  // var dataTypes = ['Text','Exact Date','Date Range','Lat/Lon Coordinates','File','Image'];
 
     // Screen options tab on T-L
   $('#screen-meta-links a').click(function(){
@@ -30,11 +32,11 @@ jQuery(document).ready(function($) {
 
   //$('#hidden-layers').show();
 
-    // Collect list of matching HTML elements where base layers to go
+    // #hidden-layers DIV (produced by dhp-project-functions.php) contains all data about map layers
   var BASE_LAYERS = $('#hidden-layers .base-layer').map(function(){
     return $(this);
   });
-  var OVERLAYS = $('#hidden-layers option').clone();
+  var OVERLAYS = $('#hidden-layers .overlay').clone();
   //console.log(BASE_LAYERS);
 
     //Assign listener to icons loaded by php
@@ -344,7 +346,7 @@ jQuery(document).ready(function($) {
       projectObj['project-details']['home-url']       = pSettings['project-details']['home-url'];
       projectObj['project-details']['max-inactive']   = pSettings['project-details']['max-inactive'];
 
-        // Set values in GUI ##
+        // Set values in GUI
       $('#home-label').val(projectObj['project-details']['home-label']);
       $('#home-url').val(projectObj['project-details']['home-url']);
       $('#max-inactive').val(projectObj['project-details']['max-inactive']);
@@ -642,7 +644,7 @@ jQuery(document).ready(function($) {
     });
     $('.add-layer').unbind('click');
     $('.add-layer').click(function(){  
-      var layerHTML = addNewLayer() 
+      var layerHTML = addNewLayer();
       $('.layer-list').append(layerHTML);
         // Create a slider to control opacity
       $(layerHTML).find('.layer-opacity').slider({
@@ -912,26 +914,27 @@ jQuery(document).ready(function($) {
     return epItems;
   }
 
-  function loadLayers(layerObject){
+  function loadLayers(layerArray){
     // console.log(layerObject)
     var layerHtml = $('<ul><li><label>Base Layer</label><select name="base-layer" id="base-layer"></select></li></ul>');
     $('select', layerHtml).append($('#hidden-layers .base-layer').clone());
 
-    if(layerObject != null && typeof layerObject === 'object') {
+    if(layerArray != null && typeof layerArray === 'object') {
       //console.log('layers'+Object.keys(layerObject).length);
       //"layers": {"0":{"id":"5675","name":"OpenStreetMap"},"1":{"id":"5672","name":"Test Map 2"}}
-      for (var i =0; i < Object.keys(layerObject).length; i++) {
+      for (var i =0; i < Object.keys(layerArray).length; i++) {
+          // First item is Base Layer
         if(i==0) {
-          $('select option#'+layerObject[i]['id'], layerHtml).attr('selected','selected');
-          $('select option#'+layerObject[i]['id'], layerHtml).attr('data-opacity',layerObject[i]['opacity']);
-          $('li', layerHtml).append('<br/><div class="layer-opacity"></div><span class="slider-value">'+layerObject[i]['opacity']+'</span> Opacity</div>');
+          $('select option#'+layerArray[i]['id'], layerHtml).attr('selected','selected');
+          $('select option#'+layerArray[i]['id'], layerHtml).attr('data-opacity',layerArray[i]['opacity']);
+          $('li', layerHtml).append('<br/><div class="layer-opacity"></div><span class="slider-value">'+layerArray[i]['opacity']+'</span> Opacity</div>');
           $('li', layerHtml).append('<label>Additional Layers</label>');
-        }
-        else{
-          //console.log('second layer')
-          $(layerHtml).append(addNewLayer('',layerObject[i]['opacity']));
-          $('li',layerHtml).eq(i).find('select option#'+layerObject[i]['id']).attr('selected','selected');
-          $('select option#'+layerObject[i]['id'], layerHtml).attr('data-opacity',layerObject[i]['opacity']);
+
+          // Additional overlay layers
+        } else{
+          $(layerHtml).append(addNewLayer('',layerArray[i]['opacity']));
+          $('li',layerHtml).eq(i).find('select option#'+layerArray[i]['id']).attr('selected','selected');
+          $('select option#'+layerArray[i]['id'], layerHtml).attr('data-opacity',layerArray[i]['opacity']);
         }
         
       }
@@ -939,13 +942,14 @@ jQuery(document).ready(function($) {
     return $(layerHtml).html();
   }
 
+    // RETURNS: jQuery object for default settings of a new map layer
   function addNewLayer(selected,layerOpacity){
     if(!layerOpacity) {
       layerOpacity = 1;
     }
     var layerLine = $('<li><select name="overlay"></select> <button class="btn btn-danger delete-layer" type="button">-</button><div><div class="layer-opacity"></div><span class="slider-value">'+layerOpacity+'</span> Opacity</div></li>');
     $('select',layerLine).append($('#hidden-layers option').clone());
-    $('.delete-layer',layerLine).click(function(){   
+    $('.delete-layer',layerLine).click(function(){
       $(this).closest('li').remove();
       //bindLegendEventsInEPTab();
       projectNeedsToBeSaved();
@@ -1211,14 +1215,10 @@ jQuery(document).ready(function($) {
     }
   } // insertHTMLForMoteList()
 
+
     // PURPOSE: Change Save button to red since project_settings has changed
   function projectNeedsToBeSaved(){
-    //$('#save-btn').after()
     $('#save-btn').addClass('btn-danger');
-    //console.log('save alert');
-    //$('#wpbody-content').css('overflow','visible'); 
-    //$('#save-btn').popover({title:'Project requires save',content:'Don\'t forget to save your project',placement:'bottom'});
-    //$('#save-btn').popover('show');
   }
 
     // RETURNS: HTML string to represent possible data types
@@ -1450,7 +1450,7 @@ jQuery(document).ready(function($) {
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['id'] = $(this).attr('id'); 
           // console.log($(this).attr('data-opacity')); 
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['opacity'] = $(this).attr('data-opacity'); 
-          projectObj['entry-points'][index]["settings"]['layers'][ind2]['name'] = $(this).text(); 
+          projectObj['entry-points'][index]["settings"]['layers'][ind2]['name'] = $(this).text();
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapType'] = $(this).attr('data-mapType'); 
           projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapTypeId'] = $(this).val();
           //console.log($(this).attr('data-mapType'));
