@@ -87,10 +87,10 @@ jQuery(document).ready(function($) {
         $('.olControlZoomIn').empty().addClass('fi-plus');
         $('.olControlZoomOut').empty().addClass('fi-minus');
         $('.olControlZoom .reset-map').on('touchend',function(){
-            dhpMaps.resetMap();
+            dhpMapsView.resetMap();
         });
         $('.olControlZoom .reset-map').on('click',function(){
-            dhpMaps.resetMap();
+            dhpMapsView.resetMap();
         });
 
             // Add user tips for map
