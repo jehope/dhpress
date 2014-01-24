@@ -173,8 +173,12 @@ var dhpMapsView = {
 
 
     updateSize: function()
-    {
-		dhpMapsView.olMap.updateSize();
+    {   
+        //set body height to viewport so user can't scroll map
+        if(jQuery('body').hasClass('fullscreen')){
+            jQuery('body').height(jQuery(window).height());
+        }
+		dhpMaps.olMap.updateSize();
     },
 
 
@@ -339,7 +343,7 @@ var dhpMapsView = {
             var countTerms = 0;
 
                 // "Root" DIV for this particular Legend
-            legendHtml = jQuery('<div class="'+legendName+' legend-div span12 row" id="term-legend-'+legIndex+'"><h1>'+legendName+'</h1><ul class="terms"></ul></div>');
+            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+'"><h1>'+legendName+'</h1><div class="terms"></div></div>');
                 // Create entries for all of the terms (do not represent children of terms)
             _.each(filterTerms, function(theTerm) {
                 if(legendName!=theTerm.name) {
@@ -349,23 +353,51 @@ var dhpMapsView = {
                     else { icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat center;'; }
 
                         // Only check the first 50 terms in each Legend
-                    if(++countTerms>50) {
-                        jQuery('ul', legendHtml).append('<li class="compare"><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></li>');
-                    } else {
-                        jQuery('ul', legendHtml).append('<li class="compare"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></li>');
-                    }
+                    // if(++countTerms>50) {
+                    //     jQuery('ul', legendHtml).append('<li class="compare"><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></li>');
+                    // } else {
+                    //     jQuery('ul', legendHtml).append('<li class="compare"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></li>');
+                    // }
+                    jQuery('.terms', legendHtml).append('<div class="row compare">'+
+                          '<div class="small-1 large-1 columns"><input type="checkbox" checked="checked"></div>'+
+                          '<div class="small-1 large-1 columns"><div class="icon-legend" style="'+icon+'"></div></div>'+
+                          '<div class="small-10 large-10 columns"><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></div>'+
+                        '</div>');
                 }
             });
-            jQuery('ul',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-map-legend-hideshow").html()));
+            jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-map-legend-hideshow").html()));
 
             jQuery('#legends .legend-row').append(legendHtml);
                 // Add Legend title to dropdown menu above
-            jQuery('.dhp-nav .dropdown-menu').append('<li><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');
+            jQuery('.dhp-nav .legend-dropdown').append('<li><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');
+            
         });
 
+        jQuery(document).foundation();
+        jQuery('#markerModal').foundation('reveal', {
+            animation: 'fadeAndPop',
+            animation_speed: 250,
+            close_on_background_click: true,
+            close_on_esc: true,
+            dismiss_modal_class: 'close-marker',
+            bg_class: 'reveal-modal-bg',
+            bg : jQuery('reveal-modal-bg'),
+            css : {
+                open : {
+                    'opacity': 0,
+                    'visibility': 'visible',
+                    'display' : 'block'
+                },
+                close : {
+                    'opacity': 1,
+                    'visibility': 'hidden',
+                    'display': 'none'
+                }
+            }
+        }); 
             //$('#legends').css({'left':0, 'top':50,'z-index':19});
             // Handle resizing Legend (min/max)
-        jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="icon-resize-small"></i></a>');
+        jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
         jQuery('.legend-resize').hide();
         jQuery('#legends').hover(function(){
             	jQuery('.legend-resize').fadeIn(100);
@@ -388,51 +420,50 @@ var dhpMapsView = {
         });
 
             // Handle user selection of value name from current Legend on right
-        jQuery('#legends ul.terms li a').click(function(event){
+        jQuery('#legends div.terms .row a').click(function(event){
             var spanName = jQuery(this).data('id');
-
                 // "Hide/Show all" button
             if(spanName==='all') {
                     // Should legend values now be checked or unchecked?
-                var boxState = jQuery(this).closest('li').find('input').prop('checked');
-                jQuery('.active-legend ul li').find('input').prop('checked',!boxState);
-                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
-                dhpMapsView.updateLayerFeatures();
+                var boxState = jQuery(this).closest('.row').find('input').prop('checked');
+                jQuery('.active-legend .terms .row').find('input').prop('checked',!boxState);
+                dhpMaps.catFilterSelect = dhpMaps.findSelectedCats();
+                dhpMaps.updateLayerFeatures();
             }
                 // a specific legend/category value (ID#)
             else {
                     // uncheck everything
-                jQuery('.active-legend ul input').removeAttr('checked');
-                jQuery('.active-legend ul.terms li.selected').removeClass('selected');
+                jQuery('.active-legend .terms input').removeAttr('checked');
+                jQuery('.active-legend .terms .row.selected').removeClass('selected');
                     // select just this item
-                jQuery(this).closest('li').addClass('selected');
-                jQuery(this).closest('li').find('input').prop('checked',true);
-                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats(spanName);
-                dhpMapsView.updateLayerFeatures();
+                jQuery(this).closest('.row').addClass('selected');
+                jQuery(this).closest('.row').find('input').prop('checked',true);
+                dhpMaps.catFilterSelect = dhpMaps.findSelectedCats(spanName);
+                dhpMaps.updateLayerFeatures();
             }
         });
 
             // Handle user selection of checkbox from current Legend on right
-        jQuery('#legends ul.terms input').click(function(event){
+        jQuery('#legends div.terms input').click(function(event){
             var spanName = jQuery(event.target).parent().find('a').data('id');
             if( spanName==='all' && jQuery(this).prop('checked') === true ) {
-                jQuery('.active-legend ul li').find('input').prop('checked',true);
-                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
-                dhpMapsView.updateLayerFeatures();
+                jQuery('.active-legend .terms .row').find('input').prop('checked',true);
+                dhpMaps.catFilterSelect = dhpMaps.findSelectedCats();
+                dhpMaps.updateLayerFeatures();
             }
             else if(spanName==='all' && jQuery(this).prop('checked') === false ) {
-                jQuery('.active-legend ul li').find('input').prop('checked',false);
-                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
-                dhpMapsView.updateLayerFeatures();
+                jQuery('.active-legend .terms .row').find('input').prop('checked',false);
+                dhpMaps.catFilterSelect = dhpMaps.findSelectedCats();
+                dhpMaps.updateLayerFeatures();
             }
             else {
-                jQuery('.active-legend ul li.check-all').find('input').prop('checked',false);                  
-                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
-                dhpMapsView.updateLayerFeatures();
+                jQuery('.active-legend .terms .check-all').find('input').prop('checked',false);                  
+                dhpMaps.catFilterSelect = dhpMaps.findSelectedCats();
+                dhpMaps.updateLayerFeatures();
             }
         });
         jQuery('ul.controls li').click(function(){
-            jQuery('.active-legend ul input').attr('checked',true);           
+            jQuery('.active-legend .terms input').attr('checked',true);           
         });
 
         jQuery('#legends .legend-row').append('<div class="legend-div span12" id="layers-panel"><ul></ul></div>');
@@ -443,7 +474,7 @@ var dhpMapsView = {
         jQuery('#term-legend-0').addClass('active-legend');
 
             // Handle selection of different Legends
-        jQuery('.dhp-nav .dropdown-menu a').click(function(evt){
+        jQuery('.dhp-nav .legend-dropdown a').click(function(evt){
             evt.preventDefault();
             var action = jQuery(this).attr('href');
             var filter = jQuery(this).text();
@@ -493,7 +524,7 @@ var dhpMapsView = {
                     layerOpacity = 1;
                 }
             }
-            jQuery('#layers-panel ul').append('<li class="layer'+index+' row-fluid"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+thisLayer.id+'">'+thisLayer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
+            jQuery('#layers-panel ul').append('<li class="layer'+index+'"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+thisLayer.id+'">'+thisLayer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
 
                 // Create slider to control layer opacity
             jQuery('.layer'+index+' .layer-opacity').slider({
@@ -589,13 +620,11 @@ var dhpMapsView = {
                     break;
                 }
             }
-
             // unknown, or multiple selection from legend
         } else {
             var i, tempSelCat, tempFilter;
-            jQuery('#legends .active-legend li.compare input:checked').each(function(index){
-                tempSelCat = jQuery(this).parent().find('.value').data( 'id' );
-                //console.log(tempSelCat+' :'+index)
+            jQuery('#legends .active-legend .compare input:checked').each(function(index){
+                tempSelCat = jQuery(this).closest('.row').find('.columns .value').data( 'id' );
                 for(i=0;i<countTerms;i++) {
                     tempFilter = dhpMapsView.catFilter.terms[i];
                     if(tempFilter.id==tempSelCat) {
@@ -706,19 +735,20 @@ var dhpMapsView = {
         jQuery('.modal-body').append(builtHTML);
 
             // clear previous marker links
-        jQuery('#markerModal .modal-footer .btn-success').remove();
+        jQuery('#markerModal .reveal-modal-footer .marker-link').remove();
 
         jQuery('#markerModal #markerModalLabel').empty().append(titleAtt);
 
             // setup links
         if (link1 && link1!='no-link') {
-            jQuery('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link1+'">'+dhpMapsView.viewParams['link-label']+'</a>');
+            jQuery('#markerModal .reveal-modal-footer').prepend('<a target="_blank" class="button success marker-link" href="'+link1+'">'+dhpMaps.viewParams['link-label']+'</a>');
         }
         if (link2 && link2 !='no-link') {
-            jQuery('#markerModal .modal-footer').prepend('<a target="_blank" class="btn btn-success" href="'+link2+'">'+dhpMapsView.viewParams['link2-label']+'</a>');
+            jQuery('#markerModal .reveal-modal-footer').prepend('<a target="_blank" class="button success marker-link" href="'+link2+'">'+dhpMaps.viewParams['link2-label']+'</a>');
         }
 
-        jQuery('#markerModal').modal('show');
+        // jQuery('#markerModal').modal('show');
+        jQuery('#markerModal').foundation('reveal', 'open');
     }, // onOLFeatureSelect()
 
 
@@ -806,7 +836,10 @@ var dhpMapsView = {
                 dhpMapsView.createMapMarkers(JSON.parse(data));
                 //$('#markerModal').modal({backdrop:true});
                     // Remove Loading modal
-                jQuery('#loading').modal('hide');
+                jQuery('#loading').foundation('reveal', 'close');
+                jQuery('.reveal-modal-bg').remove();
+                // jQuery('.reveal-modal-bg').css({'display':'none'});
+
                     // Enable joyride help tips
                 jQuery("#dhpress-tips").joyride({'tipLocation': 'right'});
                 jQuery('.dhp-nav .tips').removeClass('active');

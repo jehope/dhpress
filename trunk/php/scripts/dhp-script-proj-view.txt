@@ -1,36 +1,47 @@
     <!-- Handlebars Templates for Project View -->
 <script id="dhp-script-nav-bar" type="text/x-handlebars-template">
-  <div class="dhp-nav nav-fixed-top navbar">
-  	<div class="navbar-inner">
-  		<ul class="nav nav-pills ">
-          <li class="fullscreen" ><a href="#"><i class="icon-fullscreen"></i> Fullscreen map </a></li>
-          <li class="tips active" ><a href="#"><i class="icon-info-sign"></i> Tips </a></li>
-        </ul>
-    </div>
+  <nav class="top-bar dhp-nav" data-topbar>
+  <ul class="title-area">
+    <li class="name">
+      <h1><a href="#">My Site</a></h1>
+    </li>
+    <li class="toggle-topbar menu-icon"><a href="#">Menu</a></li>
+  </ul>
+
+  <section class="top-bar-section">
+    <!-- Right Nav Section -->
+    <ul class="right">
+    </ul>
+
+    <!-- Left Nav Section -->
+    <ul class="left">
+      <li class="fullscreen" ><a href="#"><i class="fi-arrows-out"></i> Fullscreen map </a></li>
+      <li class="tips active" ><a href="#"><i class="fi-info"></i> Tips </a></li>
+    </ul>
+  </section>
+</nav>
+
 </script>
 
 <script id="dhp-script-markerModal" type="text/x-handlebars-template">
-  <div id="markerModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="markerModalLabel" aria-hidden="true">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-            <h3 id="markerModalLabel">Map Setup</h3>
-          </div>
-          <div class="modal-body">
-          </div>
-          <div class="modal-footer">
-            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-          </div>
-        </div>
+<div id="markerModal" class="reveal-modal" data-reveal>
+  <div class="modal-header">
+    <h3 id="markerModalLabel"></h3>
+  </div>
+  <div class="modal-body">
+  </div>
+  <div class="reveal-modal-footer">
+    <a class="button close-marker" >Close</a>
+  </div>
+    <a class="close-reveal-modal close-marker">&#215;</a>
+</div>
 </script>
 
 
 <script id="dhp-script-modal-loading" type="text/x-handlebars-template">
-	<div id="loading" class="modal hide fade">
-		<div class="modal-body">
-			<div class="loading-content" style="font-size:56px; ">
-            	<i class="icon-spinner icon-spin">
-            	</i> loading
-            </div>
-		</div>
-	</div>
+<div id="loading" class="reveal-modal tiny" data-reveal>
+  <div class="loading-content">
+    <h3 class="loading-title">Loading Project</h3>
+  </div>
+</div>
 </script>
