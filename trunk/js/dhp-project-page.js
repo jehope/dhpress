@@ -1,5 +1,6 @@
 // PURPOSE: Handle viewing Project content visualizations
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
+//          viewParams['layerData'] = array with all data needed for this visualization by dhp-custom-maps
 //          The sidebar is marked with HTML div as "secondary"
 //          Section for marker modal is marked with HTML div as "markerModal"
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
@@ -8,12 +9,13 @@
 
 jQuery(document).ready(function($) {
         // Project variables
-    var dhpSettings, projectID, ajaxURL;
+    var dhpSettings, projectID, ajaxURL, viewParams;
         // Inactivity timeout
     var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive;
 
     // projectID      = $('.post').attr('id');
     ajaxURL        = dhpData.ajax_url;
+    vizParams      = dhpData.vizParams;
     dhpSettings    = dhpData.settings;
     projectID      = dhpSettings["project-details"]["id"];
     jQuery(document).foundation();
@@ -35,11 +37,11 @@ jQuery(document).ready(function($) {
         if($('body').hasClass('fullscreen')) {
             $('body').removeClass('fullscreen');
             $('.dhp-nav .fullscreen').removeClass('active');
-            dhpMaps.updateSize();
+            dhpMapsView.updateSize();
         } else {
             $('body').addClass('fullscreen');
             $('.dhp-nav .fullscreen').addClass('active');
-            dhpMaps.updateSize();
+            dhpMapsView.updateSize();
         }
     });
 
@@ -61,13 +63,24 @@ jQuery(document).ready(function($) {
     var transEP = (findModalEpSettings('transcript')) ? getEntryPointByType('transcript') : null;
 
     if (mapEP) {
+            // vizParams.layerData must have array of DHP custom map layers to add to "library" -- not base maps (??)
+        _.each(vizParams.layerData, function(theLayer) {
+            dhpCustomMaps.maps.addMap(theLayer.dhp_map_typeid, theLayer.dhp_map_shortname,
+                                    theLayer.dhp_map_n_bounds, theLayer.dhp_map_s_bounds,
+                                    theLayer.dhp_map_e_bounds, theLayer.dhp_map_w_bounds, 
+                                    theLayer.dhp_map_cent_lat, theLayer.dhp_map_cent_lon,
+                                    theLayer.dhp_map_min_zoom, theLayer.dhp_map_max_zoom,
+                                    theLayer.dhp_map_url,      null );
+        });
+
             // Add map elements to top nav bar
         $('.dhp-nav .top-bar-section .right').append(Handlebars.compile($("#dhp-script-map-menus").html()));
 
             // Insert Legend area on right sidebar
         $('#dhp-visual').after(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
-        dhpMaps.initializeMap(ajaxURL, projectID, mapEP, transEP, dhpSettings['views']);
+            // all custom maps must have already been loaded into run-time "library"
+        dhpMapsView.initializeMap(ajaxURL, projectID, mapEP, transEP, dhpSettings['views']);
 
             // Setup reset button and add foundation icons for zoom in/out
         $('.olControlZoom').append('<a class="reset-map olButton"><i class="fi-refresh"></i></a');
@@ -92,7 +105,7 @@ jQuery(document).ready(function($) {
         // Map visualization?
     if (mapEP) {
         createLoadingMessage();
-        dhpMaps.loadMapMarkers();
+        dhpMapsView.loadMapMarkers();
     }
 
         // Monitor user activity, only if setting given
@@ -169,8 +182,7 @@ jQuery(document).ready(function($) {
         }
     }
 
-        // RETURNS: entry in the modal-ep array whose name is modalName
-        // TO DO:   Put into Project object class??
+        // RETURNS: true if there is a modal entry point defined whose name is modalName
     function findModalEpSettings(modalName) {
         return (_.find(dhpSettings['views']['modal-ep'],
                         function(theName) {
