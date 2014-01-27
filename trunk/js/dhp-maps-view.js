@@ -41,6 +41,8 @@ var dhpMapsView = {
         dhpMapsView.transcriptEP= transcriptEP;
         dhpMapsView.viewParams 	= viewParams;
 
+            //Update map size if browser is resized
+        jQuery(window).resize(function() { dhpMapsView.updateSize(); });
 
             // Interface for OpenLayers to determine visual features of a map marker
         olMarkerInterface = {
@@ -87,13 +89,22 @@ var dhpMapsView = {
 
             // Create layers for maps as well as controls for each
         _.each(mapEP.layers, function(theLayer, index) {
+
             opacity = 1;
             if(theLayer['opacity']) {
                 opacity = theLayer['opacity'];
             }
             switch (theLayer['mapType']) {
             case 'type-OSM':
-                newLayer = new OpenLayers.Layer.OSM();
+                var thisLayer = dhpData.vizParams.layerData[index];
+                var arrayOSM = thisLayer.dhp_map_url.split(',');
+                if(arrayOSM.length>1) {
+                    newLayer = new OpenLayers.Layer.OSM(thisLayer.dhp_map_shortname,arrayOSM);
+                }
+                else {
+                    newLayer = new OpenLayers.Layer.OSM();
+                }
+                // new OpenLayers.Layer.OSM("MapQuest-OSM Tiles", arrayOSM);
                 newLayer.setOpacity(opacity);
                 break;
             case 'type-Google':
@@ -113,7 +124,10 @@ var dhpMapsView = {
         dhpMapsView.gg = new OpenLayers.Projection("EPSG:4326");
         dhpMapsView.sm = new OpenLayers.Projection("EPSG:900913");
 
-        //var osm = new OpenLayers.Layer.OSM(); 
+        OpenLayers.Util.onImageLoadErrorColor = "transparent";   
+        // OpenLayers.Util.onImageLoadError = function() {
+        //      this.src = '';
+        // };
 
         dhpMapsView.olMap = new OpenLayers.Map({
             div: "dhp-visual",
@@ -147,7 +161,7 @@ var dhpMapsView = {
         });
 
         dhpMapsView.selectControl = new OpenLayers.Control.SelectFeature(dhpMapsView.mapMarkerLayer,
-            { onSelect: dhpMapsView.onOLFeatureSelect, onUnselect: dhpMapsView.onOLFeatureUnselect, hover: false });
+            { onSelect: dhpMapsView.onOLFeatureSelect, hover: false });
 
         dhpMapsView.hoverControl  = new OpenLayers.Control.SelectFeature(dhpMapsView.mapMarkerLayer, 
             { hover: true, highlightOnly: true, renderIntent: "temporary" });
@@ -159,8 +173,21 @@ var dhpMapsView = {
 
         dhpMapsView.hoverControl.activate();  
         dhpMapsView.selectControl.activate();
-    }, // initializeMap()
 
+            // Setup reset button and add foundation icons for zoom in/out
+        jQuery('.olControlZoom').append('<a class="reset-map olButton"><i class="fi-refresh"></i></a');
+        jQuery('.olControlZoomIn').empty().addClass('fi-plus');
+        jQuery('.olControlZoomOut').empty().addClass('fi-minus');
+        jQuery('.olControlZoom .reset-map').on('touchend',function(){
+            dhpMapsView.resetMap();
+        });
+        jQuery('.olControlZoom .reset-map').on('click',function(){
+            dhpMapsView.resetMap();
+        });
+
+        dhpMapsView.updateSize();
+        dhpMapsView.loadMapMarkers();
+    }, // initializeMap()
 
         // PURPOSE: Reset center and scale of map
         // ASSUMES: gg has been initialized and is accessible; dhpSettings loaded
@@ -176,11 +203,16 @@ var dhpMapsView = {
     {   
         //set body height to viewport so user can't scroll map
         if(jQuery('body').hasClass('fullscreen')){
-            jQuery('body').height(jQuery(window).height());
+            
+            if(jQuery('body').hasClass('logged-in')) {
+                jQuery('body').height(jQuery(window).height()-35);
+            }
+            else {
+                jQuery('body').height(jQuery(window).height());
+            }
         }
 		dhpMapsView.olMap.updateSize();
     },
-
 
         // PURPOSE: Called by olMarkerInterface to determine icon to use for marker
         // RETURNS: First match on URL to use for icon, or else ""
@@ -343,14 +375,14 @@ var dhpMapsView = {
             var countTerms = 0;
 
                 // "Root" DIV for this particular Legend
-            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+'"><h1>'+legendName+'</h1><div class="terms"></div></div>');
+            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+'"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
                 // Create entries for all of the terms (do not represent children of terms)
             _.each(filterTerms, function(theTerm) {
                 if(legendName!=theTerm.name) {
                     var firstIconChar = theTerm.icon_url.substring(0,1);
                     var icon;
                     if(firstIconChar=='#') { icon = 'background:'+theTerm.icon_url; }
-                    else { icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat center;'; }
+                    else { icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat right; background-size: 50%;'; }
 
                         // Only check the first 50 terms in each Legend
                     // if(++countTerms>50) {
@@ -359,8 +391,8 @@ var dhpMapsView = {
                     //     jQuery('ul', legendHtml).append('<li class="compare"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></li>');
                     // }
                     jQuery('.terms', legendHtml).append('<div class="row compare">'+
-                          '<div class="small-1 large-1 columns"><input type="checkbox" checked="checked"></div>'+
-                          '<div class="small-1 large-1 columns"><div class="icon-legend" style="'+icon+'"></div></div>'+
+                          '<div class="small-2 large-2 columns" style="'+icon+'"><input type="checkbox" checked="checked"></div>'+
+                          // '<div class="small-1 large-1 columns"><div class="icon-legend" style="'+icon+'"></div></div>'+
                           '<div class="small-10 large-10 columns"><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></div>'+
                         '</div>');
                 }
@@ -373,7 +405,9 @@ var dhpMapsView = {
             
         });
 
+            //Initialize new foundation elements
         jQuery(document).foundation();
+            //configure marker modal
         jQuery('#markerModal').foundation('reveal', {
             animation: 'fadeAndPop',
             animation_speed: 250,
@@ -394,7 +428,11 @@ var dhpMapsView = {
                     'display': 'none'
                 }
             }
-        }); 
+        });
+            // On modal close unselect features
+        jQuery(document).on('closed', '#markerModal', function () {
+            dhpMapsView.onOLFeatureUnselect();
+        });
             //$('#legends').css({'left':0, 'top':50,'z-index':19});
             // Handle resizing Legend (min/max)
         jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
@@ -462,11 +500,8 @@ var dhpMapsView = {
                 dhpMapsView.updateLayerFeatures();
             }
         });
-        jQuery('ul.controls li').click(function(){
-            jQuery('.active-legend .terms input').attr('checked',true);           
-        });
-
-        jQuery('#legends .legend-row').append('<div class="legend-div span12" id="layers-panel"><ul></ul></div>');
+            // Add Layers to legends
+        jQuery('#legends .legend-row').append('<div class="legend-div" id="layers-panel"><div class="legend-title">Layer Controls</div></div>');
         jQuery('.legend-div').hide();
 
             // Show Legend 0 by default
@@ -524,7 +559,11 @@ var dhpMapsView = {
                     layerOpacity = 1;
                 }
             }
-            jQuery('#layers-panel ul').append('<li class="layer'+index+'"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+thisLayer.id+'">'+thisLayer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
+            jQuery('#layers-panel').append('<div class="layer'+index+'">'+
+                '<div class="row"><div class="columns small-12 large-12"><input type="checkbox" checked="checked"> '+
+                '<a class="value" id="'+thisLayer.id+'">'+thisLayer.name+'</a></div></div>'+
+                '<div class="row"><div class="columns small-12 large-12"><div class="layer-opacity"></div></div></div>'+
+                '</div>');
 
                 // Create slider to control layer opacity
             jQuery('.layer'+index+' .layer-opacity').slider({
@@ -736,26 +775,26 @@ var dhpMapsView = {
 
             // clear previous marker links
         jQuery('#markerModal .reveal-modal-footer .marker-link').remove();
-
+            // Change title
         jQuery('#markerModal #markerModalLabel').empty().append(titleAtt);
 
             // setup links
         if (link1 && link1!='no-link') {
-            jQuery('#markerModal .reveal-modal-footer').prepend('<a target="_blank" class="button success marker-link" href="'+link1+'">'+dhpMapsView.viewParams['link-label']+'</a>');
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a target="_blank" class="button success marker-link" href="'+link1+'">'+dhpMapsView.viewParams['link-label']+'</a></li>');
         }
         if (link2 && link2 !='no-link') {
-            jQuery('#markerModal .reveal-modal-footer').prepend('<a target="_blank" class="button success marker-link" href="'+link2+'">'+dhpMapsView.viewParams['link2-label']+'</a>');
-        }
-
-        // jQuery('#markerModal').modal('show');
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a target="_blank" class="button success marker-link" href="'+link2+'">'+dhpMapsView.viewParams['link2-label']+'</a></li>');
+        }   
+            //Open modal
         jQuery('#markerModal').foundation('reveal', 'open');
+        
     }, // onOLFeatureSelect()
 
 
         // PURPOSE: Handle unselection of a map feature
-    onOLFeatureUnselect: function(feature)
+    onOLFeatureUnselect: function()
     {
-    	feature.attributes.poppedup = false;
+        dhpMapsView.selectControl.unselectAll();
     },
 
 
@@ -815,14 +854,13 @@ var dhpMapsView = {
 
     	var featureData = reader.read(dhpMapsView.allMarkers);
         dhpMapsView.mapMarkerLayer.addFeatures(featureData);
-    //player.pause();
     }, // createMapMarkers()
 
 
         // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
     loadMapMarkers: function()
     {
-        //console.log('loading');
+        // console.log('loading');
         //$('.modal-backdrop').css({'opacity':0.1});
     	jQuery.ajax({
             type: 'POST',
