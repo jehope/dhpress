@@ -82,30 +82,15 @@ jQuery(document).ready(function($) {
             // all custom maps must have already been loaded into run-time "library"
         dhpMapsView.initializeMap(ajaxURL, projectID, mapEP, transEP, dhpSettings['views']);
 
-            // Setup reset button and add foundation icons for zoom in/out
-        $('.olControlZoom').append('<a class="reset-map olButton"><i class="fi-refresh"></i></a');
-        $('.olControlZoomIn').empty().addClass('fi-plus');
-        $('.olControlZoomOut').empty().addClass('fi-minus');
-        $('.olControlZoom .reset-map').on('touchend',function(){
-            dhpMapsView.resetMap();
-        });
-        $('.olControlZoom .reset-map').on('click',function(){
-            dhpMapsView.resetMap();
-        });
-
             // Add user tips for map
         $('body').append(Handlebars.compile($("#dhp-script-map-joyride").html()));
+
+        createLoadingMessage();
     }
 
         // Transcription views?
     if (transEP) {
         dhpTranscript.initialize();
-    }
-
-        // Map visualization?
-    if (mapEP) {
-        createLoadingMessage();
-        dhpMapsView.loadMapMarkers();
     }
 
         // Monitor user activity, only if setting given
@@ -143,7 +128,6 @@ jQuery(document).ready(function($) {
         }
     } // monitorActivity()
 
-
     function createNavBar()
     {
         var homeBtnLabel = dhpSettings["project-details"]["home-label"];
@@ -152,18 +136,15 @@ jQuery(document).ready(function($) {
             // Detect appropriate theme location to attach nav bar(header or body)
             // insert top navigational bar and controls
         if($('header.site-header')) {
-            $('header.site-header').append(Handlebars.compile($("#dhp-script-nav-bar").html()));
+            $('header.site-header').append(Handlebars.compile($('#dhp-script-nav-bar').html()));
         }
         else {
-            $('#content').prepend(Handlebars.compile($("#dhp-script-nav-bar").html()));
+            $('#content').prepend(Handlebars.compile($('#dhp-script-nav-bar').html()));
         }
-
-           
-
             // If Home button defined, insert it
         if ((homeBtnLabel !== null) && (homeBtnLabel !== '') && (homeBtnURL !== null) && (homeBtnURL !== '')) {
-            var homeBtnHTML = "<li ><a href=" + homeBtnURL + "> " + homeBtnLabel + " </a></li>";
-            $(".nav-pills").append(homeBtnHTML);
+            var homeBtnHTML = '<li ><a href="'+ homeBtnURL +'"><i class="fi-home"></i> ' + homeBtnLabel + ' </a></li>';
+            $('.top-bar-section .left').append(homeBtnHTML);
         }
 
     } // createNavBar()
