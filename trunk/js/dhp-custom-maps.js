@@ -341,9 +341,9 @@
 
                 // check if requested bounds is within the bounds of the tile set
                 // TO DO:  Change this blank tile file to other source?
-                if (!layer_bounds.intersectsBounds(bounds)) {
-                    return "http://docsouth.unc.edu/cdlamaps/static/maps/blanktile.png";
-                }
+                // if (!layer_bounds.intersectsBounds(bounds)) {
+                //     return "http://docsouth.unc.edu/cdlamaps/static/maps/blanktile.png";
+                // }
 
                 // calculate the google-like tile coordinates
                 res = this.map.getResolution();

@@ -41,6 +41,7 @@ body.fullscreen {
 	/* OL error tiles */
 .olImageLoadError {
  	display: none;
+ 	visibility: hidden !important; 
 }
 
 	/* Overrides most theme settings for img tags in the map only */
@@ -58,36 +59,52 @@ body.fullscreen {
 	overflow: auto;
 	background: #fff;
 	background-color: rgba(255, 255, 255, .95);
+	max-width: 320px;
+	min-height: 300px;
+
+	/*foundation font style*/
+	color: #222;
+	font-family: "Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
+
 }
 .fullscreen #legends {
 	position:absolute;
 	width: 320px;
-	top: 50px;
+	top: 60px;
 	left: 20px;
 	bottom: 20px;
-	overflow: auto;
+	overflow: hidden;
 	z-index: 1103;
+	-moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+	-webkit-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+	box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
 }
 .logged-in.fullscreen #legends {
-	top:80px;
+	top:70px;
 }
 .legend-row {
-	max-width: 320px;
+	
 }
 
 .legend-row .legend-div {
 	margin-left: 0px;
 }
 
-.legend-div h1 {
+.legend-div .legend-title {
 	padding-left: 10px;
 	border-bottom: 1px solid #111;
-	margin-right: 10px;
 	font-size: 22px;
+	font-weight: bold;
+	z-index: 20;
 }
 
-.legend-div ul {
-	list-style: none;
+.legend-div .terms {
+	position: absolute;
+	top:38px;
+	bottom: 0;
+	width: 100%;
+	z-index: 19;
+	overflow: auto;
 }
 
 .legend-div .terms .row {

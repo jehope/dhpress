@@ -28,10 +28,10 @@
   <div class="modal-header">
     <h3 id="markerModalLabel"></h3>
   </div>
-  <div class="modal-body">
+  <div class="modal-body clearfix">
   </div>
-  <div class="reveal-modal-footer">
-    <a class="button close-marker" >Close</a>
+  <div class="reveal-modal-footer clearfix ">
+    <ul class="button-group right"><li><a class="button close-marker" >Close</a></li></ul>
   </div>
     <a class="close-reveal-modal close-marker">&#215;</a>
 </div>
