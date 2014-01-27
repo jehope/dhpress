@@ -2358,11 +2358,11 @@ function dhpGetMapLayerData($mapLayers)
 
 		// Loop thru all map layers, collecting essential data to pass
 	foreach($mapLayers as $layer) {
-		if($layer['mapType'] == 'type-DHP')
-		{
+		// if($layer['mapType'] == 'type-DHP')
+		// {
 			$mapData = getMapMetaData($layer['id'], $mapMetaList);
 			array_push($mapArray, $mapData);
-		}
+		// }
 	}
 	return $mapArray;
 } // dhpGetMapLayerData()
