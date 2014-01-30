@@ -1372,21 +1372,23 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $projRootTaxName)
 	// $updateTaxObject['debug']['parent'] = $args;
 	// $updateTaxObject['debug']['mArrayLoop'] = array();
 
-		// Loop through array and create terms with parent(mote_name)	
+		// Loop through array and create terms with parent(mote_name) for non-empty values
 	foreach ($mArray as $value) {
-			// WP's term_exists() function doesn't escape slash characters!  Unlike wp_insert_term() and wp_update_term()!
-   		$termIs = term_exists( addslashes($value), $projRootTaxName, $parent_id );
-   		//debug
-   		// array_push($updateTaxObject['debug']['mArrayLoop'], addslashes($value));
-   		// array_push($updateTaxObject['debug']['mArrayLoop'], $termIs);
-   		if(!$termIs) {
-   			//if term doesn't exist, create
-   			wp_insert_term( $value, $projRootTaxName, $args );
-   		}
-   		else {
-   			//update term using id
-   			wp_update_term( $termIs->term_id, $projRootTaxName, $args );
-   		}
+		if (!is_null($value) && $value != '') {
+				// WP's term_exists() function doesn't escape slash characters!  Unlike wp_insert_term() and wp_update_term()!
+	   		$termIs = term_exists( addslashes($value), $projRootTaxName, $parent_id );
+	   		//debug
+	   		// array_push($updateTaxObject['debug']['mArrayLoop'], addslashes($value));
+	   		// array_push($updateTaxObject['debug']['mArrayLoop'], $termIs);
+	   		if(!$termIs) {
+	   			//if term doesn't exist, create
+	   			wp_insert_term( $value, $projRootTaxName, $args );
+	   		}
+	   		else {
+	   			//update term using id
+	   			wp_update_term( $termIs->term_id, $projRootTaxName, $args );
+	   		}
+	   	}
 	}
 
 		// Gets all top-level parent terms; need "hide_empty=0" for parent terms not associated with any Marker
@@ -1494,24 +1496,27 @@ function dhpGetMoteValues()
 		$marker_id = get_the_ID();
 		$tempMoteValue = get_post_meta($marker_id, $mote['custom-fields'], true);
 
-		$tempMoteArray = array();
-		if($mote['delim']) {
-			$tempMoteArray = split( $mote['delim'], $tempMoteValue );
+			// ignore empty or null values
+		if (!is_null($tempMoteValue) && $tempMoteValue != '') {
+			$tempMoteArray = array();
+			if($mote['delim']) {
+				$tempMoteArray = split( $mote['delim'], $tempMoteValue );
+			}
+			else {
+				$tempMoteArray = array($tempMoteValue);
+			}
+			$theseTerms = array();
+			// $debugArray['terms'] = array();
+			foreach ($tempMoteArray as &$value) {
+				// array_push($debugArray, $value);
+				$term = term_exists( $value, $rootTaxName, $parent_id );
+	   		 	if($term) {
+	   		 		array_push($theseTerms, $term['term_id']);
+	   		 		// array_push($debugArray['terms'], $term['term_id']);
+	   		 	}
+			}
+			wp_set_post_terms( $marker_id, $theseTerms, &$rootTaxName, true );
 		}
-		else {
-			$tempMoteArray = array($tempMoteValue);
-		}
-		$theseTerms = array();
-		// $debugArray['terms'] = array();
-		foreach ($tempMoteArray as &$value) {
-			// array_push($debugArray, $value);
-			$term = term_exists( $value, $rootTaxName, $parent_id ); 	
-   		 	if($term) {
-   		 		array_push($theseTerms, $term['term_id']);
-   		 		// array_push($debugArray['terms'], $term['term_id']);
-   		 	}
-		}
-		wp_set_post_terms( $marker_id, $theseTerms, &$rootTaxName, true );
 	endwhile;
 
 		// Create comma-separated string listing terms derived from other motes
@@ -2126,7 +2131,6 @@ add_action( 'wp_ajax_dhpCreateTermInTax', 'dhpCreateTermInTax' );
 //			$_POST['term_name'] = name of taxonomy term to add
 //			$_POST['parent_term_name'] = name of parent term under which it should be added
 // RETURNS:	JSON Object describing new term
-// TO DO:	Better error handling?
 
 function dhpCreateTermInTax()
 {
@@ -2134,17 +2138,21 @@ function dhpCreateTermInTax()
 	$dhp_term_name		= $_POST['term_name'];
 	$parent_term_name	= $_POST['parent_term_name'];
 
-	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-	$parent_term = term_exists( $parent_term_name, $projRootTaxName );
-		// TO DO: Check and handle non-existing term?
+	if (!is_null($dhp_term_name) && $dhp_term_name != '') {
+		$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
+		$parent_term = term_exists( $parent_term_name, $projRootTaxName );
+			// TO DO: Check and handle non-existing term?
 
-	$parent_term_id = $parent_term['term_id'];
-	$args = array( 'parent' => $parent_term_id );
-	// create new term
-	wp_insert_term( $dhp_term_name, $projRootTaxName, $args );
-	$newTerm = get_term_by('name', $dhp_term_name, $projRootTaxName);
+		$parent_term_id = $parent_term['term_id'];
+		$args = array( 'parent' => $parent_term_id );
+		// create new term
+		wp_insert_term( $dhp_term_name, $projRootTaxName, $args );
+		$newTerm = get_term_by('name', $dhp_term_name, $projRootTaxName);
 
-	die(json_encode($newTerm));
+		die(json_encode($newTerm));
+	} else {
+		die('');
+	}
 } // dhpCreateTermInTax()
 
 
