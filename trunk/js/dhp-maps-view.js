@@ -203,14 +203,28 @@ var dhpMapsView = {
     {   
         //set body height to viewport so user can't scroll map
         if(jQuery('body').hasClass('fullscreen')){
-            
-            if(jQuery('body').hasClass('logged-in')) {
-                jQuery('body').height(jQuery(window).height()-35);
+                //New WordPress has a mobile admin bar with larger height
+            if(jQuery('body').hasClass('logged-in') && jQuery(window).width() > 782) {
+                jQuery('body').height(jQuery(window).height()-32);
             }
+            else if (jQuery('body').hasClass('logged-in') && jQuery(window).width() < 783) {
+                jQuery('body').height(jQuery(window).height()-46);
+            }
+                //Non logged in users
             else {
                 jQuery('body').height(jQuery(window).height());
             }
         }
+            //resize legend items that are two lines and center checkbox
+        var newHeight,checkMargin;
+        jQuery('.row').each(function(key,value){
+            newHeight   = jQuery('.columns', this).eq(1).height();
+            if(newHeight < 35) { newHeight = 35; }
+            checkMargin = (newHeight - 10) / 2;
+            jQuery('.columns', this).eq(0).height(newHeight);
+            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkMargin});
+        });
+
 		dhpMapsView.olMap.updateSize();
     },
 
@@ -391,9 +405,9 @@ var dhpMapsView = {
                     //     jQuery('ul', legendHtml).append('<li class="compare"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></li>');
                     // }
                     jQuery('.terms', legendHtml).append('<div class="row compare">'+
-                          '<div class="small-2 large-2 columns" style="'+icon+'"><input type="checkbox" checked="checked"></div>'+
+                          '<div class="small-4 large-2 columns" style="'+icon+'"><input type="checkbox" checked="checked"></div>'+
                           // '<div class="small-1 large-1 columns"><div class="icon-legend" style="'+icon+'"></div></div>'+
-                          '<div class="small-10 large-10 columns"><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></div>'+
+                          '<div class="small-8 large-10 columns"><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></div>'+
                         '</div>');
                 }
             });

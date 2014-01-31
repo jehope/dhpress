@@ -69,7 +69,7 @@ body.fullscreen {
 }
 .fullscreen #legends {
 	position:absolute;
-	width: 320px;
+	min-width: 220px;
 	top: 60px;
 	left: 20px;
 	bottom: 20px;
@@ -78,6 +78,11 @@ body.fullscreen {
 	-moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
 	-webkit-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
 	box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+}
+@media all and (min-width: 1025px) {
+  .fullscreen #legends {
+  	min-width: 320px;
+  }
 }
 .logged-in.fullscreen #legends {
 	top:70px;
