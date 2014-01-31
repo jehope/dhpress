@@ -1671,8 +1671,9 @@ function dhpGetTranscriptClip()
 	$dhp_transcript_field = $_POST['transcript'];
 	$dhp_clip = $_POST['timecode'];
 		// Why is Project post loaded? Does this have a needed side-effect?
-	$projectObj = get_post($dhp_project);
+	// $projectObj = get_post($dhp_project);
 	//$dhp_transcript = get_post_meta( $dhp_project, $dhp_project_field, true);
+
 	$dhp_transcript = loadTranscriptFromFile($dhp_transcript_field);
 	$dhp_transcript_clip = getTranscriptClip($dhp_transcript,$dhp_clip);
 
