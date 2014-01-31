@@ -4,7 +4,7 @@
 
 var dhpTranscript = {
         // Fields created by this object:
-    // tcArray, rowIndex, transcriptData, parseTimeCode
+    // tcArray, rowIndex, transcriptData, parseTimeCode, readyFor2nd
 
 
         // PURPOSE: Initialize transcript mechanisms
@@ -31,6 +31,7 @@ var dhpTranscript = {
             // Initialize this object's variables
         dhpTranscript.rowIndex = null;
         dhpTranscript.transcriptData = [];
+        dhpTranscript.readyFor2nd = false;
 
         appendPos = jQuery(htmlID);
         if (appendPos == null) {
@@ -92,7 +93,7 @@ var dhpTranscript = {
             soundCloudWidget.bind(SC.Widget.Events.FINISH, function() {});
         });
 
-            // Allow user to click on a timecode to go to it
+            // Allow user to click anywhere in set of timecodes to go to corresponding time
         jQuery('.transcript-ep').on('click', function(evt) {
             var tempSeekTo = null;
             if(jQuery(evt.target).hasClass('type-timecode')) {
@@ -165,7 +166,8 @@ var dhpTranscript = {
                 timecode: clip
             },
             success: function(data, textStatus, XMLHttpRequest){
-                //console.log(JSON.parse(data));
+                // console.log("Order: "+order+"; Text: "+JSON.parse(data));
+                // console.log(JSON.parse(data));
                 dhpTranscript.attachTranscript(JSON.parse(data), order);
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
@@ -259,8 +261,8 @@ var dhpTranscript = {
                         dhpTranscript.tcArray.push(timecode);
                     }
                     else {
-                        textBlock += val;                       
-                    }                   
+                        textBlock += val;
+                    }
                 }
             });
         }
@@ -326,12 +328,13 @@ var dhpTranscript = {
 
             // Don't process 2nd transcript unless 1st is loaded and attached
         if(order==1) {
-            if(dhpTranscript.transcriptData[0]) {
-                dhpTranscript.attachSecondTranscript(dhpTranscript.transcriptData);
+            if(dhpTranscript.readyFor2nd) {
+                dhpTranscript.attachSecondTranscript(transcriptData);
             }
         }
         else {
-            jQuery('.transcript-ep p').append(dhpTranscript.formatTranscript(dhpTranscript.transcriptData));
+            jQuery('.transcript-ep p').append(dhpTranscript.formatTranscript(transcriptData));
+            dhpTranscript.readyFor2nd = true;
                 // Now, if right-side exists, attach it to left!
             if(dhpTranscript.transcriptData[1]) {
                 dhpTranscript.attachSecondTranscript(dhpTranscript.transcriptData[1]);
