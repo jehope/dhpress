@@ -25,13 +25,15 @@
 
 <script id="dhp-script-markerModal" type="text/x-handlebars-template">
 <div id="markerModal" class="reveal-modal" data-reveal>
-  <div class="modal-header">
-    <h3 id="markerModalLabel"></h3>
-  </div>
-  <div class="modal-body clearfix">
-  </div>
-  <div class="reveal-modal-footer clearfix ">
-    <ul class="button-group right"><li><a class="button close-marker" >Close</a></li></ul>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="markerModalLabel"></h3>
+    </div>
+    <div class="modal-body clearfix">
+    </div>
+    <div class="reveal-modal-footer clearfix ">
+      <ul class="button-group right"><li><a class="button close-marker" >Close</a></li></ul>
+    </div>
   </div>
     <a class="close-reveal-modal close-marker">&#215;</a>
 </div>
