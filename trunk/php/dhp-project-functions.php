@@ -605,7 +605,19 @@ function getIconsForTerms($parent_term, $taxonomy)
 			$child2->parent = intval($child2->parent);
 			array_push($children_names2, $child2->name);
 		}
-		$icon_url = get_term_meta($child->term_id,'icon_url',true);
+		if($child->description) {
+			$desc_object = json_decode($child->description);
+			$icon_url = $desc_object->icon_url;
+		}
+		else {
+			if(function_exists(get_term_meta)){
+				$icon_url = get_term_meta($child->term_id,'icon_url',true);
+			}
+			else {
+				$icon_url = null;
+			}
+		}
+		
 		if ($icon_url == "Pick Icon") {
 			trigger_error("Project cannot be viewed until legend ".$parent_term->name." is configured.");
 		}
@@ -1354,7 +1366,7 @@ function dhpSaveProjectSettings()
 } // dhpSaveProjectSettings()
 
 
-// PURPOSE:	Update the taxonomy 
+// PURPOSE:	Initialize the taxonomy terms for a single legend
 // INPUT:	$mArray = array of unique values for mote
 //			$mote_name = name of mote itself (parent term)
 //			$projRootTaxName = root taxonomy term for Project
@@ -1390,41 +1402,9 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $projRootTaxName)
 	   		}
 	   	}
 	}
-
-		// Gets all top-level parent terms; need "hide_empty=0" for parent terms not associated with any Marker
-	$parent_terms_to_exclude = get_terms($projRootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
-	$exclude_string;
-	$exclude_count = 0;
-		// now concatenate all parent terms (except current parent) in string
-	foreach ( $parent_terms_to_exclude as $term ) {
-		if($term->term_id != $parent_id) {
-			if($exclude_count >0) {
-				$exclude_string.=',';
-			}
-			$exclude_string.= $term->term_id;
-			$exclude_count = 1;
-		}
-	}
-
-		// Only get terms in this Project and this Mote parent
-	$terms_loaded = get_terms($projRootTaxName, 'exclude_tree='.$exclude_string.'&orderby=term_group&hide_empty=0');
- 	$t_count = count($terms_loaded);
-
- 	//return wp tax id,name,count,order
- 	$dhp_top_term = get_term_by('name', $term_name, $projRootTaxName);
-
- 	if ( $t_count > 0 ){
-   		foreach ( $terms_loaded as $term ) {
-  	    	$term_url = get_term_meta($term->term_id, 'icon_url', true);
-			$term ->icon_url = $term_url;
-		}
-	}
-	//testing return
-	// $updateTaxObject['debug'] = 'test';
-	$updateTaxObject['terms'] = $terms_loaded;
-	return $updateTaxObject;
-
-	//return $terms_loaded;
+	// This is needed to create the terms which do not display until they are added to posts(markers in this case).
+	// Code that was removed was not neccessary as it is run in the configure legend step with dhpGetMoteValues()
+	return 'terms created';
 } // dhpUpdateTaxonomy()
 
 
@@ -1454,7 +1434,7 @@ function dhpCreateLegendTax()
 	//returns unique array of values
 	$mArray = $projObj->getCustomFieldUniqueDelimValues($custom_field, $mote_delim);
 
-	//create/update terms with mArray
+	//create terms with mArray
 	$legendObject = dhpUpdateTaxonomy($mArray, $mote_name, $rootTaxName);
 
 	//testing returns
@@ -1540,7 +1520,19 @@ function dhpGetMoteValues()
  	//$dhp_top_term = get_term_by('name', $term_name, $rootTaxName);
  	if ( $t_count > 0 ){
    		foreach ( $terms_loaded as $term ) {
-  	    	$term_url = get_term_meta($term->term_id, 'icon_url', true);
+			// if term doesn't have a length for description load from term_meta
+   			if(strlen($term->description) > 0){
+   				$desc_object = json_decode($term->description);
+   				$term_url = $desc_object->icon_url;
+   			}
+   			else {
+   				if(function_exists(get_term_meta)){
+   					$term_url = get_term_meta($term->term_id, 'icon_url', true);
+   				}
+   				else {
+   					$term_url = null;
+   				}		
+   			}
 			$term ->icon_url = $term_url;
 		}
 	}
@@ -2111,16 +2103,17 @@ function loopTermHierarchy($mote_parent, $projectID, $dhp_project_terms)
 		if( ($parent_term_id==0||$parent_term_id==""||$parent_term_id==null) && ($term_id!=$mote_parent) ) {
 			$parent_term_id = $mote_parent;
 		}
-
-		$args = array( 'parent' => $parent_term_id,'term_group' =>  $term_order );
+		// add arg to update description field with icon_url
+		$new_icon_url = json_encode(array($meta_key => $meta_value));
+		$args = array( 'parent' => $parent_term_id, 'term_group' =>  $term_order, 'description' => $new_icon_url );
 		//update term(insert takes place on legend setup)
 		wp_update_term( $term_id, $projRootTaxName, $args );
-		//clear out old icon and insert new icon
-		// TO DO: just update_term_meta
-		delete_term_meta($term_id, $meta_key);
-		add_term_meta($term_id, $meta_key, $meta_value);
+		
+		// NO LONGER NEEDED. SAVES IN DESCRIPTION ABOVE
+		// delete_term_meta($term_id, $meta_key);
+		// add_term_meta($term_id, $meta_key, $meta_value);
 	}
-	$oldArgs = array('parentTerm'=>$mote_parent, 'projectID' => $projectID, 'termsArray'=>$dhp_project_terms, 'count'=> $myCount);
+	$oldArgs = array('parentTerm'=>$mote_parent, 'projectID' => $projectID, 'termsArray'=> $dhp_project_terms, 'count'=> $myCount);
 	return $oldArgs;
 } // loopTermHierarchy()
 
