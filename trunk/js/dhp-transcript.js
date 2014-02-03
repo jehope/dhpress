@@ -1,5 +1,5 @@
 // DHPressTranscript -- contains all data and functions dealing with transcriptions using SoundCloud
-
+// ASSUMES: Transcript modal is closed with button of class close-reveal-modal
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 
 var dhpTranscript = {
@@ -26,8 +26,6 @@ var dhpTranscript = {
         var WIDGET_PLAYING   = false;
         var fullTranscript   = (transParams.timecode == -1);
 
-        // console.log("Preparing transcript: Audio = "+transParams.audio);
-
             // Initialize this object's variables
         dhpTranscript.rowIndex = null;
         dhpTranscript.transcriptData = [];
@@ -37,7 +35,69 @@ var dhpTranscript = {
         if (appendPos == null) {
             throw new Error("Cannot find HTML DIV at which to append transcript.");
         }
-        appendPos.append('<div class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'&show_artwork=true"></iframe></p></div>');
+        appendPos.append('<div class="transcript-ep"><p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p></div>');
+
+            // Must set these variables after HTML appended above
+        var scWidget = SC.Widget(document.getElementById('scPlayer'));
+
+            // Setup audio/transcript SoundCloud player after entire sound clip loaded
+        scWidget.bind(SC.Widget.Events.READY, function() {
+                // if partial transcript, seek to beginning before binding to seek or play happens
+            scWidget.bind(SC.Widget.Events.LOAD_PROGRESS, function onLoadProgress (e) {
+                if (e.loadedProgress && e.loadedProgress === 1) {
+                    if (!fullTranscript) {
+                        scWidget.seekTo(transParams.startTime);
+                            // highlight of time section will happen with PLAY_PROGRESS
+                    }
+                }
+            });
+
+            scWidget.bind(SC.Widget.Events.PLAY, function() {
+                WIDGET_PLAYING = true;
+            });
+
+            scWidget.bind(SC.Widget.Events.PAUSE, function() {
+                WIDGET_PLAYING = false;
+            });
+
+            scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(params) {
+                    // Keep within bounds if only excerpt of longer transcript
+                if (!fullTranscript) {
+                    if (params.currentPosition < transParams.startTime) {
+                        scWidget.seekTo(transParams.startTime);
+                    } else if (params.currentPosition > transParams.endTime) {
+                        scWidget.pause();
+                        WIDGET_PLAYING = false;
+                    }
+                }
+                if (WIDGET_PLAYING) {
+                    dhpTranscript.hightlightTranscriptLine(params.currentPosition);
+                }
+            });
+
+                // Can't seek within the SEEK event because it causes infinite recursion
+
+            scWidget.bind(SC.Widget.Events.FINISH, function() {
+                WIDGET_PLAYING = false;
+            });
+        });
+
+            // Allow user to click anywhere in set of timecodes to go to corresponding time
+        jQuery('.transcript-ep').on('click', function(evt) {
+            if(jQuery(evt.target).hasClass('type-timecode')) {
+                var seekToTime = jQuery(evt.target).closest('.type-timecode').data('timecode');
+                scWidget.seekTo(seekToTime);
+                if(!WIDGET_PLAYING) {
+                    scWidget.play();
+                }
+            }
+        });
+
+            // Silence SoundCloud if close button pressed
+        jQuery('.close-reveal-modal').on('click', function () {
+            var scWidget = SC.Widget(document.getElementById('scPlayer'));
+            scWidget.pause();
+        });
 
             // Is there any primary transcript data?
         if(transParams.transcript && transParams.transcript!=='none') {
@@ -63,54 +123,6 @@ var dhpTranscript = {
                 dhpTranscript.loadTranscriptClip(ajaxURL, projectID, transParams.transcript2, transParams.timecode, 1);
             }
         }
-
-            // Must wait to set these variables after HTML appended above
-        var iframeElement    = document.querySelector('.player');
-        var soundCloudWidget = SC.Widget(iframeElement.id);
-
-            // Setup audio/transcript SoundClod player
-        soundCloudWidget.bind(SC.Widget.Events.READY, function() {
-              // load new widget
-            // soundCloudWidget.play();         // Don't invoke immediate play as data may not be loaded yet
-            soundCloudWidget.bind(SC.Widget.Events.PLAY, function() {
-                WIDGET_PLAYING = true;
-            });
-            soundCloudWidget.bind(SC.Widget.Events.PAUSE, function() {
-                WIDGET_PLAYING = false;
-            });
-            soundCloudWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
-                    // Keep within bounds if only excerpt of longer transcript
-                if ((!fullTranscript) && (e.currentPosition < transParams.startTime)) {
-                    soundCloudWidget.pause();
-                    soundCloudWidget.seekTo(transParams.startTime);
-                }
-                if ((!fullTranscript) && (e.currentPosition > transParams.endTime)) {
-                    soundCloudWidget.pause();
-                }
-                dhpTranscript.hightlightTranscriptLine(e.currentPosition);
-            });
-            soundCloudWidget.bind(SC.Widget.Events.SEEK, function() {});
-            soundCloudWidget.bind(SC.Widget.Events.FINISH, function() {});
-        });
-
-            // Allow user to click anywhere in set of timecodes to go to corresponding time
-        jQuery('.transcript-ep').on('click', function(evt) {
-            var tempSeekTo = null;
-            if(jQuery(evt.target).hasClass('type-timecode')) {
-                tempSeekTo = jQuery(evt.target).closest('.type-timecode').data('timecode');
-                soundCloudWidget.seekTo(tempSeekTo);
-                if(!WIDGET_PLAYING) {
-                    soundCloudWidget.play();
-                }
-            }
-        });
-
-        jQuery(htmlID).on('hidden', function () {
-            if(WIDGET_PLAYING) {
-                var tempWidget = SC.Widget(iframeElementID);
-                tempWidget.pause();
-            }
-        });
     }, // prepareOneTranscript()
 
 
