@@ -12,6 +12,7 @@
 
 define( 'DHP_SCRIPT_PROJ_VIEW',  'dhp-script-proj-view.txt' );
 define( 'DHP_SCRIPT_MAP_VIEW',   'dhp-script-map-view.txt' );
+// define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unused
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
 
 	// HTML fields added to Custom Fields box in Edit Project admin panel
@@ -1662,9 +1663,6 @@ function dhpGetTranscriptClip()
 	$dhp_project = $_POST['project'];
 	$dhp_transcript_field = $_POST['transcript'];
 	$dhp_clip = $_POST['timecode'];
-		// Why is Project post loaded? Does this have a needed side-effect?
-	// $projectObj = get_post($dhp_project);
-	//$dhp_transcript = get_post_meta( $dhp_project, $dhp_project_field, true);
 
 	$dhp_transcript = loadTranscriptFromFile($dhp_transcript_field);
 	$dhp_transcript_clip = getTranscriptClip($dhp_transcript,$dhp_clip);
@@ -1683,9 +1681,8 @@ add_action( 'wp_ajax_nopriv_dhpGetTaxTranscript', 'dhpGetTaxTranscript');
 //			$_POST['transcript'] = (end of URL) to file containing contents of transcript
 //			$_POST['tax_term'] = the taxonomic term that marker must match
 // ASSUMES: The transcript is only associated with one taxonomic term
-// RETURNS:	null if not found, or if not a note associated with transcript; otherwise, JSON-encoded complete transcript with fields:
+// RETURNS:	null if not found, or if not associated with transcript; otherwise, JSON-encoded complete transcript with fields:
 //				audio = data from custom field
-//				feed = array of Markers which match category (and their associated data)
 //				settings = entry-point settings for transcript
 //				transcript, transcript2 = transcript data itself for each of 2 possible transcripts
 
@@ -1741,7 +1738,7 @@ function dhpGetTaxTranscript()
 		}
 	}
 
-	$dhp_object['feed'] = dhp_get_group_feed($rootTaxName, $dhp_tax_term);
+	// $dhp_object['feed'] = dhp_get_group_feed($rootTaxName, $dhp_tax_term);
 	$dhp_object['settings'] = $dhp_transcript_ep;
 	$dhp_object['audio'] = $marker_meta[$dhp_audio_mote['custom-fields']][0];
 	$dhp_object['transcript'] = $dhp_transcript;
@@ -2212,21 +2209,6 @@ function dhp_project_restore_revision( $post_id, $revision_id )
 } // dhp_project_restore_revision()
 
 
-//add_filter( '_wp_post_revision_fields', 'my_plugin_revision_fields' );
-// function my_plugin_revision_fields( $fields )
-// {
-// 	$fields['my_meta'] = 'My Meta';
-// 	return $fields;
-// } // my_plugin_revision_fields()
-
-//add_filter( '_wp_post_revision_field_my_meta', 'my_plugin_revision_field', 10, 2 );
-// function my_plugin_revision_field( $value, $field )
-// {
-// 	global $revision;
-// 	return get_metadata( 'post', $revision->ID, $field, true );
-// } // my_plugin_revision_field()
-
-
 add_action( 'admin_enqueue_scripts', 'add_dhp_project_admin_scripts', 10, 1 );
 
 // add_dhp_project_admin_scripts( $hook )
@@ -2347,14 +2329,14 @@ function dhp_get_script_text($scriptname)
 } // dhp_get_script_text()
 
 
-add_filter( 'the_content', 'dhp_add_html_hook' );
+add_filter( 'the_content', 'dhp_mod_page_content' );
 
 // PURPOSE:	Called by WP to modify content to be rendered for a post page
 // INPUT:	$content = material to show on page
 // RETURNS:	$content with ID of this post and DH Press hooks for marker text and visualization
 // NOTES:   Need to insert Handlebars script texts into HTML, depending on visualizations
 
-function dhp_add_html_hook($content) {
+function dhp_mod_page_content($content) {
 	$postID = get_the_ID();
 	$postType = get_query_var('post_type');
 		// Only produce dhp-visual div hook for Project posts
@@ -2377,7 +2359,7 @@ function dhp_add_html_hook($content) {
 		break;
 	}
 	return $content.'<div class="dhp-post" id="'.$postID.'"><div class="dhp-entrytext"></div>'.$to_append.'</div>';
-} // dhp_add_html_hook()
+} // dhp_mod_page_content()
 
 
 add_filter( 'single_template', 'dhp_page_template' );
@@ -2407,8 +2389,6 @@ function dhp_page_template( $page_template )
 
         // $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
 
-		// wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__)));
-		// wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__)));
 		//foundation styles
         wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.0.3/css/foundation.min.css',  dirname(__FILE__)));
         wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
@@ -2469,8 +2449,6 @@ function dhp_page_template( $page_template )
 
         // $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
 
-		// wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__)));
-		// wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__)));
 		//foundation styles
 		wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.0.3/css/foundation.min.css',  dirname(__FILE__)));
 		wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
@@ -2504,7 +2482,7 @@ add_filter( 'archive_template', 'dhp_tax_template' );
 // PURPOSE: Set template to be used to show results of top-level custom taxonomy display
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
-// TO DO:   Get visualizations to work??
+// TO DO:   Check to see if the taxonomy is the transcript-source mote before display transcription
 
 function dhp_tax_template( $page_template )
 {
@@ -2547,6 +2525,7 @@ function dhp_tax_template( $page_template )
 		// wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
 
 			// Is there audio transcript?
+			// TO DO: Also check if taxonomy is the transcript-source mote
 	    if ($projObj->getEntryPointByName('transcript')) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 		    wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
