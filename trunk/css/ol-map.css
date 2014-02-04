@@ -22,12 +22,16 @@ body.fullscreen {
 }
 .olControlZoom .reset-map {
 	margin-top: 5px;
-	padding-top: 1px;
+	padding-top: 2px;
 	-webkit-border-radius: 4px;
 	-moz-border-radius: 4px;
 	border-radius: 4px;
    	cursor: pointer;
-   	font-size: 16px;
+   	font-size: 18px;
+}
+.isMobile .olControlZoom .reset-map {
+	padding-top: 1px;
+	font-size: 16px;
 }
 	/* Foundation Icons required custom config */
 .olControlZoom a.olControlZoomIn {
@@ -44,6 +48,12 @@ body.fullscreen {
 .olImageLoadError {
  	display: none;
  	visibility: hidden !important; 
+}
+
+.olMap .olControlAttribution {
+	bottom: 10px;
+	right: 10px;
+
 }
 
 	/* Overrides most theme settings for img tags in the map only */
