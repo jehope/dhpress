@@ -12,7 +12,12 @@ jQuery(document).ready(function($) {
     var dhpSettings, projectID, ajaxURL, viewParams;
         // Inactivity timeout
     var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive;
+    var browserMobile = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
 
+    if(browserMobile) {
+        $('body').addClass('isMobile');
+    }
+    console.log(browserMobile)
     // projectID      = $('.post').attr('id');
     ajaxURL        = dhpData.ajax_url;
     vizParams      = dhpData.vizParams;
@@ -33,7 +38,7 @@ jQuery(document).ready(function($) {
     }
     $('.dhp-nav .title-area .name h1 a').text($('.entry-title').text());
         // handle toggling fullscreen mode
-    $('.dhp-nav .fullscreen').click(function(){
+    $('.dhp-nav .fullscreen').on('click', function(){
         if($('body').hasClass('fullscreen')) {
             $('body').removeClass('fullscreen');
             $('.dhp-nav .fullscreen').removeClass('active');
@@ -46,7 +51,7 @@ jQuery(document).ready(function($) {
     });
 
         // handle turning joyride tips on/off
-    $('.dhp-nav .tips').click(function(){
+    $('.dhp-nav .tips').on('click', function(){
         if($('.dhp-nav .tips').hasClass('active')) {
             $('.dhp-nav .tips').removeClass('active');
             $('#dhpress-tips').joyride('hide');
@@ -74,7 +79,7 @@ jQuery(document).ready(function($) {
         });
 
             // Add map elements to top nav bar
-        $('.dhp-nav .top-bar-section .right').append(Handlebars.compile($("#dhp-script-map-menus").html()));
+        $('.dhp-nav .top-bar-section .left').append(Handlebars.compile($("#dhp-script-map-menus").html()));
 
             // Insert Legend area on right sidebar
         $('#dhp-visual').after(Handlebars.compile($("#dhp-script-map-legend-head").html()));
@@ -144,7 +149,7 @@ jQuery(document).ready(function($) {
             // If Home button defined, insert it
         if ((homeBtnLabel !== null) && (homeBtnLabel !== '') && (homeBtnURL !== null) && (homeBtnURL !== '')) {
             var homeBtnHTML = '<li ><a href="'+ homeBtnURL +'"><i class="fi-home"></i> ' + homeBtnLabel + ' </a></li>';
-            $('.top-bar-section .left').append(homeBtnHTML);
+            $('.top-bar-section .right').prepend(homeBtnHTML);
         }
 
     } // createNavBar()
