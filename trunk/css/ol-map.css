@@ -22,16 +22,18 @@ body.fullscreen {
 }
 .olControlZoom .reset-map {
 	margin-top: 5px;
-	padding-top: 2px;
+	padding-top: 1px;
 	-webkit-border-radius: 4px;
 	-moz-border-radius: 4px;
 	border-radius: 4px;
    	cursor: pointer;
+   	font-size: 16px;
 }
 	/* Foundation Icons required custom config */
 .olControlZoom a.olControlZoomIn {
 	padding-top: 2px;
-	font-size: 17px;
+	font-size: 15px;
+	padding-left: 1px;
 }
 .olControlZoom a.olControlZoomOut {
 	font-size: 15px;
@@ -67,6 +69,9 @@ body.fullscreen {
 	font-family: "Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
 
 }
+#legends.mini {
+	min-height: 30px;
+}
 .fullscreen #legends {
 	position:absolute;
 	min-width: 220px;
@@ -97,6 +102,7 @@ body.fullscreen {
 
 .legend-div .legend-title {
 	padding-left: 10px;
+	padding-right: 10px;
 	border-bottom: 1px solid #111;
 	font-size: 22px;
 	font-weight: bold;
@@ -149,8 +155,7 @@ body.fullscreen {
 
 	/* Little resize button on legends */
 .legend-resize {
-	padding: 2px 5px;
-	float: right;
+	padding: 7px;
 	position: absolute;
 	right: 0px;
 }
