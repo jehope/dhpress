@@ -1716,29 +1716,29 @@ function dhpGetTaxTranscript()
 
 	$projObj      = new DHPressProject($projectID);
 	$rootTaxName  = $projObj->getRootTaxName();
-
 	$dhp_transcript_ep = $projObj->getEntryPointByName("transcript");
 
+		// Store results to return here
 	$dhp_object = array();
 
 		// What custom field holds appropriate data? Fetch it from Marker
 	$dhp_audio_mote = $projObj->getMoteByName($dhp_transcript_ep['settings']['audio']);
+
 	$dhp_transcript_mote = $projObj->getMoteByName($dhp_transcript_ep['settings']['transcript']);
 	$dhp_transcript_cfield = $dhp_transcript_mote['custom-fields'];
-
-	// $dhp_object['debug-dtn'] = $dhp_tax_term;
-	// $dhp_object['debug-filename'] = $transFile;
-	// $dhp_object['debug-count-1stm'] = count($first_marker);
-	// $dhp_object['debug-mID'] = $first_marker[0]->ID;
-	// $dhp_object['debug-sa'] = $dhp_transcript_ep['settings']['audio'];
-	// $dhp_object['debug-st'] = $dhp_transcript_ep['settings']['transcript'];
-	// $dhp_object['debug-tcf'] = $dhp_transcript_cfield;
-	// $dhp_object['debug-rtn'] = $rootTaxName;
-
 	$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
-	// $dhp_object['debug-ts'] = $dhp_transcript;
 	if($dhp_transcript!='none') {
 		$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
+	}
+
+		//if project has two transcripts
+	if($dhp_transcript_ep['settings']['transcript2']) {
+		$dhp_transcript2_mote = $projObj->getMoteByName($dhp_transcript_ep['settings']['transcript2']);
+		$dhp_transcript2_cfield = $dhp_transcript2_mote['custom-fields'];
+		$dhp_transcript2 = $marker_meta[$dhp_transcript2_cfield][0];
+		if ($dhp_transcript2 != 'none') {
+			$dhp_object['transcript2'] = loadTranscriptFromFile($dhp_transcript2);
+		}
 	}
 
 	$dhp_object['feed'] = dhp_get_group_feed($rootTaxName, $dhp_tax_term);
@@ -1746,15 +1746,7 @@ function dhpGetTaxTranscript()
 	$dhp_object['audio'] = $marker_meta[$dhp_audio_mote['custom-fields']][0];
 	$dhp_object['transcript'] = $dhp_transcript;
 
-		//if project has two transcripts
-	if($dhp_settings_ep['settings']['transcript2']) {
-		$dhp_transcript2_field = $projObj->getMoteByName($dhp_transcript_ep['settings']['transcript2']);
-		$dhp_transcript2_cfield = $dhp_transcript2_field['custom-fields'];//$marker_meta['transcript_url'])
-		$dhp_transcript2 = loadTranscriptFromFile($marker_meta[$dhp_transcript2_cfield][0]);
-		$dhp_object['transcript2'] = $dhp_transcript2;
-	}
-
-	die(json_encode($dhp_object));	
+	die(json_encode($dhp_object));
 } // dhpGetTaxTranscript()
 
 
@@ -2290,7 +2282,6 @@ function add_dhp_project_admin_scripts( $hook )
 
         } else if ( $post->post_type == 'dhp-markers' ) {
         	wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__) ));
-
         }
 
         // Shows list of all Project in admin panel
@@ -2301,43 +2292,6 @@ function add_dhp_project_admin_scripts( $hook )
         }
     }
 } // add_dhp_project_admin_scripts()
-
-
-// PURPOSE: Prepare required scripts for CDLA maps to be rendered as WP content
-// INPUT:	$mapLayers = array of map layers (each containing Hash ['mapType'], ['id'])
-// ASSUMES:	Map data has been loaded into WP DB
-// TO DO:	Better error handling if map data doesn't exist?
-
-// function dhpRegisterCDLAMaps($mapLayers)
-// {
-// 	wp_register_script(
-// 				'cdlaMaps',
-// 				'http://docsouth.unc.edu/cdlamaps/api/OASIS',
-// 				array( 'open-layers' ),
-// 				false,
-// 				true
-// 			);
-// 	wp_enqueue_script('cdlaMaps');
-
-// 		// Loop thru all CDLA layers
-// 	$cdla_count = 0;
-// 	foreach($mapLayers as $layer) {
-// 		if($layer['mapType'] == 'type-CDLA')
-// 		{
-// 			$map_id = get_post_meta($layer['id'],'dhp_map_typeid',true);
-// 			$cdla_layer_url = 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$map_id;
-
-// 			wp_register_script(
-// 				'cdla-layer-data'.$cdla_count,
-// 				$cdla_layer_url,
-// 				array( 'cdlaMaps' ),
-// 				false,
-// 				true
-// 			);
-// 			wp_enqueue_script( 'cdla-layer-data'.$cdla_count++);
-// 		}
-// 	}
-// } // dhp_register_maps()
 
 
 // PURPOSE: Extract DHP custom map data from Map Library so they can be rendered
@@ -2515,8 +2469,8 @@ function dhp_page_template( $page_template )
 
         // $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
 
-		wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__)));
-		wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__)));
+		// wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__)));
+		// wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__)));
 		//foundation styles
 		wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.0.3/css/foundation.min.css',  dirname(__FILE__)));
 		wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
@@ -2525,7 +2479,7 @@ function dhp_page_template( $page_template )
 		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('jquery');
-		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
+		// wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.0.3/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'dhp-modernizr', plugins_url('/lib/foundation-5.0.3/js/modernizr.js', dirname(__FILE__)), 'jquery');
 		//wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
@@ -2578,8 +2532,6 @@ function dhp_tax_template( $page_template )
 	    	// mediaelement for timelines -- not currently used
 		// wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
 
-		wp_enqueue_style( 'dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__)));
-		wp_enqueue_style( 'dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__)));
 		//foundation styles
 		wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.0.3/css/foundation.min.css',  dirname(__FILE__)));
 		wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
@@ -2588,7 +2540,6 @@ function dhp_tax_template( $page_template )
 		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script( 'jquery' );
-		wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.0.3/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'dhp-modernizr', plugins_url('/lib/foundation-5.0.3/js/modernizr.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'underscore' );
