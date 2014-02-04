@@ -23,8 +23,9 @@ var dhpTranscript = {
     prepareOneTranscript: function (ajaxURL, projectID, htmlID, transParams)
     {
         var appendPos;
-        var WIDGET_PLAYING   = false;
-        var fullTranscript   = (transParams.timecode == -1);
+        var playingNow = false;
+        var primeAudio = true;
+        var fullTranscript = (transParams.timecode == -1);
 
             // Initialize this object's variables
         dhpTranscript.rowIndex = null;
@@ -42,35 +43,34 @@ var dhpTranscript = {
 
             // Setup audio/transcript SoundCloud player after entire sound clip loaded
         scWidget.bind(SC.Widget.Events.READY, function() {
-                // if partial transcript, seek to beginning before binding to seek or play happens
-            scWidget.bind(SC.Widget.Events.LOAD_PROGRESS, function onLoadProgress (e) {
-                if (e.loadedProgress && e.loadedProgress === 1) {
-                    if (!fullTranscript) {
-                        scWidget.seekTo(transParams.startTime);
-                            // highlight of time section will happen with PLAY_PROGRESS
-                    }
-                }
-            });
+                // Prime the audio (seekTo won't work until sound loaded and playing)
+            scWidget.play();
 
             scWidget.bind(SC.Widget.Events.PLAY, function() {
-                WIDGET_PLAYING = true;
+                playingNow = true;
             });
 
             scWidget.bind(SC.Widget.Events.PAUSE, function() {
-                WIDGET_PLAYING = false;
+                playingNow = false;
             });
 
             scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(params) {
+                    // Pauses audio after it primes so seekTo will function
+                if (primeAudio) {
+                    scWidget.pause();
+                    primeAudio = false;
+                    playingNow = false;
+                }
                     // Keep within bounds if only excerpt of longer transcript
                 if (!fullTranscript) {
                     if (params.currentPosition < transParams.startTime) {
                         scWidget.seekTo(transParams.startTime);
                     } else if (params.currentPosition > transParams.endTime) {
                         scWidget.pause();
-                        WIDGET_PLAYING = false;
+                        playingNow = false;
                     }
                 }
-                if (WIDGET_PLAYING) {
+                if (playingNow) {
                     dhpTranscript.hightlightTranscriptLine(params.currentPosition);
                 }
             });
@@ -78,7 +78,7 @@ var dhpTranscript = {
                 // Can't seek within the SEEK event because it causes infinite recursion
 
             scWidget.bind(SC.Widget.Events.FINISH, function() {
-                WIDGET_PLAYING = false;
+                playingNow = false;
             });
         });
 
@@ -87,7 +87,8 @@ var dhpTranscript = {
             if(jQuery(evt.target).hasClass('type-timecode')) {
                 var seekToTime = jQuery(evt.target).closest('.type-timecode').data('timecode');
                 scWidget.seekTo(seekToTime);
-                if(!WIDGET_PLAYING) {
+                if(!playingNow) {
+                    playingNow = true;
                     scWidget.play();
                 }
             }
@@ -95,6 +96,12 @@ var dhpTranscript = {
 
             // Silence SoundCloud if close button pressed
         jQuery('.close-reveal-modal').on('click', function () {
+            var scWidget = SC.Widget(document.getElementById('scPlayer'));
+            scWidget.pause();
+        });
+
+            // Silence SoundCloud if modal closed in another way
+        jQuery('#markerModal').on('closed', function () {
             var scWidget = SC.Widget(document.getElementById('scPlayer'));
             scWidget.pause();
         });
