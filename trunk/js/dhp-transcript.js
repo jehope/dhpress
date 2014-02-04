@@ -94,12 +94,6 @@ var dhpTranscript = {
             }
         });
 
-            // Silence SoundCloud if close button pressed
-        jQuery('.close-reveal-modal').on('click', function () {
-            var scWidget = SC.Widget(document.getElementById('scPlayer'));
-            scWidget.pause();
-        });
-
             // Silence SoundCloud if modal closed in another way
         jQuery('#markerModal').on('closed', function () {
             var scWidget = SC.Widget(document.getElementById('scPlayer'));
