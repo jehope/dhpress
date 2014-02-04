@@ -1,20 +1,49 @@
 <?php
-/**
-     * Registers and handles diPH Map Library functions
-     *
-     * @package diPH Toolkit
-     * @author diPH Team
-     * @link http://dhpress.org/download/
-     */
-     
-global $cdlamapid;
+// PURPOSE: Handles DH Press custom maps (entering and editing of map data)
+// NOTES:   In order for maps to be used by DH Press projects, there must be entries in the Maps Library, either
+//              entered by hand or imported via CSV files
+//          The following custom fields are required for all maps in the Map Library:
+//              dhp_map_typeid      = unique ID for this map (String)
+//              dhp_map_shortname   = a short title for map, does not need to be unique
+//              dhp_map_category    = [ "base" | "overlay" ]
+//              dhp_map_type        = [ "DHP" | "WMS" | "KML" | "Google" | "OSM" | "TMS" ]
+//              dhp_map_url         = URL for map on map server
+//              dhp_map_n_bounds    = latitude of northern bounds of map/overlay
+//              dhp_map_s_bounds    = latitude of southern bounds of map/overlay
+//              dhp_map_e_bounds    = longitude of eastern bounds of map/overlay
+//              dhp_map_w_bounds    = longitude of western bounds of map/overlay
+//              dhp_map_min_zoom    = minimum zoom for map (Integer)
+//              dhp_map_max_zoom    = maximum zoom for map (Integer)
+//              dhp_map_cent_lat    = latitude of centroid
+//              dhp_map_cent_lon    = longitude of centroid
+//          The following custom fields are mostly for purposes of documenting and identifying maps:
+//              dhp_map_desc
+//              dhp_map_state
+//              dhp_map_county
+//              dhp_map_city
+//              dhp_map_otherlocation
+//              dhp_map_classification
+//              dhp_map_year
+//              dhp_map_source
+//              dhp_map_creator
+
+// The data from CDLA library copied into default DH Press library from files in the directory
+//              http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/
+
+    // A list of all of the custom fields associated with Map post types
+$dhp_map_custom_fields = array( 'dhp_map_typeid', 'dhp_map_shortname', 'dhp_map_category', 'dhp_map_type', 'dhp_map_url',
+                                'dhp_map_n_bounds', 'dhp_map_s_bounds', 'dhp_map_e_bounds', 'dhp_map_w_bounds',
+                                'dhp_map_min_zoom', 'dhp_map_max_zoom', 'dhp_map_cent_lat', 'dhp_map_cent_lon',
+                                'dhp_map_desc', 'dhp_map_state', 'dhp_map_county', 'dhp_map_city',
+                                'dhp_map_otherlocation', 'dhp_map_classification', 'dhp_map_year', 'dhp_map_source', 'dhp_map_creator'
+                            );
+
 
 // ============================== Init Functions ============================
 
 add_action( 'init', 'dhp_mapset_init' );
 
-// dhp_mapset_init()
-// PURPOSE: Add new taxonomy for mapsets
+    // PURPOSE: Add new taxonomy for mapsets
 function dhp_mapset_init()
 {
   $labels = array(
@@ -47,7 +76,7 @@ function dhp_mapset_init()
     'menu_position' => null,
     'supports' => array( 'title', 'author', 'excerpt', 'comments', 'revisions','custom-fields' )
 //'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions','custom-fields' )
-  ); 
+  );
   register_post_type('dhp-maps',$args);
 }
 
@@ -67,7 +96,6 @@ function dhp_mapset_init()
 //     'add_or_remove_items' => __( 'Add or remove mapsets' ),
 //     'menu_name' => __( 'Mapsets' ),
 //   ); 
-
 //   register_taxonomy('mapset','dhp-maps',array(
 //     'hierarchical' => true,
 //     'labels' => $labels,
@@ -76,33 +104,58 @@ function dhp_mapset_init()
 //     'query_var' => true,
 //     'rewrite' => array( 'slug' => 'mapsets' ),
 //   ));
-    
 // }
 //add_action( 'init', 'mapset_init' );
 
 
 add_action( 'admin_enqueue_scripts', 'add_dhp_map_library_scripts', 10, 1 );
 
-// add_dhp_map_library_scripts( $hook )
-// Custom scripts to be run on new/edit Map pages only
-// PURPOSE: Prepare CSS and JS files for all page types in WP
-// INPUT:   $hook = name of template file being loaded
-// ASSUMES: Other WP global variables for current page are set
-
+    // PURPOSE: Prepare CSS and JS files for all page types in WP
+    // INPUT:   $hook = name of template file being loaded
+    // ASSUMES: Other WP global variables for current page are set
+    // NOTES:   Custom scripts to be run on new/edit Map pages only (not view)
 function add_dhp_map_library_scripts( $hook )
 {
     global $post;
 
     if ( $hook == 'edit.php'|| $hook == 'post-new.php' || $hook == 'post.php' ) {
-        if ( 'dhp-maps' === $post->post_type ) {     
-            //wp_register_style( 'ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
-            wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
-            wp_enqueue_script(  'jquery' );
-             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-             wp_enqueue_script(  'dhp-map-library-script', plugins_url('/js/dhp-map-library-admin.js', dirname(__FILE__) ));
+        if ( $post->post_type === 'dhp-maps' ) {
+            //wp_register_style('ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
+            // wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+            wp_enqueue_script('jquery' );
+            //wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
+            wp_enqueue_script('dhp-map-library-script', plugins_url('/js/dhp-map-library-admin.js', dirname(__FILE__) ));
         }
     }
 } // add_dhp_map_library_scripts()
+
+
+    // PURPOSE: Return all of the data in custom fields associated with a particular Map post
+    // INPUT:   $postID = ID of the Map post
+    //          $cfArray = array of names of custom fields
+    // RETURNS: An associative array (hash) of values
+function dhp_get_map_custom_fields($postID, $cfArray)
+{
+    $returnVals = array();
+
+    foreach ($cfArray as $key) {
+        $dataItem = get_post_meta($postID, $key, true);
+        $returnVals[$key] = $dataItem;
+    }
+    return $returnVals;
+} // dhp_get_map_custom_fields()
+
+
+    // PURPOSE: Update the data in custom fields associated with a particular Map post from _POST[] vars
+    // INPUT:   $postID = ID of the Map post
+    //          $cfArray = array of names of custom fields to update
+function dhp_update_map_from_post($postID, $cfArray)
+{
+    foreach ($cfArray as $key) {
+        $dataItem = $_POST[$key];
+        update_post_meta($postID, $key, $dataItem);
+    }
+} // dhp_update_map_from_post()
 
 
 add_action('add_meta_boxes', 'add_dhp_map_settings_box');
@@ -119,85 +172,94 @@ function add_dhp_map_settings_box()
         'high');                           // $priority
 }
 
-// show_dhp_map_settings_box()
-// PURPOSE: Handle creating HTML to show/edit custom fields specific to Map marker
-// ASSUMES: $post global is set to the Map post we are currently looking at
-// TO DO:   Must be more efficient means of selecting option
-
+    // PURPOSE: Handle creating HTML to show/edit custom fields specific to Map marker
+    // ASSUMES: $post global is set to the Map post we are currently looking at
+    // TO DO:   Must be more efficient means of selecting option
 function show_dhp_map_settings_box()
 {
-    global $post;
+    global $post, $dhp_map_custom_fields;
 
-    // Setup nonce
+        // Setup nonce
     echo '<input type="hidden" name="dhp_map_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
-    $dhp_map_desc = get_post_meta($post->ID, 'dhp_map_desc',true);
-    $dhp_map_typeid = get_post_meta($post->ID, 'dhp_map_typeid',true);
-    
-    $dhp_map_url = get_post_meta($post->ID, 'dhp_map_url',true);  
-    $dhp_map_type = get_post_meta($post->ID, 'dhp_map_type',true);
-
-    if($dhp_map_type == 'WMS'){
-        $selectWMS = 'selected';
-    }else if($dhp_map_type == 'KML'){
-        $selectKML = 'selected';
-    }else if($dhp_map_type == 'CDLA'){
-        $selectCDLA = 'selected';
-    }else if($dhp_map_type == 'Google'){
-        $selectGoogle = 'selected';
-    }else if($dhp_map_type == 'OSM'){
-        $selectOSM = 'selected';
-    }
-    else if($dhp_map_type == 'TMS'){
-        $selectTMS = 'selected';
-    }
-    else{
-        $selectType = 'selected';
-    }
-    $dhp_map_category = get_post_meta($post->ID, 'dhp_map_category',true);
-    if($dhp_map_category == 'base layer'){
-        $selectBaseLayer = 'selected';
-    }else if($dhp_map_category == 'overlay'){
-        $selectOverlay = 'selected';
-    }else{
-        $selectCategory = 'selected';
-    }
 
         // Fetch all custom fields for this Map
-    $dhp_map_source = get_post_meta($post->ID, 'dhp_map_source',true);
-    $dhp_map_creator = get_post_meta($post->ID, 'dhp_map_creator',true);
-    $dhp_map_classification = get_post_meta( $post->ID, 'dhp_map_classification', true );
-    $dhp_map_state = get_post_meta( $post->ID, 'dhp_map_state', true );
-    $dhp_map_county = get_post_meta( $post->ID, 'dhp_map_county', true );
-    $dhp_map_city = get_post_meta( $post->ID, 'dhp_map_city', true );
-    $dhp_map_year = get_post_meta( $post->ID, 'dhp_map_year', true );
-    
+    $mapAttributes = dhp_get_map_custom_fields($post->ID, $dhp_map_custom_fields);
+
+    switch($mapAttributes['dhp_map_type']) {
+    case 'WMS':
+        $selectWMS = 'selected';
+        break;
+    case 'KML':
+        $selectKML = 'selected';
+        break;
+    case 'DHP':
+        $selectDHP = 'selected';
+        break;
+    case 'Google':
+        $selectGoogle = 'selected';
+        break;
+    case 'OSM':
+        $selectOSM = 'selected';
+        break;
+    case 'TMS':
+        $selectTMS = 'selected';
+        break;
+    default:
+        $selectType = 'selected';
+        break;
+    }
+
+    switch ($mapAttributes['dhp_map_category']) {
+    case 'base layer':
+        $selectBaseLayer = 'selected';
+        break;
+    case 'overlay':
+        $selectOverlay = 'selected';
+        break;
+    default:
+        $selectCategory = 'selected';
+        break;
+    }
+
     echo '<table>';
     echo '<tr><td colspan=2><label>Please enter the map information below:</label></td></tr>';
-    echo '<tr><td colspan=2><label>* means required attribute for CDLA Maps</label></td></tr>';
-    echo '<tr><td align=right>Description:</td><td><input name="dhp_map_desc" id="dhp_map_desc" type="text" size="60" value="'.$dhp_map_desc.'"/></td></tr>';
-    echo '<tr><td align=right>*Map TypeID:</td><td><input name="dhp_map_typeid" id="dhp_map_typeid" type="text" size="60" value="'.$dhp_map_typeid.'"/></td></tr>';
-    echo '<tr><td align=right>URL:</td><td><input name="dhp_map_url" id="dhp_map_url" type="text" size="30" value="'.$dhp_map_url.'"/></td></tr>';
-    echo '<tr><td align=right>*Type:</td><td><select name="dhp_map_type" id="dhp_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML"  '.$selectKML.' >KML</option><option value="CDLA"  '.$selectCDLA.'>CDLA</option><option value="OSM"  '.$selectOSM.'>OSM</option><option value="OSM"  '.$selectTMS.'>TMS</option><option value="Google"  '.$selectGoogle.'>Google</option></select></td></tr>';
+    echo '<tr><td colspan=2><label>* = required attribute for DHP Maps</label></td></tr>';
+    echo '<tr><td align=right>*Map ID:</td><td><input name="dhp_map_typeid" id="dhp_map_typeid" type="text" size="60" value="'.$mapAttributes['dhp_map_typeid'].'"/></td></tr>';
+    echo '<tr><td align=right>*Short title:</td><td><input name="dhp_map_shortname" id="dhp_map_shortname" type="text" size="60" value="'.$mapAttributes['dhp_map_shortname'].'"/></td></tr>';
+    echo '<tr><td align=right>*URL:</td><td><input name="dhp_map_url" id="dhp_map_url" type="text" size="30" value="'.$mapAttributes['dhp_map_url'].'"/></td></tr>';
+    echo '<tr><td align=right>*Type:</td><td><select name="dhp_map_type" id="dhp_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML" '.$selectKML.' >KML</option><option value="DHP" '.$selectDHP.'>Custom DHP</option><option value="OSM" '.$selectOSM.'>OSM</option><option value="OSM" '.$selectTMS.'>TMS</option><option value="Google" '.$selectGoogle.'>Google</option></select></td></tr>';
     echo '<tr><td align=right>*Category:</td><td><select name="dhp_map_category" id="dhp_map_category"><option value="" '.$selectCategory.'>Please select a category</option><option value="base layer" '.$selectBaseLayer.'>Base Layer</option><option value="overlay" '.$selectOverlay.' >Overlay</option></select></td></tr>';
-    echo '<tr><td align=right>Classification:</td><td><input name="dhp_map_classification" id="dhp_map_classification" type="text" size="30" value="'.$dhp_map_classification.'"/></td></tr>';
-    echo '<tr><td align=right>State:</td><td><input name="dhp_map_state" id="dhp_map_state" type="text" size="30" value="'.$dhp_map_state.'"/></td></tr>';
-    echo '<tr><td align=right>County:</td><td><input name="dhp_map_county" id="dhp_map_county" type="text" size="30" value="'.$dhp_map_county.'"/></td></tr>';
-    echo '<tr><td align=right>City:</td><td><input name="dhp_map_city" id="dhp_map_city" type="text" size="30" value="'.$dhp_map_city.'"/></td></tr>';
-    echo '<tr><td align=right>Year:</td><td><input name="dhp_map_year" id="dhp_map_year" type="text" size="30" value="'.$dhp_map_year.'"/></td></tr>';
-    echo '<tr><td align=right>Source:</td><td><input name="dhp_map_source" id="dhp_map_source" type="text" size="30" value="'.$dhp_map_source.'"/></td></tr>';
-    echo '<tr><td align=right>Creator:</td><td><input name="dhp_map_creator" id="dhp_map_creator" type="text" size="30" value="'.$dhp_map_creator.'"/></td></tr>';
+
+    echo '<tr><td align=right>*North bounds:</td><td><input name="dhp_map_n_bounds" id="dhp_map_n_bounds" type="text" size="10" value="'.$mapAttributes['dhp_map_n_bounds'].'"/></td></tr>';
+    echo '<tr><td align=right>*South bounds:</td><td><input name="dhp_map_s_bounds" id="dhp_map_s_bounds" type="text" size="10" value="'.$mapAttributes['dhp_map_s_bounds'].'"/></td></tr>';
+    echo '<tr><td align=right>*East bounds:</td><td><input name="dhp_map_e_bounds" id="dhp_map_e_bounds" type="text" size="10" value="'.$mapAttributes['dhp_map_e_bounds'].'"/></td></tr>';
+    echo '<tr><td align=right>*West bounds:</td><td><input name="dhp_map_w_bounds" id="dhp_map_w_bounds" type="text" size="10" value="'.$mapAttributes['dhp_map_w_bounds'].'"/></td></tr>';
+
+    echo '<tr><td align=right>*Latitude of Centroid:</td><td><input name="dhp_map_cent_lat" id="dhp_map_cent_lat" type="text" size="10" value="'.$mapAttributes['dhp_map_cent_lat'].'"/></td></tr>';
+    echo '<tr><td align=right>*Longitude of Centroid:</td><td><input name="dhp_map_cent_lon" id="dhp_map_cent_lon" type="text" size="10" value="'.$mapAttributes['dhp_map_cent_lon'].'"/></td></tr>';
+    echo '<tr><td align=right>*Minimum Zoom:</td><td><input name="dhp_map_min_zoom" id="dhp_map_min_zoom" type="text" size="2" value="'.$mapAttributes['dhp_map_min_zoom'].'"/></td></tr>';
+    echo '<tr><td align=right>*Maximum Zoom:</td><td><input name="dhp_map_max_zoom" id="dhp_map_max_zoom" type="text" size="2" value="'.$mapAttributes['dhp_map_max_zoom'].'"/></td></tr>';
+
+    echo '<tr><td align=right>Description:</td><td><input name="dhp_map_desc" id="dhp_map_desc" type="text" size="60" value="'.$mapAttributes['dhp_map_desc'].'"/></td></tr>';
+    echo '<tr><td align=right>Classification:</td><td><input name="dhp_map_classification" id="dhp_map_classification" type="text" size="30" value="'.$mapAttributes['dhp_map_classification'].'"/></td></tr>';
+    echo '<tr><td align=right>State:</td><td><input name="dhp_map_state" id="dhp_map_state" type="text" size="30" value="'.$mapAttributes['dhp_map_state'].'"/></td></tr>';
+    echo '<tr><td align=right>County:</td><td><input name="dhp_map_county" id="dhp_map_county" type="text" size="30" value="'.$mapAttributes['dhp_map_county'].'"/></td></tr>';
+    echo '<tr><td align=right>City:</td><td><input name="dhp_map_city" id="dhp_map_city" type="text" size="30" value="'.$mapAttributes['dhp_map_city'].'"/></td></tr>';
+    echo '<tr><td align=right>Year:</td><td><input name="dhp_map_year" id="dhp_map_year" type="text" size="30" value="'.$mapAttributes['dhp_map_year'].'"/></td></tr>';
+    echo '<tr><td align=right>Source:</td><td><input name="dhp_map_source" id="dhp_map_source" type="text" size="30" value="'.$mapAttributes['dhp_map_source'].'"/></td></tr>';
+    echo '<tr><td align=right>Creator:</td><td><input name="dhp_map_creator" id="dhp_map_creator" type="text" size="30" value="'.$mapAttributes['dhp_map_creator'].'"/></td></tr>';
     echo '</table>';
 } // show_dhp_map_settings_box()
 
 
 add_action('save_post', 'save_dhp_map_settings');  
 
-// save_dhp_map_settings($post_id)
-// PURPOSE: Handle saving values from UI edit boxes into Map post
-// INPUT:   $post_id = ID of Map marker
-
+    // PURPOSE: Save values from UI edit boxes into Map post
+    // INPUT:   $post_id = ID of Map marker
 function save_dhp_map_settings($post_id)
-{    
+{
+    global $dhp_map_custom_fields;
+
     // verify nonce
     if (!wp_verify_nonce($_POST['dhp_map_settings_box_nonce'], basename(__FILE__)))
         return $post_id;
@@ -211,61 +273,43 @@ function save_dhp_map_settings($post_id)
         } elseif (!current_user_can('edit_post', $post_id)) {
             return $post_id;
     }
-    
-    update_post_meta($post_id, 'dhp_map_desc',$_POST['dhp_map_desc']);
-    update_post_meta($post_id, 'dhp_map_typeid',$_POST['dhp_map_typeid']);
-    update_post_meta($post_id, 'dhp_map_url',$_POST['dhp_map_url']);
-    update_post_meta($post_id, 'dhp_map_type',$_POST['dhp_map_type']);
-    update_post_meta($post_id, 'dhp_map_category',$_POST['dhp_map_category']);
-    update_post_meta($post_id, 'dhp_map_source',$_POST['dhp_map_source']);
-    update_post_meta($post_id, 'dhp_map_creator',$_POST['dhp_map_creator']);
+
+    dhp_update_map_from_post($post_id, $dhp_map_custom_fields);
 } // save_dhp_map_settings()
 
 
 add_filter( 'single_template', 'dhp_map_page_template' );
 
-// dhp_map_page_template( $page_template )
 // PURPOSE: Handle setting template to be used for Map type
 // INPUT:   $page_template = default name of template file
 // RETURNS: Modified name of template file
-// ASSUMES: $post global is set to current page post to display
+// ASSUMES: map template will pass Map post custom fields to JavaScript
 
 function dhp_map_page_template( $page_template )
 {
     global $post;
-    
-    $cdlamapid = get_post_meta($post->ID, 'dhp_map_typeid',true);
+
+    $dhpMapID = get_post_meta($post->ID, 'dhp_map_typeid',true);
     $post_type = get_query_var('post_type');
+
     if ( $post_type == 'dhp-maps' ) {
         $page_template = dirname( __FILE__ ) . '/dhp-map-template.php';
 
-        wp_register_script(
-                'cdlaMaps',
-                'http://docsouth.unc.edu/cdlamaps/api/OASIS',
-                array( 'open-layers' ),
-                false,
-                true
-            );  
-        
-        wp_enqueue_style( 'ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
-            
+        wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)));
+        wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)));
+
         wp_enqueue_script('jquery');
         wp_enqueue_script('underscore');
 
-        wp_enqueue_script( 'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-        //wp_enqueue_script( 'dhp-public-map-script', plugins_url('/js/dhp-map-page.js', dirname(__FILE__) ));
-        wp_enqueue_script( 'dhp-public-map-script', plugins_url('/js/dhp-map-page.js', dirname(__FILE__) ));
-        wp_enqueue_script( 'cdlaMaps' );
-        wp_enqueue_script( 'dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-        //$dhp_map_cdlaid = get_post_meta($post->ID, 'dhp_map_cdlaid',true);
-
-        wp_enqueue_script( 'cdla-map-script', 'http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/'.$cdlamapid);
+        wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
+        wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__)));
+        wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'open-layers');
+        wp_enqueue_script('dhp-public-map-script', plugins_url('/js/dhp-map-page.js', dirname(__FILE__)), array('open-layers', 'dhp-custom-maps' ));
     }
     return $page_template;
 } // dhp_map_page_template()
 
 
-// dhp_maps_filter_restrict_manage_posts()
 // PURPOSE: Create HTML code to create Drop-down list of Map-types to filter lists of Maps in admin Panel
 // INPUT:   $_GET['post_type'] = custom post type
 // SIDE-FX: Outputs HTML text for drop-down list
@@ -285,7 +329,7 @@ function dhp_maps_filter_restrict_manage_posts()
         //change this to the list of values you want to show
         //in 'label' => 'value' format
         $values = array(
-                        'CDLA' => 'CDLA',
+                        'DHP' => 'DHP',
                         'KML' => 'KML',
                         'Google' => 'Google'
         );
@@ -312,7 +356,6 @@ function dhp_maps_filter_restrict_manage_posts()
 
 add_filter( 'parse_query', 'dhp_maps_filter' );
 
-// dhp_maps_filter($query)
 // PURPOSE: Modify the query string (used to show list in Maps admin panel) according to UI selection
 // INPUT:   $query = the array describing the query for Markers to display in panel
 //          $_GET['post_type'] = post type of posts being displayed in admin panel
@@ -327,7 +370,7 @@ function dhp_maps_filter( $query )
     if (isset($_GET['post_type'])) {
         $type = $_GET['post_type'];
     }
-    if ( 'dhp-maps' == $type && is_admin() && $pagenow=='edit.php' && isset($_GET['dhp_map_type']) && $_GET['dhp_map_type'] != '') {
+    if ( $type == 'dhp-maps' && is_admin() && $pagenow=='edit.php' && isset($_GET['dhp_map_type']) && $_GET['dhp_map_type'] != '') {
         $query->query_vars['meta_key'] = 'dhp_map_type';
         $query->query_vars['meta_value'] = $_GET['dhp_map_type'];
     }
@@ -336,7 +379,6 @@ function dhp_maps_filter( $query )
 
 add_filter('manage_posts_columns', 'add_dhp_maps_columns');
 
-// add_dhp_maps_columns($defaults)
 // PURPOSE: Handle modifying array of columns to show when listing Maps in admin panel
 // INPUT:   $defaults = hash/array of field names and labels for the columns to display
 // RETURNS: Hash/array of column names with new columns added, some removed
@@ -351,7 +393,7 @@ function add_dhp_maps_columns($defaults)
     unset($defaults['author']);
     unset($defaults['comments']);
     unset($defaults['date']);
-    
+
         // Add special ones for Maps
     $defaults['types'] = __('Type');
     $defaults['category'] = __('Category');
@@ -361,14 +403,19 @@ function add_dhp_maps_columns($defaults)
     $defaults['city'] = __('City');
     $defaults['year'] = __('Year');
     $defaults['date'] = __('Date');
-    
+
     return $defaults;
 } // add_dhp_maps_columns()
 
+    // columns to show in WP admin panel when looking at Map Library: name of column => name of custom field
+$dhp_admin_map_cols = array("types"         => "dhp_map_type",          "category"   => "dhp_map_category",
+                            "classification"=> "dhp_map_classification","state"      => "dhp_map_state",
+                            "county"        => "dhp_map_county",        "city"       => "dhp_map_city",
+                            "year"          => "dhp_map_year"
+                         );
 
 add_action('manage_posts_custom_column', 'dhp_maps_custom_column', 10, 2);
 
-// dhp_maps_custom_column($name, $post_id)
 // PURPOSE: Output text to display custom column value for Map in admin panel
 // INPUT:   $name = name key for column (name of field)
 //          $post_id = ID of Map post
@@ -378,41 +425,14 @@ add_action('manage_posts_custom_column', 'dhp_maps_custom_column', 10, 2);
 
 function dhp_maps_custom_column($name, $post_id)
 {
-    global $post;
+    global $post, $dhp_admin_map_cols;
 
     $post_type = get_query_var('post_type');
-    if ( $post_type == 'dhp-maps' ){
-        $meta_type = get_post_meta( $post_id, 'dhp_map_type', true );
-        $meta_category = get_post_meta( $post_id, 'dhp_map_category', true );
-        $meta_classification = get_post_meta( $post_id, 'dhp_map_classification', true );
-        $meta_state = get_post_meta( $post_id, 'dhp_map_state', true );
-        $meta_county = get_post_meta( $post_id, 'dhp_map_county', true );
-        $meta_city = get_post_meta( $post_id, 'dhp_map_city', true );
-        $meta_year = get_post_meta( $post_id, 'dhp_map_year', true );
-        switch ($name)
-        {
-            case 'types':
-                echo $meta_type;
-                break;
-            case 'category':
-                echo $meta_category;
-                break;
-            case 'classification':
-                echo $meta_classification;
-                break;
-            case 'state':
-                echo $meta_state;
-                break;
-            case 'county':
-                echo $meta_county;
-                break;
-            case 'city':
-                echo $meta_city;
-                break;
-            case 'year':
-                echo $meta_year;
-                break;
-        }
+    if ( $post_type == 'dhp-maps' ) {
+
+        $customField = $dhp_admin_map_cols[$name];
+        $cfData      = get_post_meta( $post_id, $customField, true );
+        echo $cfData;
     }
 } // dhp_maps_custom_column()
 

@@ -51,7 +51,10 @@
 
 .reveal-modal {
 	z-index: 1104;
+	max-height: 75%;
+	overflow: auto;
 }
+
 	/* FIX: Adjusts foundations nowrap style for code blocks */
 code {
 	white-space: inherit;
@@ -87,13 +90,11 @@ body.fullscreen .site {
 	/* Viewing Project content */
 .entry-content .dhp-entrytext h3 {
 	clear: none;
-	line-height:1.1;
-	margin-top: 6px;
 	margin-bottom: 3px;
+	font-weight: bold;
 }
 
 .entry-content .dhp-entrytext p {
-	line-height: 1.1;
 	margin-top: 3px;
 	margin-bottom: 6px;
 }
@@ -115,7 +116,12 @@ body.fullscreen .site {
 .modal {
 	z-index: 1150;
 }
-
+.modal-content {
+	overflow: auto;
+}
+.modal-content div {
+	padding-bottom: 10px;
+}
 .modal.transcript {
 	position: fixed;
 	top: 10%;
@@ -130,8 +136,11 @@ body.fullscreen .site {
 
 .modal-header h3 {
 	clear: none;
+	font-size: 20px;
 }
-
+.modal-body h3 {
+	font-size: 16px;
+}
 .modal-body .thumb-right img {
 	float: right;
 	padding-left: 5px;

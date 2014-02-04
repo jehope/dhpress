@@ -1,10 +1,10 @@
 // DHPressTranscript -- contains all data and functions dealing with transcriptions using SoundCloud
-
+// ASSUMES: Transcript modal is closed with button of class close-reveal-modal
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 
 var dhpTranscript = {
         // Fields created by this object:
-    // tcArray, rowIndex, transcriptData, parseTimeCode
+    // tcArray, rowIndex, transcriptData, parseTimeCode, readyFor2nd
 
 
         // PURPOSE: Initialize transcript mechanisms
@@ -23,20 +23,82 @@ var dhpTranscript = {
     prepareOneTranscript: function (ajaxURL, projectID, htmlID, transParams)
     {
         var appendPos;
-        var WIDGET_PLAYING   = false;
-        var fullTranscript   = (transParams.timecode == -1);
-
-        // console.log("Preparing transcript: Audio = "+transParams.audio);
+        var playingNow = false;
+        var primeAudio = true;
+        var fullTranscript = (transParams.timecode == -1);
 
             // Initialize this object's variables
         dhpTranscript.rowIndex = null;
         dhpTranscript.transcriptData = [];
+        dhpTranscript.readyFor2nd = false;
 
         appendPos = jQuery(htmlID);
         if (appendPos == null) {
             throw new Error("Cannot find HTML DIV at which to append transcript.");
         }
-        appendPos.append('<div class="transcript-ep"><p class="pull-right"><iframe id="ep-player" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'&show_artwork=true"></iframe></p></div>');
+        appendPos.append('<div class="transcript-ep"><p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p></div>');
+
+            // Must set these variables after HTML appended above
+        var scWidget = SC.Widget(document.getElementById('scPlayer'));
+
+            // Setup audio/transcript SoundCloud player after entire sound clip loaded
+        scWidget.bind(SC.Widget.Events.READY, function() {
+                // Prime the audio (seekTo won't work until sound loaded and playing)
+            scWidget.play();
+
+            scWidget.bind(SC.Widget.Events.PLAY, function() {
+                playingNow = true;
+            });
+
+            scWidget.bind(SC.Widget.Events.PAUSE, function() {
+                playingNow = false;
+            });
+
+            scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(params) {
+                    // Pauses audio after it primes so seekTo will function
+                if (primeAudio) {
+                    scWidget.pause();
+                    primeAudio = false;
+                    playingNow = false;
+                }
+                    // Keep within bounds if only excerpt of longer transcript
+                if (!fullTranscript) {
+                    if (params.currentPosition < transParams.startTime) {
+                        scWidget.seekTo(transParams.startTime);
+                    } else if (params.currentPosition > transParams.endTime) {
+                        scWidget.pause();
+                        playingNow = false;
+                    }
+                }
+                if (playingNow) {
+                    dhpTranscript.hightlightTranscriptLine(params.currentPosition);
+                }
+            });
+
+                // Can't seek within the SEEK event because it causes infinite recursion
+
+            scWidget.bind(SC.Widget.Events.FINISH, function() {
+                playingNow = false;
+            });
+        });
+
+            // Allow user to click anywhere in set of timecodes to go to corresponding time
+        jQuery('.transcript-ep').on('click', function(evt) {
+            if(jQuery(evt.target).hasClass('type-timecode')) {
+                var seekToTime = jQuery(evt.target).closest('.type-timecode').data('timecode');
+                scWidget.seekTo(seekToTime);
+                if(!playingNow) {
+                    playingNow = true;
+                    scWidget.play();
+                }
+            }
+        });
+
+            // Silence SoundCloud if modal closed in another way
+        jQuery('#markerModal').on('closed', function () {
+            var scWidget = SC.Widget(document.getElementById('scPlayer'));
+            scWidget.pause();
+        });
 
             // Is there any primary transcript data?
         if(transParams.transcript && transParams.transcript!=='none') {
@@ -62,54 +124,6 @@ var dhpTranscript = {
                 dhpTranscript.loadTranscriptClip(ajaxURL, projectID, transParams.transcript2, transParams.timecode, 1);
             }
         }
-
-            // Must wait to set these variables after HTML appended above
-        var iframeElement    = document.querySelector('.player');
-        var soundCloudWidget = SC.Widget(iframeElement.id);
-
-            // Setup audio/transcript SoundClod player
-        soundCloudWidget.bind(SC.Widget.Events.READY, function() {
-              // load new widget
-            // soundCloudWidget.play();         // Don't invoke immediate play as data may not be loaded yet
-            soundCloudWidget.bind(SC.Widget.Events.PLAY, function() {
-                WIDGET_PLAYING = true;
-            });
-            soundCloudWidget.bind(SC.Widget.Events.PAUSE, function() {
-                WIDGET_PLAYING = false;
-            });
-            soundCloudWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e) {
-                    // Keep within bounds if only excerpt of longer transcript
-                if ((!fullTranscript) && (e.currentPosition < transParams.startTime)) {
-                    soundCloudWidget.pause();
-                    soundCloudWidget.seekTo(transParams.startTime);
-                }
-                if ((!fullTranscript) && (e.currentPosition > transParams.endTime)) {
-                    soundCloudWidget.pause();
-                }
-                dhpTranscript.hightlightTranscriptLine(e.currentPosition);
-            });
-            soundCloudWidget.bind(SC.Widget.Events.SEEK, function() {});
-            soundCloudWidget.bind(SC.Widget.Events.FINISH, function() {});
-        });
-
-            // Allow user to click on a timecode to go to it
-        jQuery('.transcript-ep').on('click', function(evt) {
-            var tempSeekTo = null;
-            if(jQuery(evt.target).hasClass('type-timecode')) {
-                tempSeekTo = jQuery(evt.target).closest('.type-timecode').data('timecode');
-                soundCloudWidget.seekTo(tempSeekTo);
-                if(!WIDGET_PLAYING) {
-                    soundCloudWidget.play();
-                }
-            }
-        });
-
-        jQuery(htmlID).on('hidden', function () {
-            if(WIDGET_PLAYING) {
-                var tempWidget = SC.Widget(iframeElementID);
-                tempWidget.pause();
-            }
-        });
     }, // prepareOneTranscript()
 
 
@@ -165,7 +179,8 @@ var dhpTranscript = {
                 timecode: clip
             },
             success: function(data, textStatus, XMLHttpRequest){
-                //console.log(JSON.parse(data));
+                // console.log("Order: "+order+"; Text: "+JSON.parse(data));
+                // console.log(JSON.parse(data));
                 dhpTranscript.attachTranscript(JSON.parse(data), order);
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
@@ -259,8 +274,8 @@ var dhpTranscript = {
                         dhpTranscript.tcArray.push(timecode);
                     }
                     else {
-                        textBlock += val;                       
-                    }                   
+                        textBlock += val;
+                    }
                 }
             });
         }
@@ -326,12 +341,13 @@ var dhpTranscript = {
 
             // Don't process 2nd transcript unless 1st is loaded and attached
         if(order==1) {
-            if(dhpTranscript.transcriptData[0]) {
-                dhpTranscript.attachSecondTranscript(dhpTranscript.transcriptData);
+            if(dhpTranscript.readyFor2nd) {
+                dhpTranscript.attachSecondTranscript(transcriptData);
             }
         }
         else {
-            jQuery('.transcript-ep p').append(dhpTranscript.formatTranscript(dhpTranscript.transcriptData));
+            jQuery('.transcript-ep p').append(dhpTranscript.formatTranscript(transcriptData));
+            dhpTranscript.readyFor2nd = true;
                 // Now, if right-side exists, attach it to left!
             if(dhpTranscript.transcriptData[1]) {
                 dhpTranscript.attachSecondTranscript(dhpTranscript.transcriptData[1]);

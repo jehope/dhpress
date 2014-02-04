@@ -48,9 +48,6 @@ jQuery(document).ready(function($) {
 
 			// Marker values to be enclosed in this new DIV
 		var contentHTML = '';
-		// var entry_html = $('<div class="new-content"/>');
-			// Append it to DIV for this specific postID
-		// $('.dhp-entrytext').append(entry_html);
 
 			// default title is Marker post title -- REDO THIS??
 		// if(markerTitle=='the_title') {

@@ -1,13 +1,14 @@
-// DH Press Maps -- contains all data and functions dealing with maps using OpenLayer
+// DH Press Maps View -- contains all data and functions for rendering maps with help of dhpCustomMaps
 // ASSUMES: The sidebar is marked with HTML div as "secondary"
 //          An area for the map has been marked with HTML div as "dhp-visual"
+//          That the custom maps "library" has already been loaded with corresponding map entries
 // NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
 //          The class active-legend is added to whichever legend is currently visible and selected
 
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 
 
-var dhpMaps = {
+var dhpMapsView = {
 
         // Contains fields: olMap, gg, sm, selectControl, hoverControl, mapMarkerLayer
         //					ajaxURL, projectID, mapEP, transcriptEP, viewParams
@@ -34,12 +35,14 @@ var dhpMaps = {
         var newLayer;
 
         	// Save reset data for later
-        dhpMaps.ajaxURL 	= ajaxURL;
-        dhpMaps.projectID 	= projectID;
-        dhpMaps.mapEP		= mapEP;
-        dhpMaps.transcriptEP= transcriptEP;
-        dhpMaps.viewParams 	= viewParams;
+        dhpMapsView.ajaxURL 	= ajaxURL;
+        dhpMapsView.projectID 	= projectID;
+        dhpMapsView.mapEP		= mapEP;
+        dhpMapsView.transcriptEP= transcriptEP;
+        dhpMapsView.viewParams 	= viewParams;
 
+            //Update map size if browser is resized
+        jQuery(window).resize(function() { dhpMapsView.updateSize(); });
 
             // Interface for OpenLayers to determine visual features of a map marker
         olMarkerInterface = {
@@ -52,7 +55,7 @@ var dhpMaps = {
                 }
                 var highParentI ='';
                 if(cats) {
-                    highParentI = dhpMaps.getHighestParentIcon(cats);
+                    highParentI = dhpMapsView.getHighestParentIcon(cats);
                 }
                 if(!highParentI){
                     return '';
@@ -69,7 +72,7 @@ var dhpMaps = {
                 }
                 var highParentI ='';
                 if(cats) {
-                    highParentI = dhpMaps.getHighestParentColor(cats);
+                    highParentI = dhpMapsView.getHighestParentColor(cats);
                 }
                 return highParentI;
             },
@@ -82,48 +85,60 @@ var dhpMaps = {
             }
         };
 
-        dhpMaps.catFilter = new Object();
+        dhpMapsView.catFilter = new Object();
 
             // Create layers for maps as well as controls for each
         _.each(mapEP.layers, function(theLayer, index) {
+
             opacity = 1;
             if(theLayer['opacity']) {
                 opacity = theLayer['opacity'];
             }
             switch (theLayer['mapType']) {
             case 'type-OSM':
-                newLayer = new OpenLayers.Layer.OSM();
+                var thisLayer = dhpData.vizParams.layerData[index];
+                var arrayOSM = thisLayer.dhp_map_url.split(',');
+                if(arrayOSM.length>1) {
+                    newLayer = new OpenLayers.Layer.OSM(thisLayer.dhp_map_shortname,arrayOSM);
+                }
+                else {
+                    newLayer = new OpenLayers.Layer.OSM();
+                }
+                // new OpenLayers.Layer.OSM("MapQuest-OSM Tiles", arrayOSM);
                 newLayer.setOpacity(opacity);
                 break;
             case 'type-Google':
                 newLayer = new OpenLayers.Layer.Google(theLayer['name'],
                                 { type: theLayer['mapTypeId'], numZoomLevels: 20, opacity: opacity, animationEnabled: true});
                 break;
-            case 'type-CDLA':
-                cdla.maps.defaultAPI(cdla.maps.API_OPENLAYERS);
-                var cdlaObj = new cdla.maps.Map(theLayer['mapTypeId']);
-                newLayer = cdlaObj.layer();
+            case 'type-DHP':
+                dhpCustomMaps.maps.defaultAPI(dhpCustomMaps.maps.API_OPENLAYERS);
+                var dhpObj = new dhpCustomMaps.maps.Map(theLayer['mapTypeId']);
+                newLayer = dhpObj.layer();
                 newLayer.setOpacity(opacity);
                 break;
             } // switch
             mapLayers.push(newLayer);
         }); // each sourceLayers
 
-        dhpMaps.gg = new OpenLayers.Projection("EPSG:4326");
-        dhpMaps.sm = new OpenLayers.Projection("EPSG:900913");
+        dhpMapsView.gg = new OpenLayers.Projection("EPSG:4326");
+        dhpMapsView.sm = new OpenLayers.Projection("EPSG:900913");
 
-        //var osm = new OpenLayers.Layer.OSM(); 
+        OpenLayers.Util.onImageLoadErrorColor = "transparent";   
+        // OpenLayers.Util.onImageLoadError = function() {
+        //      this.src = '';
+        // };
 
-        dhpMaps.olMap = new OpenLayers.Map({
+        dhpMapsView.olMap = new OpenLayers.Map({
             div: "dhp-visual",
-            projection: dhpMaps.sm,
-            displayProjection: dhpMaps.gg
+            projection: dhpMapsView.sm,
+            displayProjection: dhpMapsView.gg
         });
-        dhpMaps.olMap.addLayers(mapLayers);
+        dhpMapsView.olMap.addLayers(mapLayers);
 
         //map.addControl(new OpenLayers.Control.LayerSwitcher());
 
-        dhpMaps.resetMap();
+        dhpMapsView.resetMap();
 
         olMapTemplate = {
             fillColor: "${getColor}",
@@ -139,35 +154,48 @@ var dhpMaps = {
         olClusterStrategy = new OpenLayers.Strategy.Cluster();
         olClusterStrategy.distance = 1;
 
-        dhpMaps.mapMarkerLayer = new OpenLayers.Layer.Vector(mapEP["marker-layer"], {
+        dhpMapsView.mapMarkerLayer = new OpenLayers.Layer.Vector(mapEP["marker-layer"], {
             strategies: [olClusterStrategy],
             rendererOptions: { zIndexing: true }, 
             styleMap: new OpenLayers.StyleMap(olStyle)
         });
 
-        dhpMaps.selectControl = new OpenLayers.Control.SelectFeature(dhpMaps.mapMarkerLayer,
-            { onSelect: dhpMaps.onOLFeatureSelect, onUnselect: dhpMaps.onOLFeatureUnselect, hover: false });
+        dhpMapsView.selectControl = new OpenLayers.Control.SelectFeature(dhpMapsView.mapMarkerLayer,
+            { onSelect: dhpMapsView.onOLFeatureSelect, hover: false });
 
-        dhpMaps.hoverControl  = new OpenLayers.Control.SelectFeature(dhpMaps.mapMarkerLayer, 
+        dhpMapsView.hoverControl  = new OpenLayers.Control.SelectFeature(dhpMapsView.mapMarkerLayer, 
             { hover: true, highlightOnly: true, renderIntent: "temporary" });
 
         //mapMarkerLayer.id = "Markers";
-        dhpMaps.olMap.addLayer(dhpMaps.mapMarkerLayer);
-        dhpMaps.olMap.addControl(dhpMaps.hoverControl);
-        dhpMaps.olMap.addControl(dhpMaps.selectControl);
+        dhpMapsView.olMap.addLayer(dhpMapsView.mapMarkerLayer);
+        dhpMapsView.olMap.addControl(dhpMapsView.hoverControl);
+        dhpMapsView.olMap.addControl(dhpMapsView.selectControl);
 
-        dhpMaps.hoverControl.activate();  
-        dhpMaps.selectControl.activate();
+        dhpMapsView.hoverControl.activate();  
+        dhpMapsView.selectControl.activate();
+
+            // Setup reset button and add foundation icons for zoom in/out
+        jQuery('.olControlZoom').append('<a class="reset-map olButton"><i class="fi-refresh"></i></a');
+        jQuery('.olControlZoomIn').empty().addClass('fi-plus');
+        jQuery('.olControlZoomOut').empty().addClass('fi-minus');
+        jQuery('.olControlZoom .reset-map').on('touchend',function(){
+            dhpMapsView.resetMap();
+        });
+        jQuery('.olControlZoom .reset-map').on('click',function(){
+            dhpMapsView.resetMap();
+        });
+
+        dhpMapsView.updateSize();
+        dhpMapsView.loadMapMarkers();
     }, // initializeMap()
-
 
         // PURPOSE: Reset center and scale of map
         // ASSUMES: gg has been initialized and is accessible; dhpSettings loaded
     resetMap: function()
     {
-        var lonlat = new OpenLayers.LonLat(dhpMaps.mapEP.lon, dhpMaps.mapEP.lat);
-        lonlat.transform(dhpMaps.gg, dhpMaps.olMap.getProjectionObject());
-        dhpMaps.olMap.setCenter(lonlat, dhpMaps.mapEP.zoom);
+        var lonlat = new OpenLayers.LonLat(dhpMapsView.mapEP.lon, dhpMapsView.mapEP.lat);
+        lonlat.transform(dhpMapsView.gg, dhpMapsView.olMap.getProjectionObject());
+        dhpMapsView.olMap.setCenter(lonlat, dhpMapsView.mapEP.zoom);
     }, // resetMap()
 
 
@@ -175,11 +203,30 @@ var dhpMaps = {
     {   
         //set body height to viewport so user can't scroll map
         if(jQuery('body').hasClass('fullscreen')){
-            jQuery('body').height(jQuery(window).height());
+                //New WordPress has a mobile admin bar with larger height
+            if(jQuery('body').hasClass('logged-in') && jQuery(window).width() > 782) {
+                jQuery('body').height(jQuery(window).height()-32);
+            }
+            else if (jQuery('body').hasClass('logged-in') && jQuery(window).width() < 783) {
+                jQuery('body').height(jQuery(window).height()-46);
+            }
+                //Non logged in users
+            else {
+                jQuery('body').height(jQuery(window).height());
+            }
         }
-		dhpMaps.olMap.updateSize();
-    },
+            //resize legend items that are two lines and center checkbox
+        var newHeight,checkMargin;
+        jQuery('.row').each(function(key,value){
+            newHeight   = jQuery('.columns', this).eq(1).height();
+            if(newHeight < 35) { newHeight = 35; }
+            checkMargin = (newHeight - 10) / 2;
+            jQuery('.columns', this).eq(0).height(newHeight);
+            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkMargin});
+        });
 
+		dhpMapsView.olMap.updateSize();
+    },
 
         // PURPOSE: Called by olMarkerInterface to determine icon to use for marker
         // RETURNS: First match on URL to use for icon, or else ""
@@ -188,7 +235,7 @@ var dhpMaps = {
         // TO DO:   Make recursive function?
     getHighestParentIcon: function(catValues)
     {
-        var countTerms = dhpMaps.catFilterSelect.length; 
+        var countTerms = dhpMapsView.catFilterSelect.length; 
         var countCats = catValues.length;
         var thisCat, thisCatID;
         var thisMarkerID;
@@ -196,7 +243,7 @@ var dhpMaps = {
         var i,j,k;
 
         for(i=0;i<countTerms;i++) {         // for all category values
-            thisCat = dhpMaps.catFilterSelect[i];
+            thisCat = dhpMapsView.catFilterSelect[i];
             thisCatID = thisCat.id;
 
             for(j=0;j<countCats;j++) {      // for all marker values
@@ -237,7 +284,7 @@ var dhpMaps = {
         // TO DO:   Make recursive function?
     getHighestParentColor: function(catValues)
     {
-        var countTerms = dhpMaps.catFilterSelect.length; 
+        var countTerms = dhpMapsView.catFilterSelect.length; 
         var countCats = catValues.length;
         var thisCat, thisCatID;
         var thisMarkerID;
@@ -245,7 +292,7 @@ var dhpMaps = {
         var i,j,k;
 
         for(i=0;i<countTerms;i++) {         // for all category values
-            thisCat = dhpMaps.catFilterSelect[i];
+            thisCat = dhpMapsView.catFilterSelect[i];
             thisCatID = thisCat.id;
 
             for(j=0;j<countCats;j++) {      // for all marker values
@@ -282,12 +329,12 @@ var dhpMaps = {
     createLegends: function(legendList)
     {
             // Custom event types bound to the document to be triggered elsewhere
-        jQuery(document).bind('order.findSelectedCats',function(){ dhpMaps.catFilterSelect= dhpMaps.findSelectedCats();});
-        jQuery(document).bind('order.updateLayerFeatures',function(){ dhpMaps.updateLayerFeatures();});
+        jQuery(document).bind('order.findSelectedCats',function(){ dhpMapsView.catFilterSelect= dhpMapsView.findSelectedCats();});
+        jQuery(document).bind('order.updateLayerFeatures',function(){ dhpMapsView.updateLayerFeatures();});
 
         //console.log('here'+_.size(legendList));
         var legendHtml;
-        var legendWidth;
+        var legendHeight;
         var mapPosition		= jQuery('#dhp-visual').position();
         var mapWidth 		= jQuery('#dhp-visual').width();
         var pageWidth 		= jQuery('body').width();
@@ -342,25 +389,19 @@ var dhpMaps = {
             var countTerms = 0;
 
                 // "Root" DIV for this particular Legend
-            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+'"><h1>'+legendName+'</h1><div class="terms"></div></div>');
+            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+'"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
                 // Create entries for all of the terms (do not represent children of terms)
             _.each(filterTerms, function(theTerm) {
                 if(legendName!=theTerm.name) {
                     var firstIconChar = theTerm.icon_url.substring(0,1);
                     var icon;
                     if(firstIconChar=='#') { icon = 'background:'+theTerm.icon_url; }
-                    else { icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat center;'; }
+                    else { icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat right; background-size: 50%;'; }
 
-                        // Only check the first 50 terms in each Legend
-                    // if(++countTerms>50) {
-                    //     jQuery('ul', legendHtml).append('<li class="compare"><input type="checkbox" ><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></li>');
-                    // } else {
-                    //     jQuery('ul', legendHtml).append('<li class="compare"><input type="checkbox" checked="checked"><p class="icon-legend" style="'+icon+'"></p><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></li>');
-                    // }
                     jQuery('.terms', legendHtml).append('<div class="row compare">'+
-                          '<div class="small-1 large-1 columns"><input type="checkbox" checked="checked"></div>'+
-                          '<div class="small-1 large-1 columns"><div class="icon-legend" style="'+icon+'"></div></div>'+
-                          '<div class="small-10 large-10 columns"><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></div>'+
+                          '<div class="small-4 large-2 columns" style="'+icon+'"><input type="checkbox" checked="checked"></div>'+
+                          // '<div class="small-1 large-1 columns"><div class="icon-legend" style="'+icon+'"></div></div>'+
+                          '<div class="small-8 large-10 columns"><a class="value" data-id="'+theTerm.id+'">'+theTerm.name+'</a></div>'+
                         '</div>');
                 }
             });
@@ -368,11 +409,12 @@ var dhpMaps = {
 
             jQuery('#legends .legend-row').append(legendHtml);
                 // Add Legend title to dropdown menu above
-            jQuery('.dhp-nav .legend-dropdown').append('<li><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');
-            
+            jQuery('.dhp-nav .legend-dropdown').append('<li><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
         });
 
+            //Initialize new foundation elements
         jQuery(document).foundation();
+            //configure marker modal
         jQuery('#markerModal').foundation('reveal', {
             animation: 'fadeAndPop',
             animation_speed: 250,
@@ -393,50 +435,58 @@ var dhpMaps = {
                     'display': 'none'
                 }
             }
-        }); 
-            //$('#legends').css({'left':0, 'top':50,'z-index':19});
+        });
+            // Attach reveal bg listener for mobile devices(iPad bug)
+        if(jQuery('body').hasClass('isMobile')) {
+            jQuery('body').on('touchend', function(evt) {
+                if(jQuery(evt.target).hasClass('reveal-modal-bg')) {
+                    jQuery('#markerModal').foundation('reveal', 'close');
+                }            
+            });
+        }
+            // On modal close unselect features
+        jQuery(document).on('closed', '#markerModal', function () {
+            dhpMapsView.onOLFeatureUnselect();
+        });
+
             // Handle resizing Legend (min/max)
         jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
-        jQuery('.legend-resize').hide();
-        jQuery('#legends').hover(function(){
-            	jQuery('.legend-resize').fadeIn(100);
-        	},
-        	function() {
-            	jQuery('.legend-resize').fadeOut(100);
-        });
-        jQuery('.legend-resize').click(function(){
+        if(!jQuery('body').hasClass('isMobile')) {
+            jQuery('.legend-resize').hide();
+            jQuery('#legends').hover(function(){
+                jQuery('.legend-resize').fadeIn(100);
+            },
+            function() {
+                jQuery('.legend-resize').fadeOut(100);
+            });
+        }
+             
+            // Add legend hide/show action
+        jQuery('.legend-resize').on('click', function(){
             if(jQuery('#legends').hasClass('mini')) {
-                jQuery('.terms .value').show();
-                jQuery('#legends').animate({width: legendWidth}, 500 );
-                jQuery('#legends').removeClass('mini');
-            } else {
-                //console.log($('#legends').width())
-                legendWidth = jQuery('#legends').width();
-                jQuery('.terms .value').hide();
-                jQuery('#legends').animate({width: 70}, 500 );
-                jQuery('#legends').addClass('mini');
+                jQuery('#legends').animate({ height: legendHeight },
+                    500,
+                    function() {
+                        jQuery('#legends').removeClass('mini');
+                    });
+            } 
+            else {
+                legendHeight = jQuery('#legends').height();
+                jQuery('#legends').addClass('mini');                
+                jQuery('#legends').animate({ height: 37 }, 500 );
             }
         });
-            //$('#legends').css({
-        // $('.active-legend').mousemove(function(e){
-        //     var xpos = e.pageX - 250;
-        //     var ypos = e.pageY + 15;
-        //     //$('#child_legend-'+j+'').css({'left':xpos,'top':ypos});
-        // });
-            //var childrenLegendHtml = $('<div id="child_legend-'+j+'"><h3>Children Terms</h3><ul></ul></div>');
-            //$('body').append(childrenLegendHtml);
-            //$('#child_legend-'+j+'').css({'width':'200px','margin-left':'200px','top':'40px','position':'absolute','z-index': '2001' });
 
             // Handle user selection of value name from current Legend on right
-        jQuery('#legends div.terms .row a').click(function(event){
+        jQuery('#legends div.terms .row a').on('click', function(event){
             var spanName = jQuery(this).data('id');
                 // "Hide/Show all" button
             if(spanName==='all') {
                     // Should legend values now be checked or unchecked?
                 var boxState = jQuery(this).closest('.row').find('input').prop('checked');
                 jQuery('.active-legend .terms .row').find('input').prop('checked',!boxState);
-                dhpMaps.catFilterSelect = dhpMaps.findSelectedCats();
-                dhpMaps.updateLayerFeatures();
+                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
+                dhpMapsView.updateLayerFeatures();
             }
                 // a specific legend/category value (ID#)
             else {
@@ -446,47 +496,32 @@ var dhpMaps = {
                     // select just this item
                 jQuery(this).closest('.row').addClass('selected');
                 jQuery(this).closest('.row').find('input').prop('checked',true);
-                dhpMaps.catFilterSelect = dhpMaps.findSelectedCats(spanName);
-                dhpMaps.updateLayerFeatures();
+                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats(spanName);
+                dhpMapsView.updateLayerFeatures();
             }
         });
-            // $('#term-legend-'+j+' ul.terms li').hover(function(){
-            //     $('#child_legend-'+j+'').show();
-            //     var childrenLegend = _.where(filterTerms, {name: $(this).find('a').text()})
-                
-            //     $(childrenLegend[0].children).each(function(){
-            //         $('ul', childrenLegendHtml).append('<li>'+this+'</li>')
-            //     });
-            // }, 
-            // function() {
-            //     $('#child_legend-'+j+' ul li').remove();
-            //     $('#child_legend-'+j+'').hide();
-            // });
 
             // Handle user selection of checkbox from current Legend on right
-        jQuery('#legends div.terms input').click(function(event){
+        jQuery('#legends div.terms input').on('click', function(event){
             var spanName = jQuery(event.target).parent().find('a').data('id');
             if( spanName==='all' && jQuery(this).prop('checked') === true ) {
                 jQuery('.active-legend .terms .row').find('input').prop('checked',true);
-                dhpMaps.catFilterSelect = dhpMaps.findSelectedCats();
-                dhpMaps.updateLayerFeatures();
+                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
+                dhpMapsView.updateLayerFeatures();
             }
             else if(spanName==='all' && jQuery(this).prop('checked') === false ) {
                 jQuery('.active-legend .terms .row').find('input').prop('checked',false);
-                dhpMaps.catFilterSelect = dhpMaps.findSelectedCats();
-                dhpMaps.updateLayerFeatures();
+                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
+                dhpMapsView.updateLayerFeatures();
             }
             else {
                 jQuery('.active-legend .terms .check-all').find('input').prop('checked',false);                  
-                dhpMaps.catFilterSelect = dhpMaps.findSelectedCats();
-                dhpMaps.updateLayerFeatures();
+                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
+                dhpMapsView.updateLayerFeatures();
             }
         });
-        jQuery('ul.controls li').click(function(){
-            jQuery('.active-legend .terms input').attr('checked',true);           
-        });
-
-        jQuery('#legends .legend-row').append('<div class="legend-div span12" id="layers-panel"><ul></ul></div>');
+            // Add Layers to legends
+        jQuery('#legends .legend-row').append('<div class="legend-div" id="layers-panel"><div class="legend-title">Layer Controls</div></div>');
         jQuery('.legend-div').hide();
 
             // Show Legend 0 by default
@@ -494,7 +529,7 @@ var dhpMaps = {
         jQuery('#term-legend-0').addClass('active-legend');
 
             // Handle selection of different Legends
-        jQuery('.dhp-nav .legend-dropdown a').click(function(evt){
+        jQuery('.dhp-nav .legend-dropdown a').on('click', function(evt){
             evt.preventDefault();
             var action = jQuery(this).attr('href');
             var filter = jQuery(this).text();
@@ -503,11 +538,11 @@ var dhpMaps = {
             jQuery(action).addClass('active-legend');
 
             jQuery(action).show();
-            dhpMaps.switchFilter(filter);
+            dhpMapsView.switchFilter(filter);
         });
 
             // Handle selection of Layers button on top
-        jQuery('.dhp-nav .layers a').click(function(evt){
+        jQuery('.dhp-nav .layers a').on('click', function(evt){
             evt.preventDefault();
             var action = jQuery(this).attr('href');
             var filter = jQuery(this).text();
@@ -518,10 +553,10 @@ var dhpMaps = {
             jQuery(action).show();
         });
 
-        // $('.launch-timeline').click(function(){
+        // $('.launch-timeline').on('click', function(){
         //     loadTimeline('4233');  
         // });
-        dhpMaps.catFilterSelect = dhpMaps.findSelectedCats();
+        dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
     }, // createLegends()
 
 
@@ -533,9 +568,9 @@ var dhpMaps = {
     buildLayerControls: function()
     {
         var layerOpacity;
-        var layerSettings = dhpMaps.mapEP.layers;
+        var layerSettings = dhpMapsView.mapEP.layers;
 
-        _.each(dhpMaps.olMap.layers,function(thisLayer,index){
+        _.each(dhpMapsView.olMap.layers,function(thisLayer,index){
             //console.log(layer.name)
             layerOpacity = 1;
             if(layerSettings[index]) {
@@ -544,7 +579,11 @@ var dhpMaps = {
                     layerOpacity = 1;
                 }
             }
-            jQuery('#layers-panel ul').append('<li class="layer'+index+'"><div class="span12"><input type="checkbox" checked="checked"><a class="value" id="'+thisLayer.id+'">'+thisLayer.name+'</a></div><div class="span11"><div class="layer-opacity"></div></div></li>');
+            jQuery('#layers-panel').append('<div class="layer'+index+'">'+
+                '<div class="row"><div class="columns small-12 large-12"><input type="checkbox" checked="checked"> '+
+                '<a class="value" id="'+thisLayer.id+'">'+thisLayer.name+'</a></div></div>'+
+                '<div class="row"><div class="columns small-12 large-12"><div class="layer-opacity"></div></div></div>'+
+                '</div>');
 
                 // Create slider to control layer opacity
             jQuery('.layer'+index+' .layer-opacity').slider({
@@ -558,7 +597,7 @@ var dhpMaps = {
                 }
             });
                 // Handle turning on and off map layer
-            jQuery( '.layer'+index+' input').click(function(){
+            jQuery( '.layer'+index+' input').on('click', function(){
                 if(jQuery(this).attr('checked')) {
                     thisLayer.setVisibility(true);
                 } else {
@@ -574,23 +613,23 @@ var dhpMaps = {
         // SIDE-FX: Changes catFilter
     switchFilter: function(filterName)
     {
-        var filterObj = _.where(dhpMaps.rawAjaxData, {type: "filter", name: filterName});
-        dhpMaps.catFilter = filterObj[0];
+        var filterObj = _.where(dhpMapsView.rawAjaxData, {type: "filter", name: filterName});
+        dhpMapsView.catFilter = filterObj[0];
         jQuery(document).trigger('order.findSelectedCats').trigger('order.updateLayerFeatures');
-        dhpMaps.selectControl.activate(); 
+        dhpMapsView.selectControl.activate(); 
     },
 
         // PURPOSE: Update map's feature layer after user chooses a new legend acc. to values in catFilterSelect
         // ASSUMES: allMarkers contains all of the possible marker objects
         //			catFilterSelect set to current legend selection
-        //			Marker layer is last layer in dhpMaps.olMap.layers array
+        //			Marker layer is last layer in dhpMapsView.olMap.layers array
     updateLayerFeatures: function()
     {
         var newFeatures = {type: "FeatureCollection", features: []};        // marker set resulting from current selection
         var allCategoryIDs = [];                                            // list of selected IDs
 
             // Flatten out categories (and their children) as IDs
-        _.each(dhpMaps.catFilterSelect,function(theCategory){
+        _.each(dhpMapsView.catFilterSelect,function(theCategory){
             allCategoryIDs.push(theCategory.id);
             if (theCategory.children) {
                 _.each(theCategory.children, function(catChild) {
@@ -599,19 +638,19 @@ var dhpMaps = {
             }
         });
             // Go through all markers and find just those which have values matching current categories
-        newFeatures.features = _.filter(dhpMaps.allMarkers.features, function(theMarker){
+        newFeatures.features = _.filter(dhpMapsView.allMarkers.features, function(theMarker){
             if(_.intersection(theMarker.properties.categories, allCategoryIDs).length > 0) {
                return theMarker;
             }
         });
         var reader = new OpenLayers.Format.GeoJSON({
-            'externalProjection': dhpMaps.gg,
-            'internalProjection': dhpMaps.sm
+            'externalProjection': dhpMapsView.gg,
+            'internalProjection': dhpMapsView.sm
         });
 
         var featureData = reader.read(newFeatures);
             // Marker layer must be the last layer in the array!
-        var myLayer = dhpMaps.olMap.layers[dhpMaps.olMap.layers.length-1];
+        var myLayer = dhpMapsView.olMap.layers[dhpMapsView.olMap.layers.length-1];
         myLayer.removeAllFeatures();
         myLayer.addFeatures(featureData);
     }, // updateLayerFeatures()
@@ -627,14 +666,14 @@ var dhpMaps = {
         var selCatFilter = [];
         var countTerms = 0;
 
-        if(dhpMaps.catFilter) {
-            countTerms = Object.keys(dhpMaps.catFilter.terms).length;
+        if(dhpMapsView.catFilter) {
+            countTerms = Object.keys(dhpMapsView.catFilter.terms).length;
         }
 
         if(singleID) {
             var i, tempFilter;
             for(i=0;i<countTerms;i++) {
-                tempFilter = dhpMaps.catFilter.terms[i];
+                tempFilter = dhpMapsView.catFilter.terms[i];
                 if(tempFilter.id==singleID) {
                     selCatFilter[0] = tempFilter;
                     break;
@@ -646,7 +685,7 @@ var dhpMaps = {
             jQuery('#legends .active-legend .compare input:checked').each(function(index){
                 tempSelCat = jQuery(this).closest('.row').find('.columns .value').data( 'id' );
                 for(i=0;i<countTerms;i++) {
-                    tempFilter = dhpMaps.catFilter.terms[i];
+                    tempFilter = dhpMapsView.catFilter.terms[i];
                     if(tempFilter.id==tempSelCat) {
                         selCatFilter[index] = tempFilter;
                         // console.log(tempFilter, tempSelCat);
@@ -697,7 +736,7 @@ var dhpMaps = {
         else
             selectedFeature = feature;
 
-        if(dhpMaps.viewParams['post-view-title']) {
+        if(dhpMapsView.viewParams['post-view-title']) {
             titleAtt =  selectedFeature.attributes['title'];
         }
 
@@ -709,7 +748,7 @@ var dhpMaps = {
         jQuery('.modal-body').empty();
 
             // Does feature lead to transcript window? Build transcript controls in modal
-        if(dhpMaps.transcriptEP) {
+        if(dhpMapsView.transcriptEP) {
             jQuery('#markerModal').addClass('transcript');
 
             var transcriptSettings = {
@@ -727,11 +766,11 @@ var dhpMaps = {
                 transcriptSettings.endTime   = dhpTranscript.convertToMilliSeconds(time_codes[1]);
             }
 
-            dhpTranscript.prepareOneTranscript(dhpMaps.ajaxURL, dhpMaps.projectID, '#markerModal .modal-body', transcriptSettings);
+            dhpTranscript.prepareOneTranscript(dhpMapsView.ajaxURL, dhpMapsView.projectID, '#markerModal .modal-body', transcriptSettings);
          }
 
             // Create HTML for all of the data related to the Marker
-         if (dhpMaps.viewParams['content']) {
+         if (dhpMapsView.viewParams['content']) {
             builtHTML = '<div><h3>Details:</h3></div>';
             _.each(selectedFeature.attributes.content,function(val) {       // Array of (hash) pairs
                  _.each(val,function(val1, key1) {
@@ -756,26 +795,26 @@ var dhpMaps = {
 
             // clear previous marker links
         jQuery('#markerModal .reveal-modal-footer .marker-link').remove();
-
+            // Change title
         jQuery('#markerModal #markerModalLabel').empty().append(titleAtt);
 
             // setup links
         if (link1 && link1!='no-link') {
-            jQuery('#markerModal .reveal-modal-footer').prepend('<a target="_blank" class="button success marker-link" href="'+link1+'">'+dhpMaps.viewParams['link-label']+'</a>');
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a target="_blank" class="button success marker-link" href="'+link1+'">'+dhpMapsView.viewParams['link-label']+'</a></li>');
         }
         if (link2 && link2 !='no-link') {
-            jQuery('#markerModal .reveal-modal-footer').prepend('<a target="_blank" class="button success marker-link" href="'+link2+'">'+dhpMaps.viewParams['link2-label']+'</a>');
-        }
-
-        // jQuery('#markerModal').modal('show');
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a target="_blank" class="button success marker-link" href="'+link2+'">'+dhpMapsView.viewParams['link2-label']+'</a></li>');
+        }   
+            //Open modal
         jQuery('#markerModal').foundation('reveal', 'open');
+        
     }, // onOLFeatureSelect()
 
 
         // PURPOSE: Handle unselection of a map feature
-    onOLFeatureUnselect: function(feature)
+    onOLFeatureUnselect: function()
     {
-    	feature.attributes.poppedup = false;
+        dhpMapsView.selectControl.unselectAll();
     },
 
 
@@ -806,54 +845,53 @@ var dhpMaps = {
         // TO DO:   Generalize visualization types; should createLegends() be called elsewhere?
     createMapMarkers: function(data)
     {
-        dhpMaps.rawAjaxData = data;
+        dhpMapsView.rawAjaxData = data;
         // console.log(rawAjaxData);
 
         var legends = [];
 
             // Assign data to appropriate objects
-        _.each(dhpMaps.rawAjaxData, function(val) {
+        _.each(dhpMapsView.rawAjaxData, function(val) {
             switch(val.type) {
             case 'filter':
                 legends.push(val);
                 break;
             case 'FeatureCollection':
-                dhpMaps.allMarkers = val;
+                dhpMapsView.allMarkers = val;
                 break;
             }
         });
 
             // Set current filter to the first legend by default
-        dhpMaps.catFilter  = legends[0];
-        dhpMaps.createLegends(legends);
-        dhpMaps.buildLayerControls();
+        dhpMapsView.catFilter  = legends[0];
+        dhpMapsView.createLegends(legends);
+        dhpMapsView.buildLayerControls();
 
     	var reader = new OpenLayers.Format.GeoJSON({
-                'externalProjection': dhpMaps.gg,
-                'internalProjection': dhpMaps.sm
+                'externalProjection': dhpMapsView.gg,
+                'internalProjection': dhpMapsView.sm
         });
 
-    	var featureData = reader.read(dhpMaps.allMarkers);
-        dhpMaps.mapMarkerLayer.addFeatures(featureData);
-    //player.pause();
+    	var featureData = reader.read(dhpMapsView.allMarkers);
+        dhpMapsView.mapMarkerLayer.addFeatures(featureData);
     }, // createMapMarkers()
 
 
         // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
     loadMapMarkers: function()
     {
-        //console.log('loading');
+        // console.log('loading');
         //$('.modal-backdrop').css({'opacity':0.1});
     	jQuery.ajax({
             type: 'POST',
-            url: dhpMaps.ajaxURL,
+            url: dhpMapsView.ajaxURL,
             data: {
                 action: 'dhpGetMarkers',
-                project: dhpMaps.projectID
+                project: dhpMapsView.projectID
             },
             success: function(data, textStatus, XMLHttpRequest)
             {
-                dhpMaps.createMapMarkers(JSON.parse(data));
+                dhpMapsView.createMapMarkers(JSON.parse(data));
                 //$('#markerModal').modal({backdrop:true});
                     // Remove Loading modal
                 jQuery('#loading').foundation('reveal', 'close');
@@ -863,7 +901,7 @@ var dhpMaps = {
                     // Enable joyride help tips
                 jQuery("#dhpress-tips").joyride({'tipLocation': 'right'});
                 jQuery('.dhp-nav .tips').removeClass('active');
-                jQuery('.joyride-close-tip').click(function() {
+                jQuery('.joyride-close-tip').on('click', function() {
                     jQuery('.dhp-nav .tips').removeClass('active');
                 });
                 //$('#markerModal .loading-content').remove();   
