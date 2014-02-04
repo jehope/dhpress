@@ -2434,8 +2434,8 @@ function dhp_page_template( $page_template )
 			wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
 			wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__)));
-			wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'open-layers');
-			wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'open-layers');
+			wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
+			wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
 
 				// Get any DHP custom map parameters
 			$layerData = dhpGetMapLayerData($projectSettings_map['settings']['layers']);
@@ -2449,12 +2449,12 @@ function dhp_page_template( $page_template )
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 	        wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
 			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
-				 array('jquery', 'underscore', 'soundcloud-api'));
+				 array('jquery', 'underscore', 'soundcloud-api'), DHP_PLUGIN_VERSION);
 	    	array_push($dependencies, 'dhp-transcript');
 	    }
 
 	    	// Enqueue page JS last, after we've determine what dependencies might be
-		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__)), $dependencies );
+		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
 
 		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
 			'ajax_url'   => $dev_url,
@@ -2487,7 +2487,7 @@ function dhp_page_template( $page_template )
 		// wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
 
 			// Enqueue last, after dependencies determined
-		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__)), $dependencies);
+		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION);
 
 		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
 			'ajax_url' => $dev_url,
@@ -2551,12 +2551,12 @@ function dhp_tax_template( $page_template )
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 		    wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
 			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
-				 array('jquery', 'underscore', 'soundcloud-api'));
+				 array('jquery', 'underscore', 'soundcloud-api'), DHP_PLUGIN_VERSION);
 		    array_push($dependencies, 'dhp-transcript');
 		}
 
 			// Enqueue last, after dependencies have been determined
-		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__)), $dependencies );
+		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
 
 		wp_localize_script( 'dhp-tax-script', 'dhpData', array(
 				'project_id' => $projectID,
