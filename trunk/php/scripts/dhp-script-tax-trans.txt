@@ -1,0 +1,9 @@
+    <!-- Handlebars Templates for Transcript on Taxonomy page -->
+<script id="dhp-script-transc" type="text/x-handlebars-template">
+	<ol id="dhpress-tips" class="joyRideTipContent">
+	  <li data-class="av-transcript" data-options="tipLocation:bottom"><p>There are several ways to explore the full audio file. Click once on any spot in the transcript below, either a timestamp or any word (do not double click). Or drag the red line in the media player to the point you want to hear. You may need to update your Flash for this to work properly. Use the timestamps on the left side of the screen to find the matching spot in the transcript. Scroll down to the bottom of the page to see all markers associated with this interview. To return to the map, click on the original browser tab for the project, which will still be open. It is recommended that you close this tab when you are ready to return to the map.</p>
+
+		<p>When you return to the map, the selected marker's information popup window will still be open. Close the lightbox to view and navigate around the map. Note that you will not be able to re-open the same marker until you have clicked on a different marker or refreshed your browser.</p>
+	</li>
+	</ol>
+</script>

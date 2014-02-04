@@ -13,7 +13,7 @@ jQuery(document).ready(function($) {
     var projectSettings = dhpData.project_settings;
     var taxTerm         = dhpData.tax;
 
-    console.log("Preparing tax transcript with AJAX URL "+ajax_url+" for ProjectID " + project_id + " tax head term "+taxTerm.taxonomy+" at URL "+taxTerm.slug);
+    // console.log("Preparing tax transcript with AJAX URL "+ajax_url+" for ProjectID " + project_id + " tax head term "+taxTerm.taxonomy+" at URL "+taxTerm.slug);
     // console.log(dhpData.project['motes']);
     // console.log(dhpData.tax.name);
 
