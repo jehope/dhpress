@@ -131,6 +131,8 @@ var dhpMapsView = {
 
         dhpMapsView.olMap = new OpenLayers.Map({
             div: "dhp-visual",
+            zoomDuration: 10,
+            sphericalMercator: true,
             projection: dhpMapsView.sm,
             displayProjection: dhpMapsView.gg
         });
