@@ -2413,7 +2413,7 @@ function dhp_page_template( $page_template )
     	if (!is_null($projectSettings_map)) {
 			wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-			wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__)));
+			wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers-2.13/OpenLayers.js', dirname(__FILE__)));
 			wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
 			wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
 
