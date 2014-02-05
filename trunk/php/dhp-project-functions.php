@@ -1960,7 +1960,7 @@ function dhpGetFieldValues()
 	$projectID 	= $_POST['project'];
 	$fieldName 	= $_POST['field_name'];
 	$projObj 	= new DHPressProject($projectID);
-	$tempValues	= $projObject->getCustomFieldUniqueValues($fieldName);
+	$tempValues	= $projObj->getCustomFieldUniqueValues($fieldName);
 
 	die(json_encode($tempValues));
 } // dhpGetFieldValues()
