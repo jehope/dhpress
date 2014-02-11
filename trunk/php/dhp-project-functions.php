@@ -901,9 +901,7 @@ function createMarkerArray($project_id)
 	}
 
 	$feature_collection = array();
-	//$json_string = '{"type": "FeatureCollection","features": [';
 	$feature_collection['type'] = 'FeatureCollection';
-	$feature_collection['debug'] = array();
 	$feature_array = array();
 
 		// Link parent enables linking to either the Post page for this Marker,
@@ -918,6 +916,7 @@ function createMarkerArray($project_id)
 			$term_links = 'no-link';
 			$child_terms = 'no-link';
 		}
+			// Link to mote value
 		elseif(strpos($link_parent, '(Mote)') !== FALSE) {
 			$linkMoteName = str_replace(' (Mote)', '', $link_parent);
 			$child_terms = $projObj->getMoteByName( $linkMoteName );
@@ -932,7 +931,6 @@ function createMarkerArray($project_id)
 
 	$link_parent2 = $projSettings['views']['select']['link2'];
 	if($link_parent2) {
-		array_push($feature_collection['debug'], $link_parent2);
 		if($link_parent2=='marker') {
 		//$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
 			$child_terms2 = 'marker';
@@ -941,6 +939,7 @@ function createMarkerArray($project_id)
 			$term_links2 = 'no-link';
 			$child_terms2 = 'no-link';
 		}
+			// Link to mote value
 		elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
 			$link2MoteName = str_replace(' (Mote)', '', $link_parent2);
 			$child_terms2 = $projObj->getMoteByName( $link2MoteName );
@@ -1074,8 +1073,7 @@ function createMarkerArray($project_id)
 			}
 			else {
 				$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $rootTaxName);
-			}
-				
+			}			
 			if ($term_links)
 				$thisFeaturesProperties["link"] = addslashes($term_links);
 		}
