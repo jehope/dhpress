@@ -29,9 +29,9 @@ jQuery(document).ready(function($) {
     
         // Insert Marker modal window HTML
     $('body').append(Handlebars.compile($("#dhp-script-markerModal").html()));
-        // Set modal size
-    if(dhpSettings['views']['modal-size']) {
-        jQuery('#markerModal').addClass(dhpSettings['views']['modal-size']);
+        // Set modal width
+    if(dhpSettings['views']['select']['width']) {
+        jQuery('#markerModal').addClass(dhpSettings['views']['select']['width']);
     }
         // initialize fullscreen mode settings
     if(dhpSettings['views']['viz-fullscreen']==true){

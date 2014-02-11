@@ -689,28 +689,27 @@ jQuery(document).ready(function($) {
     // builtHTMLForPostView(viewObject);
     
        // Modal view settings html
-       
-    // $('#modalView .accordion-inner').append(
-    //   '<h3>Modal Size</h3>'+'<p>'+
-    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="tiny" />'+
-    //   'Tiny</label>'+
-    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="small" />'+
-    //   'Small</label>'+
-    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="medium" checked="checked"/>'+
-    //   'Medium</label>'+
-    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="large" />'+
-    //   'Large</label>'+
-    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="xlarge" />'+
-    //   'X-Large</label>'+'</p>'
-    // );
-    //   // if setting exists then set modal size
-    // if(viewObject['modal-size']) {
-    //   _.each($('#modalView input[name=modalSize]'), function(val, key) {
-    //     if(viewObject['modal-size']===val.value) {
-    //       $(val).prop('checked',true);
-    //     }       
-    //   });
-    // }
+    $('#modalView .accordion-inner').append(
+      '<h3>Modal Size</h3>'+'<p>'+
+      '<label class="checkbox inline"><input type="radio" name="modalSize" value="tiny" />'+
+      'Tiny</label>'+
+      '<label class="checkbox inline"><input type="radio" name="modalSize" value="small" />'+
+      'Small</label>'+
+      '<label class="checkbox inline"><input type="radio" name="modalSize" value="medium" checked="checked"/>'+
+      'Medium</label>'+
+      '<label class="checkbox inline"><input type="radio" name="modalSize" value="large" />'+
+      'Large</label>'+
+      '<label class="checkbox inline"><input type="radio" name="modalSize" value="xlarge" />'+
+      'X-Large</label>'+'</p>'
+    );
+      // if setting exists then set modal size
+    if(viewObject['select']['width']) {
+      _.each($('#modalView input[name=modalSize]'), function(val, key) {
+        if(viewObject['select']['width']===val.value) {
+          $(val).prop('checked',true);
+        }       
+      });
+    }
 
       // Setup layout for "Modal View"
     $('.setup-modal-view').click(function() {
@@ -1410,7 +1409,7 @@ jQuery(document).ready(function($) {
     projectObj['views']['transcript']['content'] = transcContent;
 
     // save new modal view size
-    projectObj['views']['modal-size'] = $('input[name=modalSize]:checked', '#modalView').val()
+    projectObj['views']['select']['width'] = $('input[name=modalSize]:checked', '#modalView').val()
 
       // Save the project_settings as a string in the field
   	$('#project_settings').val(JSON.stringify(projectObj));
