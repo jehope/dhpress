@@ -762,7 +762,7 @@ var dhpMapsView = {
         var selectedFeature;
         var titleAtt='';
         var builtHTML;
-        var link1, link2;
+        var link1, link2, link1Target, link2Target;
         // var tagAtt;
 
         if (feature.cluster)
@@ -776,6 +776,13 @@ var dhpMapsView = {
 
         link1  = selectedFeature.attributes.link;
         link2  = selectedFeature.attributes.link2;
+            // Open in new tab?
+        if(dhpMapsView.viewParams['select']['link-new-tab']) {
+            link1Target = 'target="_blank"';
+        }
+        if(dhpMapsView.viewParams['select']['link2-new-tab']) {
+            link2Target = 'target="_blank"';
+        }
         // tagAtt = selectedFeature.attributes.categories;
 
             // Remove anything currently in body -- will rebuild from scratch
@@ -834,10 +841,10 @@ var dhpMapsView = {
 
             // setup links
         if (link1 && link1!='no-link') {
-            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a target="_blank" class="button success marker-link" href="'+link1+'">'+dhpMapsView.viewParams['select']['link-label']+'</a></li>');
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link1Target+' class="button success marker-link" href="'+link1+'">'+dhpMapsView.viewParams['select']['link-label']+'</a></li>');
         }
         if (link2 && link2 !='no-link') {
-            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a target="_blank" class="button success marker-link" href="'+link2+'">'+dhpMapsView.viewParams['select']['link2-label']+'</a></li>');
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link2Target+' class="button success marker-link" href="'+link2+'">'+dhpMapsView.viewParams['select']['link2-label']+'</a></li>');
         }
             //Open modal
         jQuery('#markerModal').foundation('reveal', 'open');
