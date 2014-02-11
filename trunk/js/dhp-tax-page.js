@@ -66,12 +66,6 @@ jQuery(document).ready(function($) {
             var cfName = getCustomField(legName);
                 // Use custom field to retrieve value
             var tempVal = response[cfName];
-            // console.log("CF = "+cfName+"; val = "+tempVal);
-    
-                // Display the normal WP page content if specified it should be shown
-            // if (cfName=='the_content') {
-            //  $('.dhp-entrytext').show();
-            // }
 
                 // Special legend names to show thumbnails
             if (legName=='Thumbnail Right') {
