@@ -25,7 +25,7 @@ jQuery(document).ready(function($) {
   projectObj['views'] = new Object();
 
      // Data types supported for motes
-  var dataTypes = ['Text','Lat/Lon Coordinates','File','Image'];
+  var dataTypes = ['Text', 'Lat/Lon Coordinates', 'File', 'Image', 'URL'];
   // var dataTypes = ['Text','Exact Date','Date Range','Lat/Lon Coordinates','File','Image'];
 
     // View types supported for modals
@@ -668,7 +668,14 @@ jQuery(document).ready(function($) {
 
     $('.viz-width').val(viewObject['viz-width']);
     $('.viz-height').val(viewObject['viz-height']);
-    $('.viz-fullscreen').val(viewObject['viz-fullscreen']);
+      //catch for old settings(map-fullscreen)
+    if(viewObject['map-fullscreen']) {
+      $('.viz-fullscreen').val(viewObject['map-fullscreen']);
+    }
+    else {
+      $('.viz-fullscreen').val(viewObject['viz-fullscreen']);
+    }
+    
 
     buildHTMLForPostView(viewObject['post']);
     buildHTMLForTranscView(viewObject['transcript']);
@@ -717,18 +724,25 @@ jQuery(document).ready(function($) {
       var selectData = projectObj['views']['select'] || new Array();
       var title = blankStringIfNull(selectData['title']);
       var content = [];
-      var linkTarget, linkTarget2, linkTargetLabel, linkTarget2Label;
+      var linkTarget, linkTarget2, linkTargetLabel, linkTarget2Label, linkTab, link2Tab;
 
       if(selectData['link']) {
         linkTarget = selectData['link'];
         if(selectData['link-label']) {
           linkTargetLabel = 'value="'+selectData['link-label']+'"';
         }
+        if(selectData['link-new-tab']) {
+          linkTab = 'checked="checked"';
+        }
+
       }
       if(selectData['link2']) {
         linkTarget2 = selectData['link2'];
         if(selectData['link2-label']) {
           linkTarget2Label = 'value="'+selectData['link2-label']+'"';
+        }
+        if(selectData['link2-new-tab']) {
+          link2Tab = 'checked="checked"';
         }
       }
       $('#projectModal').empty();
@@ -744,8 +758,12 @@ jQuery(document).ready(function($) {
         <ul id="modal-body-content">\
         </ul><button class="btn btn-success add-modal-content" type="button">Add Mote</button>\
         <p>Setup Links</p>\
-        <span class="pull-left" >Link 1: <input type="text" name="link-legends-label" class="link-legends-label" placeholder="Label" '+linkTargetLabel+'/><select name="link-legends" class="link-legends">'+buildHTMLForSetupLinks(linkTarget)+'</select></span>\
-        <span class="pull-left" >Link 2: <input type="text" name="link-legends2-label" class="link-legends2-label" placeholder="Label" '+linkTarget2Label+'/><select name="link-legends2" class="link-legends2">'+buildHTMLForSetupLinks(linkTarget2)+'</select></span>\
+        <div><label class="inline pull-left" >Link 1: <input type="text" name="link-legends-label" class="link-legends-label" placeholder="Label" '+linkTargetLabel+'/><select name="link-legends" class="link-legends">'+buildHTMLForSetupLinks(linkTarget)+'</select></label>\
+        <label class="checkbox inline"><input type="checkbox" class="link-new-tab" '+linkTab+'>'+
+        'Open New Tab</label></div>\
+        <div><label class="inline pull-left" >Link 2: <input type="text" name="link-legends2-label" class="link-legends2-label" placeholder="Label" '+linkTarget2Label+'/><select name="link-legends2" class="link-legends2">'+buildHTMLForSetupLinks(linkTarget2)+'</select></label>\
+        <label class="checkbox inline"><input type="checkbox" class="link2-new-tab" '+link2Tab+'>'+
+        'Open New Tab</label></div>\
       </div>\
       <div class="modal-footer">\
         <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
@@ -787,8 +805,11 @@ jQuery(document).ready(function($) {
         });
         selModalSettings['link'] = $('#projectModal .link-legends option:selected').val();
         selModalSettings['link-label'] = $('#projectModal .link-legends-label').val();
+        selModalSettings['link-new-tab'] = $('#projectModal .link-new-tab').prop('checked');
+
         selModalSettings['link2'] = $('#projectModal .link-legends2 option:selected').val();
         selModalSettings['link2-label'] = $('#projectModal .link-legends2-label').val();
+        selModalSettings['link2-new-tab'] = $('#projectModal .link2-new-tab').prop('checked');
 
         projectObj['views']['select'] = selModalSettings;
 
@@ -1055,11 +1076,20 @@ jQuery(document).ready(function($) {
 
       // For linking to taxonomic pages
     _.each(mapObject['settings']['filter-data'], function(theFilter) {
-// console.log("Filter: " + theFilter);
-      if(theFilter==selected) {
-        optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" selected="selected" >'+theFilter+'</option>';
+      if(theFilter===selected) {
+        optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" selected="selected" >'+theFilter+' (Legend)</option>';
       } else {
-        optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" >'+theFilter+'</option>';
+        optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" >'+theFilter+' (Legend)</option>';
+      }
+    });
+
+      // For linking to mote values
+    _.each(projectObj['motes'], function(theFilter) {
+      console.log(theFilter.type)
+      if( theFilter.name+' (Mote)' === selected && theFilter.type === 'URL' ) {
+        optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" selected="selected" >'+theFilter.name+' (Mote)</option>';
+      } else if( theFilter.type ==='URL' ) {
+        optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" >'+theFilter.name+' (Mote)</option>';
       }
     });
     return optionHtml;

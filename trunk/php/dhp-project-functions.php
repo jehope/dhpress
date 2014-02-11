@@ -903,7 +903,7 @@ function createMarkerArray($project_id)
 	$feature_collection = array();
 	//$json_string = '{"type": "FeatureCollection","features": [';
 	$feature_collection['type'] = 'FeatureCollection';
-
+	$feature_collection['debug'] = array();
 	$feature_array = array();
 
 		// Link parent enables linking to either the Post page for this Marker,
@@ -918,6 +918,10 @@ function createMarkerArray($project_id)
 			$term_links = 'no-link';
 			$child_terms = 'no-link';
 		}
+		elseif(strpos($link_parent, '(Mote)') !== FALSE) {
+			$linkMoteName = str_replace(' (Mote)', '', $link_parent);
+			$child_terms = $projObj->getMoteByName( $linkMoteName );
+		}
 		else {
 				// translate into category/term ID
 			$parent_id = get_term_by('name', $link_parent, $rootTaxName);
@@ -928,6 +932,7 @@ function createMarkerArray($project_id)
 
 	$link_parent2 = $projSettings['views']['select']['link2'];
 	if($link_parent2) {
+		array_push($feature_collection['debug'], $link_parent2);
 		if($link_parent2=='marker') {
 		//$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
 			$child_terms2 = 'marker';
@@ -935,6 +940,10 @@ function createMarkerArray($project_id)
 		elseif($link_parent2=='no-link') {
 			$term_links2 = 'no-link';
 			$child_terms2 = 'no-link';
+		}
+		elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
+			$link2MoteName = str_replace(' (Mote)', '', $link_parent2);
+			$child_terms2 = $projObj->getMoteByName( $link2MoteName );
 		}
 		else {
 			$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
@@ -1055,21 +1064,32 @@ function createMarkerArray($project_id)
 			$thisFeaturesProperties["content"]     = $content_att;
 		}
 
-			// Does item link to its own Marker page or Taxonomy page?
+			// Does item link to its own Marker page, Taxonomy page, or Mote value?
 		if ($link_parent && $child_terms && $child_terms != 'no-link') {
-			if ($child_terms=='marker')
+			if ($child_terms=='marker') {
 				$term_links = get_permalink();
-			else
+			}
+			elseif(strpos($link_parent, '(Mote)') !== FALSE) {
+				$term_links = get_post_meta($marker_id, $child_terms['custom-fields'], true);
+			}
+			else {
 				$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $rootTaxName);
+			}
+				
 			if ($term_links)
 				$thisFeaturesProperties["link"] = addslashes($term_links);
 		}
 
 		if ($link_parent2 && $child_terms2 && $child_terms2 != 'no-link') {
-			if ($child_terms2=='marker')
+			if ($child_terms2=='marker') {
 				$term_links2 = get_permalink();
-			else
+			}
+			elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
+				$term_links2 = get_post_meta($marker_id, $child_terms2['custom-fields'], true);
+			}
+			else {
 				$term_links2 = dhp_get_term_by_parent($child_terms2, $post_terms, $rootTaxName);
+			}
 			if ($term_links2)
 				$thisFeaturesProperties["link2"] = addslashes($term_links2);
 		}
@@ -1254,6 +1274,7 @@ function print_new_bootstrap_html($project_id)
                     <option>Lat/Lon Coordinates</option>
                     <option>File</option>
                     <option>Image</option>
+                    <option>URL</option>
                   </select><span class="help-inline">Choose a data type</span>
                 </div>
                 <div class="control-group">
