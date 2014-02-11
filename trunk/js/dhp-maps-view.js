@@ -45,7 +45,7 @@ var dhpMapsView = {
         dhpMapsView.projectID      = projectID;
         dhpMapsView.mapEP          = mapEP;
         dhpMapsView.viewParams     = viewParams;
-
+        dhpMapsView.modalSize      = dhpData['settings']['views']['select']['width'];
 
             //Update map size if browser is resized
         jQuery(window).resize(function() { dhpMapsView.dhpUpdateSize(); });
@@ -218,6 +218,8 @@ var dhpMapsView = {
             windowWidth  = jQuery(window).width();
             windowHeight = jQuery(window).height();
 
+            dhpMapsView.dhpIgnoreModalSize.call(this,windowWidth);
+
                 //New WordPress has a mobile admin bar with larger height(displays below 783px width)
             if(dhpMapsView.wpAdminBarVisible && windowWidth >= dhpMapsView.wpAdminBarWidth ) {
                 jQuery('body').height(windowHeight - dhpMapsView.wpAdminBarHeight);
@@ -230,6 +232,7 @@ var dhpMapsView = {
             else {
                 jQuery('body').height(windowHeight);
             }
+
         }
             //resize legend term position for long titles
         jQuery('.active-legend .terms').css({top:jQuery('.active-legend .legend-title').height()});
@@ -248,7 +251,25 @@ var dhpMapsView = {
             // This is an OL function to redraw the markers after map resize
         dhpMapsView.olMap.updateSize();
     }, // dhpUpdateSize()
-
+    
+        // PURPOSE: Removes modal size if window size is under a certain threshold
+        // 
+    dhpIgnoreModalSize: function(windowWidth)
+    {
+        if(windowWidth<800) {
+            jQuery('#markerModal').removeClass('medium');
+            jQuery('#markerModal').removeClass(dhpMapsView.modalSize);
+        }
+            // Experimenting with different viewport sizes
+        else if(dhpMapsView.modalSize==='tiny' && windowWidth >= 800 && windowWidth < 1200) {
+            jQuery('#markerModal').removeClass(dhpMapsView.modalSize);
+            jQuery('#markerModal').addClass('medium');
+        }
+        else {
+            jQuery('#markerModal').removeClass('medium');
+            jQuery('#markerModal').addClass(dhpMapsView.modalSize);
+        }
+    },
         // PURPOSE: Called by olMarkerInterface to determine icon to use for marker
         // RETURNS: First match on URL to use for icon, or else ""
         // INPUT:   catValues = array of IDs (integers) associated with a feature/marker
