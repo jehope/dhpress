@@ -31,7 +31,7 @@ jQuery(document).ready(function($) {
 
 	// $('.post-content').hide();
 
-		// Load Marker data for each Marker via AJAX
+		// Load specified mote data for each Marker via AJAX
 	$('.dhp-post').each(function() {
 			postID = $(this).attr('id');
 			$(this).hide();					// hide it until loaded by AJAX
@@ -61,7 +61,7 @@ jQuery(document).ready(function($) {
 		// }
 
 			// Go through each Legend and show corresponding values
-		_.each(dhpSettings['views']['post']['content'], function(legName){
+		_.each(dhpSettings['views']['post']['content'], function(legName) {
 				// Convert Legend name to custom field name
 			var cfName = getCustomField(legName);
 				// Use custom field to retrieve value

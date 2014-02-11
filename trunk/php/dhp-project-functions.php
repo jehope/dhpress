@@ -1347,7 +1347,7 @@ function print_new_bootstrap_html($project_id)
 				  <div class="accordion-group">
 				    <div class="accordion-heading">
 				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#transcView">
-				        Transcript View (modal and taxonomy)
+				        Taxonomy/Transcript View (modal and archive pages)
 				      </a>
 				    </div>
 				    <div id="transcView" class="accordion-body collapse">
