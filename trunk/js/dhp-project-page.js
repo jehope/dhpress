@@ -34,7 +34,7 @@ jQuery(document).ready(function($) {
         jQuery('#markerModal').addClass(dhpSettings['views']['select']['width']);
     }
         // initialize fullscreen mode settings
-    if(dhpSettings['views']['viz-fullscreen']==true){
+    if(dhpSettings['views']['viz-fullscreen']===true){
         $('body').addClass('fullscreen');
         $('.dhp-nav .fullscreen').addClass('active');
     }

@@ -670,10 +670,10 @@ jQuery(document).ready(function($) {
     $('.viz-height').val(viewObject['viz-height']);
       //catch for old settings(map-fullscreen)
     if(viewObject['map-fullscreen']) {
-      $('.viz-fullscreen').val(viewObject['map-fullscreen']);
+      $('.viz-fullscreen').prop('checked',viewObject['map-fullscreen']);
     }
     else {
-      $('.viz-fullscreen').val(viewObject['viz-fullscreen']);
+      $('.viz-fullscreen').prop('checked',viewObject['viz-fullscreen']);
     }
     
 
@@ -1394,7 +1394,7 @@ jQuery(document).ready(function($) {
 
     projectObj['views'] = new Object();
 
-    projectObj['views']['viz-fullscreen'] = $('.viz-fullscreen').val();
+    projectObj['views']['viz-fullscreen'] = $('.viz-fullscreen').prop('checked');
     projectObj['views']['viz-width']      = $('.viz-width').val();
     projectObj['views']['viz-height']     = $('.viz-height').val();
 
