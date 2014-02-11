@@ -2,6 +2,7 @@
 //          Loaded by add_dhp_project_admin_scripts() in dhp-project-functions.php
 // ASSUMES: dhpDataLib is used to pass parameters to this function via wp_localize_script()
 //          WP code creates hidden data in with DIV ID hidden-layers for info about map layers
+//          Initial project settings embedded in HTML in DIV ID project_settings by show_dhp_project_settings_box()
 // USES:    JavaScript libraries jQuery, jQuery UI (for drag-drop), Underscore, Bootstrap ...
 // TO DO:   Creates too many global variables -- put these within scope of this JS function
 
@@ -14,6 +15,9 @@ jQuery(document).ready(function($) {
 
   var projectObj = new Object();         // Initialized in initializeProjectObj() but only updated by saveProjectSettings() when user selects Save button
 
+    // Selection modal settings saved here
+  var selModalSettings;
+
     // Create new empty settings
   projectObj['project-details'] = new Object();
   projectObj['entry-points'] = new Object();
@@ -24,20 +28,19 @@ jQuery(document).ready(function($) {
   var dataTypes = ['Text','Lat/Lon Coordinates','File','Image'];
   // var dataTypes = ['Text','Exact Date','Date Range','Lat/Lon Coordinates','File','Image'];
 
+    // View types supported for modals
+  var modalViewNames = ['transcript'];
+
     // Screen options tab on T-L
   $('#screen-meta-links a').click(function(){
     $('#screen-options-wrap').removeClass('hidden');
   });
-  // console.log("testing dev");
-
-  //$('#hidden-layers').show();
 
     // #hidden-layers DIV (produced by dhp-project-functions.php) contains all data about map layers
   var BASE_LAYERS = $('#hidden-layers .base-layer').map(function(){
     return $(this);
   });
   var OVERLAYS = $('#hidden-layers .overlay').clone();
-  //console.log(BASE_LAYERS);
 
     //Assign listener to icons loaded by php
   $('.dhp_icon').click(function() {
@@ -48,9 +51,6 @@ jQuery(document).ready(function($) {
   		assignListeners(this);
   	}
   });
-  // $(window).resize(function() {
-  // 	resizeTB();
-  //  });
 
     // Prepare Bootstrap modal popover on Publish button (called below if not saved)
   $('#publish').popover({
@@ -126,37 +126,11 @@ jQuery(document).ready(function($) {
   //   }    
   // });
 
-    // Handle Create Entry Point > A/V Transcript
-  $('#add-transcript').click(function(){
-    var transcriptCount  = countEntryPoints('transcript') +1;
-    if(transcriptCount==2) {
-      var options = { 
-        animation: true, 
-        placement:'right',
-        title:'transcript limit reached',
-        content:'Maximum of one transcript are allowed currently.',
-        trigger:'manual',
-        delay: { show: 500, hide: 100 }
-      }
-      $('#transcript1-tab').popover(options);
-      $('#transcript1-tab').popover('show');
-      $('#transcript1-tab a').tab('show');
-      setTimeout(function () {
-        $('#transcript1-tab').popover('hide');
-      }, 3000);
-    } else {
-      projectNeedsToBeSaved();
-      epsettings = '';
-      buildHTMLForEntryPoint('transcript',epsettings);
-      //show tab/content after loading
-      $('#transcript'+transcriptCount+'-tab a').tab('show');
-    }    
-  });
-
     // + button on Motes tab (for creating new custom field)
   $('#create-new-custom').click(function(){
     $('#projectModal').empty();
-    $('#projectModal').append('<div class="modal-header">\
+    $('#projectModal').append(
+    '<div class="modal-header">\
       <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
       <h3 id="myModalLabel">New Custom Field</h3>\
     </div>\
@@ -215,10 +189,12 @@ jQuery(document).ready(function($) {
       dhpGetFieldValues(tempFindValues);
     });
 
+
     $('.find-custom-field-value').on('focus',function(e){
       $('.undone-warning').remove();
       $('#projectModal .modal-body').append('<div class="alert alert-error undone-warning"><p>Warning! This action can not be undone.</p></div>');
     });
+
 
     $('#find-custom-field').click(function(e){
       e.preventDefault();
@@ -230,7 +206,6 @@ jQuery(document).ready(function($) {
       var filterTrue = $('#projectModal .filter-active').prop('checked');
       var replaceAll = $('#projectModal .filter-replace-all').prop('checked');
       // console.log("is it "+filterTrue)
-
 
       if(tempFindCFvalue&&!filterTrue) {
         // console.log('just find all');
@@ -317,13 +292,6 @@ jQuery(document).ready(function($) {
     // PURPOSE: Initialize all Project settings in projectObj
     // INPUT:   settingString = String representing project settings (needs to be parsed), or null if none (new)
   function initializeProjectObj(settingString) {
-    // $('#motes #create-mote .cf-type').change(function(){
-    //     if($(this).find("option:selected").text()=='Dynamic Data Field'){
-    //       //console.log($(this).find("option:selected").text());
-    //     } else {
-
-    //     }
-    //   });
     // console.log("settingString = " + settingString);
 
     var pSettings;
@@ -340,6 +308,7 @@ jQuery(document).ready(function($) {
       if (pSettings['project-details']['id'] !== projectID) {
           throw new Error("Project ID "+projectID+" sent by WP does not match ID "+pSettings['project-details']['id']+" in project settings");
       }
+      projectObj['project-details']['version']        = 2;
       projectObj['project-details']['id']             = pSettings['project-details']['id'];
       projectObj['project-details']['name']           = pSettings['project-details']['name'];
       projectObj['project-details']['home-label']     = pSettings['project-details']['home-label'];
@@ -352,7 +321,10 @@ jQuery(document).ready(function($) {
       $('#max-inactive').val(projectObj['project-details']['max-inactive']);
 
       dhpGetCustomFields();
+
+      // New project -- no pre-existing settings
     } else {
+      projectObj['project-details']['version'] = 2;
       projectObj['project-details']['id'] = projectID;
     }
 
@@ -367,26 +339,28 @@ jQuery(document).ready(function($) {
         insertHTMLForMoteList(pSettings['motes']);
       }
     });
+
     $('body').bind('load-entry-points', function(e) {
       if(pSettings && pSettings['entry-points']) {
         buildEntryPoints(pSettings['entry-points']);
       }
     });
 
-    // $('body').bind('load-shared-motes', function(e) {
-    //   if(pSettings['shared-motes']) {
-    //     buildSharedMotes(pSettings['shared-motes']);
-    //   }
-    //   return;
-    // });
     $('body').bind('load-views', function(e) {
-      //console.log(data['views']);
       if (pSettings && pSettings['views']) {
         projectObj['views'] = pSettings['views'];
+
+      } else {
+        projectObj['views'] = new Object();
+        projectObj['views']['select'] = new Object();
+        projectObj['views']['post'] = new Object();
+        projectObj['views']['transcript'] = new Object();
       }
-      builtHTMLForViewsTab(projectObj['views']);
-      return;
+      selModalSettings = projectObj['views']['select'];
+
+      buildHTMLForViewsTab();
     });
+
     $('body').bind('add-save-alert', function(e) {
       $('#dhp_settings_box input').on('change',function(){
         projectNeedsToBeSaved();
@@ -394,7 +368,6 @@ jQuery(document).ready(function($) {
       $('#dhp_settings_box select').on('change',function(){
         projectNeedsToBeSaved();
       });
-      return;
     });
 
     //fire in order, according to dependencies
@@ -478,16 +451,6 @@ jQuery(document).ready(function($) {
     _.each(entryPoints, function(theEP) {
       buildHTMLForEntryPoint(theEP["type"], theEP["settings"]);
     });
-    // for (var i =0; i < Object.keys(entryPoints).length; i++) {
-    // //console.log(epObject[i]["type"])
-    //   if(entryPoints[i]["type"]=="map") {
-    //     //console.log("oh yeah itsa map")
-    //   }
-    //   if(entryPoints[i]["type"]=="timeline") {
-    //     //console.log("timeline...no way")
-    //   }
-    //   buildHTMLForEntryPoint(entryPoints[i]["type"],entryPoints[i]["settings"])
-    // }
   }
 
 
@@ -506,40 +469,24 @@ jQuery(document).ready(function($) {
     // case "timeline":
     //     //settings['start-date'] = '01/01/2012'
     //     entryTabContent = '<div class="input-prepend input-append">\
-    //                           <input class="span4" type="text" name="start-date" id="start-date" placeholder="Start Date" value="'+createIfEmpty(settings['start-date'])+'" />\
+    //                           <input class="span4" type="text" name="start-date" id="start-date" placeholder="Start Date" value="'+blankStringIfNull(settings['start-date'])+'" />\
     //                           <span>-</span>\
-    //                           <input class="span4" type="text" name="end-date" id="end-date" placeholder="End Date" value="'+createIfEmpty(settings['end-date'])+'" />\
+    //                           <input class="span4" type="text" name="end-date" id="end-date" placeholder="End Date" value="'+blankStringIfNull(settings['end-date'])+'" />\
     //                           </div>\
     //                           <label>Timeline Data</label>\
     //                         <select name="timeline-mote" id="timeline-mote">'+buildHTMLForMotes(settings['timeline-data'])+'\
     //                         </select>';
     //   break;
-    case 'transcript':
-      //settings['start-date'] = '01/01/2012';
-      //need audio, transcript, timecode
-      entryTabContent = '<label>Audio URL</label>\
-                          <select name="av-transcript-audio" id="av-transcript-audio">'+buildHTMLForMotes(settings['audio'])+'\
-                          </select>\
-                          <label>Transcript</label>\
-                          <select name="av-transcript-txt" id="av-transcript-txt">'+buildHTMLForMotes(settings['transcript'])+'\
-                          </select>\
-                          <label>Transcript 2</label>\
-                          <select name="av-transcript-txt2" id="av-transcript-txt2">'+buildHTMLForMotes(settings['transcript2'])+'\
-                          </select>\
-                            <label>Time Stamp(clip)</label>\
-                          <select name="av-transcript-clip" id="av-transcript-clip">'+buildHTMLForMotes(settings['timecode'])+'\
-                          </select>';
-      break;
     case 'map':
       entryTabContent = '<div class="row-fluid vars">\
                       <div class="cords span5">\
                           <label>Map Center (Lat/Lon)</label>\
                           <div class="input-prepend input-append">\
-                            <input class="span5" type="text" name="lat" id="lat" placeholder="Lat" value="'+createIfEmpty(settings['lat'])+'" />\
-                            <input class="span5" type="text" name="lon" id="lon" placeholder="Lon" value="'+createIfEmpty(settings['lon'])+'" />\
+                            <input class="span5" type="text" name="lat" id="lat" placeholder="Lat" value="'+blankStringIfNull(settings['lat'])+'" />\
+                            <input class="span5" type="text" name="lon" id="lon" placeholder="Lon" value="'+blankStringIfNull(settings['lon'])+'" />\
                           </div>\
                           <label>Initial Zoom</label>\
-                          <input type="text" name="zoom" id="zoom" placeholder="Zoom" value="'+createIfEmpty(settings['zoom'])+'" />\
+                          <input type="text" name="zoom" id="zoom" placeholder="Zoom" value="'+blankStringIfNull(settings['zoom'])+'" />\
                       </div>\
                       <div class="span7 layers">\
                         <ul class="layer-list">\
@@ -551,7 +498,7 @@ jQuery(document).ready(function($) {
                   <div class="row-fluid vars">\
                       <div class="span5">\
                       	<label>Marker Layer(Lat/Lon) <span class="badge badge-info"><i class="icon-question-sign icon-white"></i></span></label>\
-                          <select class="span12" name="marker-layer" id="marker-layer">'+buildHTMLForMotes(settings['marker-layer'],'Lat/Lon Coordinates')+'\
+                          <select class="span12" name="marker-layer" id="marker-layer">'+buildHTMLForMotes(settings['marker-layer'],false,'Lat/Lon Coordinates')+'\
                           </select>\
                       </div>\
                       <div class="span7">\
@@ -585,7 +532,6 @@ jQuery(document).ready(function($) {
           }
         }); 
     });
-
 
       // Handle Delete button for Entry Point
     $('#'+type+'-'+epCount+ ' .close').click(function(e){
@@ -663,156 +609,127 @@ jQuery(document).ready(function($) {
     });    
   } // buildHTMLForEntryPoint()
 
+
     // RETURNS: First entry point within parentObj of type objType
-  function getEntryPointByType(epList,epType) {
+  function getEntryPointByType(epList, epType) {
     return _.find(epList, function(theEP) { return theEP.type == epType });
   }
 
-    // PURPOSE: Creates Post View section of Views tab
-    // INPUT:   JSON object representing "views" portion of project settings (could be empty if new)
-  function builtHTMLForPostView(viewObject) {
-    var markerTitle = '';
-    var markerContent ='';
-    if(viewObject['post-view-title']) {
-      markerTitle = viewObject['post-view-title'];
-    }
-    
+
+    // PURPOSE: Creates Post section of Views tab
+    // INPUT:   JSON object representing "post" portion of project settings (could be empty if new)
+  function buildHTMLForPostView(postView) {
+    var markerTitle = blankStringIfNull(postView['title']);
+
     $('.marker-view').append('<select name="post-view-title" class="title-custom-fields save-view"><option selected="selected" value="the_title" >Marker Title</option>'+buildHTMLForMotes(markerTitle)+'</select>');
-    $('.marker-view').append('<p>Pick the motes to display in single page view.</p><ul id="post-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add</button>');
+    $('.marker-view').append('<p>Pick the motes to display in Marker Post pages.</p><ul id="post-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
 
-    if(viewObject['post-view-content']){
-      var tempVar = $('<div/>');
-      _.each(viewObject['post-view-content'],function(val){
-        $(tempVar).append(addContentMotes(val));
+    if(postView['content']){
+      var htmlStr = $('<div/>');
+      _.each(postView['content'],function(val) {
+        $(htmlStr).append(buildContentMotesHTML(val));
       });
-      $('#post-content-view').append(tempVar);
+      $('#post-content-view').append(htmlStr);
     }
-    $('.delete-content-mote').unbind('click');
-    $('.delete-content-mote').on('click',function(){
-          $(this).parent('li').remove();
-           projectNeedsToBeSaved();
-    });
-    $('.add-mote-content').click(function(e){
-        //console.log($('#projectModal .custom-fields option:selected').val());
-        $('#post-content-view').append(addContentMotes());
-        projectNeedsToBeSaved();
-        $('.delete-content-mote').unbind('click');
-        $('.delete-content-mote').on('click',function(){
-          $(this).parent('li').remove();
-        });
+  } // buildHTMLForPostView()
+
+
+    // PURPOSE: Creates Transcript section of Views tab
+    // INPUT:   JSON object representing "transcript" portion of project settings (could be empty if new)
+    // TO DO:   Add "Create" and "Delete" buttons to Source mote
+  function buildHTMLForTranscView(transcView) {
+    var transHTML = '<label>Transcript Source (all excerpts must have same value for this mote)</label>\
+                    <select name="av-transcript-source" id="av-transcript-source">'+buildHTMLForMotes(transcView['source'], true)+'</select>\
+                    <label>Audio URL</label>\
+                    <select name="av-transcript-audio" id="av-transcript-audio">'+buildHTMLForMotes(transcView['audio'], true)+'</select>\
+                    <label>Transcript Text</label>\
+                    <select name="av-transcript-txt" id="av-transcript-txt">'+buildHTMLForMotes(transcView['transcript'], true)+'</select>\
+                    <label>Transcript Text 2</label>\
+                    <select name="av-transcript-txt2" id="av-transcript-txt2">'+buildHTMLForMotes(transcView['transcript2'], true)+'</select>\
+                    <label>Time Stamp(clip)</label>\
+                    <select name="av-transcript-clip" id="av-transcript-clip">'+buildHTMLForMotes(transcView['timecode'], true)+'</select>';
+
+    $('.transc-view').append(transHTML);
+    $('.transc-view').append('<p>Pick the motes to display for each transcript excerpt post.</p><ul id="transc-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
+
+    if(transcView['content']){
+      var htmlStr = $('<div/>');
+      _.each(transcView['content'],function(val) {
+        $(htmlStr).append(buildContentMotesHTML(val));
       });
-  } // builtHTMLForPostView()
+      $('#transc-content-view').append(htmlStr);
+    }
+  } // buildHTMLForTranscView()
 
-    // INPUT:   theView = object containing parameters corresponding to "views" portion of project settings
-  // function updateViewObjectFormat(theView) {
-  //   var newViewObject = new Object();
-
-  //   console.log('//start viewObject update');
-
-  //   _.each(theView, function(val,key){
-  //     console.log(key + ' : '+ val)
-  //     if(val instanceof Object == true ) {
-  //       console.log(val)
-  //     }
-  //   });
-  //   console.log('//new viewObject format')
-
-  //   newViewObject['projectPage'] = new Object();
-  //   newViewObject['projectPage'][0] = new Object();
-  //   newViewObject['projectPage'][0].type = 'map';
-  //   newViewObject['projectPage'][0].width = theView['map-width'];
-  //   newViewObject['projectPage'][0].height = theView['map-height'];
-  //   newViewObject['projectPage'][0].fullscreen = theView['map-fullscreen'];
-  //   // newViewObject['projectPage'][0].legend = theView['legend-pos'];
-
-  //   newViewObject['popupModals'] = new Object();
-  //   newViewObject['popupModals']['title'] = theView['title'];
-  //   newViewObject['popupModals']['ep'] = theView['modal-ep'];
-  //   newViewObject['popupModals']['motes'] = theView['content'];
-  //   newViewObject['popupModals']['links'] = new Object();
-  //   newViewObject['popupModals']['links'][0] = new Object();
-  //   newViewObject['popupModals']['links'][1] = new Object();
-  //   newViewObject['popupModals']['links'][0].link = theView['link'];
-  //   newViewObject['popupModals']['links'][0].title = theView['link-label'];;
-  //   newViewObject['popupModals']['links'][1].link = theView['link2'];
-  //   newViewObject['popupModals']['links'][1].title = theView['link2-label'];;
-
-  //   newViewObject['markerPage'] = new Object();
-  //   newViewObject['markerPage'].title = theView['post-view-title'];
-  //   newViewObject['markerPage'].motes = theView['post-view-content'];
-
-  //   console.log(newViewObject);
-  //   console.log('//end viewObject update')
-  // }
 
     // PURPOSE: Called to create HTML for Main View and Modal View sections of Views tab
-    // INPUT:   viewObject = JSON object representing "views" portion of project settings
-  function builtHTMLForViewsTab(viewObject){
-    if(!viewObject) {
-      viewObject = new Object();
-    } 
-    //console.log(projectObj);
+  function buildHTMLForViewsTab() {
+    var viewObject = projectObj['views'];
 
-    //setup layout for main view
-    var mapView,legendView;
-    mapView = viewObject;
+    $('.viz-width').val(viewObject['viz-width']);
+    $('.viz-height').val(viewObject['viz-height']);
+    $('.viz-fullscreen').val(viewObject['viz-fullscreen']);
 
-      // set HTML values for each UI component that matches
-    _.each(mapView,function(val,key) {
-      $('.'+key).val(val);
-      if(viewObject['map-fullscreen']) {
-        $('.'+key).attr('checked','checked');
-      }
+    buildHTMLForPostView(viewObject['post']);
+    buildHTMLForTranscView(viewObject['transcript']);
+
+      // Handle deleting content for either Post View or Transc View
+    bindDelContentMote();
+
+      // Adding new motes to either Post or Transcript views
+    $('.add-mote-content').click(function() {
+          // Need to add to HTML immediately above button!
+        $(this).prev().append(buildContentMotesHTML());
+        projectNeedsToBeSaved();
+
+          // New button to bind, but must replace all (so we don't get multiple bindings and calls)
+        bindDelContentMote();
     });
 
-    builtHTMLForPostView(viewObject);
+    // builtHTMLForPostView(viewObject);
     
-      // Modal view settings html
-    $('#modalView .accordion-inner').append(
-      '<h3>Modal Size</h3>'+'<p>'+
-      '<label class="checkbox inline"><input type="radio" name="modalSize" value="tiny" />'+
-      'Tiny</label>'+
-      '<label class="checkbox inline"><input type="radio" name="modalSize" value="small" />'+
-      'Small</label>'+
-      '<label class="checkbox inline"><input type="radio" name="modalSize" value="medium" checked="checked"/>'+
-      'Medium</label>'+
-      '<label class="checkbox inline"><input type="radio" name="modalSize" value="large" />'+
-      'Large</label>'+
-      '<label class="checkbox inline"><input type="radio" name="modalSize" value="xlarge" />'+
-      'X-Large</label>'+'</p>'
-    );
-      // if setting exists then set modal size
-    if(viewObject['modal-size']) {
-      _.each($('#modalView input[name=modalSize]'), function(val, key) {
-        if(viewObject['modal-size']===val.value) {
-          $(val).prop('checked',true);
-        }       
-      });
-    }
-    
-      
-      
-          // $('input[name=radioName]:checked', '#myForm').val()
-    // Setup layout for frontend modals
-    $('.setup-modal-view').click(function(){
-      var title = '';
-      console.log(viewObject);
+       // Modal view settings html
+       
+    // $('#modalView .accordion-inner').append(
+    //   '<h3>Modal Size</h3>'+'<p>'+
+    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="tiny" />'+
+    //   'Tiny</label>'+
+    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="small" />'+
+    //   'Small</label>'+
+    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="medium" checked="checked"/>'+
+    //   'Medium</label>'+
+    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="large" />'+
+    //   'Large</label>'+
+    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="xlarge" />'+
+    //   'X-Large</label>'+'</p>'
+    // );
+    //   // if setting exists then set modal size
+    // if(viewObject['modal-size']) {
+    //   _.each($('#modalView input[name=modalSize]'), function(val, key) {
+    //     if(viewObject['modal-size']===val.value) {
+    //       $(val).prop('checked',true);
+    //     }       
+    //   });
+    // }
 
+      // Setup layout for "Modal View"
+    $('.setup-modal-view').click(function() {
+        // Cover case that settings do not exist
+      var selectData = projectObj['views']['select'] || new Array();
+      var title = blankStringIfNull(selectData['title']);
       var content = [];
-      var linkTarget,linkTarget2,linkTargetLabel,linkTarget2Label;
-      if(viewObject['title']) {
-        title = viewObject['title'];
-      }
-      if(viewObject['link']) {
-        linkTarget = viewObject['link'];
-        if(viewObject['link-label']) {
-          linkTargetLabel = 'value="'+viewObject['link-label']+'"';
+      var linkTarget, linkTarget2, linkTargetLabel, linkTarget2Label;
+
+      if(selectData['link']) {
+        linkTarget = selectData['link'];
+        if(selectData['link-label']) {
+          linkTargetLabel = 'value="'+selectData['link-label']+'"';
         }
       }
-      if(viewObject['link2']) {
-        linkTarget2 = viewObject['link2'];
-        if(viewObject['link2-label']) {
-          linkTarget2Label = 'value="'+viewObject['link2-label']+'"';
+      if(selectData['link2']) {
+        linkTarget2 = selectData['link2'];
+        if(selectData['link2-label']) {
+          linkTarget2Label = 'value="'+selectData['link2-label']+'"';
         }
       }
       $('#projectModal').empty();
@@ -821,10 +738,10 @@ jQuery(document).ready(function($) {
         <h3 id="myModalLabel">Choose Title: <select name="custom-fields" class="title-custom-fields"><option selected="selected" value="the_title" >Marker Title</option>'+buildHTMLForMotes(title)+'</select></h3>\
       </div>\
       <div class="modal-body">\
-        <p>Pick the entry points to display in the modal.</p>\
-        <ul id="modal-body-ep">\
-        </ul><button class="btn btn-success add-modal-ep" type="button">Add Entry Point</button>\
-        <p>Pick the motes to display in the modal.</p>\
+        <p>Select views to display in the modal.</p>\
+        <ul id="modal-views">\
+        </ul><button class="btn btn-success add-modal-view" type="button">Add View</button>\
+        <p>Select the motes to display in the modal.</p>\
         <ul id="modal-body-content">\
         </ul><button class="btn btn-success add-modal-content" type="button">Add Mote</button>\
         <p>Setup Links</p>\
@@ -835,87 +752,110 @@ jQuery(document).ready(function($) {
         <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
         <button class="btn btn-primary" id="save-modal-view" aria-hidden="true">Confirm</button>\
       </div>');
-      //$('#projectModal .title-custom-fields').append($('#create-mote select.custom-fields').clone().html());
-      //$('#projectModal .title-custom-fields').prepend('<option name="the_title" value="the_title">Marker Title</option>');
-      if(viewObject['content']) {
-        //each
-        _.each(viewObject['content'],function(val,index) {
-          //console.log(val);
-          $('#modal-body-content').append(addContentMotes(val));
-        });
-        $('.delete-content-mote').unbind('click');
-        $('.delete-content-mote').on('click',function(){
-          $(this).parent('li').remove();
-        });
-        //title = viewObject['title'];
-      }
-      if(viewObject['modal-ep']) {
-        //each
-        _.each(viewObject['modal-ep'],function(val,index) {
-          //console.log(val);
-          $('#modal-body-ep').append(addEntryPoint(val));
-        });
-        $('.delete-ep-view').unbind('click');
-        $('.delete-ep-view').on('click',function(){
-          $(this).parent('li').remove();
-        });
-        //title = viewObject['title'];
-      }
-      //load view settings
-      
-      $('#projectModal .title-custom-fields').on('change',function(){
-        $('#projectModal .title-custom-fields option:selected').each( function() {
-            //console.log($(this).val()); 
-        });
-        
-        //$('#projectModal .modal-body').append('<div class="alert alert-error"><p>Warning! Can not undo this action.</p></div>');
-      });
 
-      $('#save-modal-view').click(function(e){
+      if(selectData['view-type']) {
+        _.each(selectData['view-type'],function(val) {
+          //console.log(val);
+          $('#modal-views').append(addModalView(val));
+        });
+        $('.delete-modal-view').unbind('click');
+        $('.delete-modal-view').on('click',function(){
+          $(this).parent().remove();
+        });
+      }
+
+      if(selectData['content']) {
+        _.each(selectData['content'],function(val) {
+            // Add select modal content motes
+          $('#modal-body-content').append(buildContentMotesHTML(val));
+            // Must rebind code since we've created more content mote buttons
+          bindDelContentMote();
+        });
+      }
+
+      $('#save-modal-view').click(function(e) {
+        selModalSettings = new Object;
         e.preventDefault();
         //console.log($('#projectModal .title-custom-fields option:selected').val());
-        viewObject['title'] = $('#projectModal .title-custom-fields option:selected').val();
-        viewObject['modal-ep'] = new Object();
-        $('#projectModal .content-ep option:selected').each( function(index) {
-          viewObject['modal-ep'][index] = $(this).val();
+        selModalSettings['title'] = $('#projectModal .title-custom-fields option:selected').val();
+        selModalSettings['view-type'] = new Array();
+        $('#projectModal .modal-view').each( function(i) {
+          selModalSettings['view-type'].push($(this).val());
         });
-        viewObject['content'] = new Object();
-        $('#projectModal .content-motes option:selected').each( function(index) {
-          viewObject['content'][index] = $(this).val();
+        selModalSettings['content'] = new Array();
+        $('#projectModal .sel-content-motes').each( function(i) {
+          selModalSettings['content'].push($(this).val());
         });
-        viewObject['link'] = $('#projectModal .link-legends option:selected').val();
-        viewObject['link-label'] = $('#projectModal .link-legends-label').val();
-        viewObject['link2'] = $('#projectModal .link-legends2 option:selected').val();
-        viewObject['link2-label'] = $('#projectModal .link-legends2-label').val();
-        // $('#save-modal-view').text('saving...');
+        selModalSettings['link'] = $('#projectModal .link-legends option:selected').val();
+        selModalSettings['link-label'] = $('#projectModal .link-legends-label').val();
+        selModalSettings['link2'] = $('#projectModal .link-legends2 option:selected').val();
+        selModalSettings['link2-label'] = $('#projectModal .link-legends2-label').val();
 
-         //console.log(viewObject);
-        projectObj['views'] = viewObject;
+        projectObj['views']['select'] = selModalSettings;
+
         projectNeedsToBeSaved();
         $('#projectModal').modal('hide'); 
       });
 
-      $('.add-modal-content').click(function(e){
+      $('.add-modal-view').click(function(e){
         //console.log($('#projectModal .custom-fields option:selected').val());
-        $('#modal-body-content').append(addContentMotes());
-      });
-
-      $('.add-modal-ep').click(function(e){
-        //console.log($('#projectModal .custom-fields option:selected').val());
-        $('#modal-body-ep').append(addEntryPoint());
-        $('.delete-ep-view').on('click',function(){
-          $(this).parent('li').remove();
+        $('#modal-views').append(addModalView());
+        $('.delete-modal-view').on('click',function(){
+          $(this).parent().remove();
         });
       });
-    });
-  } // builtHTMLForViewsTab()
 
-  function addContentMotes(selected) {
-    var contentMote = '<li><select name="content-motes" class="content-motes">\
-    '+buildHTMLForMotes(selected)+'</select> <button class="btn btn-danger delete-content-mote" type="button">-</button></li>';
+      $('.add-modal-content').click(function(e){
+        //console.log($('#projectModal .custom-fields option:selected').val());
+        $('#modal-body-content').append(buildContentMotesHTML());
+        bindDelContentMote();
+      });
+    }); // create modal
+
+  } // buildHTMLForViewsTab()
+
+
+  function bindDelContentMote()
+  {
+      $('.del-sel-content').unbind('click');
+      $('.del-sel-content').on('click',function() {
+          $(this).parent().remove();
+          projectNeedsToBeSaved();
+      });
+  } // bindDelContentMote()
+
+
+    // INPUT:  selected = mote name which is current selection, or null
+    // RETURN: string of HTML for selection of all available motes, inc. delete button
+  function buildContentMotesHTML(selected) {
+    var contentMote = '<li><select class="sel-content-motes">\
+    '+buildHTMLForMotes(selected)+'</select> <button class="btn btn-danger del-sel-content" type="button">-</button></li>';
 
     return contentMote;
+  } // buildContentMotesHTML()
+
+
+  function addModalView(selected)
+  {
+    var modalView = '<li><select name="modal-view" class="modal-view">\
+    '+getModalViews(selected)+'</select> <button class="btn btn-danger delete-modal-view" type="button">-</button></li>';
+
+    return modalView;
   }
+
+    // RETURNS: HTML string of dropdown options for all Entry Points defined for Project
+    // ASSUMES: Can read entry points from projectObj 
+  function getModalViews(selected) {
+    var modalViews = '';
+
+    _.each(modalViewNames, function(name) {
+      var isSelected;
+      isSelected = (selected===name) ? 'selected' : '';
+      modalViews += '<option name="'+name+'" '+isSelected+' >'+name+'</option>';
+    });
+    return modalViews;
+  } // getModalViews()
+
 
   function addEntryPoint(selected) {
     var contentEP = '<li><select name="content-ep" class="content-ep">\
@@ -936,7 +876,8 @@ jQuery(document).ready(function($) {
       epItems += '<option name="'+val['type']+'" '+isSelected+' >'+val['type']+'</option>';
     });
     return epItems;
-  }
+  } // getEntryPoints()
+
 
   function loadLayers(layerArray){
     // console.log(layerObject)
@@ -962,9 +903,10 @@ jQuery(document).ready(function($) {
         }
         
       }
-    }      
+    }
     return $(layerHtml).html();
-  }
+  } // loadLayers()
+
 
     // RETURNS: jQuery object for default settings of a new map layer
   function addNewLayer(selected,layerOpacity){
@@ -1064,6 +1006,7 @@ jQuery(document).ready(function($) {
     });  
   } // bindLegendEventsInEPTab()
 
+
     // RETURNS: HTML string to represent legendList
   function buildHTMLForLegendList(legendList) {
       var listHtml ='';
@@ -1086,25 +1029,21 @@ jQuery(document).ready(function($) {
       theLegend = '';
       legendButton = '<button class="btn btn-inverse create-legend" type="button">Create</button><button class="btn btn-success load-legend hide" type="button">Configure</button>';
       tempcount = $('.legend-list li').length;
-      console.log(tempcount);
       count = tempcount+1;
-      //console.log('3legend count '+tempcount[1]);
     }
-    //console.log('legend count '+count);
-    // console.log(theLegend);
-    var legendLine = '<li id="legend-'+count+'"><select name="filter-mote" id="filter-mote">'+buildHTMLForMotes(theLegend,'Text')+'</select>'+
+    var legendLine = '<li id="legend-'+count+'"><select name="filter-mote" id="filter-mote">'+buildHTMLForMotes(theLegend,false,'Text')+'</select>'+
                           legendButton+' <button class="btn btn-danger delete-legend" type="button">Delete</button>\
                           </li>';
     return legendLine;
-  }
+  } // buildHTMLForALegend()
+
 
     // RETURNS: HMTL string to represent option list in Setup Links dropdown options in Modal Views
     // INPUT:   selected is the current selection
     // ASSUMES: That user has configured a Map for the Project
     // TO DO:   Don't require a map!! Rename function
-
-  function buildHTMLForSetupLinks(selected){
-    //console.log(mapObject);
+  function buildHTMLForSetupLinks(selected)
+  {
     var mapObject = getEntryPointByType(projectObj['entry-points'], 'map');
     var optionHtml = '';
     if(selected=="no-link") {
@@ -1125,7 +1064,8 @@ jQuery(document).ready(function($) {
       }
     });
     return optionHtml;
-  }
+  } // buildHTMLForSetupLinks()
+
 
     // RETURNS: mote Object associated with Project whose name is moteName
     // ASSUMES: Can use projectObj data
@@ -1135,12 +1075,18 @@ jQuery(document).ready(function($) {
 
     // RETURNS: HTML string of dropdown options for motes defined by project of a specific type
     // INPUT:   selected is the current selection (name of mote), if any
+    //          canBeNone is true if user can select no mote at all
     //          moteType is the datatype of mote to list, or undefined for any type
     // ASSUMES: Can use projectObj data
-  function buildHTMLForMotes(selected, moteType) {
+  function buildHTMLForMotes(selected, canBeNone, moteType) {
     //console.log(projectObj['motes']);
-    var moteOptions = '', selectedTxt;
+    var moteOptions, selectedTxt;
 
+    if (canBeNone) {
+      moteOptions = '<option value="">(none)</option>';
+    } else {
+      moteOptions = '';
+    }
       // Go through all of the Project's defined motes, find matches on type
     _.each(projectObj['motes'], function(theMote) {
       selectedTxt = (theMote['name'] == selected) ? 'selected="selected"' : '';
@@ -1152,16 +1098,17 @@ jQuery(document).ready(function($) {
   } // buildHTMLForMotes()
 
 
-  function createIfEmpty(value) {
+  function blankStringIfNull(value) {
     if(!value) {
       return '';
     } else {
       return value;
     }
-  }
+  } // blankStringIfNull()
+
 
     // PURPOSE: Insert HTML for moteList (corresponding to "motes" of project settings) and preloads the data
-  function insertHTMLForMoteList(moteList){
+  function insertHTMLForMoteList(moteList) {
     var moteCount = countMotes();
     for (var i =0; i < Object.keys(moteList).length; i++) {
       //console.log('html for '+moteObject[i]['name']);
@@ -1294,7 +1241,8 @@ jQuery(document).ready(function($) {
         cflistHtml += '</select>';
       }
     return cflistHtml;
-  }
+  } // buildHTMLForCustomFields()
+
 
   //create select list of project custom fields for motes(dynamic data type)
   // function customFieldDynamicOption(selected){
@@ -1347,16 +1295,17 @@ jQuery(document).ready(function($) {
     // TO DO:   Make more efficient by minimizing use of indices
   function saveProjectSettings()	{
   	// console.log($('#dhp-projectid').val());
-  	projectObj['project-details']['name']         = $('#titlediv #title').val();
     // projectObj['project-details']['id'] = $('#dhp-projectid').val();
     projectObj['project-details']['id']           = projectID;
+  	projectObj['project-details']['name']         = $('#titlediv #title').val();
+    projectObj['project-details']['version']      = 2;
     projectObj['project-details']['home-label']   = $('#home-label').val();
     projectObj['project-details']['home-url']     = $('#home-url').val();
     projectObj['project-details']['max-inactive'] = $('#max-inactive').val();
 
     //console.log(projectObj['project-details']['marker-custom-fields'])
 
-  	//MOTES - clear old values...add fresh
+      //MOTES - clear old values...add fresh
   	projectObj['motes'] = new Object();
   	$('#mote-list .accordion-group').each(function(index){
       newMote = new Object();
@@ -1411,40 +1360,54 @@ jQuery(document).ready(function($) {
      //   	projectObj['entry-points'][index]["settings"]['end-date'] = $(this).find('#end-date').val();
      //   	projectObj['entry-points'][index]["settings"]['timeline-data'] = $(this).find('#timeline-mote').val();
      //  }
-      if(type[0]=='transcript') {
-        projectObj['entry-points'][index] = new Object();
-        projectObj['entry-points'][index]["type"] = type[0];
-        projectObj['entry-points'][index]["settings"] = new Object();
-        projectObj['entry-points'][index]["settings"]['audio'] = $(this).find('#av-transcript-audio').val();
-        projectObj['entry-points'][index]["settings"]['transcript'] = $(this).find('#av-transcript-txt').val();
-        projectObj['entry-points'][index]["settings"]['transcript2'] = $(this).find('#av-transcript-txt2').val();
-        
-        projectObj['entry-points'][index]["settings"]['timecode'] = $(this).find('#av-transcript-clip').val();
-      }
+
   	});
-    if(!projectObj['views']) {
-        projectObj['views'] = new Object();
-    }
-    var tempMarkerContent = [];
 
+    projectObj['views'] = new Object();
+
+    projectObj['views']['viz-fullscreen'] = $('.viz-fullscreen').val();
+    projectObj['views']['viz-width']      = $('.viz-width').val();
+    projectObj['views']['viz-height']     = $('.viz-height').val();
+
+    projectObj['views']['post'] = new Object();
+    projectObj['views']['post']['title']  = $('.post-view-title').val();
+    var markerPostContent = [];
     $('#post-content-view li').each(function(index, theElement){
-        tempMarkerContent.push($(theElement).find('option:selected').val());
+        markerPostContent.push($(theElement).find('option:selected').val());
     });
-    projectObj['views']['post-view-content'] = tempMarkerContent;
+    projectObj['views']['post']['content'] = markerPostContent;
 
-    $('.save-view').each(function(index, theElement) {
-      projectObj['views'][$(theElement).attr('name')] = theElement.value;
-          //console.log(val);
-          //if(val.type=='')
-          if(theElement.type=="checkbox"&&theElement.checked) {
-          //   console.log(val); 
-             projectObj['views'][$(theElement).attr('name')] = true;
-          }
-          if(theElement.type=="checkbox"&&!theElement.checked) {
-          //   console.log(val); 
-             projectObj['views'][$(theElement).attr('name')] = false;
-          }
+      // Settings for select Modal have already been saved, are no longer available on GUI
+    projectObj['views']['select'] = selModalSettings;
+
+    // projectObj['views']['select'] = new Object();
+    // projectObj['views']['select']['title'] = $('.title-custom-fields').val();
+    // var selectPostContent = [];
+    // $('#modal-body-content li').each(function(index, theElement){
+    //     selectPostContent.push($(theElement).find('option:selected').val());
+    // });
+    // projectObj['views']['select']['content'] = selectPostContent;
+    // var selectPostViews = [];
+    // $('#modal-body-ep li').each(function(index, theElement){
+    //     selectPostViews.push($(theElement).find('option:selected').val());
+    // });
+    // projectObj['views']['select']['view-type']   = selectPostViews;
+    // projectObj['views']['select']['link']        = $('.link-legends').val();
+    // projectObj['views']['select']['link2']       = $('.link-legends2').val();
+    // projectObj['views']['select']['link-label']  = $('.link-legends-label').val();
+    // projectObj['views']['select']['link2-label'] = $('.link-legends2-label').val();
+
+    projectObj['views']['transcript'] = new Object();
+    projectObj['views']['transcript']['audio'] = $('#av-transcript-audio').val();
+    projectObj['views']['transcript']['transcript'] = $('#av-transcript-txt').val();
+    projectObj['views']['transcript']['transcript2'] = $('#av-transcript-txt2').val();
+    projectObj['views']['transcript']['timecode'] = $('#av-transcript-clip').val();
+    projectObj['views']['transcript']['source'] = $('#av-transcript-source').val();
+    var transcContent = [];
+    $('#transc-content-view li').each(function(index, theElement){
+        transcContent.push($(theElement).find('option:selected').val());
     });
+    projectObj['views']['transcript']['content'] = transcContent;
 
     // save new modal view size
     projectObj['views']['modal-size'] = $('input[name=modalSize]:checked', '#modalView').val()
@@ -1468,7 +1431,7 @@ jQuery(document).ready(function($) {
     //          data = JSON Object of all of the unique values of the Mote
   function createConfigureLegendModal(title,data){
     $('#taxModal .modal-body').empty();
-  	$('#taxModal .modal-body').append(builtHTMLForLegendValues(data));
+  	$('#taxModal .modal-body').append(buildHTMLForLegendValues(data));
   	
     $('#taxModal .modal-body').append('<div class="icons-color"><a class="use-icons">Icons</a> | <a class="use-colors">Colors</a></div>');
   	$('#taxModal .modal-body .icons-color').append($('.icons').clone());
@@ -1622,9 +1585,9 @@ jQuery(document).ready(function($) {
       i++;
       
   	});
-  	
-  	console.log(JSON.stringify(treeObject));
-  	createTaxTerms(treeParent,JSON.stringify(treeObject));	
+
+  	// console.log(JSON.stringify(treeObject));
+  	createTaxTerms(treeParent, JSON.stringify(treeObject));	
   } // saveArrayTree()
 
 
@@ -1632,7 +1595,7 @@ jQuery(document).ready(function($) {
     // INPUT:   taxTermString = JSON string for taxonomic term
     // RETURNS: jQuery HTML object for Legend values
     // TO DO:   Make more efficient with _.each()
-  function builtHTMLForLegendValues(taxTermString) {
+  function buildHTMLForLegendValues(taxTermString) {
     var termObj = JSON.parse(taxTermString);
   	var htmlStart = '';
 
@@ -1673,12 +1636,12 @@ jQuery(document).ready(function($) {
   		}
   	}
     return result;
-  } // show_props()
+  } // buildHTMLForLegendValues()
 
 
     // INPUT:   optionArrayAsJSON = JSON object containing array of items
     // RETURNS: HTML text representing all of the options in optionArrayAsJSON
-  function builtHTMLForOptionList(optionArrayAsJSON) {
+  function buildHTMLForOptionList(optionArrayAsJSON) {
     var tempOptionArray = JSON.parse(optionArrayAsJSON);
     var tempHtml = null;
     _.each(tempOptionArray, function(val,key){
@@ -1686,7 +1649,8 @@ jQuery(document).ready(function($) {
         tempHtml += '<option value="'+val+'" >'+val+'</option>';
     });
     return tempHtml;
-  }
+  } // buildHTMLForOptionList()
+
 
     // PURPOSE: Change button next to Legend from Create to Configure
   function changeToLoadBtn() {
@@ -1700,7 +1664,7 @@ jQuery(document).ready(function($) {
     // PURPOSE: Saves project settings data object
     // RETURNS: Saved date
     
-  function updateProjectSettings(){
+  function updateProjectSettings() {
     // console.log("Updating settings for project " + projectID);
   	var settingsData = $('#project_settings').val();
   	jQuery.ajax({
@@ -1718,7 +1682,9 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  }
+  } // updateProjectSettings()
+
+
     // PURPOSE: Create terms for new legend
     // RETURNS: Object with terms
     // INPUT:   treeParentID = Top level term id(legend name)
@@ -1741,7 +1707,7 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  }
+  } // dhpCreateLegendTax()
 
     // PURPOSE: Get term object for legend editor and open modal
     // RETURNS: Object with terms
@@ -1778,13 +1744,12 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  } 
+  } // dhpGetMoteValues()
 
     // PURPOSE: Update term structure for legend(introduces icon_url field)
     // RETURNS: Object with terms
     // INPUT:   treeParentID = Top level term id (legend name)
     //          taxTerms = termObject to update terms in wordpress(introduces icon_url)
-
   function createTaxTerms(treeParentID,taxTerms) {
     // console.log("Create legend for treeParentID " + treeParentID + " in Project ID " + projectID);
     var termData = taxTerms;
@@ -1804,7 +1769,7 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  } 
+  } // createTaxTerms()
 
   /**
    * [createCustomFieldFilter create a custom field using a subset of markers filtered by a custom field and value]
@@ -1864,7 +1829,8 @@ jQuery(document).ready(function($) {
          alert(errorThrown);
       }
     });
-  }
+  } // updateCustomFieldFilter()
+
 
   function replaceCustomFieldFilter(fieldName,newValue,filterKey,filterValue){
     jQuery.ajax({
@@ -1886,7 +1852,8 @@ jQuery(document).ready(function($) {
          alert(errorThrown);
       }
     });
-  }
+  } // replaceCustomFieldFilter()
+
 
   function createCustomField(fieldName,fieldValue) { 
     jQuery.ajax({
@@ -1906,7 +1873,8 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  }
+  } // createCustomField()
+
 
   function findReplaceCustomField(tempFindCF,tempFindCFvalue,tempReplaceCFvalue){
     jQuery.ajax({
@@ -1927,7 +1895,8 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  }
+  } // findReplaceCustomField()
+
 
   function deleteCustomField(deleteField) { 
     jQuery.ajax({
@@ -1946,7 +1915,8 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  }
+  } // deleteCustomField()
+
 
   function deleteTerms(termName) {
     jQuery.ajax({
@@ -1965,7 +1935,8 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  }
+  } // deleteTerms()
+
 
   function dhpGetCustomFields() {
     jQuery.ajax({
@@ -1983,7 +1954,8 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  }
+  } // dhpGetCustomFields()
+
 
   function dhpGetFieldValues(fieldName){
     jQuery.ajax({
@@ -1996,13 +1968,14 @@ jQuery(document).ready(function($) {
           },
           success: function(data, textStatus, XMLHttpRequest){
               console.log(data);
-              $('.filter-field-values').empty().append(builtHTMLForOptionList(data));
+              $('.filter-field-values').empty().append(buildHTMLForOptionList(data));
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
           }
       });
-  }
+  } // dhpGetFieldValues()
+
 
   function dhpCreateTermInTax(new_term, parent_term) {
   // console.log(parent_term);
@@ -2026,6 +1999,6 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  }
-  
+  } // dhpCreateTermInTax()
+
 });

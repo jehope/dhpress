@@ -16,20 +16,20 @@ define( 'DHP_SCRIPT_MAP_VIEW',   'dhp-script-map-view.txt' );
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
 
 	// HTML fields added to Custom Fields box in Edit Project admin panel
-$dhp_project_settings_fields = array (
-	array(
-		'label'=> 'Project Settings',
-		'desc'	=> 'Stores the project_settings string as a JSON object.',
-		'id'	=> 'project_settings',
-		'type'	=> 'textarea'
-	),
-	array(
-		'label'=> 'Icons',
-		'desc'	=> 'Icons for categories.',
-		'id'	=> 'project_icons',
-		'type'	=> 'hidden'
-	)
-);
+// $dhp_project_settings_fields = array (
+// 	array(
+// 		'label'=> 'Project Settings',
+// 		'desc'	=> 'Stores the project_settings string as a JSON object.',
+// 		'id'	=> 'project_settings',
+// 		'type'	=> 'textarea'
+// 	),
+// 	array(
+// 		'label'=> 'Icons',
+// 		'desc'	=> 'Icons for categories.',
+// 		'id'	=> 'project_icons',
+// 		'type'	=> 'hidden'
+// 	)
+// );
 
 // ================== Initialize Plug-in ==================
 
@@ -390,7 +390,11 @@ function add_dhp_project_settings_box()
 
 function show_dhp_project_settings_box()
 {
-	global $dhp_project_settings_fields, $post;
+	global $post;
+	// global $dhp_project_settings_fields;
+
+	$projObj = new DHPressProject($post->ID);
+    $project_settings = $projObj->getAllSettings();
 
 	// Load post id for project settings
 	echo '<input type="hidden" id="dhp-projectid" value="'.$post->ID.'"/>';
@@ -398,63 +402,69 @@ function show_dhp_project_settings_box()
 	echo '<input type="hidden" name="dhp_project_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
 	//echo '<div id="map-divs"></div><button id="locate">Locate me!</button>';
 
-	// Begin the field table and loop
+	// Insert HTML for special Project fields
 	echo '<table class="project-form-table">';
-	foreach ($dhp_project_settings_fields as $field) {
-		// get value of this field if it exists for this post
-		$meta = get_post_meta($post->ID, $field['id'], true);
-		// begin a table row with
+	echo '<tr><th><label for="project_settings">Project Settings</label></th><td>';
+	echo '<textarea name="project_settings" id="project_settings" cols="60" rows="4">'.json_encode($project_settings).'</textarea>
+		<br /><span class="description">Stores the project_settings as JSON object</span>';
+	echo '</td></tr>';
+	echo '<input type="hidden" name="project_icons" id="project_icons" value="'.get_post_meta($post->ID, 'project_icons', true).'" />';
 
-				switch($field['type']) {
-					// case items will go here
-					// text
-					case 'text':
-						echo '<tr>
-							<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
-							<td>';
-						echo '<input type="text" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" size="30" />
-							<br /><span class="description">'.$field['desc'].'</span>';
-							echo '</td></tr>';
-						break;
-					// textarea
-					case 'textarea':
-						echo '<tr>
-							<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
-							<td>';
-						echo '<textarea name="'.$field['id'].'" id="'.$field['id'].'" cols="60" rows="4">'.$meta.'</textarea>
-							<br /><span class="description">'.$field['desc'].'</span>';
-							echo '</td></tr>';
-						break;
-					// checkbox
-					case 'checkbox':
-						echo '<tr>
-							<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
-							<td>';
-						echo '<input type="checkbox" name="'.$field['id'].'" id="'.$field['id'].'" ',$meta ? ' checked="checked"' : '','/>
-							<label for="'.$field['id'].'">'.$field['desc'].'</label>';
-							echo '</td></tr>';
-						break;
-					// select
-					case 'select':
-						echo '<tr>
-							<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
-							<td>';
-						echo '<select name="'.$field['id'].'" id="'.$field['id'].'">';
-						foreach ($field['options'] as $option) {
-							echo '<option', $meta == $option['value'] ? ' selected="selected"' : '', ' value="'.$option['value'].'">'.$option['label'].'</option>';
-						}
-						echo '</select><br /><span class="description">'.$field['desc'].'</span>';
-						echo '</td></tr>';
-						break;
-					// textarea
-					case 'hidden':
-						echo '<input type="hidden" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" />';
-						break;
-				} //end switch
-		
-	} // end foreach
+		// Begin the field table and loop
+	// foreach ($dhp_project_settings_fields as $field) {
+	// 	// get value of this field if it exists for this post
+	// 	$meta = get_post_meta($post->ID, $field['id'], true);
+	// 	// begin a table row with
+
+	// 			switch($field['type']) {
+	// 				// case items will go here
+	// 				// text
+	// 				case 'text':
+	// 					echo '<tr>
+	// 						<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
+	// 						<td>';
+	// 					echo '<input type="text" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" size="30" />
+	// 						<br /><span class="description">'.$field['desc'].'</span>';
+	// 						echo '</td></tr>';
+	// 					break;
+	// 				// textarea
+	// 				case 'textarea':
+	// 					echo '<tr>
+	// 						<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
+	// 						<td>';
+	// 					echo '<textarea name="'.$field['id'].'" id="'.$field['id'].'" cols="60" rows="4">'.$meta.'</textarea>
+	// 						<br /><span class="description">'.$field['desc'].'</span>';
+	// 						echo '</td></tr>';
+	// 					break;
+	// 				// checkbox
+	// 				case 'checkbox':
+	// 					echo '<tr>
+	// 						<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
+	// 						<td>';
+	// 					echo '<input type="checkbox" name="'.$field['id'].'" id="'.$field['id'].'" ',$meta ? ' checked="checked"' : '','/>
+	// 						<label for="'.$field['id'].'">'.$field['desc'].'</label>';
+	// 						echo '</td></tr>';
+	// 					break;
+	// 				// select
+	// 				case 'select':
+	// 					echo '<tr>
+	// 						<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
+	// 						<td>';
+	// 					echo '<select name="'.$field['id'].'" id="'.$field['id'].'">';
+	// 					foreach ($field['options'] as $option) {
+	// 						echo '<option', $meta == $option['value'] ? ' selected="selected"' : '', ' value="'.$option['value'].'">'.$option['label'].'</option>';
+	// 					}
+	// 					echo '</select><br /><span class="description">'.$field['desc'].'</span>';
+	// 					echo '</td></tr>';
+	// 					break;
+	// 				// textarea
+	// 				case 'hidden':
+	// 					echo '<input type="hidden" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" />';
+	// 					break;
+	// 			} //end switch
+	// } // end foreach
 	echo '</table>'; // end table
-	
+
 	print_new_bootstrap_html($post->ID);
 } // show_dhp_project_settings_box()
 
@@ -465,13 +475,13 @@ add_action('save_post', 'save_dhp_project_settings');
 // PURPOSE: Save data posted to WP for project based on project_settings_fields
 //				(Could also be invoked by Auto-Save feature of WP)
 // INPUT:	$post_id is the id of the post updated
+// NOTE:    Complication is for new Project that does not yet have ID?
 // ASSUMES:	$_POST is set to post data
 //			$dhp_project_settings_fields describes the data posted
-// TO DO:	Simplify saving logic at end
 
 function save_dhp_project_settings($post_id)
 {
-    global $dhp_project_settings_fields;
+    // global $dhp_project_settings_fields;
 
     	// is this an update of existing Project post?
 	$parent_id = wp_is_post_revision( $post_id );
@@ -492,31 +502,56 @@ function save_dhp_project_settings($post_id)
 			return $post_id;
 	}
 
+		// If there was a previous version (not a new Project)
 	if ( $parent_id ) {
 		// loop through fields and save the data
 		$parent  = get_post( $parent_id );
-		
-		foreach ($dhp_project_settings_fields as $field) {
-			$old = get_post_meta( $parent->ID, $field['id'], true);
-			$new = $_POST[$field['id']];
-			if ($new && $new != $old) {
-				update_metadata( 'post', $post_id, $field['id'], $new);
-			} elseif ($new == '' && $old) {
-				delete_metadata( 'post', $post_id, $field['id'], $old);
-			}
-		} // end foreach
+		$srcToCheck = $parent->ID;
 	} else {
-		// loop through fields and save the data
-		foreach ($dhp_project_settings_fields as $field) {
-			$old = get_post_meta($post_id, $field['id'], true);
-			$new = $_POST[$field['id']];
-			if ($new && $new != $old) {
-				update_post_meta($post_id, $field['id'], $new);
-			} elseif ($new == '' && $old) {
-				delete_post_meta($post_id, $field['id'], $old);
-			}
-		} // end foreach
+		$srcToCheck = $post_id;
 	}
+
+		// $parent  = get_post( $parent_id );
+
+	$projObj = new DHPressProject($srcToCheck);
+    $old = $projObj->getAllSettings();
+    $new = $_POST['project_settings'];
+	if ($new && $new != $old) {
+		update_metadata('post', $post_id, 'project_settings', $new);
+	} elseif ($new == '' && $old) {
+		delete_metadata('post', $post_id, 'project_settings', $old);
+	}
+
+	$old = get_post_meta($srcToCheck, 'project_icons', true);
+	$new = $_POST['project_icons'];
+	if ($new && $new != $old) {
+		update_metadata('post', $post_id, 'project_icons', $new);
+	} elseif ($new == '' && $old) {
+		delete_metadata('post', $post_id, 'project_icons', $old);
+	}
+
+		// foreach ($dhp_project_settings_fields as $field) {
+		// 	$old = get_post_meta( $parent->ID, $field['id'], true);
+		// 	$new = $_POST[$field['id']];
+		// 	if ($new && $new != $old) {
+		// 		update_metadata( 'post', $post_id, $field['id'], $new);
+		// 	} elseif ($new == '' && $old) {
+		// 		delete_metadata( 'post', $post_id, $field['id'], $old);
+		// 	}
+		// } // end foreach
+
+	// } else {
+	// 	// loop through fields and save the data
+	// 	foreach ($dhp_project_settings_fields as $field) {
+	// 		$old = get_post_meta($post_id, $field['id'], true);
+	// 		$new = $_POST[$field['id']];
+	// 		if ($new && $new != $old) {
+	// 			update_post_meta($post_id, $field['id'], $new);
+	// 		} elseif ($new == '' && $old) {
+	// 			delete_post_meta($post_id, $field['id'], $old);
+	// 		}
+	// 	} // end foreach
+	// }
 } // save_dhp_project_settings()
 
 
@@ -672,6 +707,7 @@ function dhp_get_term_by_parent($link_terms, $terms, $rootTaxName)
 // ASSUMES: Should retain marker even if missing visualization data
 // NOTE:    Which specific features will be returned in results will depend upon visualization; that is,
 //				category/legend MUST be augmented by visual features
+// TO DO:   Is this function even used or needed now? Doesn't look like it.
 
 function dhp_get_group_feed($rootTaxName,$term_name)
 {
@@ -700,11 +736,15 @@ function dhp_get_group_feed($rootTaxName,$term_name)
 				$coordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
 			}
 			break;
-		case "transcript":
-			$audio      = $projObj->getMoteByName($eps['settings']['audio'] );
-			$transcript = $projObj->getMoteByName($eps['settings']['transcript'] );
-			$timecode   = $projObj->getMoteByName($eps['settings']['timecode'] );
-			break;
+		}
+	}
+
+	if ($projObj->selectModalHas("transcript")) {
+		$audio = $project_settings['views']['transcript']['audio'];
+		if (!is_null($audio) && ($audio != '')) {
+			$transcript = $project_settings['views']['transcript']['transcript'];
+			$transcript2= $project_settings['views']['transcript']['transcript2'];
+			$timecode   = $project_settings['views']['transcript']['timecode'];
 		}
 	}
 
@@ -740,9 +780,9 @@ function dhp_get_group_feed($rootTaxName,$term_name)
 
 			// Get audio transcripts features
 		if (!is_null($audio)) {
-			$audio_val = get_post_meta($marker_id, $audio['custom-fields']);
+			$audio_val = get_post_meta($marker_id, $audio['custom-fields'], true);
 			$timecode_val = get_post_meta($marker_id, $timecode['custom-fields'], true);
-			$this_feature['properties']['audio'] = $audio_val[0];
+			$this_feature['properties']['audio'] = $audio_val;
 			$this_feature['properties']['timecode'] = $timecode_val;
 		}
 
@@ -823,7 +863,7 @@ function createMarkerArray($project_id)
 	$projSettings = $projObj->getAllSettings();
 
     	// Initialize settings in case not used
-	$map_pointsMote = $cordMote = $filters = $audio = $transcript = $timecode = null;
+	$map_pointsMote = $cordMote = $filters = $audio = $transcript = $transcript2 = $timecode = null;
 
     	// Accumulate settings that are specified
 	foreach( $projSettings['entry-points'] as $eps) {
@@ -847,12 +887,16 @@ function createMarkerArray($project_id)
 				array_push($json_Object, getIconsForTerms($parent, $rootTaxName));
 			}
 			break;
-		case "transcript":
-			$audio       = $projObj->getMoteByName( $eps['settings']['audio'] );
-			$transcript  = $projObj->getMoteByName( $eps['settings']['transcript'] );
-			$transcript2 = $projObj->getMoteByName( $eps['settings']['transcript2'] );			
-			$timecode    = $projObj->getMoteByName( $eps['settings']['timecode'] );
-			break;
+		}
+	}
+
+		// If a marker is selected and leads to a transcript in modal, need those values also
+	if ($projObj->selectModalHas("transcript")) {
+		$audio = $project_settings['views']['transcript']['audio'];
+		if (!is_null($audio) && ($audio != '')) {
+			$transcript = $project_settings['views']['transcript']['transcript'];
+			$transcript2= $project_settings['views']['transcript']['transcript2'];
+			$timecode   = $project_settings['views']['transcript']['timecode'];
 		}
 	}
 
@@ -861,10 +905,10 @@ function createMarkerArray($project_id)
 	$feature_collection['type'] = 'FeatureCollection';
 
 	$feature_array = array();
-	//$feature_collection['type'] = "FeatureCollection";
-	//$feature_collection['features'] = array();
 
-	$link_parent = $projSettings['views']['link'];
+		// Link parent enables linking to either the Post page for this Marker,
+		//	or to the category/taxonomy which includes this Marker
+	$link_parent = $projSettings['views']['select']['link'];
 	if($link_parent) {
 		if($link_parent=='marker') {
 		//$parent_id = get_term_by('name', $link_parent, $rootTaxName);
@@ -882,10 +926,10 @@ function createMarkerArray($project_id)
 		}
 	}
 
-	$link_parent2 = $projSettings['views']['link2'];
+	$link_parent2 = $projSettings['views']['select']['link2'];
 	if($link_parent2) {
 		if($link_parent2=='marker') {
-		//$parent_id = get_term_by('name', $link_parent, $rootTaxName);
+		//$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
 			$child_terms2 = 'marker';
 		}
 		elseif($link_parent2=='no-link') {
@@ -899,7 +943,7 @@ function createMarkerArray($project_id)
 	}
 
 		// Determine whether title is default title of marker post or another (custom) field
-	$title_mote = $projSettings['views']['title'];
+	$title_mote = $projSettings['views']['select']['title'];
 	if ($title_mote != 'the_title') {
 		$temp_mote = $projObj->getMoteByName($title_mote);
 		if (is_null($temp_mote)) {
@@ -991,25 +1035,27 @@ function createMarkerArray($project_id)
 		$content_att = array();
 
 			// For each of the legends/categories defined for the View, gather values for this Marker
-		$viewsContent = $projSettings['views']['content'];
+		$viewsContent = $projSettings['views']['select']['content'];
 		if($viewsContent) {
-			foreach( $viewsContent as $index => $contentMoteName ) {
+			foreach( $viewsContent as $contentMoteName ) {
 				$content_mote = $projObj->getMoteByName( $contentMoteName );
 				$content_type = $content_mote['type'];
 				if($content_mote['custom-fields']=='the_content') {
 					$content_val = apply_filters('the_content', get_post_field('post_content', $marker_id));
-				}
-				else {
+				} else {
 					$content_val = get_post_meta($marker_id,$content_mote['custom-fields'],true);
 				}
-				if($content_type=='Image'){
-					$content_val = '<img src="'.addslashes($content_val).'" />';
+				if (!is_null($content_val) && ($content_val != '')) {
+					if($content_type=='Image'){
+						$content_val = '<img src="'.addslashes($content_val).'" />';
+					}
+					array_push($content_att, array($contentMoteName => $content_val));
 				}
-				array_push($content_att, array($contentMoteName => $content_val));
 			}
 			$thisFeaturesProperties["content"]     = $content_att;
 		}
 
+			// Does item link to its own Marker page or Taxonomy page?
 		if ($link_parent && $child_terms && $child_terms != 'no-link') {
 			if ($child_terms=='marker')
 				$term_links = get_permalink();
@@ -1160,7 +1206,7 @@ function print_new_bootstrap_html($project_id)
 
 	echo '<div class="new-bootstrap">
     <div class="row-fluid">
-    	<div class="span12">
+      <div class="span12">
         <div class="tabbable tabs-left">
           <ul class="nav nav-tabs">
            <li class="active"><a href="#info" data-toggle="tab">Settings</a></li>
@@ -1200,10 +1246,10 @@ function print_new_bootstrap_html($project_id)
 	              		<a class="btn btn-info" id="search-replace-btn" data-toggle="modal" href="#projectModal"><i class="icon-edit"></i></a>
 	              		<a class="btn btn-info" id="delete-cf-btn" data-toggle="modal" href="#projectModal"><i class="icon-trash"></i></a>
 	              		<a class="btn btn-info" id="create-new-custom" data-toggle="modal" href="#projectModal"><i class="icon-plus"></i></a> 
-	              	</div>                
+	              	</div>
                 </div>
                 <div class="control-group">
-                  <select name="cf-type" class="cf-type">                          
+                  <select name="cf-type" class="cf-type">
                     <option>Text</option>
                     <option>Lat/Lon Coordinates</option>
                     <option>File</option>
@@ -1227,9 +1273,8 @@ function print_new_bootstrap_html($project_id)
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Create Entry Point<b class="caret"></b></a>
                   <ul class="dropdown-menu">
                     <li><a id="add-map" >Map</a></li>
-                    <li><a id="add-transcript" >A/V Transcript</a></li>
                     <li class="disabled"><a id="add-timeline">Timeline</a></li>
-                    <li class="disabled"><a>Topic Cards</a></li>
+                    <li class="disabled"><a id="add-top-card">Topic Cards</a></li>
                   </ul>
                 </li>
               </ul>
@@ -1244,6 +1289,7 @@ function print_new_bootstrap_html($project_id)
               <h4>Views</h4>
               
               <div class="accordion" id="viewList">
+
 				  <div class="accordion-group">
 				    <div class="accordion-heading">
 				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#mapView">
@@ -1254,12 +1300,12 @@ function print_new_bootstrap_html($project_id)
 				      <div class="accordion-inner">
 				       <p>
 				       <label class="checkbox">
-                    	<input class="save-view map-fullscreen" type="checkbox" name="map-fullscreen" value="fullscreen">Visualization takes Fullscreen
+                    	<input class="save-view viz-fullscreen" type="checkbox" name="viz-fullscreen" value="fullscreen">Visualization takes full screen
                   		</label>
                   		</p>
                   		<p>
-				       <input class="span3 save-view map-width" name="map-width" type="text" placeholder="Viz Width" />             
-				       <input class="span3 save-view map-height" name="map-height" type="text" placeholder="Viz Height" />
+				       <input class="span3 save-view viz-width" name="viz-width" type="text" placeholder="Viz Width" />             
+				       <input class="span3 save-view viz-height" name="viz-height" type="text" placeholder="Viz Height" />
 				       </p>
 				       <!--<p>
 				       <select name="legend-pos" class="legend-pos save-view">                          
@@ -1270,10 +1316,11 @@ function print_new_bootstrap_html($project_id)
 				      </div>
 				    </div>
 				  </div>
+
 				  <div class="accordion-group">
 				    <div class="accordion-heading">
 				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#modalView">
-				        Modal View
+				        Modal View (item selected from visualization)
 				      </a>
 				    </div>
 				    <div id="modalView" class="accordion-body collapse">
@@ -1284,10 +1331,11 @@ function print_new_bootstrap_html($project_id)
 				      </div>
 				    </div>
 				  </div>
+
 				  <div class="accordion-group">
 				    <div class="accordion-heading">
 				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#linkView">
-				        Post View
+				        Post View (marker pages)
 				      </a>
 				    </div>
 				    <div id="linkView" class="accordion-body collapse">
@@ -1295,15 +1343,28 @@ function print_new_bootstrap_html($project_id)
 				      </div>
 				    </div>
 				  </div>
-				</div>
-            </div>
-          </div>
-        </div>
-      </div>  
-    </div>
-</div>'.
-'<select style="display:none;"id="hidden-layers" >'.dhp_build_HTML_maplayer_options(getLayerList()).'</select>'.'
-<!--New Custom Field Modal -->
+
+				  <div class="accordion-group">
+				    <div class="accordion-heading">
+				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#transcView">
+				        Transcript View (modal and taxonomy)
+				      </a>
+				    </div>
+				    <div id="transcView" class="accordion-body collapse">
+				      <div class="accordion-inner transc-view">
+				      </div>
+				    </div>
+				  </div>
+
+				</div> <!-- accordian -->
+            </div> <!-- div views -->
+          </div> <!-- tab content -->
+        </div> <!-- tabbable tabs-left -->
+      </div>  <!-- span12 -->
+    </div> <!-- row-fluid -->
+</div><!-- new-bootstrap -->
+<select style="display:none;" id="hidden-layers" >'.dhp_build_HTML_maplayer_options(getLayerList()).'</select>'.'
+<!-- This modal used for all pop-ups -->
 <div id="projectModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 </div>';
 } // print_new_bootstrap_html()
@@ -1678,9 +1739,8 @@ add_action( 'wp_ajax_nopriv_dhpGetTaxTranscript', 'dhpGetTaxTranscript');
 
 // PURPOSE: AJAX function to retrieve entire transcript when viewing a taxonomy archive page
 // INPUT:	$_POST['project'] = ID of Project
-//			$_POST['transcript'] = (end of URL) to file containing contents of transcript
-//			$_POST['tax_term'] = the taxonomic term that marker must match
-// ASSUMES: The transcript is only associated with one taxonomic term
+//			$_POST['transcript'] = (end of URL) to file containing contents of transcript; slug based on mote value
+//			$_POST['tax_term'] = the root taxonomic term that marker must match (based on Project ID)
 // RETURNS:	null if not found, or if not associated with transcript; otherwise, JSON-encoded complete transcript with fields:
 //				audio = data from custom field
 //				settings = entry-point settings for transcript
@@ -1713,15 +1773,15 @@ function dhpGetTaxTranscript()
 
 	$projObj      = new DHPressProject($projectID);
 	$rootTaxName  = $projObj->getRootTaxName();
-	$dhp_transcript_ep = $projObj->getEntryPointByName("transcript");
+	$proj_settings = $projObj->getAllSettings();
 
 		// Store results to return here
 	$dhp_object = array();
 
 		// What custom field holds appropriate data? Fetch it from Marker
-	$dhp_audio_mote = $projObj->getMoteByName($dhp_transcript_ep['settings']['audio']);
+	$dhp_audio_mote = $projObj->getMoteByName($proj_settings['views']['transcript']['audio']);
+	$dhp_transcript_mote = $projObj->getMoteByName($proj_settings['views']['transcript']['transcript']);
 
-	$dhp_transcript_mote = $projObj->getMoteByName($dhp_transcript_ep['settings']['transcript']);
 	$dhp_transcript_cfield = $dhp_transcript_mote['custom-fields'];
 	$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
 	if($dhp_transcript!='none') {
@@ -1729,8 +1789,8 @@ function dhpGetTaxTranscript()
 	}
 
 		//if project has two transcripts
-	if($dhp_transcript_ep['settings']['transcript2']) {
-		$dhp_transcript2_mote = $projObj->getMoteByName($dhp_transcript_ep['settings']['transcript2']);
+	if($proj_settings['views']['transcript']['transcript2']) {
+		$dhp_transcript2_mote = $projObj->getMoteByName($proj_settings['views']['transcript']['transcript2']);
 		$dhp_transcript2_cfield = $dhp_transcript2_mote['custom-fields'];
 		$dhp_transcript2 = $marker_meta[$dhp_transcript2_cfield][0];
 		if ($dhp_transcript2 != 'none') {
@@ -2192,18 +2252,20 @@ add_action( 'wp_restore_post_revision', 'dhp_project_restore_revision', 10, 2 );
 //			$revision_id = ID of new revised post
 // ASSUMES:	$dhp_project_settings_fields global is set
 
-function dhp_project_restore_revision( $post_id, $revision_id )
+function dhp_project_restore_revision($post_id, $revision_id)
 {
-	global $dhp_project_settings_fields;
+	// global $dhp_project_settings_fields;
+	$dhp_project_settings_fields = array( 'project_settings', 'project_icons' );
 
-	$post     = get_post( $post_id );
-	$revision = get_post( $revision_id );
-	foreach ($dhp_project_settings_fields as $field) {
-			$old = get_metadata( 'post', $revision->ID, $field['id'], true);
+	$post     = get_post($post_id);
+	$revision = get_post($revision_id);
+
+	foreach ($dhp_project_settings_fields as $fieldID) {
+			$old = get_metadata( 'post', $revision->ID, $fieldID, true);
 			if ( false !== $old) {
-				update_post_meta($post_id, $field['id'], $old);
+				update_post_meta($post_id, $fieldID, $old);
 			} else {
-				delete_post_meta($post_id, $field['id'] );
+				delete_post_meta($post_id, $fieldID );
 			}
 		} // end foreach
 } // dhp_project_restore_revision()
@@ -2387,8 +2449,6 @@ function dhp_page_template( $page_template )
     		// Visualizations can send parameters via this array
     	$vizParams = array();
 
-        // $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
-
 		//foundation styles
         wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.0.3/css/foundation.min.css',  dirname(__FILE__)));
         wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
@@ -2425,7 +2485,7 @@ function dhp_page_template( $page_template )
 	    }
 
 	    	// Transcript specific
-	    if (!is_null($projObj->getEntryPointByName('transcript'))) {
+	    if (!is_null($projObj->selectModalHas('transcript'))) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 	        wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
 			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
@@ -2446,8 +2506,6 @@ function dhp_page_template( $page_template )
     } else if ( $post_type == 'dhp-markers' ) {
 		$project_id = get_post_meta($post->ID, 'project_id',true);
 		$projObj = new DHPressProject($project_id);
-
-        // $page_template = dirname( __FILE__ ) . '/dhp-project-template.php';
 
 		//foundation styles
 		wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.0.3/css/foundation.min.css',  dirname(__FILE__)));
@@ -2482,7 +2540,8 @@ add_filter( 'archive_template', 'dhp_tax_template' );
 // PURPOSE: Set template to be used to show results of top-level custom taxonomy display
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
-// TO DO:   Check to see if the taxonomy is the transcript-source mote before display transcription
+// NOTES:   The name of the taxonomy is the value of a mote;
+//				the name of the tax-term's parent is the name of the mote
 
 function dhp_tax_template( $page_template )
 {
@@ -2500,12 +2559,16 @@ function dhp_tax_template( $page_template )
 	    $title = $term->taxonomy;
 	    $term_parent = get_term($term->parent, $title);
 
-	    	// Get the name of the term, which is also the name of the custom field
+	    	// Set the name of the term's parent, which is also the name of the mote
 	    $term->parent_name = $term_parent->name;
 
 	    $projectID = DHPressProject::RootTaxNameToProjectID($title);
 	    $projObj = new DHPressProject($projectID);
 	    $project_settings = $projObj->getAllSettings();
+
+	    	// Are we on a taxonomy/archive page that corresponds to transcript "source"?
+	    $isTranscript = ($project_settings['views']['transcript']['source'] == $term_parent->name);
+	    	// If above doesn't work, try comparing $term->taxonomy
 
 	    	// mediaelement for timelines -- not currently used
 		// wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
@@ -2524,9 +2587,7 @@ function dhp_tax_template( $page_template )
 		// wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
 		// wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
 
-			// Is there audio transcript?
-			// TO DO: Also check if taxonomy is the transcript-source mote
-	    if ($projObj->getEntryPointByName('transcript')) {
+	    if ($isTranscript) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 		    wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
 			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
@@ -2535,13 +2596,14 @@ function dhp_tax_template( $page_template )
 		}
 
 			// Enqueue last, after dependencies have been determined
-		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-template.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
+		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
 
 		wp_localize_script( 'dhp-tax-script', 'dhpData', array(
 				'project_id' => $projectID,
 				'ajax_url' => $dev_url,
 				'tax' => $term,
-				'project_settings' => $project_settings
+				'project_settings' => $project_settings,
+				'isTranscript' => $isTranscript
 			) );
 	}
 	return $page_template;
