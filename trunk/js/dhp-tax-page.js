@@ -3,8 +3,9 @@
 //          Loaded by dhp_tax_template() in dhp-project-functions.php
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //          page has DIV ID of dhp-entrytext where transaction material can be appended
+// NOTES:   taxTerm.parent_name is the name of the mote; taxTerm.name is the value of the mote
 // USES:    JavaScript libraries jQuery, Underscore, dhp-transcript
-// TO DO:   Check that the taxonomy is based on a mote appropriate for showing transcriptions
+// TO DO:   Fetch and display mote values specified in projectSettings
 
 jQuery(document).ready(function($) {
 
@@ -12,31 +13,24 @@ jQuery(document).ready(function($) {
     var project_id      = dhpData.project_id;
     var projectSettings = dhpData.project_settings;
     var taxTerm         = dhpData.tax;
+    var isTranscript    = dhpData.isTranscript;
 
     // console.log("Preparing tax transcript with AJAX URL "+ajax_url+" for ProjectID " + project_id + " tax head term "+taxTerm.taxonomy+" at URL "+taxTerm.slug);
     // console.log(dhpData.project['motes']);
-    // console.log(dhpData.tax.name);
-
-    dhpTranscript.initialize();
+    // console.log("Term name: "+taxTerm.name);
+    // console.log("Parent name: "+taxTerm.parent_name);
+    // console.log("Is transcript: "+isTranscript);
 
         // Insert name of taxonomy on top of page, where A/V widget will go
 	$('#content').prepend('<h1>'+taxTerm.name+'</h1><div class="dhp-transcript-content"></div>');
 
-        // Check to see if there is a transcript entry point in general
-	var transcriptSettings = settingsHas('entry-points','transcript');
-	if(transcriptSettings) {
+        // Check to see if this is a transcript taxonomy
+	if (isTranscript) {
+        dhpTranscript.initialize();
+
         // $('#content').prepend('<div id="transcript-div"></div>');
         dhpTranscript.prepareTaxTranscript(ajax_url, project_id, ".dhp-transcript-content", taxTerm.taxonomy, taxTerm.slug);
 	}
-
-
-        // PURPOSE: Check to see if array in project settings['settingArea'] has typeName as name
-        // RETURNS: null (if not), or that setting value
-    function settingsHas(settingArea, typeName) {
-        var hasIt = _.where(projectSettings[settingArea], {type: typeName});
-        return hasIt[0];
-    }
-
 
         // find tallest div.row in transcript and set container max-height 40px larger. Default is max 300px
         // TO DO:  Replace _.each() with _.find()

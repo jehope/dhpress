@@ -65,8 +65,6 @@ jQuery(document).ready(function($) {
 
         // Map visualization?
     var mapEP   = getEntryPointByType('map');
-    var transEP = (findModalEpSettings('transcript')) ? getEntryPointByType('transcript') : null;
-
     if (mapEP) {
             // vizParams.layerData must have array of DHP custom map layers to add to "library" -- not base maps (??)
         _.each(vizParams.layerData, function(theLayer) {
@@ -85,7 +83,7 @@ jQuery(document).ready(function($) {
         $('#dhp-visual').after(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
             // all custom maps must have already been loaded into run-time "library"
-        dhpMapsView.initializeMap(ajaxURL, projectID, mapEP, transEP, dhpSettings['views']);
+        dhpMapsView.initializeMap(ajaxURL, projectID, mapEP, dhpSettings['views']);
 
             // Add user tips for map
         $('body').append(Handlebars.compile($("#dhp-script-map-joyride").html()));
@@ -94,7 +92,7 @@ jQuery(document).ready(function($) {
     }
 
         // Transcription views?
-    if (transEP) {
+    if (modalViewHas("transcript")) {
         dhpTranscript.initialize();
     }
 
@@ -169,8 +167,8 @@ jQuery(document).ready(function($) {
     }
 
         // RETURNS: true if there is a modal entry point defined whose name is modalName
-    function findModalEpSettings(modalName) {
-        return (_.find(dhpSettings['views']['modal-ep'],
+    function modalViewHas(modalName) {
+        return (_.find(dhpSettings['views']['select']['view-type'],
                         function(theName) {
                             return (theName == modalName); })
                 != undefined);

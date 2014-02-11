@@ -130,8 +130,8 @@ var dhpTranscript = {
         // PURPOSE: Build all HTML and initialize controls for transcript associated with a Taxonomic Term
         // INPUT:   ajaxURL = URL to use for loading data
         //          htmlID = jQuery selector to specify where resulting HTML should be appended
-        //          taxTerm = head taxonomic term
-        //          transcript = end of URL for specific transcript
+        //          taxTerm = root taxonomic term (based on Project ID)
+        //          transcript = end of URL for specific transcript / slug based on mote value
     prepareTaxTranscript: function (ajaxURL, projectID, htmlID, taxTerm, transcript)
     {
         jQuery.ajax({
@@ -144,7 +144,6 @@ var dhpTranscript = {
                 tax_term: taxTerm
             },
             success: function(data, textStatus, XMLHttpRequest){
-                console.log("Tax transcript = "+data);
                 if (data != null) {
                     var results = JSON.parse(data);
                     var transParams = {

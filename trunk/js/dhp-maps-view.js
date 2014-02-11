@@ -11,7 +11,7 @@
 var dhpMapsView = {
 
         // Contains fields: olMap, gg, sm, selectControl, hoverControl, mapMarkerLayer
-        //					ajaxURL, projectID, mapEP, transcriptEP, viewParams
+        //					ajaxURL, projectID, mapEP, viewParams
         //					rawAjaxData
         //					allMarkers = All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
         //                  catFilter = All values for currently selected Legend; see data desc in getIconsForTerms() of dhp-project-functions.php
@@ -22,9 +22,8 @@ var dhpMapsView = {
         // INPUT:   ajaxURL      = URL to WP
         //			projectID    = ID of project
         //			mapEP        = settings for map entry point (from project settings)
-        //			transcriptEP = settings for transcript entry point (from project settings)
         //			viewParams   = settings for view (from project settings)
-    initializeMap: function(ajaxURL, projectID, mapEP, transcriptEP, viewParams)
+    initializeMap: function(ajaxURL, projectID, mapEP, viewParams)
     {
         var olMarkerInterface;
         var olMapTemplate;
@@ -38,7 +37,6 @@ var dhpMapsView = {
         dhpMapsView.ajaxURL 	= ajaxURL;
         dhpMapsView.projectID 	= projectID;
         dhpMapsView.mapEP		= mapEP;
-        dhpMapsView.transcriptEP= transcriptEP;
         dhpMapsView.viewParams 	= viewParams;
 
             //Update map size if browser is resized
@@ -460,7 +458,7 @@ var dhpMapsView = {
                 jQuery('.legend-resize').fadeOut(100);
             });
         }
-             
+
             // Add legend hide/show action
         jQuery('.legend-resize').on('click', function(){
             if(jQuery('#legends').hasClass('mini')) {
@@ -570,7 +568,7 @@ var dhpMapsView = {
         var layerOpacity;
         var layerSettings = dhpMapsView.mapEP.layers;
 
-        _.each(dhpMapsView.olMap.layers,function(thisLayer,index){
+        _.each(dhpMapsView.olMap.layers,function(thisLayer,index) {
             //console.log(layer.name)
             layerOpacity = 1;
             if(layerSettings[index]) {
@@ -659,7 +657,6 @@ var dhpMapsView = {
         // PURPOSE: Handle user selection of a legend value, so that only markers with that value shown
         // INPUT:   singleID = ID of the Legend value to select
         // RETURNS: Array of term objects from catFilter that match current UI selection based on ID
-        // TO DO:   Rewrite this to eliminate loop
         // ASSUMES: catFilter is null or contains lists of terms for current Legend/Filter
     findSelectedCats: function(singleID)
     {
@@ -718,6 +715,13 @@ var dhpMapsView = {
     //     });
     // }
 
+        // RETURNS: true if there is a modal entry point defined whose name is modalName
+    modalViewHas: function(modalName)
+    {
+        return (_.find(dhpMapsView.viewParams['select']['view-type'],
+                    function(theName) { return (theName == modalName); }) != undefined);
+    },
+
         // PURPOSE: Handle user selection of a marker on a map to bring up modal
         // INPUT:   feature = the feature selected on map
         // ASSUMES: Can use only first feature if a cluster of features is passed
@@ -736,7 +740,7 @@ var dhpMapsView = {
         else
             selectedFeature = feature;
 
-        if(dhpMapsView.viewParams['post-view-title']) {
+        if(dhpMapsView.viewParams['select']['title']) {
             titleAtt =  selectedFeature.attributes['title'];
         }
 
@@ -747,8 +751,9 @@ var dhpMapsView = {
             // Remove anything currently in body -- will rebuild from scratch
         jQuery('.modal-body').empty();
 
-            // Does feature lead to transcript window? Build transcript controls in modal
-        if(dhpMapsView.transcriptEP) {
+            // Should Select Modal show transcript?
+        if (dhpMapsView.modalViewHas("transcript"))
+        {
             jQuery('#markerModal').addClass('transcript');
 
             var transcriptSettings = {
@@ -770,7 +775,7 @@ var dhpMapsView = {
          }
 
             // Create HTML for all of the data related to the Marker
-         if (dhpMapsView.viewParams['content']) {
+         if (dhpMapsView.viewParams['select']['content']) {
             builtHTML = '<div><h3>Details:</h3></div>';
             _.each(selectedFeature.attributes.content,function(val) {       // Array of (hash) pairs
                  _.each(val,function(val1, key1) {
@@ -790,7 +795,6 @@ var dhpMapsView = {
             });
         }
 
-	
         jQuery('.modal-body').append(builtHTML);
 
             // clear previous marker links
@@ -800,14 +804,13 @@ var dhpMapsView = {
 
             // setup links
         if (link1 && link1!='no-link') {
-            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a target="_blank" class="button success marker-link" href="'+link1+'">'+dhpMapsView.viewParams['link-label']+'</a></li>');
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a target="_blank" class="button success marker-link" href="'+link1+'">'+dhpMapsView.viewParams['select']['link-label']+'</a></li>');
         }
         if (link2 && link2 !='no-link') {
-            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a target="_blank" class="button success marker-link" href="'+link2+'">'+dhpMapsView.viewParams['link2-label']+'</a></li>');
-        }   
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a target="_blank" class="button success marker-link" href="'+link2+'">'+dhpMapsView.viewParams['select']['link2-label']+'</a></li>');
+        }
             //Open modal
         jQuery('#markerModal').foundation('reveal', 'open');
-        
     }, // onOLFeatureSelect()
 
 

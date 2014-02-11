@@ -4,7 +4,10 @@
  ** PURPOSE: Encapsulate (some) implementation details of Projects on WordPress
  ** ASSUMES: Running in WordPress environment
  ** NOTES:   Class attempts to do "lazy loading": only retrieve data when needed
- **			 settings is an array/JSON object of this structure
+ **			 Settings is an array/JSON object, whose structure depends on version;
+ **				conversion between them is done by ensureSettings().
+
+ **		VERSION 1 (first iteration of DH Press)
  **			"project-details": {
 		        "id": Integer,
 		        "name": String,
@@ -51,21 +54,98 @@
 		        }
 		    },
 		    "views": {
-		        "post-view-content": [ String (name of mote), ...  ],
 		        "map-fullscreen": false | true,
 		        "map-width": Integer,
 		        "map-height": Integer,
 		        "post-view-title": String,
 		        "title": String (name of mote),
+		        "post-view-content": [ String (name of mote), ...  ],
 		        "modal-ep": [			// Entry-point(s) to display in selected Marker modal
 		        	Integer (index) : 'transcript' | 'map'
 		        ],
 		        "content": [			// Motes to show when Marker selected in visualization
 		            Integer (index): String (mote name), ...
 		        ],
-		        "link": "no-link",
-		        "link2": "no-link"
+		        "link": Name of mote,
+		        "link-label" : String,
+		        "link2": Name of mote,
+		        "link-label2" : String
 		    } 
+ 
+ **		VERSION 2 (latest iteration of DH Press)
+ **			"project-details": {
+		        "id": Integer,										// ID of Project
+		        "name": String,
+		        "version": Integer,									// Should = 2
+		        "marker-custom-fields": [ String, ... ],			// list of custom fields <=> motes
+		        "home-label": String,
+		        "home-url": String,
+		        "max-inactive": Number (in minutes)
+		    },
+		    "motes": [
+		        Index: {
+		            "name": String,
+		            "type": String (name of type),
+		            "custom-fields": String,
+		            "delim": String (containing a character or empty string)
+		        }, ...
+		    ],
+		    "entry-points": [										// contents of settings depends on type of entry point
+		    	Integer (index) : {
+		            "type": String ("map" or "..."),
+		            "settings": {									// map settings are as follows
+		                "lat": Number,
+		                "lon": Number,
+		                "zoom": Number,
+		                "opacity": Number,
+		                "layers": [
+		                    Index: {
+		                        "id": Number,
+		                        "name": String,
+		                        "mapType": String ("type-OSM" or "type-DHP"),
+		                        "mapTypeId": String,
+		                    }, ...
+		                ],
+		                "marker-layer": String (name of mote),		// Mote used for geo coord
+		                "filter-data": [							// List of mote Legends/categories
+		                    Index : String (name of note), ...
+		                ]
+		            } -- or -- ...
+		        }
+		    },
+		    "views": {
+		        "viz-fullscreen": false | true,
+		        "viz-width": Integer,						// Size of visualization window (non-full screen)
+		        "viz-height": Integer,
+		    	"post" : {									// For Marker post pages
+			        "title": String,						// Title to give Marker modal
+			        "content": [ String, ...  ]				// Names of motes to show
+		    	},
+		    	"select" : {								// For modal when item selected from visualation
+			        "title": String (name of mote),
+			        "view-type": [							// Types of views to display in selected Marker modal
+			        	Integer (index) : 'transcript' | 'map'
+			        ],
+			        "content": [							// Motes to show when Marker selected in visualization
+			            Integer (index): String (mote name), ...
+			        ],
+			        "link" : [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
+			        "link2": [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
+			        "link-label" : String,
+			        "link2-label" : String
+		    	}
+		        "transcript" : {
+					"audio" 	: Name of mote (that contains last part of URL to audio file)
+					"transcript" : Name of mote (that contains URL to textual transcription of original),
+					"transcript2" : Name of mote (that contains URL to textual transcription of any translation),
+					"timecode" : Name of mote (that contains the timecode),
+					"source"	: Name of mote with common value across excerpts of transcripts (taxonomy category),
+					"content"	: [							// Motes to show when tax/archive page shown
+			            Integer (index): String (mote name), ...
+					]
+		        }
+		    }
+
  **/
 
 class DHPressProject
@@ -260,6 +340,20 @@ class DHPressProject
 	} // getMoteByName()
 
 
+		// RETURNS: true if the Select Modal contains $viewType
+	public function selectModalHas($viewType)
+	{
+		$this->ensureSettings();
+
+		foreach($this->settings['views']['select']['view-type'] as $vt) {
+			if($vt==$viewType) {
+				return true;
+			}
+		}
+		return false;
+	} // selectModalHas()
+
+
 		// RETURNS: Map type ID for layer whose type is typeName in epList
 	public function getMapLayerTypeID($typeName, $layerList)
 	{
@@ -272,7 +366,7 @@ class DHPressProject
 			}
 		}
 		return null;
-	} // dhp_get_map_type()
+	} // getMapLayerTypeID()
 
 
 		// RETURNS: All Mote settings in Project
@@ -306,19 +400,101 @@ class DHPressProject
 	    // PRIVATE OBJECT METHODS
 		//======================
 
+	static private function doClone($value)
+	{
+		if (is_null($value)) {
+			return null;
+		}
+		if (is_integer($value) || is_integer($value) || is_bool($value)) {
+			return $value;
+		}
+		if (is_string($value)) {
+			if ($value == '') {
+				return '';
+			}
+			return sprintf("%s", $value);
+		}
+		return clone($value);
+	} // doClone()
+
+
     	// PURPOSE: Ensure that Project Settings have been loaded; read if not
+		//			Translate to new format of Project Settings if in old format
     private function ensureSettings()
     {
     	if ($this->id == -1) {
     		trigger_error("Project ID not set");
     	}
+    		// Do we need to read the settings?
     	if (is_null($this->settings)) {
     		$settingsString = get_post_meta($this->id, 'project_settings', true);
     		$this->settings = json_decode($settingsString, true);
     		if (is_null($this->settings)) {
 	    		trigger_error("Cannot decode project settings as JSON");
     		}
-    	}
-    }
+
+	 		$settingsArray = $this->settings;
+	 			// Do we need to convert to new format?
+	 		if (is_null($settingsArray['project-details']['version'])) {
+	 			$newSettings = array();
+	 			$newSettings['project-details'] = new ArrayObject($settingsArray['project-details']);
+	 			$newSettings['project-details']['version'] = 2;
+
+	 			$newSettings['motes'] = new ArrayObject($settingsArray['motes']);
+
+	 				// prepare views setting for values
+	 			$newSettings['views'] = array();
+	 			$newSettings['views']['transcript'] = array();
+				$newSettings['views']['transcript']['audio']       = '';
+				$newSettings['views']['transcript']['transcript']  = '';
+				$newSettings['views']['transcript']['transcript2'] = '';
+				$newSettings['views']['transcript']['timecode']    = '';
+				$newSettings['views']['transcript']['source']  	   = '';
+				$newSettings['views']['transcript']['content']     = array();
+
+	 			$newSettings['entry-points'] = array();
+
+	 			foreach ($settingsArray['entry-points'] as $epSetting) {
+	 					// Just copy map settings over
+	 				if ($epSetting['type'] == 'map') {
+	 					array_push($newSettings['entry-points'], new ArrayObject($epSetting));
+
+	 					// Must copy transcript settings to new variables
+	 				} elseif ($epSetting['type'] == 'transcript') {
+						$newSettings['views']['transcript']['audio']       = DHPressProject::doClone($epSetting['settings']['audio']);
+						$newSettings['views']['transcript']['transcript']  = DHPressProject::doClone($epSetting['settings']['transcript']);
+						$newSettings['views']['transcript']['transcript2'] = DHPressProject::doClone($epSetting['settings']['transcript2']);
+						$newSettings['views']['transcript']['timecode']    = DHPressProject::doClone($epSetting['settings']['timecode']);
+
+	 				} else {
+	    				trigger_error("Unknown entry point type: ".$epSetting['type']);
+	 				}
+	 			}
+
+				$newSettings['views']['viz-fullscreen'] = $settingsArray['views']['map-fullscreen'];
+				$newSettings['views']['viz-width']      = $settingsArray['views']['map-width'];
+				$newSettings['views']['viz-height']     = $settingsArray['views']['map-height'];
+
+				$newSettings['views']['post']     		= array();
+				$newSettings['views']['post']['title']	= DHPressProject::doClone($settingsArray['views']['post-view-title']);
+				$newSettings['views']['post']['content']= new ArrayObject($settingsArray['views']['post-view-content']);
+
+				$newSettings['views']['select']     	= array();
+				$newSettings['views']['select']['title']= DHPressProject::doClone($settingsArray['views']['title']);
+				$newSettings['views']['select']['view-type']= new ArrayObject($settingsArray['views']['modal-ep']);
+				$newSettings['views']['select']['content']= new ArrayObject($settingsArray['views']['post-view-content']);
+				$newSettings['views']['select']['link'] = DHPressProject::doClone($settingsArray['views']['link']);
+				$newSettings['views']['select']['link2']= DHPressProject::doClone($settingsArray['views']['link2']);
+				$newSettings['views']['select']['link-label'] = DHPressProject::doClone($settingsArray['views']['link-label']);
+				$newSettings['views']['select']['link2-label']= DHPressProject::doClone($settingsArray['views']['link2-label']);
+
+	 				// Save new settings format
+	 			$this->settings = $newSettings;
+
+	 		} elseif ($settingsArray['project-details']['version'] != 2) {
+	    		trigger_error("Unknown project settings format");
+	 		}
+    	} // if need to read settings
+    } // ensureSettings()
 
 } // class DHPressProject

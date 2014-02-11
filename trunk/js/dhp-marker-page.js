@@ -2,7 +2,7 @@
 //			Also used for taxonomy pages, so there may be many entries 
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //			Content for each Marker marked by DIV CLASS="dhp-post" and has ID of marker
-// USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
+// USES:    JavaScript libraries jQuery, Underscore, ...
 
 
 jQuery(document).ready(function($) { 
@@ -14,14 +14,14 @@ jQuery(document).ready(function($) {
 	// var save_entry_content = new Object();		// Marker settings were saved in this object -- now just title
 
 		// Set Marker title, if given one -- This has been removed to allow using Theme defaults and Tax pages
-	// if(dhpSettings['views']['post-view-title']) {
+	// if(dhpSettings['views']['post']['title']) {
 	// 	save_entry_content['the_title'] = $('.post-title').html();
 	// 	$('.post-title').empty();
 	// }
 
 		// Is there any initial content? Make space, but don't load it yet
-	// if(dhpSettings['views']['post-view-content']) {
-	// 	if(dhpSettings['views']['post-view-content'].length>0) {
+	// if(dhpSettings['views']['post']['content']) {
+	// 	if(dhpSettings['views']['post']['content'].length>0) {
 	// 			// Create placeholder for all AJAX data
 	// 		// $('.dhp-entrytext').wrapInner('<div class="post-content" />');
 	// 			// Hide it initially
@@ -60,9 +60,8 @@ jQuery(document).ready(function($) {
 		// 	$('.post-title').append(response[titleCF]);
 		// }
 
-
 			// Go through each Legend and show corresponding values
-		_.each(dhpSettings['views']['post-view-content'], function(legName){
+		_.each(dhpSettings['views']['post']['content'], function(legName){
 				// Convert Legend name to custom field name
 			var cfName = getCustomField(legName);
 				// Use custom field to retrieve value
@@ -81,7 +80,7 @@ jQuery(document).ready(function($) {
 				contentHTML +='<p class="thumb-left"><img src="'+tempVal+'" /></p>';
 				// Otherwise, just add the legend name and value to the string we are building
 			} else if (tempVal) {
-					contentHTML += '<h3>'+legName+'</h3><p>'+tempVal+'</p>';
+				contentHTML += '<h3>'+legName+'</h3><p>'+tempVal+'</p>';
 			}
 		});
 		// console.log("contentHTML = "+contentHTML);
