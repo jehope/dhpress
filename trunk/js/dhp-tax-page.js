@@ -5,13 +5,12 @@
 //          page has DIV ID of dhp-entrytext where transaction material can be appended
 // NOTES:   taxTerm.parent_name is the name of the mote; taxTerm.name is the value of the mote
 // USES:    JavaScript libraries jQuery, Underscore, dhp-transcript
-// TO DO:   Fetch and display mote values specified in projectSettings
 
 jQuery(document).ready(function($) {
 
     var ajax_url        = dhpData.ajax_url;
     var project_id      = dhpData.project_id;
-    var projectSettings = dhpData.project_settings;
+    var dhpSettings     = dhpData.project_settings;
     var taxTerm         = dhpData.tax;
     var isTranscript    = dhpData.isTranscript;
 
@@ -28,9 +27,99 @@ jQuery(document).ready(function($) {
 	if (isTranscript) {
         dhpTranscript.initialize();
 
-        // $('#content').prepend('<div id="transcript-div"></div>');
         dhpTranscript.prepareTaxTranscript(ajax_url, project_id, ".dhp-transcript-content", taxTerm.taxonomy, taxTerm.slug);
 	}
+
+
+        // Load specified mote data for each Marker via AJAX
+    $('.dhp-post').each(function() {
+            postID = $(this).attr('id');
+            $(this).hide();                 // hide it until loaded by AJAX
+            loadMeta(postID);
+        }
+    );
+
+        // PURPOSE: Add dynamic content to Marker page from AJAX response
+        // INPUT:   postID = ID of the Marker (also ID of DIV of CLASS "dhp-post")
+        //          response = Hash of field name / value of Custom Fields read from Marker Page
+    function addContentToDiv(postID, response) {
+            // Title for view of Marker content Page
+        // var markerTitle = dhpSettings['views']['post-view-title'];
+
+            // Marker values to be enclosed in this new DIV
+        var contentHTML = '';
+
+            // default title is Marker post title -- REDO THIS??
+        // if(markerTitle=='the_title') {
+        //  $('.post-title').append(save_entry_content['the_title']);
+
+        //  // unless overridden by settings
+        // } else {
+        //      // convert from Legend name to custom field name
+        //  var titleCF = getCustomField(markerTitle);
+        //  $('.post-title').append(response[titleCF]);
+        // }
+
+            // Go through each Legend and show corresponding values
+        _.each(dhpSettings['views']['transcript']['content'], function(legName) {
+                // Convert Legend name to custom field name
+            var cfName = getCustomField(legName);
+                // Use custom field to retrieve value
+            var tempVal = response[cfName];
+            // console.log("CF = "+cfName+"; val = "+tempVal);
+    
+                // Display the normal WP page content if specified it should be shown
+            // if (cfName=='the_content') {
+            //  $('.dhp-entrytext').show();
+            // }
+
+                // Special legend names to show thumbnails
+            if (legName=='Thumbnail Right') {
+                contentHTML += '<p class="thumb-right"><img src="'+tempVal+'" /></p>';
+            } else if (legName=='Thumbnail Left') {
+                contentHTML +='<p class="thumb-left"><img src="'+tempVal+'" /></p>';
+                // Otherwise, just add the legend name and value to the string we are building
+            } else if (tempVal) {
+                contentHTML += '<h3>'+legName+'</h3><p>'+tempVal+'</p>';
+            }
+        });
+        // console.log("contentHTML = "+contentHTML);
+        $('#'+postID+' .dhp-entrytext').append(contentHTML);
+        $('#'+postID).show();
+    } // addContentToDiv()
+
+
+        // PURPOSE: Convert from moteName to custom-field name
+    function getCustomField(moteName)
+    {
+        var theMote = _.find(dhpSettings['motes'], function(theMote) {
+            return moteName == theMote['name'];
+        });
+        return theMote['custom-fields'];
+    } // getCustomField()
+
+
+        // PURPOSE: Update Marker content page to show all of Marker's custom fields
+        // INPUT:   postID = ID for this Marker post
+    function loadMeta(postID)
+    {
+        jQuery.ajax({
+            type: 'POST',
+            url: ajax_url,
+            data: {
+                action: 'dhpGetMoteContent',
+                post: postID
+                // fields: field_names
+            },
+            success: function(data, textStatus, XMLHttpRequest) {
+                //console.log(JSON.parse(data));
+                addContentToDiv(postID, JSON.parse(data));
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+               alert(errorThrown);
+            }
+        });
+    } // loadMeta()
 
         // find tallest div.row in transcript and set container max-height 40px larger. Default is max 300px
         // TO DO:  Replace _.each() with _.find()
@@ -79,6 +168,4 @@ jQuery(document).ready(function($) {
     // 		}
     // 	});
     // }
-
-
 });

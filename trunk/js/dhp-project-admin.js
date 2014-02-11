@@ -650,7 +650,7 @@ jQuery(document).ready(function($) {
                     <select name="av-transcript-clip" id="av-transcript-clip">'+buildHTMLForMotes(transcView['timecode'], true)+'</select>';
 
     $('.transc-view').append(transHTML);
-    $('.transc-view').append('<p>Pick the motes to display for each transcript excerpt post.</p><ul id="transc-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
+    $('.transc-view').append('<p>Pick the motes to display for each taxonomy post entry.</p><ul id="transc-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
 
     if(transcView['content']){
       var htmlStr = $('<div/>');
