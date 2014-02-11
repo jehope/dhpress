@@ -892,17 +892,20 @@ function createMarkerArray($project_id)
 
 		// If a marker is selected and leads to a transcript in modal, need those values also
 	if ($projObj->selectModalHas("transcript")) {
-		$audio = $project_settings['views']['transcript']['audio'];
-		if (!is_null($audio) && ($audio != '')) {
-			$transcript = $project_settings['views']['transcript']['transcript'];
-			$transcript2= $project_settings['views']['transcript']['transcript2'];
-			$timecode   = $project_settings['views']['transcript']['timecode'];
+		$audio = $projSettings['views']['transcript']['audio'];
+			// Translate from Mote Name to Custom Field name
+		if (!is_null($audio) && ($audio !== '')) {
+			$audio = $projObj->getCustomFieldForMote($audio);
+			$transcript = $projObj->getCustomFieldForMote($projSettings['views']['transcript']['transcript']);
+			$transcript2= $projObj->getCustomFieldForMote($projSettings['views']['transcript']['transcript2']);
+			$timecode   = $projObj->getCustomFieldForMote($projSettings['views']['transcript']['timecode']);
 		}
 	}
 
 	$feature_collection = array();
 	$feature_collection['type'] = 'FeatureCollection';
 	$feature_array = array();
+
 
 		// Link parent enables linking to either the Post page for this Marker,
 		//	or to the category/taxonomy which includes this Marker
@@ -1008,16 +1011,16 @@ function createMarkerArray($project_id)
 
 			// Audio transcript features?
 		if (!is_null($audio)) {
-			$audio_val = get_post_meta($marker_id,$audio['custom-fields'],true);
+			$audio_val = get_post_meta($marker_id, $audio, true);
 			$thisFeaturesProperties["audio"] = $audio_val;
 
-			$transcript_val = get_post_meta($marker_id, $transcript['custom-fields'],true);
+			$transcript_val = get_post_meta($marker_id, $transcript, true);
 			$thisFeaturesProperties["transcript"]  = $transcript_val;
 
-			$transcript2_val = get_post_meta($marker_id, $transcript2['custom-fields'],true);
+			$transcript2_val = get_post_meta($marker_id, $transcript2, true);
 			$thisFeaturesProperties["transcript2"] = $transcript2_val;
 
-			$timecode_val = get_post_meta($marker_id,$timecode['custom-fields'],true);
+			$timecode_val = get_post_meta($marker_id, $timecode, true);
 			$thisFeaturesProperties["timecode"]    = $timecode_val;
 		}
 
@@ -2504,7 +2507,7 @@ function dhp_page_template( $page_template )
 	    }
 
 	    	// Transcript specific
-	    if (!is_null($projObj->selectModalHas('transcript'))) {
+	    if ($projObj->selectModalHas('transcript')) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 	        wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
 			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),

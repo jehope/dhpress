@@ -85,8 +85,8 @@
 		    "motes": [
 		        Index: {
 		            "name": String,
-		            "type": String (name of type),
-		            "custom-fields": String,
+		            "type": String, (name of data type)
+		            "custom-fields": String, (name of custom field which holds value)
 		            "delim": String (containing a character or empty string)
 		        }, ...
 		    ],
@@ -340,6 +340,13 @@ class DHPressProject
 				return $mote;
 	} // getMoteByName()
 
+		// RETURNS: Name of Custom Field corresponding to mote
+		// ASSUMES: Only 1 custom field
+	public function getCustomFieldForMote($moteName)
+	{
+		$mote = $this->getMoteByName($moteName);
+		return $mote['custom-fields'];
+	} // getCustomFieldForMote()
 
 		// RETURNS: true if the Select Modal contains $viewType
 	public function selectModalHas($viewType)
@@ -347,7 +354,7 @@ class DHPressProject
 		$this->ensureSettings();
 
 		foreach($this->settings['views']['select']['view-type'] as $vt) {
-			if($vt==$viewType) {
+			if ($vt === $viewType) {
 				return true;
 			}
 		}
