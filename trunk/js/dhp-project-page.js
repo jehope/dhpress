@@ -17,7 +17,6 @@ jQuery(document).ready(function($) {
     if(browserMobile) {
         $('body').addClass('isMobile');
     }
-    console.log(browserMobile)
     // projectID      = $('.post').attr('id');
     ajaxURL        = dhpData.ajax_url;
     vizParams      = dhpData.vizParams;
@@ -45,11 +44,11 @@ jQuery(document).ready(function($) {
         if($('body').hasClass('fullscreen')) {
             $('body').removeClass('fullscreen');
             $('.dhp-nav .fullscreen').removeClass('active');
-            dhpMapsView.updateSize();
+            dhpMapsView.dhpUpdateSize();
         } else {
             $('body').addClass('fullscreen');
             $('.dhp-nav .fullscreen').addClass('active');
-            dhpMapsView.updateSize();
+            dhpMapsView.dhpUpdateSize();
         }
     });
 
