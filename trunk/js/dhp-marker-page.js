@@ -9,27 +9,12 @@ jQuery(document).ready(function($) {
 
 	var ajax_url = dhpData.ajax_url;
 	var dhpSettings = dhpData.settings;
-	//console.log(dhpSettings);
-
-	// var save_entry_content = new Object();		// Marker settings were saved in this object -- now just title
 
 		// Set Marker title, if given one -- This has been removed to allow using Theme defaults and Tax pages
 	// if(dhpSettings['views']['post']['title']) {
 	// 	save_entry_content['the_title'] = $('.post-title').html();
 	// 	$('.post-title').empty();
 	// }
-
-		// Is there any initial content? Make space, but don't load it yet
-	// if(dhpSettings['views']['post']['content']) {
-	// 	if(dhpSettings['views']['post']['content'].length>0) {
-	// 			// Create placeholder for all AJAX data
-	// 		// $('.dhp-entrytext').wrapInner('<div class="post-content" />');
-	// 			// Hide it initially
-	// 		$('.post-content').hide();
-	// 	}
-	// }
-
-	// $('.post-content').hide();
 
 		// Load specified mote data for each Marker via AJAX
 	$('.dhp-post').each(function() {
@@ -66,12 +51,6 @@ jQuery(document).ready(function($) {
 			var cfName = getCustomField(legName);
 				// Use custom field to retrieve value
 			var tempVal = response[cfName];
-			// console.log("CF = "+cfName+"; val = "+tempVal);
-	
-				// Display the normal WP page content if specified it should be shown
-			// if (cfName=='the_content') {
-			// 	$('.dhp-entrytext').show();
-			// }
 
 				// Special legend names to show thumbnails
 			if (legName=='Thumbnail Right') {
