@@ -686,6 +686,32 @@ jQuery(document).ready(function($) {
         bindDelContentMote();
     });
 
+    // builtHTMLForPostView(viewObject);
+    
+       // Modal view settings html
+       
+    // $('#modalView .accordion-inner').append(
+    //   '<h3>Modal Size</h3>'+'<p>'+
+    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="tiny" />'+
+    //   'Tiny</label>'+
+    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="small" />'+
+    //   'Small</label>'+
+    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="medium" checked="checked"/>'+
+    //   'Medium</label>'+
+    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="large" />'+
+    //   'Large</label>'+
+    //   '<label class="checkbox inline"><input type="radio" name="modalSize" value="xlarge" />'+
+    //   'X-Large</label>'+'</p>'
+    // );
+    //   // if setting exists then set modal size
+    // if(viewObject['modal-size']) {
+    //   _.each($('#modalView input[name=modalSize]'), function(val, key) {
+    //     if(viewObject['modal-size']===val.value) {
+    //       $(val).prop('checked',true);
+    //     }       
+    //   });
+    // }
+
       // Setup layout for "Modal View"
     $('.setup-modal-view').click(function() {
         // Cover case that settings do not exist
@@ -1256,91 +1282,6 @@ jQuery(document).ready(function($) {
   	});
   }
 
-  // function popupIcons(){
-  //     tb_show('Hayti Intro', '#TB_inline?height=350&width=400&inlineId=dhp_icons_box' );
-  //     //$('#TB_window').css({'width':300});
-  // }
-
-  //Applies typing listeners to the new mote fields
-  // function dhpAssignMoteListeners(theobj) {
-  // 	var mote_id = '#'+$(theobj).attr('id');
-  // 	var remove_span = '#'+$(theobj).attr('id')+' .delete-mote';
-  // 	var remove_li = mote_id;
-  // 	//console.log(mote_id);
-  // 	//setup before functions
-  //     var typingTimerMote;                //timer identifier
-  //     var moteTypingInterval = 3000;  //time in ms, 5 second for example
-
-  //     //on keyup, start the countdown
-  //     $($(theobj).find('input')).keyup(function(){
-  //     	//console.log('typing');
-
-  //         typingTimerMote = setTimeout(doneTypingMote, moteTypingInterval);
-  //     });
-
-  //     //on keydown, clear the countdown 
-  //     $($(theobj).find('input')).keydown(function(){
-  //         clearTimeout(typingTimerMote);
-  //     });
-  	
-  // 	$('.delete-mote').unbind('click');
-  //     $('.delete-mote').click(function() {
-  //     	//console.log('remove');
-  //         //$(mote_id).toggleClass('selected');	
-  //         deleteMoteLine($(this).closest('li').attr('id'));
-  // 		$(this).closest('li').remove();
-
-  // 		doneTypingMote();
-  //     });
-      
-  //     $('.make-tax').unbind('click');
-  //     $('.make-tax').click(function() {
-  //     	var moteName = jQuery(this).parent('li').find('input').val();
-  //     	var projectID = jQuery('#post_ID').val();
-  //     	//dhpGetMoteValues(moteName,false);
-  //     	$(this).next('.legend').show();
-  // 		$(this).replaceWith('<span class="loaded">Loaded</span>');
-  		
-
-  //     });
-  //     $('.legend').unbind('click');
-  //     $('.legend').click(function() {
-  //     	var moteName = jQuery(this).parent('li').find('input').val();
-  //     	var projectID = jQuery('#post_ID').val();
-  //     	//dhpGetMoteValues(moteName,true);
-      	
-  //     });
-              
-  // }
-
-  //user is "finished typing," do something
-  // function doneTypingMote() {
-
-  //     $('.motes').each(function() {
-  //     	//$(this).attr('id')
-  //     	var moteOID = $(this).attr('id');
-  //     	var moteName = $(this).find('input').val();
-  //     	var moteID = moteName.toLowerCase();
-  //     	moteID = moteID.trim();
-  //     	//console.log(moteID+'done');
-  //     	moteID = moteID.replace(" ","_");
-  //     	projectObj.motes[moteOID] = {"id": moteID,"name": moteName};
-     	
-  //     });
-  //     saveProjectEntry();
-  //     createMarkerSettings();
-  //     saveProjectSettings();
-  //     //console.log(metaID);
-  // }
-
-
-  // $('.add-layer').click(function(){
-  //     addMoteLine();
-  //    createMarkerSettings();
-  // 	saveProjectSettings();
-
-  // });
-
     // PURPOSE: User has selected Save button -- update UI and save configuration data
   function saveProjectListeners() {
     $('#publish').removeClass('button-primary-disabled');
@@ -1468,7 +1409,8 @@ jQuery(document).ready(function($) {
     });
     projectObj['views']['transcript']['content'] = transcContent;
 
-    //console.log(projectObj);
+    // save new modal view size
+    projectObj['views']['modal-size'] = $('input[name=modalSize]:checked', '#modalView').val()
 
       // Save the project_settings as a string in the field
   	$('#project_settings').val(JSON.stringify(projectObj));

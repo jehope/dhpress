@@ -33,14 +33,22 @@ var dhpMapsView = {
         var opacity;
         var newLayer;
 
-        	// Save reset data for later
-        dhpMapsView.ajaxURL 	= ajaxURL;
-        dhpMapsView.projectID 	= projectID;
-        dhpMapsView.mapEP		= mapEP;
-        dhpMapsView.viewParams 	= viewParams;
+            // Constants
+        dhpMapsView.wpAdminBarWidth        = 783; // Width at which the admin bar changes to mobile version
+        dhpMapsView.wpAdminBarHeight       = 32;  // Default admin bar height
+        dhpMapsView.wpMobileAdminBarHeight = 46;  // Mobile admin bar height
+        dhpMapsView.wpAdminBarVisible      = jQuery('body').hasClass('admin-bar'); // check if admin bar is present
+        dhpMapsView.checkboxHeight         = 12; // default checkbox height
+
+            // Save reset data for later
+        dhpMapsView.ajaxURL        = ajaxURL;
+        dhpMapsView.projectID      = projectID;
+        dhpMapsView.mapEP          = mapEP;
+        dhpMapsView.viewParams     = viewParams;
+
 
             //Update map size if browser is resized
-        jQuery(window).resize(function() { dhpMapsView.updateSize(); });
+        jQuery(window).resize(function() { dhpMapsView.dhpUpdateSize(); });
 
             // Interface for OpenLayers to determine visual features of a map marker
         olMarkerInterface = {
@@ -97,7 +105,7 @@ var dhpMapsView = {
                 var thisLayer = dhpData.vizParams.layerData[index];
                 var arrayOSM = thisLayer.dhp_map_url.split(',');
                 if(arrayOSM.length>1) {
-                    newLayer = new OpenLayers.Layer.OSM(thisLayer.dhp_map_shortname,arrayOSM);
+                    newLayer = new OpenLayers.Layer.OSM(thisLayer.dhp_map_shortname, arrayOSM);
                 }
                 else {
                     newLayer = new OpenLayers.Layer.OSM();
@@ -107,7 +115,7 @@ var dhpMapsView = {
                 break;
             case 'type-Google':
                 newLayer = new OpenLayers.Layer.Google(theLayer['name'],
-                                { type: theLayer['mapTypeId'], numZoomLevels: 20, opacity: opacity, animationEnabled: true});
+                                { type: theLayer['mapTypeId'], numZoomLevels: 20, opacity: opacity, animationEnabled: true });
                 break;
             case 'type-DHP':
                 dhpCustomMaps.maps.defaultAPI(dhpCustomMaps.maps.API_OPENLAYERS);
@@ -129,6 +137,8 @@ var dhpMapsView = {
 
         dhpMapsView.olMap = new OpenLayers.Map({
             div: "dhp-visual",
+            zoomDuration: 10,
+            sphericalMercator: true,
             projection: dhpMapsView.sm,
             displayProjection: dhpMapsView.gg
         });
@@ -183,7 +193,7 @@ var dhpMapsView = {
             dhpMapsView.resetMap();
         });
 
-        dhpMapsView.updateSize();
+        dhpMapsView.dhpUpdateSize();
         dhpMapsView.loadMapMarkers();
     }, // initializeMap()
 
@@ -196,35 +206,48 @@ var dhpMapsView = {
         dhpMapsView.olMap.setCenter(lonlat, dhpMapsView.mapEP.zoom);
     }, // resetMap()
 
-
-    updateSize: function()
+        // PURPOSE: Resizes dhp elements when browser size changes
+        // 
+    dhpUpdateSize: function()
     {   
-        //set body height to viewport so user can't scroll map
+        var windowWidth, windowHeight, newRowHeight, checkboxMargin;
+
+        //reset body height to viewport so user can't scroll map
         if(jQuery('body').hasClass('fullscreen')){
-                //New WordPress has a mobile admin bar with larger height
-            if(jQuery('body').hasClass('logged-in') && jQuery(window).width() > 782) {
-                jQuery('body').height(jQuery(window).height()-32);
+                // get new dimensions of browser
+            windowWidth  = jQuery(window).width();
+            windowHeight = jQuery(window).height();
+
+                //New WordPress has a mobile admin bar with larger height(displays below 783px width)
+            if(dhpMapsView.wpAdminBarVisible && windowWidth >= dhpMapsView.wpAdminBarWidth ) {
+                jQuery('body').height(windowHeight - dhpMapsView.wpAdminBarHeight);
             }
-            else if (jQuery('body').hasClass('logged-in') && jQuery(window).width() < 783) {
-                jQuery('body').height(jQuery(window).height()-46);
+                // Non mobile admin bar height
+            else if(dhpMapsView.wpAdminBarVisible && windowWidth < dhpMapsView.wpAdminBarWidth ) {
+                jQuery('body').height(windowHeight - dhpMapsView.wpMobileAdminBarHeight);
             }
                 //Non logged in users
             else {
-                jQuery('body').height(jQuery(window).height());
+                jQuery('body').height(windowHeight);
             }
         }
+            //resize legend term position for long titles
+        jQuery('.active-legend .terms').css({top:jQuery('.active-legend .legend-title').height()});
+
             //resize legend items that are two lines and center checkbox
-        var newHeight,checkMargin;
         jQuery('.row').each(function(key,value){
-            newHeight   = jQuery('.columns', this).eq(1).height();
-            if(newHeight < 35) { newHeight = 35; }
-            checkMargin = (newHeight - 10) / 2;
-            jQuery('.columns', this).eq(0).height(newHeight);
-            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkMargin});
+                //height of row containing text(could be multiple lines)
+            newRowHeight   = jQuery('.columns', this).eq(1).height();
+                // variable to center checkbox in row
+            checkboxMargin = (newRowHeight - dhpMapsView.checkboxHeight) / 2;
+                // set elements in rows with new values
+            jQuery('.columns', this).eq(0).height(newRowHeight);
+            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
         });
 
-		dhpMapsView.olMap.updateSize();
-    },
+            // This is an OL function to redraw the markers after map resize
+        dhpMapsView.olMap.updateSize();
+    }, // dhpUpdateSize()
 
         // PURPOSE: Called by olMarkerInterface to determine icon to use for marker
         // RETURNS: First match on URL to use for icon, or else ""
@@ -409,6 +432,8 @@ var dhpMapsView = {
                 // Add Legend title to dropdown menu above
             jQuery('.dhp-nav .legend-dropdown').append('<li><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
         });
+            // Update checkbox height(varies by theme/browser) 
+        dhpMapsView.checkboxHeight = jQuery('#legends').find('input:checkbox').height();
 
             //Initialize new foundation elements
         jQuery(document).foundation();
@@ -501,17 +526,15 @@ var dhpMapsView = {
 
             // Handle user selection of checkbox from current Legend on right
         jQuery('#legends div.terms input').on('click', function(event){
-            var spanName = jQuery(event.target).parent().find('a').data('id');
-            if( spanName==='all' && jQuery(this).prop('checked') === true ) {
-                jQuery('.active-legend .terms .row').find('input').prop('checked',true);
+            var checkAll = jQuery(this).closest('.row').hasClass('check-all');
+            var boxState = jQuery(this).prop('checked');
+                // "Hide/Show all" checkbox
+            if( checkAll ) {
+                jQuery('.active-legend .terms .row').find('input').prop('checked',boxState);
                 dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
                 dhpMapsView.updateLayerFeatures();
             }
-            else if(spanName==='all' && jQuery(this).prop('checked') === false ) {
-                jQuery('.active-legend .terms .row').find('input').prop('checked',false);
-                dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
-                dhpMapsView.updateLayerFeatures();
-            }
+                // toggle individual terms
             else {
                 jQuery('.active-legend .terms .check-all').find('input').prop('checked',false);                  
                 dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
@@ -525,18 +548,13 @@ var dhpMapsView = {
             // Show Legend 0 by default
         jQuery('#term-legend-0').show();
         jQuery('#term-legend-0').addClass('active-legend');
+            //Set initial size of legend
+        dhpMapsView.dhpUpdateSize();
 
             // Handle selection of different Legends
         jQuery('.dhp-nav .legend-dropdown a').on('click', function(evt){
             evt.preventDefault();
-            var action = jQuery(this).attr('href');
-            var filter = jQuery(this).text();
-            jQuery('.legend-div').hide();
-            jQuery('.legend-div').removeClass('active-legend');
-            jQuery(action).addClass('active-legend');
-
-            jQuery(action).show();
-            dhpMapsView.switchFilter(filter);
+            dhpMapsView.switchLegend.call(this);
         });
 
             // Handle selection of Layers button on top
@@ -547,8 +565,8 @@ var dhpMapsView = {
             jQuery('.legend-div').hide();
             jQuery('.legend-div').removeClass('active-legend');
             jQuery(action).addClass('active-legend');
-
             jQuery(action).show();
+
         });
 
         // $('.launch-timeline').on('click', function(){
@@ -557,12 +575,24 @@ var dhpMapsView = {
         dhpMapsView.catFilterSelect = dhpMapsView.findSelectedCats();
     }, // createLegends()
 
+        // PURPOSE: Change legend and redraw elements
+    switchLegend: function()
+    {       
+        var action = jQuery(this).attr('href');
+        var filter = jQuery(this).text();
+        jQuery('.legend-div').hide();
+        jQuery('.legend-div').removeClass('active-legend');
+        jQuery(action).addClass('active-legend');
+
+        jQuery(action).show();
+        dhpMapsView.switchFilter(filter);
+        dhpMapsView.dhpUpdateSize();
+    },  // switchLegend()
 
         // PURPOSE: Create UI controls for opacity of each layer in right (Legend) area
         // ASSUMES: map.layers has been initialized, settings are loaded
         //          HTML element "layers-panel" has been inserted into document
         // NOTE:    The final map layer is for Markers, so has no corresponding user settings
-
     buildLayerControls: function()
     {
         var layerOpacity;
