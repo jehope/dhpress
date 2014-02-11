@@ -123,6 +123,7 @@
 		    	},
 		    	"select" : {								// For modal when item selected from visualation
 			        "title": String (name of mote),
+			        "width": "tiny" | "small" | "medium" | "large" | "x-large",
 			        "view-type": [							// Types of views to display in selected Marker modal
 			        	Integer (index) : 'transcript' | 'map'
 			        ],
