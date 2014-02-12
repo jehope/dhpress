@@ -151,6 +151,12 @@ body.fullscreen {
 	overflow: hidden;
 	display: inherit;
 }
+.legend-div .layers a {
+	line-height: 15px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	overflow: hidden;
+}
 .legend-div input[type='checkbox'] {
 	/*margin: 12px;*/
 	vertical-align: middle;
