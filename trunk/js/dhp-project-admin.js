@@ -1085,7 +1085,7 @@ jQuery(document).ready(function($) {
 
       // For linking to mote values
     _.each(projectObj['motes'], function(theFilter) {
-      console.log(theFilter.type)
+      // console.log(theFilter.type)
       if( theFilter.name+' (Mote)' === selected && theFilter.type === 'URL' ) {
         optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" selected="selected" >'+theFilter.name+' (Mote)</option>';
       } else if( theFilter.type ==='URL' ) {
