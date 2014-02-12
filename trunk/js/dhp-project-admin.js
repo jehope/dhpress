@@ -638,6 +638,7 @@ jQuery(document).ready(function($) {
     // INPUT:   JSON object representing "transcript" portion of project settings (could be empty if new)
     // TO DO:   Add "Create" and "Delete" buttons to Source mote
   function buildHTMLForTranscView(transcView) {
+    $('.transc-view').append('<p>Pick the motes to display for each taxonomy post entry.</p><ul id="transc-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
     var transHTML = '<label>Transcript Source (all excerpts must have same value for this mote)</label>\
                     <select name="av-transcript-source" id="av-transcript-source">'+buildHTMLForMotes(transcView['source'], true)+'</select>\
                     <label>Audio URL</label>\
@@ -650,7 +651,6 @@ jQuery(document).ready(function($) {
                     <select name="av-transcript-clip" id="av-transcript-clip">'+buildHTMLForMotes(transcView['timecode'], true)+'</select>';
 
     $('.transc-view').append(transHTML);
-    $('.transc-view').append('<p>Pick the motes to display for each taxonomy post entry.</p><ul id="transc-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
 
     if(transcView['content']){
       var htmlStr = $('<div/>');
@@ -952,13 +952,15 @@ jQuery(document).ready(function($) {
     // PURPOSE: Bind all event listeners for Legend buttons on Entry Points tab (with EP selected)
   function bindLegendEventsInEPTab(){
       // Create Legend buttons
+      // There is a special case to handle: when a new entry point is created, the first mote Legend
+      //  is created as a default, but it doesn't actually exist yet!
     $('.create-legend').unbind('click');
     $('.create-legend').click(function() {
-        var moteName = $(this).parent().find('#filter-mote option:selected').val();
+        var moteName = $(this).parent().find('.filter-mote option:selected').val();
         var mote = getMote(moteName);
         // var projectID = projectObj['project-details']['id'];
-    // console.log("Creating mote " + moteName + " for Project "+ projectID);
 
+        $('#createModal').detach();
         $('body').append('<!-- Modal -->\
           <div id="createModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
             <div class="modal-header">\
@@ -979,7 +981,7 @@ jQuery(document).ready(function($) {
       // Configure Legend buttons
     $('.load-legend').unbind('click');
     $('.load-legend').click(function() {
-        var moteName = $(this).parent().find('#filter-mote option:selected').val();
+        var moteName = $(this).parent().find('.filter-mote option:selected').val();
         var mote = getMote(moteName);
         // var projectID = projectObj['project-details']['id'];
         //console.log(projectObj['motes'])
@@ -989,7 +991,8 @@ jQuery(document).ready(function($) {
       // Delete Legend buttons
     $('.delete-legend').unbind('click');
     $('.delete-legend').click(function() {
-      var moteName = $(this).parent().find('#filter-mote option:selected').val();
+      var moteName = $(this).parent().find('.filter-mote option:selected').val();
+
       var createdYet = $(this).parent('li');
       // console.log($(createdYet).children().eq(1));
       var lineID = $(this).closest('li').attr('id');
@@ -1034,11 +1037,11 @@ jQuery(document).ready(function($) {
         for (var i =0; i < Object.keys(legendList).length; i++) {
           listHtml += buildHTMLForALegend(legendList[i],i+1);
          }
-       } else {
-        listHtml += buildHTMLForALegend(null, 0); 
+       // } else {
+       //  listHtml += buildHTMLForALegend(null, 0); 
       } 
     return listHtml;
-  }
+  } // buildHTMLForLegendList()
 
     // RETURNS: HTML string to represent theLegend, which is index (1..n) in list
     // INPUT:   theLegend = null if there are no legends yet at all
@@ -1051,7 +1054,7 @@ jQuery(document).ready(function($) {
       tempcount = $('.legend-list li').length;
       count = tempcount+1;
     }
-    var legendLine = '<li id="legend-'+count+'"><select name="filter-mote" id="filter-mote">'+buildHTMLForMotes(theLegend,false,'Text')+'</select>'+
+    var legendLine = '<li id="legend-'+count+'"><select name="filter-mote" class="filter-mote">'+buildHTMLForMotes(theLegend,false,'Text')+'</select>'+
                           legendButton+' <button class="btn btn-danger delete-legend" type="button">Delete</button>\
                           </li>';
     return legendLine;
