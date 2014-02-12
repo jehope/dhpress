@@ -260,7 +260,7 @@ jQuery(document).ready(function($) {
 
     // Parse Project settings
   var settings = $('#project_settings').val();
-  if(settings) {
+  if(settings && settings !== '') {
     initializeProjectObj(settings);
 
     // Or else create empty settings for new Project

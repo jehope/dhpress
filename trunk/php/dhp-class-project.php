@@ -428,6 +428,8 @@ class DHPressProject
 
     	// PURPOSE: Ensure that Project Settings have been loaded; read if not
 		//			Translate to new format of Project Settings if in old format
+		// NOTE:    Calling functions must handle case when project is newly created
+		//				and does not have any settings.
     private function ensureSettings()
     {
     	if ($this->id == -1) {
@@ -436,6 +438,9 @@ class DHPressProject
     		// Do we need to read the settings?
     	if (is_null($this->settings)) {
     		$settingsString = get_post_meta($this->id, 'project_settings', true);
+    		if (empty($settingsStrings)) {
+    			return;
+    		}
     		$this->settings = json_decode($settingsString, true);
     		if (is_null($this->settings)) {
 	    		trigger_error("Cannot decode project settings as JSON");

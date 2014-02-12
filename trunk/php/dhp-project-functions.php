@@ -395,6 +395,12 @@ function show_dhp_project_settings_box()
 
 	$projObj = new DHPressProject($post->ID);
     $project_settings = $projObj->getAllSettings();
+    	// must handle case that project has just been created and does not have settings yet
+    if (empty($project_settings)) {
+    	$project_settings = '';
+    } else {
+    	$project_settings = json_encode($project_settings);
+    }
 
 	// Load post id for project settings
 	echo '<input type="hidden" id="dhp-projectid" value="'.$post->ID.'"/>';
@@ -405,7 +411,7 @@ function show_dhp_project_settings_box()
 	// Insert HTML for special Project fields
 	echo '<table class="project-form-table">';
 	echo '<tr><th><label for="project_settings">Project Settings</label></th><td>';
-	echo '<textarea name="project_settings" id="project_settings" cols="60" rows="4">'.json_encode($project_settings).'</textarea>
+	echo '<textarea name="project_settings" id="project_settings" cols="60" rows="4">'.$project_settings.'</textarea>
 		<br /><span class="description">Stores the project_settings as JSON object</span>';
 	echo '</td></tr>';
 	echo '<input type="hidden" name="project_icons" id="project_icons" value="'.get_post_meta($post->ID, 'project_icons', true).'" />';
