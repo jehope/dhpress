@@ -1511,7 +1511,7 @@ function dhpGetMoteValues()
 			wp_set_post_terms( $marker_id, $theseTerms, &$rootTaxName, true );
 		}
 	endwhile;
-
+	delete_option("{$rootTaxName}_children");
 		// Create comma-separated string listing terms derived from other motes
 	$exclude_string;
 	$exclude_count = 0;
@@ -2072,7 +2072,7 @@ function dhpCreateTaxTerms()
 	// $termDetailsArray = array('parentTerm'=>$mote_parent, 'projectID' => $dhp_projectID, 'termsArray'=>$dhp_project_terms1);
 
 	$newArgs = loopTermHierarchy($mote_parent, $dhp_projectID, $dhp_project_terms1);
-
+	delete_option("{$projRootTaxName}_children");
 	die(json_encode($newArgs));
 } // dhpCreateTaxTerms()
 
@@ -2113,6 +2113,7 @@ function loopTermHierarchy($mote_parent, $projectID, $dhp_project_terms)
 		// delete_term_meta($term_id, $meta_key);
 		// add_term_meta($term_id, $meta_key, $meta_value);
 	}
+	delete_option("{$projRootTaxName}_children");
 	$oldArgs = array('parentTerm'=>$mote_parent, 'projectID' => $projectID, 'termsArray'=> $dhp_project_terms, 'count'=> $myCount);
 	return $oldArgs;
 } // loopTermHierarchy()
@@ -2140,8 +2141,10 @@ function dhpCreateTermInTax()
 		$parent_term_id = $parent_term['term_id'];
 		$args = array( 'parent' => $parent_term_id );
 		// create new term
-		wp_insert_term( $dhp_term_name, $projRootTaxName, $args );
-		$newTerm = get_term_by('name', $dhp_term_name, $projRootTaxName);
+		$newTermId = wp_insert_term( $dhp_term_name, $projRootTaxName, $args );
+		$newTerm = get_term_by('id', $newTermId['term_id'], $projRootTaxName);
+			// Clear term taxonomy
+		delete_option("{$projRootTaxName}_children");
 
 		die(json_encode($newTerm));
 	} else {
