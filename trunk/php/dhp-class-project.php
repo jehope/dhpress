@@ -438,7 +438,7 @@ class DHPressProject
     		// Do we need to read the settings?
     	if (is_null($this->settings)) {
     		$settingsString = get_post_meta($this->id, 'project_settings', true);
-    		if (empty($settingsStrings)) {
+    		if (empty($settingsString)) {
     			return;
     		}
     		$this->settings = json_decode($settingsString, true);

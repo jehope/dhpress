@@ -391,12 +391,12 @@ function add_dhp_project_settings_box()
 function show_dhp_project_settings_box()
 {
 	global $post;
-	// global $dhp_project_settings_fields;
 
 	$projObj = new DHPressProject($post->ID);
     $project_settings = $projObj->getAllSettings();
     	// must handle case that project has just been created and does not have settings yet
-    if (empty($project_settings)) {
+    if (is_null($project_settings)) {
+echo "Settings empty!";
     	$project_settings = '';
     } else {
     	$project_settings = json_encode($project_settings);
@@ -406,7 +406,6 @@ function show_dhp_project_settings_box()
 	echo '<input type="hidden" id="dhp-projectid" value="'.$post->ID.'"/>';
 	// Use nonce for verification
 	echo '<input type="hidden" name="dhp_project_settings_box_nonce" value="'.wp_create_nonce(basename(__FILE__)).'" />';
-	//echo '<div id="map-divs"></div><button id="locate">Locate me!</button>';
 
 	// Insert HTML for special Project fields
 	echo '<table class="project-form-table">';
@@ -416,59 +415,6 @@ function show_dhp_project_settings_box()
 	echo '</td></tr>';
 	echo '<input type="hidden" name="project_icons" id="project_icons" value="'.get_post_meta($post->ID, 'project_icons', true).'" />';
 
-		// Begin the field table and loop
-	// foreach ($dhp_project_settings_fields as $field) {
-	// 	// get value of this field if it exists for this post
-	// 	$meta = get_post_meta($post->ID, $field['id'], true);
-	// 	// begin a table row with
-
-	// 			switch($field['type']) {
-	// 				// case items will go here
-	// 				// text
-	// 				case 'text':
-	// 					echo '<tr>
-	// 						<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
-	// 						<td>';
-	// 					echo '<input type="text" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" size="30" />
-	// 						<br /><span class="description">'.$field['desc'].'</span>';
-	// 						echo '</td></tr>';
-	// 					break;
-	// 				// textarea
-	// 				case 'textarea':
-	// 					echo '<tr>
-	// 						<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
-	// 						<td>';
-	// 					echo '<textarea name="'.$field['id'].'" id="'.$field['id'].'" cols="60" rows="4">'.$meta.'</textarea>
-	// 						<br /><span class="description">'.$field['desc'].'</span>';
-	// 						echo '</td></tr>';
-	// 					break;
-	// 				// checkbox
-	// 				case 'checkbox':
-	// 					echo '<tr>
-	// 						<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
-	// 						<td>';
-	// 					echo '<input type="checkbox" name="'.$field['id'].'" id="'.$field['id'].'" ',$meta ? ' checked="checked"' : '','/>
-	// 						<label for="'.$field['id'].'">'.$field['desc'].'</label>';
-	// 						echo '</td></tr>';
-	// 					break;
-	// 				// select
-	// 				case 'select':
-	// 					echo '<tr>
-	// 						<th><label for="'.$field['id'].'">'.$field['label'].'</label></th>
-	// 						<td>';
-	// 					echo '<select name="'.$field['id'].'" id="'.$field['id'].'">';
-	// 					foreach ($field['options'] as $option) {
-	// 						echo '<option', $meta == $option['value'] ? ' selected="selected"' : '', ' value="'.$option['value'].'">'.$option['label'].'</option>';
-	// 					}
-	// 					echo '</select><br /><span class="description">'.$field['desc'].'</span>';
-	// 					echo '</td></tr>';
-	// 					break;
-	// 				// textarea
-	// 				case 'hidden':
-	// 					echo '<input type="hidden" name="'.$field['id'].'" id="'.$field['id'].'" value="'.$meta.'" />';
-	// 					break;
-	// 			} //end switch
-	// } // end foreach
 	echo '</table>'; // end table
 
 	print_new_bootstrap_html($post->ID);
@@ -478,8 +424,8 @@ function show_dhp_project_settings_box()
 // 'save_post' is called after post is created or updated
 add_action('save_post', 'save_dhp_project_settings');
 
-// PURPOSE: Save data posted to WP for project based on project_settings_fields
-//				(Could also be invoked by Auto-Save feature of WP)
+// PURPOSE: Save data posted to WP for project
+//				(Could be invoked by Auto-Save feature of WP)
 // INPUT:	$post_id is the id of the post updated
 // NOTE:    Complication is for new Project that does not yet have ID?
 // ASSUMES:	$_POST is set to post data
@@ -535,29 +481,6 @@ function save_dhp_project_settings($post_id)
 	} elseif ($new == '' && $old) {
 		delete_metadata('post', $post_id, 'project_icons', $old);
 	}
-
-		// foreach ($dhp_project_settings_fields as $field) {
-		// 	$old = get_post_meta( $parent->ID, $field['id'], true);
-		// 	$new = $_POST[$field['id']];
-		// 	if ($new && $new != $old) {
-		// 		update_metadata( 'post', $post_id, $field['id'], $new);
-		// 	} elseif ($new == '' && $old) {
-		// 		delete_metadata( 'post', $post_id, $field['id'], $old);
-		// 	}
-		// } // end foreach
-
-	// } else {
-	// 	// loop through fields and save the data
-	// 	foreach ($dhp_project_settings_fields as $field) {
-	// 		$old = get_post_meta($post_id, $field['id'], true);
-	// 		$new = $_POST[$field['id']];
-	// 		if ($new && $new != $old) {
-	// 			update_post_meta($post_id, $field['id'], $new);
-	// 		} elseif ($new == '' && $old) {
-	// 			delete_post_meta($post_id, $field['id'], $old);
-	// 		}
-	// 	} // end foreach
-	// }
 } // save_dhp_project_settings()
 
 
@@ -659,7 +582,7 @@ function getIconsForTerms($parent_term, $taxonomy)
 				$icon_url = null;
 			}
 		}
-		
+
 		if ($icon_url == "Pick Icon") {
 			trigger_error("Project cannot be viewed until legend ".$parent_term->name." is configured.");
 		}
@@ -1301,8 +1224,8 @@ function print_new_bootstrap_html($project_id)
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Create Entry Point<b class="caret"></b></a>
                   <ul class="dropdown-menu">
                     <li><a id="add-map" >Map</a></li>
-                    <li class="disabled"><a id="add-timeline">Timeline</a></li>
                     <li class="disabled"><a id="add-top-card">Topic Cards</a></li>
+                    <li class="disabled"><a id="add-timeline">Timeline</a></li>
                   </ul>
                 </li>
               </ul>
