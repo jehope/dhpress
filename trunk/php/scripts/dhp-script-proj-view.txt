@@ -1,6 +1,6 @@
     <!-- Handlebars Templates for Project View -->
 <script id="dhp-script-nav-bar" type="text/x-handlebars-template">
-  <nav class="top-bar dhp-nav" data-topbar>
+  <nav class="top-bar dhp-nav" data-topbar data-options="is_hover: false">
   <ul class="title-area">
     <li class="name">
       <h1><a href="#">My Site</a></h1>
