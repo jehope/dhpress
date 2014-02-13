@@ -27,7 +27,7 @@ require_once( dirname(__FILE__) . '/../lib/csv-importer/csv_importer.php' );
 // action function for above hook
 function dhp_add_pages() {
     // Add a new top-level menu -- This is hooked into the custom post type (Projects, Markers, Maps)
-    add_menu_page(__('DH Press','dhp-menu'), __('DH Press','dhp-menu'), 'manage_options', 'dhp-top-level-handle', null, plugins_url( 'dhpress/images/dhpress-plugin-icon16.png' ) );
+    add_menu_page( __('DH Press','dhp-menu'), __('DH Press','dhp-menu'), 'manage_options', 'dhp-top-level-handle', null, plugins_url('/images/dhpress-plugin-icon16.png', dirname(__FILE__)) );
 }
 
 ?>
