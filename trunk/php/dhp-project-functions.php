@@ -396,7 +396,6 @@ function show_dhp_project_settings_box()
     $project_settings = $projObj->getAllSettings();
     	// must handle case that project has just been created and does not have settings yet
     if (is_null($project_settings)) {
-echo "Settings empty!";
     	$project_settings = '';
     } else {
     	$project_settings = json_encode($project_settings);
@@ -414,7 +413,6 @@ echo "Settings empty!";
 		<br /><span class="description">Stores the project_settings as JSON object</span>';
 	echo '</td></tr>';
 	echo '<input type="hidden" name="project_icons" id="project_icons" value="'.get_post_meta($post->ID, 'project_icons', true).'" />';
-
 	echo '</table>'; // end table
 
 	print_new_bootstrap_html($post->ID);
