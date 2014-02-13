@@ -1654,7 +1654,7 @@ jQuery(document).ready(function($) {
   			$('li#'+termObj[i].term_id+' div', result).append('<span class="disclose"><span></span></span>');
   			$('li#'+termObj[i].term_id+' div', result).append('<span class="term-name">'+ termObj[i].name + '</span>');		
   			$('li#'+termObj[i].term_id+' div', result).append('<span class="term-count"> ' + termObj[i].count + '</span>');
-  			if(termObj[i].icon_url!='undefined'&&termObj[i].icon_url!='') {
+  			if(termObj[i].icon_url!='undefined'&&termObj[i].icon_url!=''&&termObj[i].icon_url!=null) {
   				//console.log('before:'+obj[i].icon_url+'after');
           if(termObj[i].icon_url.substring(0,1)=='#') {
             $('li#'+termObj[i].term_id+' div', result).append('<span class="term-icon">'+termObj[i].icon_url+'</span>');
