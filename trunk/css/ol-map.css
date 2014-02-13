@@ -151,7 +151,7 @@ body.fullscreen {
 	overflow: hidden;
 	display: inherit;
 }
-.legend-div .layers a {
+#layers-panel a {
 	line-height: 15px;
 	padding-top: 10px;
 	padding-bottom: 10px;
