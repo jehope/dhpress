@@ -333,49 +333,49 @@ jQuery(document).ready(function($) {
       projectNeedsToBeSaved();
     });
 
-      // Create handlers to load data in order. Entry points are dependent on motes.
-    $('body').bind('load-motes', function(e) {
-      if(pSettings && pSettings['motes']) {
-        insertHTMLForMoteList(pSettings['motes']);
-      }
+      // If user changes anything inside standard edit boxes
+    $('#dhp_settings_box input').on('change',function(){
+      projectNeedsToBeSaved();
+    });
+    $('#dhp_settings_box select').on('change',function(){
+      projectNeedsToBeSaved();
     });
 
-    $('body').bind('load-entry-points', function(e) {
-      if(pSettings && pSettings['entry-points']) {
-        buildEntryPoints(pSettings['entry-points']);
-      }
-    });
+    if(pSettings && pSettings['motes']) {
+      insertHTMLForMoteList(pSettings['motes']);
+    }
 
-    $('body').bind('load-views', function(e) {
-      if (pSettings && pSettings['views']) {
-        projectObj['views'] = pSettings['views'];
+    if(pSettings && pSettings['entry-points']) {
+      buildEntryPoints(pSettings['entry-points']);
+    }
 
-      } else {
-        projectObj['views'] = new Object();
-        projectObj['views']['select'] = new Object();
-        projectObj['views']['post'] = new Object();
-        projectObj['views']['transcript'] = new Object();
-      }
-      selModalSettings = projectObj['views']['select'];
+    if (pSettings && pSettings['views']) {
+      projectObj['views'] = pSettings['views'];
 
-      buildHTMLForViewsTab();
-    });
+    } else {
+      projectObj['views'] = new Object();
+      projectObj['views']['select'] = new Object();
+      projectObj['views']['post'] = new Object();
+      projectObj['views']['transcript'] = new Object();
+    }
+    selModalSettings = projectObj['views']['select'];
 
-    $('body').bind('add-save-alert', function(e) {
-      $('#dhp_settings_box input').on('change',function(){
-        projectNeedsToBeSaved();
-      });
-      $('#dhp_settings_box select').on('change',function(){
-        projectNeedsToBeSaved();
-      });
-    });
+    buildHTMLForViewsTab();
 
-    //fire in order, according to dependencies
-    $('body').trigger('load-motes');
-    $('body').trigger('load-entry-points');
-    // $('body').trigger('load-shared-motes');
-    $('body').trigger('load-views');
-    $('body').trigger('add-save-alert');
+
+      // All menus that depend upon mote defintions need to be rebuilt
+      //  dynamically whenever user changes them
+    // $('body').bind('motes-changed', function(e) {
+    //     // First, check that all motes in project settings arrays still exist; remove if not
+    //     // TO DO
+
+    //     // Now remove and rebuilt all menus
+    //   $('#map-marker-selection').remove();
+    //   $('#map-marker-div').append('<select class="span12" name="map-marker-selection" id="map-marker-selection">'+
+    //       buildHTMLForMotes(settings['marker-layer'],false,'Lat/Lon Coordinates')+'</select>');
+
+    // }
+
 
     //$('#create-mote .custom-fields').replaceWith(buildHTMLForCustomFields());
     $('#create-mote #create-btn').click(function() {
@@ -446,9 +446,9 @@ jQuery(document).ready(function($) {
 
 
     // PURPOSE: Save array of entry points, builds the html for them and preload the data
-  function buildEntryPoints(entryPoints) {
-    projectObj['entry-points'] = entryPoints;
-    _.each(entryPoints, function(theEP) {
+  function buildEntryPoints(epSettings) {
+    projectObj['entry-points'] = epSettings;
+    _.each(epSettings, function(theEP) {
       buildHTMLForEntryPoint(theEP["type"], theEP["settings"]);
     });
   }
@@ -496,9 +496,9 @@ jQuery(document).ready(function($) {
                       </div>\
                   </div>\
                   <div class="row-fluid vars">\
-                      <div class="span5">\
+                      <div class="span5" id="map-marker-div">\
                       	<label>Marker Layer(Lat/Lon) <span class="badge badge-info"><i class="icon-question-sign icon-white"></i></span></label>\
-                          <select class="span12" name="marker-layer" id="marker-layer">'+buildHTMLForMotes(settings['marker-layer'],false,'Lat/Lon Coordinates')+'\
+                          <select class="span12" name="map-marker-selection" id="map-marker-selection">'+buildHTMLForMotes(settings['marker-layer'],false,'Lat/Lon Coordinates')+'\
                           </select>\
                       </div>\
                       <div class="span7">\
@@ -617,7 +617,6 @@ jQuery(document).ready(function($) {
 
 
     // PURPOSE: Creates Post section of Views tab
-    // INPUT:   JSON object representing "post" portion of project settings (could be empty if new)
   function buildHTMLForPostView(postView) {
     var markerTitle = blankStringIfNull(postView['title']);
 
@@ -635,7 +634,6 @@ jQuery(document).ready(function($) {
 
 
     // PURPOSE: Creates Transcript section of Views tab
-    // INPUT:   JSON object representing "transcript" portion of project settings (could be empty if new)
     // TO DO:   Add "Create" and "Delete" buttons to Source mote
   function buildHTMLForTranscView(transcView) {
     $('.transc-view').append('<p>Pick the motes to display for each taxonomy post entry.</p><ul id="transc-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
@@ -675,7 +673,6 @@ jQuery(document).ready(function($) {
     else {
       $('.viz-fullscreen').prop('checked',viewObject['viz-fullscreen']);
     }
-    
 
     buildHTMLForPostView(viewObject['post']);
     buildHTMLForTranscView(viewObject['transcript']);
@@ -693,8 +690,6 @@ jQuery(document).ready(function($) {
         bindDelContentMote();
     });
 
-    // builtHTMLForPostView(viewObject);
-    
        // Modal view settings html
     $('#modalView .accordion-inner').append(
       '<h3>Modal Size</h3>'+'<p>'+
@@ -734,7 +729,6 @@ jQuery(document).ready(function($) {
         if(selectData['link-new-tab']) {
           linkTab = 'checked="checked"';
         }
-
       }
       if(selectData['link2']) {
         linkTarget2 = selectData['link2'];
@@ -773,7 +767,7 @@ jQuery(document).ready(function($) {
       if(selectData['view-type']) {
         _.each(selectData['view-type'],function(val) {
           //console.log(val);
-          $('#modal-views').append(addModalView(val));
+          $('#modal-views').append(buildModalView(val));
         });
         $('.delete-modal-view').unbind('click');
         $('.delete-modal-view').on('click',function(){
@@ -819,7 +813,7 @@ jQuery(document).ready(function($) {
 
       $('.add-modal-view').click(function(e){
         //console.log($('#projectModal .custom-fields option:selected').val());
-        $('#modal-views').append(addModalView());
+        $('#modal-views').append(buildModalView());
         $('.delete-modal-view').on('click',function(){
           $(this).parent().remove();
         });
@@ -855,7 +849,7 @@ jQuery(document).ready(function($) {
   } // buildContentMotesHTML()
 
 
-  function addModalView(selected)
+  function buildModalView(selected)
   {
     var modalView = '<li><select name="modal-view" class="modal-view">\
     '+getModalViews(selected)+'</select> <button class="btn btn-danger delete-modal-view" type="button">-</button></li>';
@@ -943,14 +937,14 @@ jQuery(document).ready(function($) {
     return layerLine;
   }
 
-  function getAvailableLayers(){
+  function getAvailableLayers() {
     //console.log($('#hidden-layers'));
     var layersA = $('#hidden-layers').clone();
     return layersA;
   }
 
     // PURPOSE: Bind all event listeners for Legend buttons on Entry Points tab (with EP selected)
-  function bindLegendEventsInEPTab(){
+  function bindLegendEventsInEPTab() {
       // Create Legend buttons
       // There is a special case to handle: when a new entry point is created, the first mote Legend
       //  is created as a default, but it doesn't actually exist yet!
@@ -960,7 +954,7 @@ jQuery(document).ready(function($) {
         var mote = getMote(moteName);
         // var projectID = projectObj['project-details']['id'];
 
-        $('#createModal').detach();
+        $('#createModal').remove();
         $('body').append('<!-- Modal -->\
           <div id="createModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
             <div class="modal-header">\
@@ -1037,9 +1031,7 @@ jQuery(document).ready(function($) {
         for (var i =0; i < Object.keys(legendList).length; i++) {
           listHtml += buildHTMLForALegend(legendList[i],i+1);
          }
-       // } else {
-       //  listHtml += buildHTMLForALegend(null, 0); 
-      } 
+      }
     return listHtml;
   } // buildHTMLForLegendList()
 
@@ -1190,11 +1182,14 @@ jQuery(document).ready(function($) {
       $('#group'+(moteCount+i)+' .cf-type').change(function(){
         //console.log($(this).find("option:selected").text());
       });
+
         // Handle selection of X in top right
       $('#group'+(moteCount+i)+' .accordion-toggle .close').click(function(e){
         e.stopPropagation();
         e.preventDefault();
+          // If mote really deleted, we need to update all settings and menus
         if($(this).text()=='Confirm Delete') {
+          $('body').trigger('motes-changed');
           $(this).closest('.accordion-group').remove();
         } else {
           $(this).text('Confirm Delete');
@@ -1242,7 +1237,7 @@ jQuery(document).ready(function($) {
   // RETURNS: HTML string for all of the Custom Fields (for this Project)
   // INPUT:   selected is current selection (single name or list of them)
   // ASSUMES: List of these fields is embedded in HTML under create-mote ID as .custom0-fields options
-  function buildHTMLForCustomFields(selected){
+  function buildHTMLForCustomFields(selected) {
     if(!selected) { selected = '';}
     var trimSelected = selected.split(',');
 
@@ -1250,7 +1245,6 @@ jQuery(document).ready(function($) {
       return $(this).val();
     }).get().join();
     cflist = cflistString.split(',');
-    //cflist = ['Audio Url','lat','lon','alt_location','date_range','Interviewee']
 
       // is there a multiple selection?
     if (trimSelected.length>1) {
@@ -1335,8 +1329,6 @@ jQuery(document).ready(function($) {
     projectObj['project-details']['home-url']     = $('#home-url').val();
     projectObj['project-details']['max-inactive'] = $('#max-inactive').val();
 
-    //console.log(projectObj['project-details']['marker-custom-fields'])
-
       //MOTES - clear old values...add fresh
   	projectObj['motes'] = new Object();
   	$('#mote-list .accordion-group').each(function(index){
@@ -1344,7 +1336,7 @@ jQuery(document).ready(function($) {
   		newMote["name"] = $(this).find('.mote-name').val();
       newMote["type"] = $(this).find('.cf-type').val();
       newMote["custom-fields"] = $(this).find('.custom-fields option:selected').map(function() {
-                    return $(this).val();
+            return $(this).val();
         }).get().join();
       newMote["delim"] = $(this).find('.delim').val();
       projectObj['motes'][index] = newMote;
@@ -1377,7 +1369,7 @@ jQuery(document).ready(function($) {
             //$("div[class^='apple-']")
         });
 
-       	projectObj['entry-points'][index]["settings"]['marker-layer'] = $(this).find('#marker-layer').val();
+       	projectObj['entry-points'][index]["settings"]['marker-layer'] = $(this).find('#map-marker-selection').val();
         //legends
         projectObj['entry-points'][index]["settings"]['filter-data'] = new Object();
         $('.legend-list li option:selected').each(function(index2) {
@@ -1412,23 +1404,6 @@ jQuery(document).ready(function($) {
       // Settings for select Modal have already been saved, are no longer available on GUI
     projectObj['views']['select'] = selModalSettings;
 
-    // projectObj['views']['select'] = new Object();
-    // projectObj['views']['select']['title'] = $('.title-custom-fields').val();
-    // var selectPostContent = [];
-    // $('#modal-body-content li').each(function(index, theElement){
-    //     selectPostContent.push($(theElement).find('option:selected').val());
-    // });
-    // projectObj['views']['select']['content'] = selectPostContent;
-    // var selectPostViews = [];
-    // $('#modal-body-ep li').each(function(index, theElement){
-    //     selectPostViews.push($(theElement).find('option:selected').val());
-    // });
-    // projectObj['views']['select']['view-type']   = selectPostViews;
-    // projectObj['views']['select']['link']        = $('.link-legends').val();
-    // projectObj['views']['select']['link2']       = $('.link-legends2').val();
-    // projectObj['views']['select']['link-label']  = $('.link-legends-label').val();
-    // projectObj['views']['select']['link2-label'] = $('.link-legends2-label').val();
-
     projectObj['views']['transcript'] = new Object();
     projectObj['views']['transcript']['audio'] = $('#av-transcript-audio').val();
     projectObj['views']['transcript']['transcript'] = $('#av-transcript-txt').val();
@@ -1461,10 +1436,9 @@ jQuery(document).ready(function($) {
     // PURPOSE: Create new modal to configure legend
     // INPUT:   title = name of mote (unused!)
     //          data = JSON Object of all of the unique values of the Mote
-  function createConfigureLegendModal(title,data){
+  function createConfigureLegendModal(title,data) {
     $('#taxModal .modal-body').empty();
   	$('#taxModal .modal-body').append(buildHTMLForLegendValues(data));
-  	
     $('#taxModal .modal-body').append('<div class="icons-color"><a class="use-icons">Icons</a> | <a class="use-colors">Colors</a></div>');
   	$('#taxModal .modal-body .icons-color').append($('.icons').clone());
     $('#taxModal .modal-footer').empty();
@@ -1615,7 +1589,6 @@ jQuery(document).ready(function($) {
   		// termTree +='"term_id":"'+this.id+'","name":"'+tempName+'","term_order":"'+i+'","parent":"'+tempParent+'","count":"'+tempCount+'","icon_url":"'+tempIcon+'"}';
   		treeObject.push(tempTermObject);
       i++;
-      
   	});
 
   	// console.log(JSON.stringify(treeObject));
