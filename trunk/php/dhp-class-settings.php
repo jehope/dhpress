@@ -25,6 +25,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 		    // register the settings for this plugin
 		    register_setting( 'dhp_global_settings-group', 'timeout_duration' );
 		    register_setting( 'dhp_global_settings-group', 'redirect_url' );
+		    register_setting( 'dhp_global_settings-group', 'tip_url' );
 		}
 			// Add options page for global utilities
 		static function add_menu()
@@ -35,6 +36,20 @@ if( !class_exists( 'DHPressSettings' ) ) {
 		static function dhp_settings_page() 
 		{
 			echo self::settingsPageTemplate();
+		}
+
+		static function dhp_list_pages_for_tips()
+		{
+ 
+			$pages = get_pages();
+			$options;
+			foreach ( $pages as $page ) {
+				$option  = '<option value="' . $page->ID . '" '. selected(get_option('tip_url'),$page->ID) . '>';
+				$option  .= $page->post_title;
+				$option  .= '</option>';
+				$options .= $option;
+			}
+			return $options;
 		}
 			// Template for settings page
 			// TODO: Move to it's own file
@@ -56,6 +71,17 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				            <tr valign="top">
 				                <th scope="row"><label for="redirect_url">Redirect URL</label></th>
 				                <td><input type="text" name="redirect_url" id="redirect_url" value="<?php echo get_option( 'redirect_url' ); ?>" /></td>
+				            </tr>
+				            <tr valign="top">
+				            	<td colspan="2">Create a page for help text/tips and select it in the dropdown below.</p></td>
+				            </tr>
+				            <tr valign="top">
+				                <th scope="row"><label for="redirect_url">Site Tip Page</label></th>
+				                <td>
+				                	<select name="tip_url" id="tip_url">
+				                		<?php echo self::dhp_list_pages_for_tips(); ?>
+								    </select>
+				                </td>
 				            </tr>
 				        </table>
 

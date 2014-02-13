@@ -2237,6 +2237,7 @@ function add_dhp_project_admin_scripts( $hook )
 
     $blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
+	$plugin_folder = plugins_url('',dirname(__FILE__));
 	$postID  = get_the_ID();
 
  		// Editing a specific project in admin panel
@@ -2268,13 +2269,16 @@ function add_dhp_project_admin_scripts( $hook )
 			wp_enqueue_script('dhp-nested-sortable', plugins_url('/lib/jquery.mjs.nestedSortable.js', dirname(__FILE__) ));
 			wp_enqueue_style('dhp-jPicker-style1', plugins_url('/js/jpicker/css/jPicker-1.1.6.min.css',  dirname(__FILE__) ));
 			wp_enqueue_style('dhp-jPicker-style2', plugins_url('/js/jpicker/jPicker.css',  dirname(__FILE__) ));
-			wp_enqueue_script('dhp-jPicker', plugins_url('/js/jpicker/jpicker-1.1.6.js', dirname(__FILE__) ));
-
+			
 			wp_enqueue_script('dhp-project-script', plugins_url('/js/dhp-project-admin.js', dirname(__FILE__) ));
 			wp_localize_script('dhp-project-script', 'dhpDataLib', array(
 				'ajax_url' => $dev_url,
-				'projectID' => $postID
+				'projectID' => $postID,
+				'plugin_folder' => $plugin_folder
 			) );
+				// jpicker requires knowing where the plugin is located(and named) to load images. Location is passed in the dataLib object
+			wp_enqueue_script('dhp-jPicker', plugins_url('/js/jpicker/jpicker-1.1.6.js', dirname(__FILE__) ),'dhpDataLib');
+
 
         } else if ( $post->post_type == 'dhp-markers' ) {
         	wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__) ));

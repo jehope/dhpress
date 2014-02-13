@@ -352,12 +352,14 @@ class DHPressProject
 	public function selectModalHas($viewType)
 	{
 		$this->ensureSettings();
-
-		foreach($this->settings['views']['select']['view-type'] as $vt) {
-			if ($vt === $viewType) {
-				return true;
-			}
+		if($this->settings['views']['select']['view-type']) {
+			foreach($this->settings['views']['select']['view-type'] as $vt) {
+				if ($vt === $viewType) {
+					return true;
+				}
+			}			
 		}
+		
 		return false;
 	} // selectModalHas()
 
