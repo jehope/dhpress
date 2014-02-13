@@ -846,7 +846,7 @@ var dhpMapsView = {
                     }
                     else {
                         if (val1) {
-                            builtHTML += '<div><i>'+key1+'</i>: '+val1+'</div>';
+                            builtHTML += '<div><span class="key-title">'+key1+'</span>: '+val1+'</div>';
                         }
                     }
                 });
