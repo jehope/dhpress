@@ -5,6 +5,8 @@
 //          Initial project settings embedded in HTML in DIV ID project_settings by show_dhp_project_settings_box()
 // USES:    JavaScript libraries jQuery, jQuery UI (for drag-drop), Underscore, Bootstrap ...
 // TO DO:   Creates too many global variables -- put these within scope of this JS function
+// NOTES:   Functions whose name begins "buildHTML..." return HTML strings
+//          
 
 jQuery(document).ready(function($) {
 
@@ -93,7 +95,7 @@ jQuery(document).ready(function($) {
     } else {
       projectNeedsToBeSaved();
       epsettings = '';
-      buildHTMLForEntryPoint('map',epsettings);
+      addHTMLForEntryPoint('map',epsettings);
       //show tab/content after loading
       $('#map'+mapCount+'-tab a').tab('show');
     }
@@ -120,7 +122,7 @@ jQuery(document).ready(function($) {
   //   } else {
   //     projectNeedsToBeSaved();
   //     epsettings = '';
-  //     buildHTMLForEntryPoint('timeline',epsettings);
+  //     addHTMLForEntryPoint('timeline',epsettings);
   //     //show tab/content after loading
   //     $('#timeline'+timelineCount+'-tab a').tab('show');
   //   }    
@@ -360,12 +362,12 @@ jQuery(document).ready(function($) {
     }
     selModalSettings = projectObj['views']['select'];
 
-    buildHTMLForViewsTab();
+    addHTMLForViewsTab();
 
 
       // All menus that depend upon mote defintions need to be rebuilt
       //  dynamically whenever user changes them
-    // $('body').bind('motes-changed', function(e) {
+    // $('body').on('motes-changed', function(e) {
     //     // First, check that all motes in project settings arrays still exist; remove if not
     //     // TO DO
 
@@ -449,14 +451,14 @@ jQuery(document).ready(function($) {
   function buildEntryPoints(epSettings) {
     projectObj['entry-points'] = epSettings;
     _.each(epSettings, function(theEP) {
-      buildHTMLForEntryPoint(theEP["type"], theEP["settings"]);
+      addHTMLForEntryPoint(theEP["type"], theEP["settings"]);
     });
   }
 
 
     // PURPOSE: Build the HTML for a single Entry Point, given its type and settings
     // INPUT:   type = the name of a valid entry point type: 'map', 'transcript'
-  function buildHTMLForEntryPoint(type, settings){
+  function addHTMLForEntryPoint(type, settings){
     var epCount  = countEntryPoints(type) +1;
     if(!settings) {
       settings = new Object();
@@ -607,7 +609,7 @@ jQuery(document).ready(function($) {
       projectNeedsToBeSaved();
       //bindLegendEventsInEPTab();
     });    
-  } // buildHTMLForEntryPoint()
+  } // addHTMLForEntryPoint()
 
 
     // RETURNS: First entry point within parentObj of type objType
@@ -617,7 +619,7 @@ jQuery(document).ready(function($) {
 
 
     // PURPOSE: Creates Post section of Views tab
-  function buildHTMLForPostView(postView) {
+  function addHTMLForPostView(postView) {
     var markerTitle = blankStringIfNull(postView['title']);
 
     $('.marker-view').append('<select name="post-view-title" class="title-custom-fields save-view"><option selected="selected" value="the_title" >Marker Title</option>'+buildHTMLForMotes(markerTitle)+'</select>');
@@ -630,16 +632,16 @@ jQuery(document).ready(function($) {
       });
       $('#post-content-view').append(htmlStr);
     }
-  } // buildHTMLForPostView()
+  } // addHTMLForPostView()
 
 
     // PURPOSE: Creates Transcript section of Views tab
     // TO DO:   Add "Create" and "Delete" buttons to Source mote
-  function buildHTMLForTranscView(transcView) {
+  function addHTMLForTranscView(transcView) {
     $('.transc-view').append('<p>Pick the motes to display for each taxonomy post entry.</p><ul id="transc-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
     var transHTML = '<label>Transcript Source (all excerpts must have same value for this mote)</label>\
                     <select name="av-transcript-source" id="av-transcript-source">'+buildHTMLForMotes(transcView['source'], true)+'</select>\
-                    <label>Audio URL</label>\
+                    <label>Audio URL (setting enables or disables widget playback)</label>\
                     <select name="av-transcript-audio" id="av-transcript-audio">'+buildHTMLForMotes(transcView['audio'], true)+'</select>\
                     <label>Transcript Text</label>\
                     <select name="av-transcript-txt" id="av-transcript-txt">'+buildHTMLForMotes(transcView['transcript'], true)+'</select>\
@@ -657,11 +659,11 @@ jQuery(document).ready(function($) {
       });
       $('#transc-content-view').append(htmlStr);
     }
-  } // buildHTMLForTranscView()
+  } // addHTMLForTranscView()
 
 
     // PURPOSE: Called to create HTML for Main View and Modal View sections of Views tab
-  function buildHTMLForViewsTab() {
+  function addHTMLForViewsTab() {
     var viewObject = projectObj['views'];
 
     $('.viz-width').val(viewObject['viz-width']);
@@ -674,8 +676,8 @@ jQuery(document).ready(function($) {
       $('.viz-fullscreen').prop('checked',viewObject['viz-fullscreen']);
     }
 
-    buildHTMLForPostView(viewObject['post']);
-    buildHTMLForTranscView(viewObject['transcript']);
+    addHTMLForPostView(viewObject['post']);
+    addHTMLForTranscView(viewObject['transcript']);
 
       // Handle deleting content for either Post View or Transc View
     bindDelContentMote();
@@ -745,9 +747,9 @@ jQuery(document).ready(function($) {
         <h3 id="myModalLabel">Choose Title: <select name="custom-fields" class="title-custom-fields"><option selected="selected" value="the_title" >Marker Title</option>'+buildHTMLForMotes(title)+'</select></h3>\
       </div>\
       <div class="modal-body">\
-        <p>Select views to display in the modal.</p>\
+        <p>Select widgets to display in the modal.</p>\
         <ul id="modal-views">\
-        </ul><button class="btn btn-success add-modal-view" type="button">Add View</button>\
+        </ul><button class="btn btn-success add-modal-view" type="button">Add Widget</button>\
         <p>Select the motes to display in the modal.</p>\
         <ul id="modal-body-content">\
         </ul><button class="btn btn-success add-modal-content" type="button">Add Mote</button>\
@@ -826,7 +828,7 @@ jQuery(document).ready(function($) {
       });
     }); // create modal
 
-  } // buildHTMLForViewsTab()
+  } // addHTMLForViewsTab()
 
 
   function bindDelContentMote()
@@ -852,23 +854,23 @@ jQuery(document).ready(function($) {
   function buildModalView(selected)
   {
     var modalView = '<li><select name="modal-view" class="modal-view">\
-    '+getModalViews(selected)+'</select> <button class="btn btn-danger delete-modal-view" type="button">-</button></li>';
+    '+getModalViewSelection(selected)+'</select> <button class="btn btn-danger delete-modal-view" type="button">-</button></li>';
 
     return modalView;
   }
 
     // RETURNS: HTML string of dropdown options for all Entry Points defined for Project
     // ASSUMES: Can read entry points from projectObj 
-  function getModalViews(selected) {
-    var modalViews = '';
+  function getModalViewSelection(selected) {
+    var modalSelection = '';
 
     _.each(modalViewNames, function(name) {
       var isSelected;
       isSelected = (selected===name) ? 'selected' : '';
-      modalViews += '<option name="'+name+'" '+isSelected+' >'+name+'</option>';
+      modalSelection += '<option name="'+name+'" '+isSelected+' >'+name+'</option>';
     });
-    return modalViews;
-  } // getModalViews()
+    return modalSelection;
+  } // getModalViewSelection()
 
 
   function addEntryPoint(selected) {
@@ -943,6 +945,29 @@ jQuery(document).ready(function($) {
     return layersA;
   }
 
+    // PURPOSE: Show modal about creation of legend terms, invoke AJAX function
+    // INPUT:   moteName
+  function doCreateLegend(moteName) {
+    var mote = getMote(moteName);
+    $('#createModal').remove();
+    $('body').append('<!-- Modal -->\
+      <div id="createModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
+        <div class="modal-header">\
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+          <h3 id="myModalLabel">Creating Legend</h3>\
+        </div>\
+        <div class="modal-body">\
+          <p>Creating terms associated with the '+moteName+' legend.</p>\
+        </div>\
+        <div class="modal-footer">\
+        </div>\
+      </div>');
+    $('#createModal').modal('show');
+    //console.log(projectObj['motes'])
+    dhpCreateLegendTax(mote);
+  } // doCreateLegend()
+
+
     // PURPOSE: Bind all event listeners for Legend buttons on Entry Points tab (with EP selected)
   function bindLegendEventsInEPTab() {
       // Create Legend buttons
@@ -951,35 +976,17 @@ jQuery(document).ready(function($) {
     $('.create-legend').unbind('click');
     $('.create-legend').click(function() {
         var moteName = $(this).parent().find('.filter-mote option:selected').val();
-        var mote = getMote(moteName);
         // var projectID = projectObj['project-details']['id'];
-
-        $('#createModal').remove();
-        $('body').append('<!-- Modal -->\
-          <div id="createModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
-            <div class="modal-header">\
-              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
-              <h3 id="myModalLabel">Creating Legend</h3>\
-            </div>\
-            <div class="modal-body">\
-              <p>Creating terms associated with the '+moteName+' legend.</p>\
-            </div>\
-            <div class="modal-footer">\
-            </div>\
-          </div>');
-        $('#createModal').modal('show');
-        //console.log(projectObj['motes'])
-        dhpCreateLegendTax(mote,true);
+        doCreateLegend(moteName);
     });
 
       // Configure Legend buttons
     $('.load-legend').unbind('click');
     $('.load-legend').click(function() {
         var moteName = $(this).parent().find('.filter-mote option:selected').val();
-        var mote = getMote(moteName);
         // var projectID = projectObj['project-details']['id'];
         //console.log(projectObj['motes'])
-        dhpGetMoteValues(mote);
+        dhpGetMoteValues(moteName);
     });
 
       // Delete Legend buttons
@@ -1666,9 +1673,7 @@ jQuery(document).ready(function($) {
 
   //=================================== AJAX functions ==================================
 
-    // PURPOSE: Saves project settings data object
-    // RETURNS: Saved date
-    
+    // PURPOSE: Saves project settings data object    
   function updateProjectSettings() {
     // console.log("Updating settings for project " + projectID);
   	var settingsData = $('#project_settings').val();
@@ -1692,9 +1697,8 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Create terms for new legend
     // RETURNS: Object with terms
-    // INPUT:   treeParentID = Top level term id(legend name)
-    //          taxTerms = termObject to be created in wordpress
-  function dhpCreateLegendTax(mote,loadLegend) {
+    // INPUT:   mote = record for mote
+  function dhpCreateLegendTax(mote) {
     // console.log("Create legend for mote " + mote + " for project " + projectID);
     jQuery.ajax({
           type: 'POST',
@@ -1702,7 +1706,7 @@ jQuery(document).ready(function($) {
           data: {
               action: 'dhpCreateLegendTax',
               project: projectID,
-              mote_name: mote
+              mote: mote
           },
           success: function(data, textStatus, XMLHttpRequest){
               $('#createModal').modal('hide');
@@ -1716,7 +1720,7 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Get term object for legend editor and open modal
     // RETURNS: Object with terms
-    // INPUT:   mote = Top level term id(legend name)
+    // INPUT:   mote = mote record
   function dhpGetMoteValues(mote) {
     // console.log("Getting mote values for project " + projectID);
       //create modal here to hold users attention. Data will be rendered on response
@@ -1740,7 +1744,7 @@ jQuery(document).ready(function($) {
           data: {
               action: 'dhpGetMoteValues',
               project: projectID,
-              mote_name: mote
+              mote: mote
           },
           success: function(data, textStatus, XMLHttpRequest){
               createConfigureLegendModal(mote['name'],data); 
