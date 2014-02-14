@@ -1423,13 +1423,13 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $projRootTaxName)
 add_action( 'wp_ajax_dhpCreateLegendTax', 'dhpCreateLegendTax' );
 
 // PURPOSE:	Handle Ajax call to create a taxonomy when a Legend is created
-// INPUT:	Through $_POST['mote_name'] array: ['type', 'delim', 'custom-fields', 'name']
+// INPUT:	Through $_POST['mote'] array: ['type', 'delim', 'custom-fields', 'name']
 //			$_POST['project'] = ID of Project
 // RETURN:	Array of unique values/tax-terms as JSON object
 
 function dhpCreateLegendTax()
 { 
-	$mote         = $_POST['mote_name'];
+	$mote         = $_POST['mote'];
 	$mote_type    = $mote['type'];
 	$mote_delim   = $mote['delim'];
 	$mote_name	  = $mote['name'];
@@ -1460,7 +1460,7 @@ add_action( 'wp_ajax_dhpGetMoteValues', 'dhpGetMoteValues' );
 // PURPOSE:	Handle Ajax call to get the unique values for a mote and associate these as
 //			taxonomy terms with each Marker post
 // INPUT:	$_POST['project'] global is ID of Project
-//			$_POST['mote_name'] global is Hash describing mote
+//			$_POST['mote'] global is mote record
 // RETURNS:	JSON Object of all of the unique values of the Mote
 // TO DO:	Isn't there a lot of duplicate code in here?
 
