@@ -6,8 +6,8 @@ jQuery(document).ready(function($) {
 
 var dhpGlobalSettings = function($) {
 
-var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive, myMonitor;
-
+    var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive, myMonitor;
+    var kioskTablet = true;
 		// Only execute if not loaded in iframe
 	if(!inIframe()) {
 			// Monitor user activity, only if setting given
@@ -19,7 +19,32 @@ var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInacti
 	        activeMonitorID = window.setInterval(monitorActivity, 60000);    // 1000 milliseconds = 1 sec * 60 sec = 1 minute
 	        addSiteListeners.call(this);
 	    }
+        if(dhpGlobals.global_tip) {
+            $('.main-navigation .nav-menu').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal>Tips</a></li>');
+            
+            $(document).foundation();
+        }
+        if(dhpGlobals.kiosk_mode === '1') {
+            $('body').addClass('kiosk-mode-non-iframe');
+            // For kiosk mode
+        
+            $('#dhp-visual').height($('#dhp-visual').height()-45);
+        
+            $('body').append('<div class="kiosk-menu contain-to-grid"><nav class="top-bar" data-topbar><section class="top-bar-section"></section></nav></div>')
+            $('.main-navigation .nav-menu').clone().appendTo( '.kiosk-menu .top-bar-section' );
+            $(document).foundation();
+        }
 	}
+    if(dhpGlobals.kiosk_mode === '1') {
+            $('body').addClass('kiosk-mode');
+            $('.dhp-nav .top-bar-section .right .tips').remove();
+            $('.dhp-nav .top-bar-section .right').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal>Tips</a></li>');
+            
+        }
+
+    function launchTips() {
+        
+    }
 
 		// PURPOSE: assign listeners for user activity
 		// ASSUMES: Using window assigns events above the document(2 iframes + main page == 3 document bodys)

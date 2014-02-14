@@ -1,0 +1,22 @@
+.kiosk-menu {
+	position:fixed;
+	bottom:0;
+	width:100%;
+	height:45px;
+}
+.kiosk-mode.fullscreen #dhp-visual {
+	margin-bottom: -45px;
+}
+.kiosk-mode #legends {
+	bottom: 65px;
+}
+
+.kiosk-mode .top-bar-section .right .fullscreen {
+	display: none;
+}
+.kiosk-mode-non-iframe .dhp-split-iframes { 
+	bottom: 45px;
+}
+#tipModal h1 {
+	font-size: 2.75rem;
+}
