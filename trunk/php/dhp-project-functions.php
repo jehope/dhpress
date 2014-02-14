@@ -972,19 +972,18 @@ function createMarkerArray($project_id)
 		// $feature_collection['debug'] = $viewsContent;
 		$content_att = array();
 
-			// For each of the legends/categories defined for the View, gather values for this Marker
-		$viewsContent = $projSettings['views']['select']['content'];
-		if($viewsContent) {
-			foreach( $viewsContent as $contentMoteName ) {
+			// Gather all values to be displayed in modal if marker selected
+		$selectContent = $projSettings['views']['select']['content'];
+		if($selectContent) {
+			foreach( $selectContent as $contentMoteName ) {
 				$content_mote = $projObj->getMoteByName( $contentMoteName );
-				$content_type = $content_mote['type'];
 				if($content_mote['custom-fields']=='the_content') {
 					$content_val = apply_filters('the_content', get_post_field('post_content', $marker_id));
 				} else {
 					$content_val = get_post_meta($marker_id,$content_mote['custom-fields'],true);
 				}
-				if (!is_null($content_val) && ($content_val != '')) {
-					if($content_type=='Image'){
+				if (!is_null($content_val) && ($content_val !== '')) {
+					if($content_mote['type']=='Image'){
 						$content_val = '<img src="'.addslashes($content_val).'" />';
 					}
 					array_push($content_att, array($contentMoteName => $content_val));
@@ -1466,7 +1465,7 @@ add_action( 'wp_ajax_dhpGetMoteValues', 'dhpGetMoteValues' );
 
 function dhpGetMoteValues()
 {
-	$mote        = $_POST['mote_name'];
+	$mote        = $_POST['mote'];
 	$projectID   = $_POST['project'];
 	$projObj     = new DHPressProject($projectID);
 	$rootTaxName = $projObj->getRootTaxName();
