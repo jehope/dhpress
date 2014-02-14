@@ -21,8 +21,10 @@ var dhpGlobalSettings = function($) {
 	    }
         if(dhpGlobals.global_tip) {
             $('.main-navigation .nav-menu').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal>Tips</a></li>');
-            
             $(document).foundation();
+            $('.close-tip').on('click', function() {
+                $('#tipModal').foundation('reveal', 'close');
+            });
         }
         if(dhpGlobals.kiosk_mode === '1') {
             $('body').addClass('kiosk-mode-non-iframe');
