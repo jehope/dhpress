@@ -1720,8 +1720,9 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Get term object for legend editor and open modal
     // RETURNS: Object with terms
-    // INPUT:   mote = mote record
-  function dhpGetMoteValues(mote) {
+    // INPUT:   moteName
+  function dhpGetMoteValues(moteName) {
+    var mote = getMote(moteName);
     // console.log("Getting mote values for project " + projectID);
       //create modal here to hold users attention. Data will be rendered on response
     $('#taxModal').remove();
