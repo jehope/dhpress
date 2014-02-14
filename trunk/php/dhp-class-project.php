@@ -496,7 +496,7 @@ class DHPressProject
 
 				$newSettings['views']['select']     	= array();
 				$newSettings['views']['select']['title']= DHPressProject::doClone($settingsArray['views']['title']);
-				$newSettings['views']['select']['content']= new ArrayObject($settingsArray['views']['post-view-content']);
+				$newSettings['views']['select']['content']= new ArrayObject($settingsArray['views']['content']);
 				$newSettings['views']['select']['link'] = DHPressProject::doClone($settingsArray['views']['link']);
 				$newSettings['views']['select']['link2']= DHPressProject::doClone($settingsArray['views']['link2']);
 				$newSettings['views']['select']['link-label'] = DHPressProject::doClone($settingsArray['views']['link-label']);
