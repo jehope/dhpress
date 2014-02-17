@@ -657,12 +657,45 @@ jQuery(document).ready(function($) {
   } // addHTMLForPostView()
 
 
+    // PURPOSE: Show or hide the Create and Delete buttons for Transcript Source acc. to existence of taxonomy
+  function updateTranscButtons()
+  {
+    var transcMote, transcMoteName;
+
+    transcMoteName = $('#av-transcript-source option:selected').val();
+
+      // If something selected, need to check to see if it has category/tax values
+    if (transcMoteName && transcMoteName !== '') {
+      transcMote = getMote(transcMoteName);
+      getMoteLegendValues(transcMoteName, function(theMote, moteValues) {
+          // A mote is selected but no category yet exists
+        if (Object.keys(moteValues).length==0) {
+          $("#create-transc-mote").removeClass("hidden");
+          $("#del-transc-mote").addClass("hidden");
+
+          // Category/Legend has been created
+        } else {
+          $("#create-transc-mote").addClass("hidden");
+          $("#del-transc-mote").removeClass("hidden");
+        }
+      });
+
+      // If nothing selected, can neither Create nor Delete it
+    } else {
+      $("#create-transc-mote").addClass("hidden");
+      $("#del-transc-mote").addClass("hidden");
+    }
+  } // updateTranscButtons()
+
+
     // PURPOSE: Creates Transcript section of Views tab
     // TO DO:   Add "Create" and "Delete" buttons to Source mote
   function addHTMLForTranscView(transcView) {
     $('.transc-view').append('<p>Pick the motes to display for each taxonomy post entry.</p><ul id="transc-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
     var transHTML = '<label>Transcript Source (all excerpts must have same value for this mote)</label>\
                     <select name="av-transcript-source" id="av-transcript-source">'+buildHTMLForMotes(transcView['source'], true)+'</select>\
+                      <button type="button" id="create-transc-mote" class="btn-success hidden">Create Taxonomy</button>\
+                      <button type="button" id="del-transc-mote" class="btn-danger hidden">Delete Taxonomy</button>\
                     <label>Audio URL (setting enables or disables widget playback)</label>\
                     <select name="av-transcript-audio" id="av-transcript-audio">'+buildHTMLForMotes(transcView['audio'], true)+'</select>\
                     <label>Transcript Text</label>\
@@ -674,6 +707,8 @@ jQuery(document).ready(function($) {
 
     $('.transc-view').append(transHTML);
 
+    updateTranscButtons();
+
     if(transcView['content']){
       var htmlStr = $('<div/>');
       _.each(transcView['content'],function(val) {
@@ -681,6 +716,10 @@ jQuery(document).ready(function($) {
       });
       $('#transc-content-view').append(htmlStr);
     }
+
+    $("#av-transcript-source").change(function() {
+      updateTranscButtons();
+    });
   } // addHTMLForTranscView()
 
 
@@ -1695,7 +1734,7 @@ jQuery(document).ready(function($) {
 
   //=================================== AJAX functions ==================================
 
-    // PURPOSE: Saves project settings data object    
+    // PURPOSE: Saves project settings data object
   function updateProjectSettings() {
     // console.log("Updating settings for project " + projectID);
   	var settingsData = $('#project_settings').val();
@@ -1703,12 +1742,12 @@ jQuery(document).ready(function($) {
           type: 'POST',
           url: ajax_url,
           data: {
-              action: 'dhpSaveProjectSettings',          
+              action: 'dhpSaveProjectSettings',
               project: projectID,
               settings: settingsData
           },
           success: function(data, textStatus, XMLHttpRequest){
-              console.log(data);         
+              console.log(data);
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1758,7 +1797,7 @@ jQuery(document).ready(function($) {
           },
           success: function(data, textStatus, XMLHttpRequest){
                 // data is a JSON object
-              funcToCall(mote, data);
+              funcToCall(mote, JSON.parse(data));
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
