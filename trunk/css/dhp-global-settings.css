@@ -1,21 +1,44 @@
+
+.kiosk-mode.fullscreen #dhp-visual {
+	margin-bottom: -65px;
+}
+
 .kiosk-menu {
 	position:fixed;
 	bottom:0;
 	width:100%;
-	height:45px;
+	height:65px;
 }
-.kiosk-mode.fullscreen #dhp-visual {
-	margin-bottom: -45px;
+.kiosk-menu .top-bar-section ul {
+	font-size: 22px;
 }
-.kiosk-mode #legends {
-	bottom: 65px;
+.kiosk-menu .top-bar-section ul li>a {
+	font-size: 22px;
+	line-height: 65px;
 }
-
+.kiosk-menu .top-bar-section li:not(.has-form) a:not(.button) {
+	line-height: 65px;
+}
 .kiosk-mode .top-bar-section .right .fullscreen {
 	display: none;
 }
+.kiosk-mode #legends {
+	bottom: 20px;
+}
+.kiosk-mode-non-iframe  #legends {
+	bottom: 85px;
+}
 .kiosk-mode-non-iframe .dhp-split-iframes { 
-	bottom: 45px;
+	bottom: 65px;
+}
+#tipModal.reveal-modal {
+	position: fixed;
+    z-index: 1106;
+    max-height: 75%;
+    overflow: auto;
+}
+#tipModal .modal-content {
+    overflow: auto;
 }
 #tipModal h1 {
 	font-size: 2.75rem;

@@ -121,7 +121,8 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			      <h1><?php echo $tip_obj->post_title;?></h1>
 			    </div>
 			    <div class="modal-body clearfix">
-			    	<?php echo $tip_obj->post_content;?>
+			    	<?php remove_filter( 'the_content', 'dhp_mod_page_content' ); ?>
+			    	<?php echo apply_filters( 'the_content', $tip_obj->post_content ); ?>
 			    </div>
 			    <div class="reveal-modal-footer clearfix ">
 			      <ul class="button-group right"><li><a class="button close-tip" >Close</a></li></ul>
@@ -148,6 +149,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			if(get_option('tip_url')) {
 				$global_tip = true;
 			}
+			wp_enqueue_script( 'jquery' );
 			wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.0.3/css/foundation.min.css',  dirname(__FILE__)));
 	        wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 	        wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.0.3/js/foundation.min.js', dirname(__FILE__)), 'jquery');

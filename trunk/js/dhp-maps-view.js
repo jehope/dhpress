@@ -105,10 +105,10 @@ var dhpMapsView = {
                 var thisLayer = dhpData.vizParams.layerData[index];
                 var arrayOSM = thisLayer.dhp_map_url.split(',');
                 if(arrayOSM.length>1) {
-                    newLayer = new OpenLayers.Layer.OSM(thisLayer.dhp_map_shortname, arrayOSM);
+                    newLayer = new OpenLayers.Layer.OSM(thisLayer.dhp_map_shortname, arrayOSM, {numZoomLevels: 20} );
                 }
                 else {
-                    newLayer = new OpenLayers.Layer.OSM();
+                    newLayer = new OpenLayers.Layer.OSM(thisLayer.dhp_map_shortname, null, {numZoomLevels: 20} );
                 }
                 // new OpenLayers.Layer.OSM("MapQuest-OSM Tiles", arrayOSM);
                 newLayer.setOpacity(opacity);
@@ -124,6 +124,7 @@ var dhpMapsView = {
                 newLayer.setOpacity(opacity);
                 break;
             } // switch
+            console.log('zoom levels '+ newLayer.numZoomLevels)
             mapLayers.push(newLayer);
         }); // each sourceLayers
 
@@ -238,7 +239,7 @@ var dhpMapsView = {
         jQuery('.active-legend .terms').css({top:jQuery('.active-legend .legend-title').height()});
 
             //resize legend items that are two lines and center checkbox
-        jQuery('.row').each(function(key,value){
+        jQuery('.active-legend .row').each(function(key,value){
                 //height of row containing text(could be multiple lines)
             newRowHeight   = jQuery('.columns', this).eq(1).height();
                 // variable to center checkbox in row
