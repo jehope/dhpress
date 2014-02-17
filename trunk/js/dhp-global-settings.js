@@ -29,8 +29,8 @@ var dhpGlobalSettings = function($) {
         if(dhpGlobals.kiosk_mode === '1') {
             $('body').addClass('kiosk-mode-non-iframe');
             // For kiosk mode
-        
-            $('#dhp-visual').height($('#dhp-visual').height()-45);
+            // 65px is height of bottom menu
+            $('#dhp-visual').height($('#dhp-visual').height()-65);
         
             $('body').append('<div class="kiosk-menu contain-to-grid"><nav class="top-bar" data-topbar><section class="top-bar-section"></section></nav></div>')
             $('.main-navigation .nav-menu').clone().appendTo( '.kiosk-menu .top-bar-section' );
