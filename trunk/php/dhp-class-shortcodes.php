@@ -27,8 +27,8 @@ if(!class_exists('DHP_Splitmap_Shortcode'))
 				), $atts ) );
 			ob_start(); ?>
 				<div class="dhp-split-iframes">
-					<iframe class="left-iframe" src="<?php echo $left; ?>" /></iframe>
-					<iframe class="right-iframe" src="<?php echo $right; ?>" /></iframe>
+					<iframe scrolling="no" class="left-iframe" src="<?php echo $left; ?>" /></iframe>
+					<iframe scrolling="no" class="right-iframe" src="<?php echo $right; ?>" /></iframe>
 				</div>
 			<?php
 			return ob_get_clean();
