@@ -509,9 +509,14 @@ class DHPressProject
 				$newSettings['views']['select']['link2']= DHPressProject::doCloneObject($settingsArray['views']['link2']);
 				$newSettings['views']['select']['link-label'] = DHPressProject::doCloneObject($settingsArray['views']['link-label']);
 				$newSettings['views']['select']['link2-label']= DHPressProject::doCloneObject($settingsArray['views']['link2-label']);
+
 					// Must exclude "map" from previous settings
-				$newSettings['views']['select']['view-type']= array_diff(DHPressProject::doCloneArray($settingsArray['views']['modal-ep']),
-															array('map'));
+				$oldModalEPs = array();
+				foreach ($settingsArray['views']['modal-ep'] as $val) {
+					array_push($oldModalEPs, $val);
+				}
+				$oldModalEPs = array_diff($oldModalEPs, array('map'));
+				$newSettings['views']['select']['view-type']= DHPressProject::doCloneArray($oldModalEPs);
 
 	 				// Save new settings format
 	 			$this->settings = $newSettings;
