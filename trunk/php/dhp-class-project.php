@@ -410,7 +410,7 @@ class DHPressProject
 	    // PRIVATE OBJECT METHODS
 		//======================
 
-	static private function doClone($value)
+	static private function doCloneObject($value)
 	{
 		if (is_null($value)) {
 			return null;
@@ -425,7 +425,15 @@ class DHPressProject
 			return sprintf("%s", $value);
 		}
 		return clone($value);
-	} // doClone()
+	} // doCloneObject()
+
+	static private function doCloneArray($value)
+	{
+		if (is_null($value)) {
+			return array();
+		}
+		return new ArrayObject($value);
+	} // doCloneObject()
 
 
     	// PURPOSE: Ensure that Project Settings have been loaded; read if not
@@ -455,7 +463,7 @@ class DHPressProject
 	 			$newSettings['project-details'] = new ArrayObject($settingsArray['project-details']);
 	 			$newSettings['project-details']['version'] = 2;
 
-	 			$newSettings['motes'] = new ArrayObject($settingsArray['motes']);
+	 			$newSettings['motes'] = DHPressProject::doCloneArray($settingsArray['motes']);
 
 	 				// prepare views setting for values
 	 			$newSettings['views'] = array();
@@ -472,14 +480,14 @@ class DHPressProject
 	 			foreach ($settingsArray['entry-points'] as $epSetting) {
 	 					// Just copy map settings over
 	 				if ($epSetting['type'] == 'map') {
-	 					array_push($newSettings['entry-points'], new ArrayObject($epSetting));
+	 					array_push($newSettings['entry-points'], DHPressProject::doCloneArray($epSetting));
 
 	 					// Must copy transcript settings to new variables
 	 				} elseif ($epSetting['type'] == 'transcript') {
-						$newSettings['views']['transcript']['audio']       = DHPressProject::doClone($epSetting['settings']['audio']);
-						$newSettings['views']['transcript']['transcript']  = DHPressProject::doClone($epSetting['settings']['transcript']);
-						$newSettings['views']['transcript']['transcript2'] = DHPressProject::doClone($epSetting['settings']['transcript2']);
-						$newSettings['views']['transcript']['timecode']    = DHPressProject::doClone($epSetting['settings']['timecode']);
+						$newSettings['views']['transcript']['audio']       = DHPressProject::doCloneObject($epSetting['settings']['audio']);
+						$newSettings['views']['transcript']['transcript']  = DHPressProject::doCloneObject($epSetting['settings']['transcript']);
+						$newSettings['views']['transcript']['transcript2'] = DHPressProject::doCloneObject($epSetting['settings']['transcript2']);
+						$newSettings['views']['transcript']['timecode']    = DHPressProject::doCloneObject($epSetting['settings']['timecode']);
 
 	 				} else {
 	    				trigger_error("Unknown entry point type: ".$epSetting['type']);
@@ -491,18 +499,18 @@ class DHPressProject
 				$newSettings['views']['viz-height']     = $settingsArray['views']['map-height'];
 
 				$newSettings['views']['post']     		= array();
-				$newSettings['views']['post']['title']	= DHPressProject::doClone($settingsArray['views']['post-view-title']);
-				$newSettings['views']['post']['content']= new ArrayObject($settingsArray['views']['post-view-content']);
+				$newSettings['views']['post']['title']	= DHPressProject::doCloneObject($settingsArray['views']['post-view-title']);
+				$newSettings['views']['post']['content']= DHPressProject::doCloneArray($settingsArray['views']['post-view-content']);
 
 				$newSettings['views']['select']     	= array();
-				$newSettings['views']['select']['title']= DHPressProject::doClone($settingsArray['views']['title']);
-				$newSettings['views']['select']['content']= new ArrayObject($settingsArray['views']['content']);
-				$newSettings['views']['select']['link'] = DHPressProject::doClone($settingsArray['views']['link']);
-				$newSettings['views']['select']['link2']= DHPressProject::doClone($settingsArray['views']['link2']);
-				$newSettings['views']['select']['link-label'] = DHPressProject::doClone($settingsArray['views']['link-label']);
-				$newSettings['views']['select']['link2-label']= DHPressProject::doClone($settingsArray['views']['link2-label']);
+				$newSettings['views']['select']['title']= DHPressProject::doCloneObject($settingsArray['views']['title']);
+				$newSettings['views']['select']['content']= DHPressProject::doCloneArray($settingsArray['views']['content']);
+				$newSettings['views']['select']['link'] = DHPressProject::doCloneObject($settingsArray['views']['link']);
+				$newSettings['views']['select']['link2']= DHPressProject::doCloneObject($settingsArray['views']['link2']);
+				$newSettings['views']['select']['link-label'] = DHPressProject::doCloneObject($settingsArray['views']['link-label']);
+				$newSettings['views']['select']['link2-label']= DHPressProject::doCloneObject($settingsArray['views']['link2-label']);
 					// Must exclude "map" from previous settings
-				$newSettings['views']['select']['view-type']= array_diff(new ArrayObject($settingsArray['views']['modal-ep']),
+				$newSettings['views']['select']['view-type']= array_diff(DHPressProject::doCloneArray($settingsArray['views']['modal-ep']),
 															array('map'));
 
 	 				// Save new settings format

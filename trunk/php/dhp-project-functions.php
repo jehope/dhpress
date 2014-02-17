@@ -1456,16 +1456,17 @@ function dhpCreateLegendTax()
 //Lists all the terms in taxonomies(already created)
 add_action( 'wp_ajax_dhpGetMoteValues', 'dhpGetMoteValues' );
 
-// PURPOSE:	Handle Ajax call to get the unique values for a mote and associate these as
-//			taxonomy terms with each Marker post
-// INPUT:	$_POST['project'] global is ID of Project
-//			$_POST['mote'] global is mote record
+// PURPOSE:	Handle Ajax call to get the unique values for a mote
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['associate'] = true if need to (re-)associate mote values w/Markers; false if just collect what exists
+//			$_POST['mote'] = mote record
 // RETURNS:	JSON Object of all of the unique values of the Mote
 // TO DO:	Isn't there a lot of duplicate code in here?
 
 function dhpGetMoteValues()
 {
 	$mote        = $_POST['mote'];
+	$doAssociate = $_POST['associate'];
 	$projectID   = $_POST['project'];
 	$projObj     = new DHPressProject($projectID);
 	$rootTaxName = $projObj->getRootTaxName();
@@ -1473,42 +1474,46 @@ function dhpGetMoteValues()
 	// $debugArray = array();
 	// $debugArray['name'] = $mote['name'];
 
-		// Loop through markers for this Project, getting values for mote in each marker
-		//	and associating the marker with the taxonomic term
-
 		// Find all of the terms derived from $mote['name'] in the Project's taxonomy
 	$parent_term = get_term_by('name', $mote['name'], $rootTaxName);
 	$parent_id = $parent_term->term_id;
 	$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
 
-	$loop = $projObj->setAllMarkerLoop();
-	while ( $loop->have_posts() ) : $loop->the_post();
-		$marker_id = get_the_ID();
-		$tempMoteValue = get_post_meta($marker_id, $mote['custom-fields'], true);
+		// Loop through markers for this Project, getting values for mote in each marker
+		//	and associating the marker with the taxonomic term
 
-			// ignore empty or null values
-		if (!is_null($tempMoteValue) && $tempMoteValue != '') {
-			$tempMoteArray = array();
-			if($mote['delim']) {
-				$tempMoteArray = split( $mote['delim'], $tempMoteValue );
+	if ($doAssociate) {
+		$loop = $projObj->setAllMarkerLoop();
+		while ( $loop->have_posts() ) : $loop->the_post();
+			$marker_id = get_the_ID();
+			$tempMoteValue = get_post_meta($marker_id, $mote['custom-fields'], true);
+
+				// ignore empty or null values
+			if (!is_null($tempMoteValue) && $tempMoteValue != '') {
+				$tempMoteArray = array();
+				if($mote['delim']) {
+					$tempMoteArray = split( $mote['delim'], $tempMoteValue );
+				}
+				else {
+					$tempMoteArray = array($tempMoteValue);
+				}
+				$theseTerms = array();
+				// $debugArray['terms'] = array();
+				foreach ($tempMoteArray as &$value) {
+					// array_push($debugArray, $value);
+					$term = term_exists( $value, $rootTaxName, $parent_id );
+		   		 	if($term) {
+		   		 		array_push($theseTerms, $term['term_id']);
+		   		 		// array_push($debugArray['terms'], $term['term_id']);
+		   		 	}
+				}
+					// Ensure that marker is tagged with category terms for this mote
+				wp_set_post_terms( $marker_id, $theseTerms, &$rootTaxName, true );
 			}
-			else {
-				$tempMoteArray = array($tempMoteValue);
-			}
-			$theseTerms = array();
-			// $debugArray['terms'] = array();
-			foreach ($tempMoteArray as &$value) {
-				// array_push($debugArray, $value);
-				$term = term_exists( $value, $rootTaxName, $parent_id );
-	   		 	if($term) {
-	   		 		array_push($theseTerms, $term['term_id']);
-	   		 		// array_push($debugArray['terms'], $term['term_id']);
-	   		 	}
-			}
-			wp_set_post_terms( $marker_id, $theseTerms, &$rootTaxName, true );
-		}
-	endwhile;
-	delete_option("{$rootTaxName}_children");
+		endwhile;
+		delete_option("{$rootTaxName}_children");
+	}
+
 		// Create comma-separated string listing terms derived from other motes
 	$exclude_string;
 	$exclude_count = 0;
@@ -1522,6 +1527,8 @@ function dhpGetMoteValues()
 		}
   	    //array_push($exclude_array, $term->term_id);
 	}
+
+		// Now, get all taxonomic terms for project, excluding all other motes
 	$terms_loaded = get_terms($rootTaxName, 'exclude_tree='.$exclude_string.'&orderby=term_group&hide_empty=0');
 	//$terms = get_terms($rootTaxName, array( 'orderby' => 'term_id' ) );
  	$t_count = count($terms_loaded);
@@ -1543,13 +1550,11 @@ function dhpGetMoteValues()
    					$term_url = null;
    				}		
    			}
-			$term ->icon_url = $term_url;
+			$term->icon_url = $term_url;
 		}
 	}
 
 	die(json_encode($terms_loaded));
-	// die(json_encode($debugArray));
-	//die(json_encode($dhp_tax_name));
 } // dhpGetMoteValues()
 
 
@@ -1840,7 +1845,6 @@ add_action('wp_ajax_dhpUpdateCustomFieldFilter', 'dhpUpdateCustomFieldFilter');
 //			$_POST['filter_key'] = custom field upon which search/filter is based
 //			$_POST['filter_value'] = value that must be in custom field
 // RETURNS:	Number of markers whose values were changed
-// TO DO:	Reduce redundant code with other nearby functions
 
 function dhpUpdateCustomFieldFilter()
 {
@@ -1904,7 +1908,6 @@ add_action( 'wp_ajax_dhpReplaceCustomFieldFilter', 'dhpReplaceCustomFieldFilter'
 //			$_POST['filter_key'] = custom field upon which search/filter is based
 //			$_POST['filter_value'] = value that must be in custom field
 // RETURNS:	Number of markers whose values were changed
-// TO DO:	Reduce redundant code with other nearby functions
 
 function dhpReplaceCustomFieldFilter()
 {
@@ -1962,7 +1965,6 @@ add_action( 'wp_ajax_dhpGetFieldValues', 'dhpGetFieldValues' );
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['field_name'] = name of custom field
 // RETURNS:	JSON Object of array of all unique values for the field in the project
-// TO DO:	Rename function
 
 function dhpGetFieldValues()
 {
@@ -1984,7 +1986,6 @@ add_action( 'wp_ajax_dhpFindReplaceCustomField', 'dhpFindReplaceCustomField' );
 //			$_POST['find_value'] = field must match this value to be replaced
 //			$_POST['replace_value'] = value to use for string replace in field
 // RETURNS:	Number of markers whose values were changed
-// TO DO:	Reduce redundant code!
 
 function dhpFindReplaceCustomField()
 {
