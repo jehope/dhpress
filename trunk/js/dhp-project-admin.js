@@ -1007,7 +1007,7 @@ jQuery(document).ready(function($) {
         var moteName = $(this).parent().find('.filter-mote option:selected').val();
         // var projectID = projectObj['project-details']['id'];
         //console.log(projectObj['motes'])
-        dhpGetMoteValues(moteName);
+        dhpConfigureMoteLegend(moteName);
     });
 
       // Delete Legend buttons
@@ -1740,10 +1740,37 @@ jQuery(document).ready(function($) {
       });
   } // dhpCreateLegendTax()
 
+
+    // PURPOSE: Get the array of values/terms for moteName
+    // INPUT:   moteName = name of mote whose category names need to be fetched
+    //          funcToCall = closure to invoke upon completion with mote record and data
+  function getMoteLegendValues(moteName, funcToCall) {
+    var mote = getMote(moteName);
+
+    jQuery.ajax({
+          type: 'POST',
+          url: ajax_url,
+          data: {
+              action: 'dhpGetMoteValues',
+              project: projectID,
+              associate: false,
+              mote: mote
+          },
+          success: function(data, textStatus, XMLHttpRequest){
+                // data is a JSON object
+              funcToCall(mote, data);
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown){
+             alert(errorThrown);
+          }
+      });
+  } // getMoteLegendValues()
+
+
     // PURPOSE: Get term object for legend editor and open modal
     // RETURNS: Object with terms
     // INPUT:   moteName
-  function dhpGetMoteValues(moteName) {
+  function dhpConfigureMoteLegend(moteName) {
     var mote = getMote(moteName);
     // console.log("Getting mote values for project " + projectID);
       //create modal here to hold users attention. Data will be rendered on response
@@ -1767,6 +1794,7 @@ jQuery(document).ready(function($) {
           data: {
               action: 'dhpGetMoteValues',
               project: projectID,
+              associate: true,
               mote: mote
           },
           success: function(data, textStatus, XMLHttpRequest){
@@ -1776,7 +1804,8 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  } // dhpGetMoteValues()
+  } // dhpConfigureMoteLegend()
+
 
     // PURPOSE: Update term structure for legend(introduces icon_url field)
     // RETURNS: Object with terms
