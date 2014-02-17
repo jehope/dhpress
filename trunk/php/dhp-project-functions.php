@@ -1626,19 +1626,20 @@ add_action('wp_ajax_nopriv_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 
 function getTranscriptClip($transcript, $clip)
 {
-	$codedTransctript = utf8_encode($transcript);
+	$codedTranscript  = utf8_encode($transcript);
 	$clipArray        = split("-", $clip);
-	$clipStart        = mb_strpos($codedTransctript, $clipArray[0]);
-	$clipEnd          = mb_strpos($codedTransctript, $clipArray[1]);
-		// timecode is always 13 characters
-	$clipLength       = $clipEnd - $clipStart + 13;
+	$clipStart        = mb_strpos($codedTranscript, $clipArray[0]);
+	$clipEnd          = mb_strpos($codedTranscript, $clipArray[1]);
+		// don't include starting timecode in the resulting text -- have to include square brackets & cr
+	$clipLength       = $clipEnd - ($clipStart + strlen($clipArray[0]) + 3);
+	// $clipLength       = $clipEnd - $clipStart + 13;
 
-	if( $clipStart && $clipEnd ) {
-		$codedClip  = mb_substr($codedTransctript, $clipStart-1, $clipLength, 'UTF-8');
+	if (($clipStart !== false) && ($clipEnd !== false)) {
+		$codedClip  = mb_substr($codedTranscript, $clipStart-1, $clipLength, 'UTF-8');
 		$returnClip = utf8_decode($codedClip);
 	}
 	else {
-		$returnClip = json_encode(array('clipStart'=> $clipStart,'clipEnd'=> $clipEnd, 'clipArrayend' => $clipArray[1]));
+		$returnClip = array('clipStart'=> $clipStart,'clipEnd'=> $clipEnd, 'clipArrayend' => $clipArray[1]);
 	}
 	return $returnClip;
 } // getTranscriptClip()

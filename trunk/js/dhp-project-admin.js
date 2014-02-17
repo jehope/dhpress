@@ -79,7 +79,7 @@ jQuery(document).ready(function($) {
     var mapCount  = countEntryPoints('map') +1;
       // Maximum of 3 maps allowed
     if(mapCount==3) {
-      var options = { 
+      var options = {
         animation: true, 
         placement:'right',
         title:'Map limit reached',
@@ -93,11 +93,28 @@ jQuery(document).ready(function($) {
       setTimeout(function () { $('#map2-tab').popover('hide'); }, 3000);
 
     } else {
-      projectNeedsToBeSaved();
-      epsettings = '';
-      addHTMLForEntryPoint('map',epsettings);
-      //show tab/content after loading
-      $('#map'+mapCount+'-tab a').tab('show');
+        // Ensure that a Lat-Lon mote has been defined
+      var geoMote = findMoteOfType('Lat/Lon Coordinates');
+      if (geoMote === undefined) {
+        var options = { 
+          animation: true, 
+          placement:'right',
+          title:'Missing mote',
+          content:'You cannot create a map until you have defined a mote for Lat/Lon Coordinates.',
+          trigger:'manual',
+          delay: { show: 500, hide: 100 }
+        }
+        $('#entry-point').popover(options);
+        $('#entry-point').popover('show');
+        setTimeout(function () { $('#entry-point').popover('hide'); }, 3000);
+
+      } else {
+        projectNeedsToBeSaved();
+        epsettings = '';
+        addHTMLForEntryPoint('map',epsettings);
+        //show tab/content after loading
+        $('#map'+mapCount+'-tab a').tab('show');
+      }
     }
   });
 
@@ -348,7 +365,7 @@ jQuery(document).ready(function($) {
     }
 
     if(pSettings && pSettings['entry-points']) {
-      buildEntryPoints(pSettings['entry-points']);
+      addEntryPoints(pSettings['entry-points']);
     }
 
     if (pSettings && pSettings['views']) {
@@ -393,6 +410,13 @@ jQuery(document).ready(function($) {
       } 
     }); 
   } // initializeProjectObj()
+
+
+    // RETURNS: First mote found of theType
+  function findMoteOfType(theType) {
+    return _.find(projectObj['motes'],
+                          function (theMote) { theMote['type'] === theType; });
+  } // findMoteOfType()
 
 
     // PURPOSE: Create placeholder for new mote based on UI fields
@@ -448,7 +472,7 @@ jQuery(document).ready(function($) {
 
 
     // PURPOSE: Save array of entry points, builds the html for them and preload the data
-  function buildEntryPoints(epSettings) {
+  function addEntryPoints(epSettings) {
     projectObj['entry-points'] = epSettings;
     _.each(epSettings, function(theEP) {
       addHTMLForEntryPoint(theEP["type"], theEP["settings"]);
@@ -562,7 +586,6 @@ jQuery(document).ready(function($) {
     $('.delete-layer').click(function(){   
       //console.log('delete')
       $(this).closest('li').remove();
-      //bindLegendEventsInEPTab();
     });
 
       // Handle button for loading map -- doesn't seem to be used any longer
@@ -582,12 +605,12 @@ jQuery(document).ready(function($) {
     //   </div>');
     // });
 
-    bindLegendEventsInEPTab();
+    bindLegendEvents();
 
     $('.add-legend').unbind('click');
     $('.add-legend').click(function(){   
       $('.legend-list').append(buildHTMLForALegend(null, 0));
-      bindLegendEventsInEPTab();
+      bindLegendEvents();
       projectNeedsToBeSaved();
     });
     $('.add-layer').unbind('click');
@@ -607,7 +630,6 @@ jQuery(document).ready(function($) {
         }
       });
       projectNeedsToBeSaved();
-      //bindLegendEventsInEPTab();
     });    
   } // addHTMLForEntryPoint()
 
@@ -933,7 +955,6 @@ jQuery(document).ready(function($) {
     $('select',layerLine).append($('#hidden-layers option').clone());
     $('.delete-layer',layerLine).click(function(){
       $(this).closest('li').remove();
-      //bindLegendEventsInEPTab();
       projectNeedsToBeSaved();
     });
     return layerLine;
@@ -968,8 +989,8 @@ jQuery(document).ready(function($) {
   } // doCreateLegend()
 
 
-    // PURPOSE: Bind all event listeners for Legend buttons on Entry Points tab (with EP selected)
-  function bindLegendEventsInEPTab() {
+    // PURPOSE: Bind all event listeners for Legend buttons
+  function bindLegendEvents() {
       // Create Legend buttons
       // There is a special case to handle: when a new entry point is created, the first mote Legend
       //  is created as a default, but it doesn't actually exist yet!
@@ -1024,11 +1045,11 @@ jQuery(document).ready(function($) {
         $('#'+lineID).remove();
       }
 
-      $('#deleteModal').on('hidden', function () {     
+      $('#deleteModal').on('hidden', function () {
         $('#deleteModal').remove();
       })
-    });  
-  } // bindLegendEventsInEPTab()
+    });
+  } // bindLegendEvents()
 
 
     // RETURNS: HTML string to represent legendList
@@ -1042,10 +1063,11 @@ jQuery(document).ready(function($) {
     return listHtml;
   } // buildHTMLForLegendList()
 
+
     // RETURNS: HTML string to represent theLegend, which is index (1..n) in list
     // INPUT:   theLegend = null if there are no legends yet at all
     //          count = 0 if there are no legends yet at all
-  function buildHTMLForALegend(theLegend, count){
+  function buildHTMLForALegend(theLegend, count) {
     var legendButton = '<button class="btn btn-success load-legend" type="button">Configure</button>';
     if (count == 0) {
       theLegend = '';
