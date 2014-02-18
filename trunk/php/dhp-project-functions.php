@@ -15,21 +15,6 @@ define( 'DHP_SCRIPT_MAP_VIEW',   'dhp-script-map-view.txt' );
 // define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unused
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
 
-	// HTML fields added to Custom Fields box in Edit Project admin panel
-// $dhp_project_settings_fields = array (
-// 	array(
-// 		'label'=> 'Project Settings',
-// 		'desc'	=> 'Stores the project_settings string as a JSON object.',
-// 		'id'	=> 'project_settings',
-// 		'type'	=> 'textarea'
-// 	),
-// 	array(
-// 		'label'=> 'Icons',
-// 		'desc'	=> 'Icons for categories.',
-// 		'id'	=> 'project_icons',
-// 		'type'	=> 'hidden'
-// 	)
-// );
 
 // ================== Initialize Plug-in ==================
 
@@ -101,20 +86,6 @@ function plugin_header()
 		</style>
 <?php
 } // plugin_header()
-
-
-// ================== Preparing the Admin Panel ==================
-
-// admin_init called when user brings up the admin panel -- this sets global variable
-// add_action('admin_init', 'init_layer_list');
-
-// init_layer_list()
-// PURPOSE:	Sets global variable of list of map layers for later use
-
-// function init_layer_list()
-// {
-// 	$layers_global = getLayerList();
-// } // init_layer_list()
 
 
 // ================== DHP Maps =====================
@@ -274,7 +245,6 @@ function dhp_create_tax($taxID,$taxName,$taxSlug)
 // admin_head called when compiling header of admin panel
 add_action( 'admin_head' , 'show_tax_on_project_markers' );
 
-// show_tax_on_project_markers()
 // PURPOSE: Called when compiling project admin panel to remove the editing boxes for
 //			all taxonomies other than those connected to this project
 // ASSUMES:	$post is set to a project (i.e., that we are editing or viewing project)
@@ -299,7 +269,6 @@ function show_tax_on_project_markers()
 // add_meta_boxes called when Edit Post runs
 add_action('add_meta_boxes', 'add_dhp_project_icons_box');
 
-// add_dhp_project_icons_box()
 // PURPOSE:	Add the editing box for Marker icons (shown on maps)
 
 function add_dhp_project_icons_box()
@@ -384,7 +353,6 @@ function add_dhp_project_settings_box()
 // PURPOSE:	Called by WP to create HTML for hidden fields (in admin panel) which save Project state
 //					for auto-save
 // ASSUMES:	Global $post is set to point to post for current project
-//			Global $dhp_project_settings_fields is set to array of strings describing HTML controls
 // SIDE-FX: Creates hidden fields for storing data   
 // TO DO:	Put all HTML producing logic into special generalized function
 
@@ -427,12 +395,9 @@ add_action('save_post', 'save_dhp_project_settings');
 // INPUT:	$post_id is the id of the post updated
 // NOTE:    Complication is for new Project that does not yet have ID?
 // ASSUMES:	$_POST is set to post data
-//			$dhp_project_settings_fields describes the data posted
 
 function save_dhp_project_settings($post_id)
 {
-    // global $dhp_project_settings_fields;
-
     	// is this an update of existing Project post?
 	$parent_id = wp_is_post_revision( $post_id );
 	
@@ -1035,98 +1000,6 @@ function createMarkerArray($project_id)
 } // createMarkerArray()
 
 
-// PURPOSE:	Parse date range into from and to fields in format
-//			DATE1-DATE2 = 
-// INPUT:	Date as String in format 
-// RETURNS: Array where [0] is From-Date and [1] is To-Date
-// TO DO:	Not fully implemented
-
-function dateFormatSplit($date_range)
-{
-		// Approximate date?
-	$posA = strpos($date_range, "~");
-		// Exact date?
-	$posE = strpos($date_range, "-");
-
-	if($posE > 0) {
-    	$dateArray = explode('-', $date_range);	
-    	if($dateArray[1]=='') {
-    		$dateArray[1] = $dateArray[0];
-    	}
-	}
-	if($posA > 0) {
-    	$dateArray = explode('~', $date_range);	
-    	if($dateArray[1]=='') {
-    		$dateArray[1] = $dateArray[0];
-   	 	}
-	}
-	return $dateArray;
-} // dateFormatSplit()
-
-
-// PURPOSE: Prepare for timeline view
-// INPUT:	$project_id = ID of project
-// TO DO:	Not currently used -- Incorporate logic into createMarkerArray
-
-function createTimelineArray($project_id)
-{
-	// //loop through all markers in project -add to array
-	// $timelineArray = array();
-	// $project_object = get_post($project_id);
-	// $project_tax = DHPressProject::ProjectIDToRootTaxName($project_object->ID);
-
-	// //LOAD PROJECT SETTINGS
-	// //-get primary category parent
-
-	// $parent = get_term_by('name', "Primary Concept", $project_tax);
-	// //$parent = get_terms($project_tax, array('parent=0&hierarchical=0&number=1'));
-	// //print_r($parent);
-	// $parent_term_id = $parent->term_id;
-	// $parent_terms = get_terms( $project_tax, array( 'parent' => $parent_term_id, 'orderby' => 'term_group' ) );
-
-	// $term_icons = getIconsForTerms($parent_terms, $project_tax);
-
-	// $json_string = '{"timeline":{"headline":"Long Womens Movement","type":"default","text":"A journey","date":[';
-	// $args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
-	// $loop = new WP_Query( $args );
-	// $i = 0;
-	// while ( $loop->have_posts() ) : $loop->the_post();
-
-	// 	$marker_id = get_the_ID();
-	// 	$tempMarkerValue = get_post_meta($marker_id,$mote_name);
-	// 	$tempMoteArray = split(';',$tempMoteValue[0]);
-	// 	$latlon = get_post_meta($marker_id,'Location0');
-
-	// 	$lonlat = invertLatLon($latlon[0]);
-	// 	$title = get_the_title();
-	// 	$categories = get_post_meta($marker_id,'Primary Concept');
-	// 	$date = get_post_meta($marker_id,'date_range');
-	// 	$dateA = dateFormatSplit($date[0]);
-
-	// 	$startDate = $dateA[0];
-	// 	$endDate = $dateA[1];
-	// 	$args = array("fields" => "names");
-	// 	$post_terms = wp_get_post_terms( $marker_id, $project_tax, $args );
-	// 	$p_terms;
-	// 	foreach ($post_terms as $term ) {
-	// 		$p_terms .= $term.',';
-	// 	}
-	// 	if($i>0) {
-	// 		$json_string .= ',';
-	// 	}
-	// 	else {$i++;}
-			
-	// 	$json_string .= '{"startDate":"'.$startDate.'","endDate":"'.$endDate.'","headline":"'.$title.'","text":"'.$categories[0].'","asset":{"media":"","credit":"","caption":""}}';
-
-	// 	//array_push($markerArray,$json_string);
-	// endwhile;
-
-	// $json_string .= ']}}';	
-	//  //$result = array_unique($array)
-	// return $json_string;
-} // createTimelineArray()
-
-
 // PURPOSE:	Create HTML for option buttons for listing custom fields in print_new_bootstrap_html()
 // INPUT:	$cf_array = list of custom fields
 // RETURNS:	String containing HTML
@@ -1578,26 +1451,6 @@ function dhpGetMarkers()
 	// die($result);
 	die(json_encode($mArray));
 } // dhpGetMarkers()
-
-
-// Enable for both editing and viewing
-
-add_action( 'wp_ajax_dhpGetTimeline', 'dhpGetTimeline' );
-add_action( 'wp_ajax_nopriv_dhpGetTimeline', 'dhpGetTimeline' );
-
-// dhpGetTimeline()
-// PURPOSE: Handle Ajax call to compute Timeline for Project
-// INPUT:	$_POST['project'] is ID of Project
-// RETURNS:	Array of timeline data
-// TO DO:	Not fully implemented yet
-
-function dhpGetTimeline()
-{
-	$dhp_project = $_POST['project'];
-	$mArray = createTimelineArray($dhp_project);
-	
-	die(json_encode($mArray));
-} // dhpGetTimeline()
 
 
 // Enable for both editing and viewing
@@ -2203,11 +2056,9 @@ add_action( 'wp_restore_post_revision', 'dhp_project_restore_revision', 10, 2 );
 // PURPOSE: Handles returning to an earlier revision of this post
 // INPUT:	$post_id = ID of original post
 //			$revision_id = ID of new revised post
-// ASSUMES:	$dhp_project_settings_fields global is set
 
 function dhp_project_restore_revision($post_id, $revision_id)
 {
-	// global $dhp_project_settings_fields;
 	$dhp_project_settings_fields = array( 'project_settings', 'project_icons' );
 
 	$post     = get_post($post_id);
