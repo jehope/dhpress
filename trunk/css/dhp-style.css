@@ -22,15 +22,9 @@
 	top: 0px;
 	z-index: 1105;
 }
-.fullscreen .site-header {
-/*	position: fixed;
-	z-index: 1104;*/
+.top-bar-section ul li>a {
+	font-size: 1rem;
 }
-	/* Nav fix when using Foundation-Icons */
-.dhp-nav .top-bar-section li:not(.has-form) a:not(.button) {
-	line-height: 44px;
-}
-
 	/* Loading message styles */
 #loading {
 	position: fixed;

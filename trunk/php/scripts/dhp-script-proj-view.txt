@@ -12,7 +12,7 @@
     <!-- Right Nav Section -->
     <ul class="right">
       <li class="fullscreen" ><a href="#"><i class="fi-arrows-out"></i> Fullscreen map </a></li>
-      <li class="tips active" ><a href="#"><i class="fi-info"></i> Tips </a></li>
+      <li class="tips" ><a href="#"><i class="fi-info"></i> Tips </a></li>
     </ul>
 
     <!-- Left Nav Section -->

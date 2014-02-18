@@ -14,11 +14,12 @@ body.fullscreen {
 	top:10px;
 }
 .fullscreen #dhp-visual div.olControlZoom {
-	top:50px;
-	left: 95%;
+	top: 55px;
+	left: auto;
+	right: 20px;
 }
 .logged-in.fullscreen #dhp-visual div.olControlZoom {
-	top:80px;
+	top:70px;
 }
 .olControlZoom .reset-map {
 	margin-top: 5px;

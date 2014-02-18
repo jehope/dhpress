@@ -8,6 +8,11 @@ var dhpGlobalSettings = function($) {
 
     var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive, myMonitor;
     var kioskTablet = true;
+    var blockLinks = [];
+        //Detect user agent and determine if kiosk device
+    var kioskRE = new RegExp(dhpGlobals.kiosk_useragent, "i");
+    var kioskDevice = kioskRE.test(navigator.userAgent.toLowerCase());
+
 		// Only execute if not loaded in iframe
 	if(!inIframe()) {
 			// Monitor user activity, only if setting given
@@ -19,35 +24,105 @@ var dhpGlobalSettings = function($) {
 	        activeMonitorID = window.setInterval(monitorActivity, 60000);    // 1000 milliseconds = 1 sec * 60 sec = 1 minute
 	        addSiteListeners.call(this);
 	    }
+            // Override tips with custom modal
         if(dhpGlobals.global_tip) {
-            $('.main-navigation .nav-menu').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal>Tips</a></li>');
+            $('.dhp-nav .top-bar-section .right .tips').remove();
+            $('.main-navigation .nav-menu').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal>Map Tips</a></li>');
+            if(!dhpGlobals.kiosk_mode) {
+                $('.dhp-nav .top-bar-section .right').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal><i class="fi-info"></i> Tips</a></li>');
+            }
             $(document).foundation();
             $('.close-tip').on('click', function() {
                 $('#tipModal').foundation('reveal', 'close');
             });
         }
-        if(dhpGlobals.kiosk_mode === '1') {
+            // Kiosk mode actions
+        if(dhpGlobals.kiosk_mode && kioskDevice) {
             $('body').addClass('kiosk-mode-non-iframe');
             // For kiosk mode
             // 65px is height of bottom menu
             $('#dhp-visual').height($('#dhp-visual').height()-65);
         
-            $('body').append('<div class="kiosk-menu contain-to-grid"><nav class="top-bar" data-topbar><section class="top-bar-section"></section></nav></div>')
+            $('body').append('<div class="kiosk-menu contain-to-grid"><nav class="top-bar" data-topbar><section class="top-bar-section"></section></nav></div>');
+           
             $('.main-navigation .nav-menu').clone().appendTo( '.kiosk-menu .top-bar-section' );
+
+            
             $(document).foundation();
+
+            stretchKioskNav.call(this);
+            blockLinks = dhpGlobals.kiosk_blockurls.split(',');
+
+            findAndBlockLinks.call(this,blockLinks);
         }
 	}
-    if(dhpGlobals.kiosk_mode === '1') {
+    else {
+            // Take care of projects in iframes(dual)
+        if(dhpGlobals.kiosk_mode && kioskDevice) {
             $('body').addClass('kiosk-mode');
-            $('.dhp-nav .top-bar-section .right .tips').remove();
-            $('.dhp-nav .top-bar-section .right').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal>Tips</a></li>');
-            
+            if(dhpGlobals.global_tip) {
+                $('.dhp-nav .top-bar-section .right .tips').remove();
+            }
+            // $('.dhp-nav .top-bar-section .right').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal><i class="fi-info"></i> Tips</a></li>');           
         }
-
-    function launchTips() {
-        
     }
 
+    if(dhpGlobals.dhp_love) {
+        addDHPLove.call(this);
+    }
+    
+        // PURPOSE: Block link, try a second time(map renders links after load)    
+    function findAndBlockLinks(linksArray) {
+        $.each(linksArray, function(index,val){
+            blockLink(val.trim());
+            blockLinks[val.trim()] = setTimeout(function()
+            {
+                blockLink(val.trim());
+            }, 5000);
+        });
+    }
+    function blockLink(link) {
+        if(findLink(link)){
+            clearTimeout(blockLinks[link]);
+        }
+    }
+    function findLink(link) {
+        if($('a[href*="'+link+'"]').length >= 1) {
+            $('a[href*="'+link+'"]').on('click', function(e) {
+                e.preventDefault();
+                // $('#externalModal').foundation('reveal', 'open',  link, {'crossDomain':true});
+            });
+            console.log('blocked '+link);
+            return true;
+        }       
+    }
+        //PURPOSE: Make nav menu the width of the items
+    function stretchKioskNav() {
+        
+        var windowWidth = $(window).width();
+            //find the width of each item
+        var navWidth = findKioskNavWidth.call(this);
+
+        if(navWidth > windowWidth) {
+            $('.kiosk-menu a').css({'font-size':'18px'});
+            navWidth = findKioskNavWidth.call(this);
+        }
+            //set the width of the nav bar
+        $('.kiosk-menu .top-bar').css({'max-width':navWidth});
+    }
+        // PURPOSE: Find width of nav items
+        // RETURN: px width of nav items
+    function findKioskNavWidth() {
+        var barWidth = 0;
+        $('.kiosk-menu ul li').each(function(){
+            barWidth += $(this).width();
+        });
+        return barWidth;
+    }
+
+    function addDHPLove() {
+        $('.site-info').addClass('dhp-love').append('<p>This project has been created with DH Press, a digital humanities toolkit developed by UNC\'s Digital Innovation Lab and the Renaissance Computing Institute</p>')
+        }
 		// PURPOSE: assign listeners for user activity
 		// ASSUMES: Using window assigns events above the document(2 iframes + main page == 3 document bodys)
 	function addSiteListeners() 
@@ -87,8 +162,10 @@ var dhpGlobalSettings = function($) {
 				document.location.href = dhpGlobals.redirect_url;
 			}
 				// If on home url scroll to top instead of reload
-			else {			
-				$("html, body").animate({scrollTop:0}, '500', 'swing', function() {});
+			else {
+                if ( $(window).scrollTop() > 0) {
+                    $("html, body").animate({scrollTop:0}, '500', 'swing', function() {});
+                }		
 			}	
         }
     } // monitorActivity()

@@ -124,7 +124,6 @@ var dhpMapsView = {
                 newLayer.setOpacity(opacity);
                 break;
             } // switch
-            console.log('zoom levels '+ newLayer.numZoomLevels)
             mapLayers.push(newLayer);
         }); // each sourceLayers
 
@@ -263,6 +262,10 @@ var dhpMapsView = {
         }
             // Experimenting with different viewport sizes
         else if(dhpMapsView.modalSize==='tiny' && windowWidth >= 800 && windowWidth < 1200) {
+            jQuery('#markerModal').removeClass(dhpMapsView.modalSize);
+            jQuery('#markerModal').addClass('medium');
+        }
+        else if(dhpMapsView.modalSize==='small' && windowWidth >= 800 && windowWidth < 1200) {
             jQuery('#markerModal').removeClass(dhpMapsView.modalSize);
             jQuery('#markerModal').addClass('medium');
         }
