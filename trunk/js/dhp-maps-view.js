@@ -266,6 +266,10 @@ var dhpMapsView = {
             jQuery('#markerModal').removeClass(dhpMapsView.modalSize);
             jQuery('#markerModal').addClass('medium');
         }
+        else if(dhpMapsView.modalSize==='small' && windowWidth >= 800 && windowWidth < 1200) {
+            jQuery('#markerModal').removeClass(dhpMapsView.modalSize);
+            jQuery('#markerModal').addClass('medium');
+        }
         else {
             jQuery('#markerModal').removeClass('medium');
             jQuery('#markerModal').addClass(dhpMapsView.modalSize);
