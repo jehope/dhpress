@@ -718,7 +718,11 @@ jQuery(document).ready(function($) {
     }
 
     $("#av-transcript-source").change(function() {
+      projectNeedsToBeSaved();
       updateTranscButtons();
+    });
+    $("#av-transcript-audio, #av-transcript-txt, #av-transcript-txt2, #av-transcript-clip").change(function () {
+      projectNeedsToBeSaved();
     });
   } // addHTMLForTranscView()
 
