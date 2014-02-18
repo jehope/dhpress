@@ -120,10 +120,7 @@ function add_dhp_map_library_scripts( $hook )
 
     if ( $hook == 'edit.php'|| $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( $post->post_type === 'dhp-maps' ) {
-            //wp_register_style('ol-style', plugins_url('/js/OpenLayers/theme/default/style.css',  dirname(__FILE__) ));
-            // wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
             wp_enqueue_script('jquery' );
-            //wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
             wp_enqueue_script('dhp-map-library-script', plugins_url('/js/dhp-map-library-admin.js', dirname(__FILE__) ));
         }
     }
