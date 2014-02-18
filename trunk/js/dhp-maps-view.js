@@ -124,7 +124,6 @@ var dhpMapsView = {
                 newLayer.setOpacity(opacity);
                 break;
             } // switch
-            console.log('zoom levels '+ newLayer.numZoomLevels)
             mapLayers.push(newLayer);
         }); // each sourceLayers
 
