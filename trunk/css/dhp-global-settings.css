@@ -1,45 +1,73 @@
 
+/* Kiosk settings layout */
 .kiosk-mode.fullscreen #dhp-visual {
 	margin-bottom: -65px;
 }
 
-.kiosk-menu {
-	position:fixed;
-	bottom:0;
-	width:100%;
-	height:65px;
+/* Hide elements to avoid confusion */
+.kiosk-mode .top-bar-section .right .fullscreen,
+.kiosk-mode-non-iframe .top-bar-section .right .fullscreen,
+.kiosk-mode .main-navigation,
+.kiosk-mode-non-iframe .main-navigation {
+	display    : none !important;
+	margin-top : 0;
 }
-.kiosk-menu .top-bar-section ul {
-	font-size: 22px;
-}
-.kiosk-menu .top-bar-section ul li>a {
-	font-size: 22px;
-	line-height: 65px;
-}
-.kiosk-menu .top-bar-section li:not(.has-form) a:not(.button) {
-	line-height: 65px;
-}
-.kiosk-mode .top-bar-section .right .fullscreen {
-	display: none;
-}
+
+/* Reset legend positions */
 .kiosk-mode #legends {
 	bottom: 20px;
 }
 .kiosk-mode-non-iframe  #legends {
 	bottom: 85px;
 }
+
+/* dual iframe layout */
 .kiosk-mode-non-iframe .dhp-split-iframes { 
 	bottom: 65px;
 }
+
+/* Pages that scroll forever caused issues */
 #tipModal.reveal-modal {
-	position: fixed;
-    z-index: 1106;
-    max-height: 75%;
-    overflow: auto;
+	position   : fixed;
+	z-index    : 1106;
+	max-height : 75%;
+	overflow   : auto;
+	top        : 87px !important;
 }
 #tipModal .modal-content {
     overflow: auto;
 }
 #tipModal h1 {
 	font-size: 2.75rem;
+}
+
+/* Kiosk menu setup */
+.kiosk-menu {
+	position : fixed;
+	bottom   : 0;
+	width    : 100%;
+	height   : 65px;
+}
+.kiosk-menu .top-bar {
+	height      : 65px;
+	line-height : 65px;
+}
+.kiosk-menu .top-bar-section ul {
+	font-size: 22px;
+}
+.kiosk-menu .top-bar-section ul li>a {
+	font-size   : 22px;
+	line-height : 65px;
+}
+.kiosk-menu .top-bar-section li:not(.has-form) a:not(.button) {
+	line-height: 65px;
+}
+/* raise footer above kiosk nav */
+.kiosk-mode footer .site-info {
+	margin-bottom: 65px;
+}
+footer .site-info.dhp-love {
+	padding-left: 70px;
+	background: url('../images/dhpress-love-logo.png') no-repeat;
+	min-height: 65px;
 }
