@@ -92,7 +92,7 @@
 		    ],
 		    "entry-points": [										// contents of settings depends on type of entry point
 		    	Integer (index) : {
-		            "type": String ("map" or "..."),
+		            "type": String ("map" or "topic-cards"),
 		            "settings": {									// map settings are as follows
 		                "lat": Number,
 		                "lon": Number,
@@ -110,7 +110,13 @@
 		                "filter-data": [							// List of mote Legends/categories
 		                    Index : String (name of note), ...
 		                ]
-		            } -- or -- ...
+		            }
+		            "settings" : {									// topic-cards settings are as follows
+						"title": String (name of mote),				// to display on top of card
+						"color": String (name of mote),				// to determine color of card
+						"image": String (name of mote),				// image to show on card (first item)
+						"text" : String (name of mote)				// text to show on card (after image)
+		            }
 		        }
 		    },
 		    "views": {
@@ -125,7 +131,7 @@
 			        "title": String (name of mote),
 			        "width": "tiny" | "small" | "medium" | "large" | "x-large",
 			        "view-type": [							// Types of views to display in selected Marker modal
-			        	Integer (index) : 'transcript' | 'map'
+			        	Integer (index) : 'transcript'
 			        ],
 			        "content": [							// Motes to show when Marker selected in visualization
 			            Integer (index): String (mote name), ...
@@ -146,7 +152,6 @@
 					]
 		        }
 		    }
-
  **/
 
 class DHPressProject

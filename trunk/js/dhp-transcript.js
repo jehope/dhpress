@@ -18,7 +18,7 @@ var dhpTranscript = {
         // INPUT:   ajaxURL = URL to use for loading data (or null if already loaded)
         //          htmlID = jQuery selector to specify where resulting HTML should be appended
         //          transParams = object whose fields specify data about transcription:
-        //              audio, transcript, transcript2, timecode, startTime, endTime
+        //              audio (URL), transcript (URL), transcript2 (URL), timecode (from-to), startTime (in milliseconds), endTime (in milliseconds)
         //              timecode = -1 if full transcript (not excerpt), transcript and transcript2 already loaded
     prepareOneTranscript: function (ajaxURL, projectID, htmlID, transParams)
     {
@@ -235,7 +235,7 @@ var dhpTranscript = {
 
 
         // PURPOSE: Clean up quicktime text, format transcript (left-side specific) and put it in a list
-        // INPUT:   transcriptData = quicktime text format
+        // INPUT:   transcriptData = quicktime text format: timestamps on separate lines, [HH:MM:SS.m]
         // RETURNS: HTML for transcription 
     formatTranscript: function (transcriptData)
     {
@@ -244,7 +244,6 @@ var dhpTranscript = {
         var split_transcript = new String(transcriptData);
         split_transcript = split_transcript.trim().split(/\r\n|\r|\n/g);
         // var split_transcript = transcriptData.trim().split(/\r\n|\r|\n/g);       // More efficient but not working!
-
             // empty time code array
         dhpTranscript.tcArray = [];
         // console.log(split_transcript)
