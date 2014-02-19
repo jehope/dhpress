@@ -292,7 +292,6 @@ function show_dhp_project_icons_box()
 // PURPOSE: Create HTML icon box on right sidebox
 // SIDE FX:	Outputs HTML of thumbnail images of images associated with post
 // ASSUMES:	$post global is set to Project post
-// TO DO:	Wrap in Project class
 
 function bdw_get_images()
 {
@@ -757,12 +756,15 @@ function createMarkerArray($project_id)
     	// Initialize settings in case not used
 	$map_pointsMote = $cordMote = $filters = $audio = $transcript = $transcript2 = $timecode = null;
 
-    	// Accumulate settings that are specified
-	foreach( $projSettings['entry-points'] as $eps) {
-		switch ($eps['type']) {
+    	// If we support multiple entry points, we must accumulate settings that are specified
+		// For now, just the first entry point is implemented
+	// foreach( $projSettings['entry-points'] as $eps) {
+	// 	switch ($eps['type']) {
+		switch ($projSettings['entry-points'][0]['type']) {
 		case "map":
 				// Which field used to encode Lat-Long on map?
-			$map_pointsMote = $projObj->getMoteByName( $eps['settings']['marker-layer'] );
+			// $map_pointsMote = $projObj->getMoteByName( $eps['settings']['marker-layer'] );
+			$map_pointsMote = $projObj->getMoteByName( $projSettings['entry-points'][0]['settings']['marker-layer'] );
 			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
 				if(!$map_pointsMote['delim']) { $map_pointsMote['delim']=','; }
 				$coordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
@@ -770,7 +772,8 @@ function createMarkerArray($project_id)
 				//$coordMote = $map_pointsMote['custom-fields'];
 			}
 				// Find all possible legends/filters for this map -- each marker needs these fields
-			$filters = $eps['settings']['filter-data'];
+			// $filters = $eps['settings']['filter-data'];
+			$filters = $projSettings['entry-points'][0]['settings']['filter-data'];
 				// Collect all possible category values/tax names for each mote in all filters
 			foreach( $filters as $legend ) {
 				$parent = get_term_by('name', $legend, $rootTaxName);
@@ -779,8 +782,11 @@ function createMarkerArray($project_id)
 				array_push($json_Object, getIconsForTerms($parent, $rootTaxName));
 			}
 			break;
+		case "cards":
+			// TO DO
+			break;
 		}
-	}
+	// }
 
 		// If a marker is selected and leads to a transcript in modal, need those values also
 	if ($projObj->selectModalHas("transcript")) {
@@ -1072,7 +1078,6 @@ function print_new_bootstrap_html($project_id)
                   <select name="cf-type" class="cf-type">
                     <option>Text</option>
                     <option>Lat/Lon Coordinates</option>
-                    <option>File</option>
                     <option>Image</option>
                     <option>URL</option>
                   </select><span class="help-inline">Choose a data type</span>
@@ -1094,7 +1099,7 @@ function print_new_bootstrap_html($project_id)
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Create Entry Point<b class="caret"></b></a>
                   <ul class="dropdown-menu">
                     <li><a id="add-map" >Map</a></li>
-                    <li class="disabled"><a id="add-top-card">Topic Cards</a></li>
+                    <li><a id="add-cards">Topic Cards</a></li>
                     <li class="disabled"><a id="add-timeline">Timeline</a></li>
                   </ul>
                 </li>
@@ -1189,28 +1194,6 @@ function print_new_bootstrap_html($project_id)
 <div id="projectModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 </div>';
 } // print_new_bootstrap_html()
-
-
-// categoryString($cats)
-// PURPOSE:	Form list of category names
-// INPUT:	$cats = array of category names
-// RETURNS: Concatenated string of category names separated by comma
-// TO DO:   Can't this be implemented with implode ??
-
-// function categoryString($cats)
-// {
-// 	$catString;
-
-// 	foreach ($catArray as $key => $cat) {
-// 		if($key>0) {
-// 			$catString .= ','.$cat;
-// 		}
-// 		else {
-// 			$catString .= $cat;
-// 		} 
-// 	}
-// 	return $catString;
-// } // categoryString()
 
 
 // PURPOSE:	Creates top-level term in WP database for a mote taxonomy (may insert or update)
@@ -1478,9 +1461,10 @@ add_action('wp_ajax_nopriv_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 
 // getTranscriptClip($tran,$clip)
 // PURPOSE:	Retrieve section of text file for transcript
-// INPUT:	$tran = actual text
+// INPUT:	$tran = full text of transcript
 //			$clip = String containing from-end time of segment
-// RETURNS:	Section of $tran within the time frame specified by $clip
+// RETURNS:	Excerpt of $tran within the time frame specified by $clip (not encoded as UTF8)
+//			This text must begin with the beginning timestamp and end with the final timestamp
 
 function getTranscriptClip($transcript, $clip)
 {
@@ -1488,9 +1472,8 @@ function getTranscriptClip($transcript, $clip)
 	$clipArray        = split("-", $clip);
 	$clipStart        = mb_strpos($codedTranscript, $clipArray[0]);
 	$clipEnd          = mb_strpos($codedTranscript, $clipArray[1]);
-		// don't include starting timecode in the resulting text -- have to include square brackets & cr
-	$clipLength       = $clipEnd - ($clipStart + strlen($clipArray[0]) + 3);
-	// $clipLength       = $clipEnd - $clipStart + 13;
+		// length must include start and end timestamps
+	$clipLength       = ($clipEnd + strlen($clipArray[1]) + 1) - ($clipStart - 1) + 1;
 
 	if (($clipStart !== false) && ($clipEnd !== false)) {
 		$codedClip  = mb_substr($codedTranscript, $clipStart-1, $clipLength, 'UTF-8');
@@ -1513,9 +1496,8 @@ function loadTranscriptFromFile($fileUrl)
 	$content = @file_get_contents($fileUrl);
 	if ($content === false) {
 		trigger_error("Cannot load transcript file ".$fileUrl);
-	} else {
-		return $content;
 	}
+	return $content;
 } // loadTranscriptFromFile()
 
 
@@ -1523,7 +1505,7 @@ function loadTranscriptFromFile($fileUrl)
 // PURPOSE: AJAX function to retrieve section of transcript when viewing a Marker
 // INPUT:	$_POST['project'] = ID of Project post
 //			$_POST['transcript'] = URL to file containing contents of transcript
-//			$_POST['timecode'] = timestamp specifying part of transcript to return
+//			$_POST['timecode'] = timestamp specifying excerpt of transcript to return
 // RETURNS:	JSON-encoded section of transcription
 
 function dhpGetTranscriptClip()

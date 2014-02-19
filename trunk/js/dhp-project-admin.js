@@ -3,10 +3,10 @@
 // ASSUMES: dhpDataLib is used to pass parameters to this function via wp_localize_script()
 //          WP code creates hidden data in with DIV ID hidden-layers for info about map layers
 //          Initial project settings embedded in HTML in DIV ID project_settings by show_dhp_project_settings_box()
-// USES:    JavaScript libraries jQuery, jQuery UI (for drag-drop), Underscore, Bootstrap ...
-// TO DO:   Creates too many global variables -- put these within scope of this JS function
+// USES:    Libraries jQuery, jQuery UI (for drag-drop), Underscore, Bootstrap ...
 // NOTES:   Functions whose name begins "buildHTML..." return HTML strings
-//          
+//          Currently only 1 entry-point is fully supported; in configuration of Views, HTML DIVs are IDs rather
+//            than CLASSes, which may make reading parameters for multiple configurations may not work
 
 jQuery(document).ready(function($) {
 
@@ -27,7 +27,7 @@ jQuery(document).ready(function($) {
   projectObj['views'] = new Object();
 
      // Data types supported for motes
-  var dataTypes = ['Text', 'Lat/Lon Coordinates', 'File', 'Image', 'URL'];
+  var dataTypes = ['Text', 'Lat/Lon Coordinates', 'Image', 'URL'];
   // var dataTypes = ['Text','Exact Date','Date Range','Lat/Lon Coordinates','File','Image'];
 
     // View types supported for modals
@@ -76,7 +76,7 @@ jQuery(document).ready(function($) {
 
     // Handle Create Entry Point > Map
   $('#add-map').click(function(){
-    var mapCount  = countEntryPoints('map') +1;
+    var mapCount  = countEntryPoints('map')+1;
       // Maximum of 3 maps allowed
     if(mapCount==3) {
       var options = {
@@ -87,10 +87,9 @@ jQuery(document).ready(function($) {
         trigger:'manual',
         delay: { show: 500, hide: 100 }
       }
-      $('#map2-tab').popover(options);
-      $('#map2-tab').popover('show');
-      $('#map2-tab a').tab('show');
-      setTimeout(function () { $('#map2-tab').popover('hide'); }, 3000);
+      $('#entry-point').popover(options);
+      $('#entry-point').popover('show');
+      setTimeout(function () { $('#entry-point').popover('destroy'); }, 3000);
 
     } else {
         // Ensure that a Lat-Lon mote has been defined
@@ -100,13 +99,13 @@ jQuery(document).ready(function($) {
           animation: true, 
           placement:'right',
           title:'Missing mote',
-          content:'You cannot create a map until you have defined a mote for Lat/Lon Coordinates.',
+          content:'You cannot create a map until you have defined a Lat/Lon Coordinates mote.',
           trigger:'manual',
           delay: { show: 500, hide: 100 }
         }
         $('#entry-point').popover(options);
         $('#entry-point').popover('show');
-        setTimeout(function () { $('#entry-point').popover('hide'); }, 3000);
+        setTimeout(function () { $('#entry-point').popover('destroy'); }, 3000);
 
       } else {
         projectNeedsToBeSaved();
@@ -118,32 +117,49 @@ jQuery(document).ready(function($) {
     }
   });
 
-    // Handle Create Entry Point > Timeline
-  // $('#add-timeline').click(function(){
-  //   var timelineCount  = countEntryPoints('timeline') +1;
-  //   if(timelineCount==2) {
-  //     var options = { 
-  //       animation: true, 
-  //       placement:'right',
-  //       title:'Timeline limit reached',
-  //       content:'Maximum of one timeline are allowed currently.',
-  //       trigger:'manual',
-  //       delay: { show: 500, hide: 100 }
-  //     }
-  //     $('#timeline1-tab').popover(options);
-  //     $('#timeline1-tab').popover('show');
-  //     $('#timeline1-tab a').tab('show');
-  //     setTimeout(function () {
-  //       $('#timeline1-tab').popover('hide');
-  //     }, 3000);
-  //   } else {
-  //     projectNeedsToBeSaved();
-  //     epsettings = '';
-  //     addHTMLForEntryPoint('timeline',epsettings);
-  //     //show tab/content after loading
-  //     $('#timeline'+timelineCount+'-tab a').tab('show');
-  //   }    
-  // });
+
+    // Handle Create Entry Point > Topic Cards
+  $('#add-cards').click(function() {
+    var tcCount  = countEntryPoints('cards')+1;
+      // Maximum of 3 topic cards allowed
+    if(tcCount==3) {
+      var options = {
+        animation: true, 
+        placement:'right',
+        title:'Map limit reached',
+        content:'Maximum of two topic card views are allowed currently.',
+        trigger:'manual',
+        delay: { show: 500, hide: 100 }
+      }
+      $('#entry-point').popover(options);
+      $('#entry-point').popover('show');
+      setTimeout(function () { $('#entry-point').popover('destroy'); }, 3000);
+
+    } else {
+        // Ensure that a Lat-Lon mote has been defined
+      var textMote = findMoteOfType('Text');
+      if (textMote === undefined) {
+        var options = { 
+          animation: true, 
+          placement:'right',
+          title:'Missing mote',
+          content:'You cannot create topic cards until you have defined a Text mote.',
+          trigger:'manual',
+          delay: { show: 500, hide: 100 }
+        }
+        $('#entry-point').popover(options);
+        $('#entry-point').popover('show');
+        setTimeout(function () { $('#entry-point').popover('destroy'); }, 3000);
+
+      } else {
+        projectNeedsToBeSaved();
+        epsettings = '';
+        addHTMLForEntryPoint('cards',epsettings);
+        //show tab/content after loading
+        $('#cards'+tcCount+'-tab a').tab('show');
+      }
+    }
+  });
 
     // + button on Motes tab (for creating new custom field)
   $('#create-new-custom').click(function(){
@@ -387,11 +403,11 @@ jQuery(document).ready(function($) {
     // $('body').on('motes-changed', function(e) {
     //     // First, check that all motes in project settings arrays still exist; remove if not
     //     // TO DO
-
+    //  var geoCoords = ['Lat/Lon Coordinates']
     //     // Now remove and rebuilt all menus
     //   $('#map-marker-selection').remove();
     //   $('#map-marker-div').append('<select class="span12" name="map-marker-selection" id="map-marker-selection">'+
-    //       buildHTMLForMotes(settings['marker-layer'],false,'Lat/Lon Coordinates')+'</select>');
+    //       buildHTMLForMotes(settings['marker-layer'],false,geoCoords)+'</select>');
 
     // }
 
@@ -415,7 +431,7 @@ jQuery(document).ready(function($) {
     // RETURNS: First mote found of theType
   function findMoteOfType(theType) {
     return _.find(projectObj['motes'],
-                          function (theMote) { theMote['type'] === theType; });
+                          function (theMote) { return theMote['type'] === theType; });
   } // findMoteOfType()
 
 
@@ -481,28 +497,52 @@ jQuery(document).ready(function($) {
 
 
     // PURPOSE: Build the HTML for a single Entry Point, given its type and settings
-    // INPUT:   type = the name of a valid entry point type: 'map', 'transcript'
-  function addHTMLForEntryPoint(type, settings){
-    var epCount  = countEntryPoints(type) +1;
+    // INPUT:   moteType = the name of a valid entry point type: 'map', 'cards'
+  function addHTMLForEntryPoint(epType, settings)
+  {
+    var geoMoteType = ['Lat/Lon Coordinates'], textMoteType = ['Text'], imageMoteType = ['Image'];
+    var epCount  = countEntryPoints(epType) +1;
+
     if(!settings) {
       settings = new Object();
     }
       // Create tab from top left
-    $('#entryTabs').append('<li id="'+type+epCount+'-tab"><a href="#'+type+'-'+epCount+'" class="ep-'+type+'" data-toggle="tab">'+type+' '+epCount+'</a></li> ')
+    $('#entryTabs').append('<li id="'+epType+epCount+'-tab"><a href="#'+epType+'-'+epCount+'" class="ep-'+epType+'" data-toggle="tab">'+epType+' '+epCount+'</a></li> ')
 
       // Create content area...load settings
-    switch (type) {
-    // case "timeline":
-    //     //settings['start-date'] = '01/01/2012'
-    //     entryTabContent = '<div class="input-prepend input-append">\
-    //                           <input class="span4" type="text" name="start-date" id="start-date" placeholder="Start Date" value="'+blankStringIfNull(settings['start-date'])+'" />\
-    //                           <span>-</span>\
-    //                           <input class="span4" type="text" name="end-date" id="end-date" placeholder="End Date" value="'+blankStringIfNull(settings['end-date'])+'" />\
-    //                           </div>\
-    //                           <label>Timeline Data</label>\
-    //                         <select name="timeline-mote" id="timeline-mote">'+buildHTMLForMotes(settings['timeline-data'])+'\
-    //                         </select>';
-    //   break;
+    switch (epType) {
+    case 'cards':
+      tcCount = $('.legend-list li').length + 1;
+      entryTabContent = '<div class="row-fluid vars">\
+                      <div class="span5" id="tcard-title-div">\
+                      	<label>Card Title</label>\
+                          <select class="span12" name="tcard-title-selection" id="tcard-title-selection">\
+                          <option selected="selected" value="the_title">Marker Title</option>'+
+                          buildHTMLForMotes(settings['title'], false, textMoteType)+
+                          '</select>\
+                      </div>\
+                      <div class="span5 legend-list" id="tcard-color-div">\
+                        <label>Card Color</label>\
+                          <li id="legend-"'+tcCount+'">\
+                          <select class="span12" name="tcard-color-selection" id="tcard-color-selection">'+
+                          buildHTMLForMotes(settings['color'], true, textMoteType)+
+                          '</select>\
+                          </li>\
+                      </div>\
+                      <div class="span5" id="tcard-image-div">\
+                        <label>Card Image</label>\
+                          <select class="span12" name="tcard-image-selection" id="tcard-image-selection">'+
+                          buildHTMLForMotes(settings['image'], true, imageMoteType)+
+                          '</select>\
+                      </div>\
+                      <div class="span5" id="tcard-text-div">\
+                        <label>Card Text</label>\
+                          <select class="span12" name="tcard-text-selection" id="tcard-text-selection">'+
+                          buildHTMLForMotes(settings['text'], true, textMoteType)+
+                          '</select>\
+                      </div>\
+                  </div>';
+      break;
     case 'map':
       entryTabContent = '<div class="row-fluid vars">\
                       <div class="cords span5">\
@@ -523,12 +563,12 @@ jQuery(document).ready(function($) {
                   </div>\
                   <div class="row-fluid vars">\
                       <div class="span5" id="map-marker-div">\
-                      	<label>Marker Layer(Lat/Lon) <span class="badge badge-info"><i class="icon-question-sign icon-white"></i></span></label>\
-                          <select class="span12" name="map-marker-selection" id="map-marker-selection">'+buildHTMLForMotes(settings['marker-layer'],false,'Lat/Lon Coordinates')+'\
-                          </select>\
+                        <label>Marker Layer(Lat/Lon) <span class="badge badge-info"><i class="icon-question-sign icon-white"></i></span></label>\
+                          <select class="span12" name="map-marker-selection" id="map-marker-selection">'+buildHTMLForMotes(settings['marker-layer'],false,geoMoteType)+
+                          '</select>\
                       </div>\
                       <div class="span7">\
-                      	<label>Legends</label>\
+                        <label>Legends</label>\
                           <ul class="legend-list">\
                           '+buildHTMLForLegendList(settings['filter-data'])+'\
                           </ul>\
@@ -536,31 +576,14 @@ jQuery(document).ready(function($) {
                       </div>\
                   </div>';
           break;
+      break;
     }
 
-    $('#entryTabContent').append('<div class="tab-pane fade in ep map" id="'+type+'-'+epCount+'"><button type="button" class="close" >&times;</button>\<p>'+entryTabContent+'</p></div>');
-
-    //set sliders
-    _.each($('.layer-list li'), function(layer) {
-      var tempOpacity = 1;
-      if($(layer).find('select option:selected').attr('data-opacity')) {
-        tempOpacity = $(layer).find('select option:selected').attr('data-opacity');
-      }
-      $(layer).find('.layer-opacity').slider({
-          range: false,
-          min: 0,
-          max: 1,
-          step:.05,
-          values: [ tempOpacity ],
-          slide: function( event, ui ) {            
-            $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
-            $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
-          }
-        }); 
-    });
+      // First, do HTML mods and binds that all EPs have in common
+    $('#entryTabContent').append('<div class="tab-pane fade in ep map" id="'+epType+'-'+epCount+'"><button type="button" class="close" >&times;</button>\<p>'+entryTabContent+'</p></div>');
 
       // Handle Delete button for Entry Point
-    $('#'+type+'-'+epCount+ ' .close').click(function(e){
+    $('#'+epType+'-'+epCount+ ' .close').click(function(e){
       e.stopPropagation();
       e.preventDefault();
 
@@ -576,61 +599,88 @@ jQuery(document).ready(function($) {
     });
 
       // Handle clicking elsewhere in Entry Point tab area to cancel delete
-    $('#'+type+'-'+epCount+ '.ep').click(function(e){
+    $('#'+epType+'-'+epCount+ '.ep').click(function(e){
       if($(this).find('.close').text()=='Confirm Delete') {
         $(this).find('.close').html('&times;');
       }
     });
 
-      // Handle deleting layer
-    $('.delete-layer').click(function(){   
-      //console.log('delete')
-      $(this).closest('li').remove();
-    });
-
-      // Handle button for loading map -- doesn't seem to be used any longer
-    // $('.load-map').click(function(){
-    //   $('#projectModal').empty();
-    //   $('#projectModal').append('<div class="modal-header">\
-    //     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
-    //     <h3 id="myModalLabel">Map Setup</h3>\
-    //   </div>\
-    //   <div class="modal-body">\
-    //     <p>Zoom and drag to set your map\'s initial position.</p>\
-    //     <div id="map_canvas"></div>\
-    //   </div>\
-    //   <div class="modal-footer">\
-    //     <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\
-    //     <button class="btn btn-primary">Save changes</button>\
-    //   </div>');
-    // });
-
-    bindLegendEvents();
-
-    $('.add-legend').unbind('click');
-    $('.add-legend').click(function(){   
-      $('.legend-list').append(buildHTMLForALegend(null, 0));
+      // Now, do things specific to certain types of Entry Points
+    switch (epType) {
+    case 'map':
       bindLegendEvents();
-      projectNeedsToBeSaved();
-    });
-    $('.add-layer').unbind('click');
-    $('.add-layer').click(function(){  
-      var layerHTML = addNewLayer();
-      $('.layer-list').append(layerHTML);
-        // Create a slider to control opacity
-      $(layerHTML).find('.layer-opacity').slider({
-        range: false,
-        min: 0,
-        max: 1,
-        step:.05,
-        values: [ 1 ],
-        slide: function( event, ui ) {            
-          $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
-          $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
-        }
+
+      $('.add-legend').unbind('click');
+      $('.add-legend').click(function(){   
+        $('.legend-list').append(buildHTMLForALegend(null, 0));
+        bindLegendEvents();
+        projectNeedsToBeSaved();
       });
-      projectNeedsToBeSaved();
-    });    
+        //set sliders
+      _.each($('.layer-list li'), function(layer) {
+        var tempOpacity = 1;
+        if($(layer).find('select option:selected').attr('data-opacity')) {
+          tempOpacity = $(layer).find('select option:selected').attr('data-opacity');
+        }
+        $(layer).find('.layer-opacity').slider({
+            range: false,
+            min: 0,
+            max: 1,
+            step:.05,
+            values: [ tempOpacity ],
+            slide: function( event, ui ) {            
+              $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
+              $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
+            }
+          }); 
+      });
+
+        // Handle deleting layer
+      $('.delete-layer').click(function(){   
+        //console.log('delete')
+        $(this).closest('li').remove();
+      });
+
+        // Handle button for loading map -- doesn't seem to be used any longer
+      // $('.load-map').click(function(){
+      //   $('#projectModal').empty();
+      //   $('#projectModal').append('<div class="modal-header">\
+      //     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+      //     <h3 id="myModalLabel">Map Setup</h3>\
+      //   </div>\
+      //   <div class="modal-body">\
+      //     <p>Zoom and drag to set your map\'s initial position.</p>\
+      //     <div id="map_canvas"></div>\
+      //   </div>\
+      //   <div class="modal-footer">\
+      //     <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\
+      //     <button class="btn btn-primary">Save changes</button>\
+      //   </div>');
+      // });
+
+        $('.add-layer').unbind('click');
+        $('.add-layer').click(function() {
+          var layerHTML = addNewLayer();
+          $('.layer-list').append(layerHTML);
+            // Create a slider to control opacity
+          $(layerHTML).find('.layer-opacity').slider({
+            range: false,
+            min: 0,
+            max: 1,
+            step:.05,
+            values: [ 1 ],
+            slide: function( event, ui ) {            
+              $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
+              $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
+            }
+          });
+          projectNeedsToBeSaved();
+        });
+      break;        // map ep-type
+
+    case 'cards':
+      break;
+    }
   } // addHTMLForEntryPoint()
 
 
@@ -643,8 +693,9 @@ jQuery(document).ready(function($) {
     // PURPOSE: Creates Post section of Views tab
   function addHTMLForPostView(postView) {
     var markerTitle = blankStringIfNull(postView['title']);
+    var titleMoteTypes = ['Text'];
 
-    $('.marker-view').append('<select name="post-view-title" class="title-custom-fields save-view"><option selected="selected" value="the_title" >Marker Title</option>'+buildHTMLForMotes(markerTitle)+'</select>');
+    $('.marker-view').append('<select name="post-view-title" class="title-custom-fields save-view"><option selected="selected" value="the_title">Marker Title</option>'+buildHTMLForMotes(markerTitle, false, titleMoteTypes)+'</select>');
     $('.marker-view').append('<p>Pick the motes to display in Marker Post pages.</p><ul id="post-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
 
     if(postView['content']){
@@ -691,19 +742,20 @@ jQuery(document).ready(function($) {
     // PURPOSE: Creates Transcript section of Views tab
     // TO DO:   Add "Create" and "Delete" buttons to Source mote
   function addHTMLForTranscView(transcView) {
+    var urlMoteType = ['URL'], textMoteType = ['Text'];
     $('.transc-view').append('<p>Pick the motes to display for each taxonomy post entry.</p><ul id="transc-content-view"></ul><button class="btn btn-success add-mote-content" type="button">Add Mote</button>');
     var transHTML = '<label>Transcript Source (all excerpts must have same value for this mote)</label>\
-                    <select name="av-transcript-source" id="av-transcript-source">'+buildHTMLForMotes(transcView['source'], true)+'</select>\
+                    <select name="av-transcript-source" id="av-transcript-source">'+buildHTMLForMotes(transcView['source'], true, textMoteType)+'</select>\
                       <button type="button" id="create-transc-mote" class="btn-success hidden">Create Taxonomy</button>\
                       <button type="button" id="del-transc-mote" class="btn-danger hidden">Delete Taxonomy</button>\
                     <label>Audio URL (setting enables or disables widget playback)</label>\
-                    <select name="av-transcript-audio" id="av-transcript-audio">'+buildHTMLForMotes(transcView['audio'], true)+'</select>\
+                    <select name="av-transcript-audio" id="av-transcript-audio">'+buildHTMLForMotes(transcView['audio'], true, urlMoteType)+'</select>\
                     <label>Transcript Text</label>\
-                    <select name="av-transcript-txt" id="av-transcript-txt">'+buildHTMLForMotes(transcView['transcript'], true)+'</select>\
+                    <select name="av-transcript-txt" id="av-transcript-txt">'+buildHTMLForMotes(transcView['transcript'], true, urlMoteType)+'</select>\
                     <label>Transcript Text 2</label>\
-                    <select name="av-transcript-txt2" id="av-transcript-txt2">'+buildHTMLForMotes(transcView['transcript2'], true)+'</select>\
+                    <select name="av-transcript-txt2" id="av-transcript-txt2">'+buildHTMLForMotes(transcView['transcript2'], true, urlMoteType)+'</select>\
                     <label>Time Stamp(clip)</label>\
-                    <select name="av-transcript-clip" id="av-transcript-clip">'+buildHTMLForMotes(transcView['timecode'], true)+'</select>';
+                    <select name="av-transcript-clip" id="av-transcript-clip">'+buildHTMLForMotes(transcView['timecode'], true, textMoteType)+'</select>';
 
     $('.transc-view').append(transHTML);
 
@@ -729,6 +781,7 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Called to create HTML for Main View and Modal View sections of Views tab
   function addHTMLForViewsTab() {
+    var textMoteType = ['Text'];
     var viewObject = projectObj['views'];
 
     $('.viz-width').val(viewObject['viz-width']);
@@ -809,7 +862,7 @@ jQuery(document).ready(function($) {
       $('#projectModal').empty();
       $('#projectModal').append('<div class="modal-header">\
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
-        <h3 id="myModalLabel">Choose Title: <select name="custom-fields" class="title-custom-fields"><option selected="selected" value="the_title" >Marker Title</option>'+buildHTMLForMotes(title)+'</select></h3>\
+        <h3 id="myModalLabel">Choose Title: <select name="custom-fields" class="title-custom-fields"><option selected="selected" value="the_title" >Marker Title</option>'+buildHTMLForMotes(title, false, textMoteType)+'</select></h3>\
       </div>\
       <div class="modal-body">\
         <p>Select widgets to display in the modal.</p>\
@@ -909,18 +962,18 @@ jQuery(document).ready(function($) {
     // INPUT:  selected = mote name which is current selection, or null
     // RETURN: string of HTML for selection of all available motes, inc. delete button
   function buildContentMotesHTML(selected) {
-    var contentMote = '<li><select class="sel-content-motes">\
-    '+buildHTMLForMotes(selected)+'</select> <button class="btn btn-danger del-sel-content" type="button">-</button></li>';
-
+    var contentMote = '<li><select class="sel-content-motes">'+
+            buildHTMLForMotes(selected)+
+            '</select> <button class="btn btn-danger del-sel-content" type="button">-</button></li>';
     return contentMote;
   } // buildContentMotesHTML()
 
 
   function buildModalView(selected)
   {
-    var modalView = '<li><select name="modal-view" class="modal-view">\
-    '+getModalViewSelection(selected)+'</select> <button class="btn btn-danger delete-modal-view" type="button">-</button></li>';
-
+    var modalView = '<li><select name="modal-view" class="modal-view">'+
+            getModalViewSelection(selected)+
+            '</select> <button class="btn btn-danger delete-modal-view" type="button">-</button></li>';
     return modalView;
   }
 
@@ -1110,7 +1163,9 @@ jQuery(document).ready(function($) {
     // RETURNS: HTML string to represent theLegend, which is index (1..n) in list
     // INPUT:   theLegend = null if there are no legends yet at all
     //          count = 0 if there are no legends yet at all
+    // TO DO:   Change to different datatype in future?
   function buildHTMLForALegend(theLegend, count) {
+    var textMoteType=['Text'];
     var legendButton = '<button class="btn btn-success load-legend" type="button">Configure</button>';
     if (count == 0) {
       theLegend = '';
@@ -1118,7 +1173,8 @@ jQuery(document).ready(function($) {
       tempcount = $('.legend-list li').length;
       count = tempcount+1;
     }
-    var legendLine = '<li id="legend-'+count+'"><select name="filter-mote" class="filter-mote">'+buildHTMLForMotes(theLegend,false,'Text')+'</select>'+
+    var legendLine = '<li id="legend-'+count+'"><select name="filter-mote" class="filter-mote">'+
+                          buildHTMLForMotes(theLegend,false,textMoteType)+'</select>'+
                           legendButton+' <button class="btn btn-danger delete-legend" type="button">Delete</button>\
                           </li>';
     return legendLine;
@@ -1127,11 +1183,11 @@ jQuery(document).ready(function($) {
 
     // RETURNS: HMTL string to represent option list in Setup Links dropdown options in Modal Views
     // INPUT:   selected is the current selection
-    // ASSUMES: That user has configured a Map for the Project
-    // TO DO:   Don't require a map!! Rename function
+    // NOTES:   Check to see which motes actually have categories created before adding as option?
+    //          Accumulate legend motes from visualizations (like maps)?
   function buildHTMLForSetupLinks(selected)
   {
-    var mapObject = getEntryPointByType(projectObj['entry-points'], 'map');
+    // var mapObject = getEntryPointByType(projectObj['entry-points'], 'map');
     var optionHtml = '';
     if(selected=="no-link") {
       optionHtml = '<option name="no-link" value="no-link" selected="selected">No Link</option><option name="marker" value="marker" >Marker Post</option>';
@@ -1142,21 +1198,38 @@ jQuery(document).ready(function($) {
     }
 
       // For linking to taxonomic pages
-    _.each(mapObject['settings']['filter-data'], function(theFilter) {
-      if(theFilter===selected) {
-        optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" selected="selected" >'+theFilter+' (Legend)</option>';
-      } else {
-        optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" >'+theFilter+' (Legend)</option>';
-      }
-    });
+    // _.each(mapObject['settings']['filter-data'], function(theFilter) {
+    //   if(theFilter===selected) {
+    //     optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" selected="selected" >'+theFilter+' (Legend)</option>';
+    //   } else {
+    //     optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" >'+theFilter+' (Legend)</option>';
+    //   }
+    // });
 
       // For linking to mote values
     _.each(projectObj['motes'], function(theFilter) {
       // console.log(theFilter.type)
-      if( theFilter.name+' (Mote)' === selected && theFilter.type === 'URL' ) {
-        optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" selected="selected" >'+theFilter.name+' (Mote)</option>';
-      } else if( theFilter.type ==='URL' ) {
-        optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" >'+theFilter.name+' (Mote)</option>';
+//      if( theFilter.name+' (Mote)' === selected && theFilter.type === 'URL' ) {
+//        optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" selected="selected" >'+theFilter.name+' (Mote)</option>';
+//      } else if( theFilter.type ==='URL' ) {
+//        optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" >'+theFilter.name+' (Mote)</option>';
+//      }
+
+      switch (theFilter.type) {
+      case 'URL':
+        if( (theFilter.name+' (Mote)') === selected) {
+          optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" selected="selected" >'+theFilter.name+' (Mote)</option>';
+        } else {
+          optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" >'+theFilter.name+' (Mote)</option>';
+        }
+        break;
+      default:
+        if(theFilter.name===selected) {
+          optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter+'" selected="selected" >'+theFilter.name+' (Legend)</option>';
+        } else {
+          optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter+'" >'+theFilter.name+' (Legend)</option>';
+        }
+        break;
       }
     });
     return optionHtml;
@@ -1172,10 +1245,9 @@ jQuery(document).ready(function($) {
     // RETURNS: HTML string of dropdown options for motes defined by project of a specific type
     // INPUT:   selected is the current selection (name of mote), if any
     //          canBeNone is true if user can select no mote at all
-    //          moteType is the datatype of mote to list, or undefined for any type
+    //          moteTypes is the array of allowable types, or undefined for any type
     // ASSUMES: Can use projectObj data
-  function buildHTMLForMotes(selected, canBeNone, moteType) {
-    //console.log(projectObj['motes']);
+  function buildHTMLForMotes(selected, canBeNone, moteTypes) {
     var moteOptions, selectedTxt;
 
     if (canBeNone) {
@@ -1183,11 +1255,14 @@ jQuery(document).ready(function($) {
     } else {
       moteOptions = '';
     }
+
       // Go through all of the Project's defined motes, find matches on type
     _.each(projectObj['motes'], function(theMote) {
       selectedTxt = (theMote['name'] == selected) ? 'selected="selected"' : '';
-      if(!moteType||theMote['type']==moteType)
+        // Check to see if mote type appears in array
+      if(!moteTypes || (_.indexOf(moteTypes, theMote['type']) != -1)) {
         moteOptions += '<option value="'+theMote['name']+'" '+selectedTxt+'>'+theMote['name']+'</option>';
+      }
     });
 
     return moteOptions;
@@ -1417,13 +1492,14 @@ jQuery(document).ready(function($) {
   	  //ENTRY POINTS - clear old values...add fresh
   	projectObj['entry-points'] = new Object();
       // ID attribute is constructed as type-
-  	$('#entry-point .ep').each(function(index){
-  		var type = $(this).attr('id').split('-')
-  		if(type[0]=='map') {
-  			projectObj['entry-points'][index] = new Object();
-  			projectObj['entry-points'][index]["type"] = type[0];
-       	projectObj['entry-points'][index]["settings"] = new Object();
-  			//settings
+  	$('#entry-point .ep').each(function(index) {
+  		var type = $(this).attr('id').split('-');
+      projectObj['entry-points'][index] = new Object();
+      projectObj['entry-points'][index]["type"] = type[0];
+      projectObj['entry-points'][index]["settings"] = new Object();
+
+  		switch(type[0]) {
+      case 'map':
   			projectObj['entry-points'][index]["settings"]['lat'] = $(this).find('#lat').val();
        	projectObj['entry-points'][index]["settings"]['lon'] = $(this).find('#lon').val();
        	projectObj['entry-points'][index]["settings"]['zoom'] = $(this).find('#zoom').val();
@@ -1447,16 +1523,15 @@ jQuery(document).ready(function($) {
         $('.legend-list li option:selected').each(function(index2) {
           projectObj['entry-points'][index]["settings"]['filter-data'][index2] = $(this).val(); 
         });
-      }
-     //  if(type[0]=='timeline') {
-  			// projectObj['entry-points'][index] = new Object();
-  			// projectObj['entry-points'][index]["type"] = type[0];
-     //   	projectObj['entry-points'][index]["settings"] = new Object();
-     //   	projectObj['entry-points'][index]["settings"]['start-date'] = $(this).find('#start-date').val();
-     //   	projectObj['entry-points'][index]["settings"]['end-date'] = $(this).find('#end-date').val();
-     //   	projectObj['entry-points'][index]["settings"]['timeline-data'] = $(this).find('#timeline-mote').val();
-     //  }
+        break;
 
+      case 'cards':
+        projectObj['entry-points'][index]["settings"]['title'] = $(this).find('#tcard-title-selection').val();
+        projectObj['entry-points'][index]["settings"]['color'] = $(this).find('#tcard-color-selection').val();
+        projectObj['entry-points'][index]["settings"]['image'] = $(this).find('#tcard-image-selection').val();
+        projectObj['entry-points'][index]["settings"]['text']  = $(this).find('#tcard-text-selection').val();
+        break;
+      }
   	});
 
     projectObj['views'] = new Object();
