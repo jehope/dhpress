@@ -811,7 +811,7 @@ var dhpMapsView = {
         // tagAtt = selectedFeature.attributes.categories;
 
             // Remove anything currently in body -- will rebuild from scratch
-        jQuery('.modal-body').empty();
+        jQuery('#markerModal .modal-body').empty();
 
             // Should Select Modal show transcript?
         if (dhpMapsView.modalViewHas("transcript"))
@@ -857,7 +857,7 @@ var dhpMapsView = {
             });
         }
 
-        jQuery('.modal-body').append(builtHTML);
+        jQuery('#markerModal .modal-body').append(builtHTML);
 
             // clear previous marker links
         jQuery('#markerModal .reveal-modal-footer .marker-link').remove();
