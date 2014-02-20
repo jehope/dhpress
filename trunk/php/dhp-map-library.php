@@ -299,7 +299,7 @@ function dhp_map_page_template( $page_template )
         wp_enqueue_script('underscore');
 
         wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-        wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__)));
+            wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers-2.13/OpenLayers.js', dirname(__FILE__)));
         wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'open-layers');
         wp_enqueue_script('dhp-public-map-script', plugins_url('/js/dhp-map-page.js', dirname(__FILE__)), array('open-layers', 'dhp-custom-maps' ));
     }
