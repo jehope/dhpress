@@ -6,28 +6,32 @@ jQuery(document).ready(function($) {
 
 var dhpGlobalSettings = function($) {
 
-    var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive, myMonitor;
+    var userActivity = false, secondsInactive = 0, activeMonitorID, maxSecondsInactive, myMonitor;
     var kioskTablet = true;
     var blockLinks = [];
         //Detect user agent and determine if kiosk device
     var kioskRE = new RegExp(dhpGlobals.kiosk_useragent, "i");
     var kioskDevice = kioskRE.test(navigator.userAgent.toLowerCase());
-
+        
 		// Only execute if not loaded in iframe
 	if(!inIframe()) {
-			// Monitor user activity, only if setting given
-		maxMinutesInactive = dhpGlobals.timeout_duration;
-	    if ((maxMinutesInactive !== null) && (maxMinutesInactive !== '') && (maxMinutesInactive !== '0') && (maxMinutesInactive !== 0)) {
-	        if (typeof(maxMinutesInactive) === "string") {
-	            maxMinutesInactive = parseFloat(maxMinutesInactive);
-	        }
-	        activeMonitorID = window.setInterval(monitorActivity, 60000);    // 1000 milliseconds = 1 sec * 60 sec = 1 minute
-	        addSiteListeners.call(this);
-	    }
+        console.log('start activity monitor')
+            // Monitor user activity, only if setting given
+        maxSecondsInactive = dhpGlobals.timeout_duration * 60;
+        if ((maxSecondsInactive !== null) && (maxSecondsInactive !== '') && (maxSecondsInactive !== '0') && (maxSecondsInactive !== 0)) {
+            if (typeof(maxSecondsInactive) === "string") {
+                maxSecondsInactive = parseFloat(maxSecondsInactive);
+            }
+            activeMonitorID = window.setInterval(monitorActivity.bind(this,10) , 10000);    // 1000 milliseconds = 1 sec * 60 sec = 1 minute
+            addSiteListeners.call(this);
+        }
+
             // Override tips with custom modal
         if(dhpGlobals.global_tip) {
             $('.dhp-nav .top-bar-section .right .tips').remove();
-            $('.main-navigation .nav-menu').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal>Map Tips</a></li>');
+            $('.main-navigation .nav-menu').append('<li><li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal>Map Tips</a></li>');
+            
+
             if(!dhpGlobals.kiosk_mode) {
                 $('.dhp-nav .top-bar-section .right').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal><i class="fi-info"></i> Tips</a></li>');
             }
@@ -46,10 +50,8 @@ var dhpGlobalSettings = function($) {
             $('body').append('<div class="kiosk-menu contain-to-grid"><nav class="top-bar" data-topbar><section class="top-bar-section"></section></nav></div>');
            
             $('.main-navigation .nav-menu').clone().appendTo( '.kiosk-menu .top-bar-section' );
-
             
             $(document).foundation();
-
             stretchKioskNav.call(this);
             blockLinks = dhpGlobals.kiosk_blockurls.split(',');
 
@@ -57,16 +59,23 @@ var dhpGlobalSettings = function($) {
         }
 	}
     else {
+        
             // Take care of projects in iframes(dual)
         if(dhpGlobals.kiosk_mode && kioskDevice) {
             $('body').addClass('kiosk-mode');
             if(dhpGlobals.global_tip) {
                 $('.dhp-nav .top-bar-section .right .tips').remove();
             }
+            // $('#dhp-visual').height($('#dhp-visual').height()-65);
+            // $('#legends').height($('#legends').height()-65);
             // $('.dhp-nav .top-bar-section .right').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal><i class="fi-info"></i> Tips</a></li>');           
         }
     }
-
+        // Get rid of scrollbars for map viz
+    if($('body').hasClass('fullscreen')) {
+        $("html").css({'overflow':'hidden'});
+    }
+        // Call function to add Credits text to footer
     if(dhpGlobals.dhp_love) {
         addDHPLove.call(this);
     }
@@ -98,7 +107,6 @@ var dhpGlobalSettings = function($) {
     }
         //PURPOSE: Make nav menu the width of the items
     function stretchKioskNav() {
-        
         var windowWidth = $(window).width();
             //find the width of each item
         var navWidth = findKioskNavWidth.call(this);
@@ -117,17 +125,22 @@ var dhpGlobalSettings = function($) {
         $('.kiosk-menu ul li').each(function(){
             barWidth += $(this).width();
         });
-        return barWidth;
+        return barWidth + 1;
     }
-
+        // PURPOSE: Add DH Press credits to footer
     function addDHPLove() {
         $('.site-info').addClass('dhp-love').append('<p>This project has been created with DH Press, a digital humanities toolkit developed by UNC\'s Digital Innovation Lab and the Renaissance Computing Institute</p>')
-        }
+    }
+        // PURPOSE: Takes a WordPress gallery and cycles images like a screen saver
+    function screenSaver() {
+
+    }
+
 		// PURPOSE: assign listeners for user activity
 		// ASSUMES: Using window assigns events above the document(2 iframes + main page == 3 document bodys)
 	function addSiteListeners() 
 	{
-		myMonitor = new IframeActivityMonitor();
+		myMonitor = new IframeActivityMonitor({trackingInterval : 5000});
 			// Add iframe listeners
 		window.addEventListener('mousePositionChanged', function() {
 		    userActivity = true;
@@ -146,27 +159,38 @@ var dhpGlobalSettings = function($) {
 	} // addSiteListeners()
 
         // PURPOSE: Called once a minute to see if user has done anything in that interval
-    function monitorActivity()
+    function monitorActivity(incrementAmt)
     {
             // Either increase or rest minutesInactive, based on user activity in last minute
         if (userActivity) {
-            minutesInactive = 0;
+            secondsInactive = 0;
         } else {
-            minutesInactive++;
+            secondsInactive+= incrementAmt;
         }
         userActivity = false;
 
-        if (minutesInactive >= maxMinutesInactive) {
+        if (secondsInactive >= maxSecondsInactive) {
         		// Redirect page to home
-			if(document.location.href !== dhpGlobals.redirect_url) {
-				document.location.href = dhpGlobals.redirect_url;
-			}
-				// If on home url scroll to top instead of reload
-			else {
-                if ( $(window).scrollTop() > 0) {
-                    $("html, body").animate({scrollTop:0}, '500', 'swing', function() {});
-                }		
-			}	
+                // if running in locked kiosk page
+            if(document.location.href == dhpGlobals.kiosk_launch_url ) {
+                    // if iframe not on homepage redirect
+                if($('.make-fullscreen').attr('src') !== dhpGlobals.redirect_url) {
+                    $('.make-fullscreen').attr('src', dhpGlobals.redirect_url);
+                } 
+            }
+                // normal site
+            else {
+                if(document.location.href !== dhpGlobals.redirect_url) {
+                    document.location.href = dhpGlobals.redirect_url;
+                }
+                    // If on home url scroll to top instead of reload
+                else {
+                    if ( $(window).scrollTop() > 0) {
+                        $("html, body").animate({scrollTop:0}, '500', 'swing', function() {});
+                    }       
+                }   
+            }
+			
         }
     } // monitorActivity()
 

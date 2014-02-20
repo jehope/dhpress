@@ -1,6 +1,7 @@
 html, body {
 	min-height : 100%;
 	height     : 100%;
+	overflow : hidden;
 }
 .dhp-split-iframes {
 	position : fixed;
@@ -25,4 +26,7 @@ html, body {
 	width    : 50%;
 	right    : 0;
 	overflow : hidden;
+}
+body.dual-map .site {
+	margin-top: 0;
 }
