@@ -13,7 +13,13 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				if(get_option( 'tip_url' )) {
 					add_action('wp_footer', array( __CLASS__, 'dhp_tip_page_content') );
 				}
-				
+				if(get_option( 'kiosk_launch' )) {
+					add_action('wp_footer', array( __CLASS__, 'dhp_launch_page_content') );
+					add_filter('body_class', array( __CLASS__, 'launch_class_names') );
+				}
+				if(get_option( 'screen_saver' )) {
+					add_action('wp_footer', array( __CLASS__, 'dhp_screen_saver_content') );
+				}
 				if(get_option( 'kiosk_mode' )) {
 					// Trying to load external links in modal
 					// add_action('wp_footer', array( __CLASS__, 'dhp_external_page_content') );
@@ -40,7 +46,9 @@ if( !class_exists( 'DHPressSettings' ) ) {
 		    register_setting( 'dhp_global_settings-group', 'kiosk_mode' );
 		    register_setting( 'dhp_global_settings-group', 'kiosk_useragent' );
 		    register_setting( 'dhp_global_settings-group', 'kiosk_blockurls' );
+		    register_setting( 'dhp_global_settings-group', 'kiosk_launch' );
 		    register_setting( 'dhp_global_settings-group', 'tip_url' );
+		    register_setting( 'dhp_global_settings-group', 'screen_saver' );
 		    register_setting( 'dhp_global_settings-group', 'dhp_love' );
 		}
 			// Add options page for global utilities
@@ -60,14 +68,54 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			// return the $classes array
 			return $classes;
 		}
+		static function launch_class_names($classes) {
+			
+			global $post;
+			if($post->ID == get_option('kiosk_launch')) {
+				// add 'class-name' to the $classes array
+				$classes[] = 'kiosk-launch';
+				// return the $classes array
+			}
+			return $classes;
+		}
+		static function get_launch_url() {
+			$launch_url = get_permalink( get_option('kiosk_launch') );
+
+			return $launch_url;
+		}
+		
 			// PURPOSE: Generate html for page tip select box and select current option
 		static function dhp_list_pages_for_tips()
-		{
- 
+		{ 
 			$pages = get_pages();
 			$options = '<option value="0" '. selected(get_option('tip_url'),0) . '>-- No Tip Page --</option>';
 			foreach ( $pages as $page ) {
 				$option  = '<option value="' . $page->ID . '" '. selected(get_option('tip_url'),$page->ID) . '>';
+				$option  .= $page->post_title;
+				$option  .= '</option>';
+				$options .= $option;
+			}
+			return $options;
+		}
+		static function dhp_list_pages_for_screen_saver()
+		{
+ 
+			$pages = get_pages();
+			$options = '<option value="0" '. selected(get_option('screen_saver'),0) . '>-- No Screen Saver --</option>';
+			foreach ( $pages as $page ) {
+				$option  = '<option value="' . $page->ID . '" '. selected(get_option('screen_saver'),$page->ID) . '>';
+				$option  .= $page->post_title;
+				$option  .= '</option>';
+				$options .= $option;
+			}
+			return $options;
+		}
+		static function dhp_list_pages_for_kiosk_launch()
+		{
+			$pages = get_pages();
+			$options = '<option value="0" '. selected(get_option('kiosk_launch'),0) . '>-- No Launch Page --</option>';
+			foreach ( $pages as $page ) {
+				$option  = '<option value="' . $page->ID . '" '. selected(get_option('kiosk_launch'),$page->ID) . '>';
 				$option  .= $page->post_title;
 				$option  .= '</option>';
 				$options .= $option;
@@ -108,6 +156,15 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				                	Enter url to redirct site to when timeout occurs.</td>
 				            </tr>
 				            <tr valign="top">
+				                <th scope="row"><label for="kiosk_launch">Kiosk Launch Page</label></th>
+				                <td>
+				                	<select name="kiosk_launch" id="kiosk_launch">
+				                		<?php echo self::dhp_list_pages_for_kiosk_launch(); ?>
+								    </select>
+
+								</td>
+				            </tr>
+				            <tr valign="top">
 				                <th scope="row"><label for="kiosk_mode">Kiosk Mode</label></th>
 				                <td><input type="checkbox" name="kiosk_mode" id="kiosk_mode" value="1" <?php checked(get_option('kiosk_mode'),1); ?>/>
 				                	Add menu to bottom of site.</td>
@@ -127,7 +184,15 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				                <th scope="row"><label for="dhp_love">Display DH Press credits in footer? </label></th>
 				                <td><input type="checkbox" name="dhp_love" id="dhp_love" value="1" <?php checked(get_option('dhp_love'),1); ?>/> You'd be even cooler if you did!</td>
 				            </tr>
-				            
+				            <tr valign="top">
+				                <th scope="row"><label for="screen_saver">Screen Saver Page</label></th>
+				                <td>
+				                	<select name="screen_saver" id="screen_saver">
+				                		<?php echo self::dhp_list_pages_for_screen_saver(); ?>
+								    </select>
+								    Create a page and embed a wordpress gallery to create a screen saver(starts after 15 mins of inactivity).
+				                </td>
+				            </tr>
 				        </table>
 
 				        <?php @submit_button(); ?>
@@ -139,18 +204,15 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			// Add handlebars template to footer for tip modal
 		static function dhp_tip_page_content()
 		{	
-			echo self::dhp_tip_page_template();
-		}
-		static function dhp_get_tip_page() 
-		{
-			//get page object
-			$tip_page_object = get_post(get_option('tip_url'));
-
-			return $tip_page_object;
-		}
+			// global $post;
+			// if($post->ID == get_option('kiosk_launch')) {
+			// 	echo self::dhp_tip_page_template();
+			// }
+			echo self::dhp_tip_page_template();			
+		}	
 			// PURPOSE: Load template in html to be called by javascript
 		static function dhp_tip_page_template() {
-			$tip_obj = self::dhp_get_tip_page();
+			$tip_obj = get_post(get_option('tip_url'));
 			ob_start(); ?>
 			<div id="tipModal" class="reveal-modal medium" data-reveal>
 			  <div class="modal-content">
@@ -170,19 +232,47 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			<?php
 			return ob_get_clean();
 		}
+			// Add handlebars template to footer for tip modal
+		static function dhp_screen_saver_content()
+		{	
+			global $post;
+			if($post->ID == get_option('kiosk_launch')) {
+				// echo self::dhp_screen_saver_template();
+			}
+		}
 			// PURPOSE: Load template in html to be called by javascript
-		static function dhp_external_page_content() {
+		static function dhp_screen_saver_template() {
+			$tip_obj = get_post(get_option('screen_saver'));
 			ob_start(); ?>
-			<div id="externalModal" class="reveal-modal medium" data-reveal>
+			<div>
+			  	<?php remove_filter( 'the_content', 'dhp_mod_page_content' ); ?>
+			    <?php echo apply_filters( 'the_content', $tip_obj->post_content ); ?>
+			</div>
+			<?php
+			return ob_get_clean();
+		}
+			// Add handlebars template to footer for tip modal
+		static function dhp_launch_page_content()
+		{	
+			global $post;
+			if($post->ID == get_option('kiosk_launch')) {
+				echo self::dhp_launch_page_template();
+			}			
+		}
+			// PURPOSE: Load template in html to be called by javascript
+		static function dhp_launch_page_template() {
+			ob_start(); ?>
+			<div id="launchModal" class="reveal-modal tiny" data-reveal>
 			  <div class="modal-content">
 			    <div class="modal-header">
-			      <h1>External Page</h1>
+			      <h1>Launch in Fullscreen Kiosk Mode</h1>
 			    </div>
 			    <div class="modal-body clearfix">
+			    	<ul class="button-group"><li><a class="button full-win" >Launch Fullscreen</a></li></ul>
+			   
 			    </div>
 			    <div class="reveal-modal-footer clearfix ">
-			      <ul class="button-group right"><li><a class="button close-tip" >Close</a></li></ul>
-			    </div>
+			       </div>
 			  </div>
 			    <a class="close-reveal-modal close-tip">&#215;</a>
 			</div>
@@ -195,21 +285,31 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				// Register styles
 			// wp_register_style('dhp-global-settings-style', plugins_url('/css/dhp-global-settings.css', dirname(__FILE__)), false, DHP_PLUGIN_VERSION );
 				// Register scripts
+			wp_register_script( 'dhp-kiosk-launch-script', plugins_url( '/js/dhp-kiosk-fullscreen.js', dirname( __FILE__ ) ), array( 'jquery' ), DHP_PLUGIN_VERSION, true );
+		
 			wp_register_script( 'dhp-global-settings-script', plugins_url( '/js/dhp-global-settings.js', dirname( __FILE__ ) ), array( 'jquery' ), DHP_PLUGIN_VERSION, true );
 		}
 		static function print_scripts() 
 		{
 			$global_tip = false;
+			$screen_saver = false;
 
+			global $post;
 			if(get_option('tip_url')) {
 				$global_tip = true;
+			}
+			if(get_option('screen_saver')) {
+				$screen_saver = true;
 			}
 			wp_enqueue_script( 'jquery' );
 			wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
 	        wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 	        wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 			wp_enqueue_script( 'dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
-			
+				
+			if($post->ID == get_option('kiosk_launch')) {
+				wp_enqueue_script( 'dhp-kiosk-launch-script' );
+			}			
 			wp_enqueue_style( 'dhp-global-settings', plugins_url('/css/dhp-global-settings.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION);
 	        
 				// Load styles
@@ -219,13 +319,15 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				// Print settings to page
 			wp_localize_script( 'dhp-global-settings-script', 'dhpGlobals', array(
 				'global_tip' => $global_tip,
+				'kiosk_launch_url' => self::get_launch_url(),
 				'timeout_duration' => get_option( 'timeout_duration' ),
 				'redirect_url' => get_option( 'redirect_url' ),
 				'kiosk_mode' => get_option( 'kiosk_mode' ),
 				'kiosk_useragent' => get_option( 'kiosk_useragent' ),
 				'kiosk_blockurls' => get_option( 'kiosk_blockurls' ),
-				'dhp_love' => get_option( 'dhp_love' )
-			) );
+				'dhp_love' => get_option( 'dhp_love' ),
+				'screen_saver' => $screen_saver
+			) );	
 		}
 	}
 }
