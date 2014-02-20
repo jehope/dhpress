@@ -76,14 +76,14 @@ jQuery(document).ready(function($) {
 
     // Handle Create Entry Point > Map
   $('#add-map').click(function(){
-    var mapCount  = countEntryPoints('map')+1;
-      // Maximum of 3 maps allowed
-    if(mapCount==3) {
+    var mapCount  = countEntryPoints();
+      // Only allow 1 entry point for now
+    if(mapCount>=1) {
       var options = {
         animation: true, 
         placement:'right',
-        title:'Map limit reached',
-        content:'Maximum of two maps are allowed currently.',
+        title:'Entry Point limit reached',
+        content:'Maximum of one entry point allowed currently.',
         trigger:'manual',
         delay: { show: 500, hide: 100 }
       }
@@ -109,10 +109,9 @@ jQuery(document).ready(function($) {
 
       } else {
         projectNeedsToBeSaved();
-        epsettings = '';
-        addHTMLForEntryPoint('map',epsettings);
+        addHTMLForEntryPoint('map',null);
         //show tab/content after loading
-        $('#map'+mapCount+'-tab a').tab('show');
+        $('#map'+(mapCount+1)+'-tab a').tab('show');
       }
     }
   });
@@ -120,14 +119,14 @@ jQuery(document).ready(function($) {
 
     // Handle Create Entry Point > Topic Cards
   $('#add-cards').click(function() {
-    var tcCount  = countEntryPoints('cards')+1;
-      // Maximum of 3 topic cards allowed
-    if(tcCount==3) {
+    var tcCount = countEntryPoints();
+      // Only allow 1 entry point for now
+    if(tcCount>=1) {
       var options = {
         animation: true, 
         placement:'right',
-        title:'Map limit reached',
-        content:'Maximum of two topic card views are allowed currently.',
+        title:'Entry Point limit reached',
+        content:'Maximum of one entry point allowed currently.',
         trigger:'manual',
         delay: { show: 500, hide: 100 }
       }
@@ -153,10 +152,9 @@ jQuery(document).ready(function($) {
 
       } else {
         projectNeedsToBeSaved();
-        epsettings = '';
-        addHTMLForEntryPoint('cards',epsettings);
+        addHTMLForEntryPoint('cards',null);
         //show tab/content after loading
-        $('#cards'+tcCount+'-tab a').tab('show');
+        $('#cards'+(tcCount+1)+'-tab a').tab('show');
       }
     }
   });
@@ -312,10 +310,17 @@ jQuery(document).ready(function($) {
   //  =============  Utility Functions ============================
 
     // RETURNS: Number of Entry Points that the user has defined
+    // INPUT:   Either an entry point type, or undefined to count all specific tabs
   function countEntryPoints(type){
-    var count = $('#entryTabs .ep-'+type);
-    //console.log(count.length);
-    return count.length;
+    var count;
+    if (type) {
+      count = $('#entryTabs .ep-'+type);
+      count = count.length;
+    } else {
+      count = $('#entryTabs > li');
+      count = count.length - 2;  // don't count Home and New tabs
+    }
+    return count;
   }
 
     // PURPOSE: Store updated Custom Field data list in Project Object
@@ -1012,15 +1017,15 @@ jQuery(document).ready(function($) {
     return epItems;
   } // getEntryPoints()
 
-
-  function loadLayers(layerArray){
+    // INPUT:   layerArray = layers[] array in entry point for map settings (or null if new map)
+    // ASSUMES: Data about base layers has been embedded in page in DIV called hidden-layers
+  function loadLayers(layerArray)
+  {
     // console.log(layerObject)
     var layerHtml = $('<ul><li><label>Base Layer</label><select name="base-layer" id="base-layer"></select></li></ul>');
     $('select', layerHtml).append($('#hidden-layers .base-layer').clone());
 
     if(layerArray != null && typeof layerArray === 'object') {
-      //console.log('layers'+Object.keys(layerObject).length);
-      //"layers": {"0":{"id":"5675","name":"OpenStreetMap"},"1":{"id":"5672","name":"Test Map 2"}}
       for (var i =0; i < Object.keys(layerArray).length; i++) {
           // First item is Base Layer
         if(i==0) {
@@ -1035,7 +1040,6 @@ jQuery(document).ready(function($) {
           $('li',layerHtml).eq(i).find('select option#'+layerArray[i]['id']).attr('selected','selected');
           $('select option#'+layerArray[i]['id'], layerHtml).attr('data-opacity',layerArray[i]['opacity']);
         }
-        
       }
     }
     return $(layerHtml).html();
