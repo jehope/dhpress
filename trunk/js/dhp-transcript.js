@@ -37,6 +37,7 @@ var dhpTranscript = {
             throw new Error("Cannot find HTML DIV at which to append transcript.");
         }
         appendPos.append('<div class="transcript-ep"><p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p></div>');
+        appendPos.append('<input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript<br>');
 
             // Must set these variables after HTML appended above
         var scWidget = SC.Widget(document.getElementById('scPlayer'));
@@ -55,7 +56,7 @@ var dhpTranscript = {
             });
 
             scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(params) {
-                    // Pauses audio after it primes so seekTo will function
+                    // Pauses audio after it primes so seekTo will work properly
                 if (primeAudio) {
                     scWidget.pause();
                     primeAudio = false;
@@ -70,7 +71,7 @@ var dhpTranscript = {
                         playingNow = false;
                     }
                 }
-                if (playingNow) {
+                if (playingNow && document.getElementById("transcSyncOn").checked) {
                     dhpTranscript.hightlightTranscriptLine(params.currentPosition);
                 }
             });
