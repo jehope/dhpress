@@ -185,6 +185,7 @@ var dhpGlobalSettings = function($) {
                 }
                     // If on home url scroll to top instead of reload
                 else {
+                    $('#tipModal').foundation('reveal', 'close');
                     if ( $(window).scrollTop() > 0) {
                         $("html, body").animate({scrollTop:0}, '500', 'swing', function() {});
                     }       
