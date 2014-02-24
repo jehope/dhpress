@@ -1099,8 +1099,8 @@ function print_new_bootstrap_html($project_id)
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Create Entry Point<b class="caret"></b></a>
                   <ul class="dropdown-menu">
                     <li><a id="add-map" >Map</a></li>
-                    <li><a id="add-cards">Topic Cards</a></li>
-                    <li class="disabled"><a id="add-timeline">Timeline</a></li>
+                    <!--<li><a id="add-cards">Topic Cards</a></li>
+                    <li class="disabled"><a id="add-timeline">Timeline</a></li>-->
                   </ul>
                 </li>
               </ul>
