@@ -1,0 +1,111 @@
+/** CSS styles specific to Admin Views in DH Press
+ **/
+
+@charset "UTF-8";
+
+/* Fixes background color that bootstrap sets */
+body {
+	background: none;
+}
+/* Fixes menu spacing that bootstrap overrides */
+ul.wp-submenu {
+	margin-left: 0;
+}
+/* Fixes spacing that bootstrap overrides */
+.submitbox label {
+	display: inline;
+}
+/* Pulls entry point X to right */
+#entry-point .close {
+	position: absolute;
+	right:10px;
+	top: 85px;
+}
+
+/* Positions upload button on right for icon upload box */
+#dhp_icons_box .misc-pub-section, #TB_ajaxContent .misc-pub-section {
+	padding: 0px;
+	min-height: 34px;
+}
+
+#dhp_icons_box .misc-pub-section span {
+	padding-top: 10px;
+	float: left;
+}
+#dhp_icons_box .dhp-icon-upload {
+	margin-top: 5px;
+	text-align: right;
+	float: right;
+	line-height: 23px;
+}
+
+/* Positions icons on right and applies style in the Legend configuration*/
+.term-icon {
+	float: right;
+	cursor: pointer;
+}
+.term-icon img {
+	height: 20px;
+	width: auto;
+}
+
+/* Positions categories on left in Legend configuration */
+.cat-list {
+	width: 400px;
+	float: left;
+}
+
+/* Hides project settings textarea that holds current project data */
+.project-form-table {
+	display: none;
+}
+
+/* Positions color picker on right of each term */
+.jPicker {
+	float: right;
+}
+
+ul.legend-list, ul.layer-list {
+	margin-left: 0px;
+}
+
+.legend-list .btn, .layer-list .btn, .modal-body .btn {
+	margin-bottom: 10px;
+}
+
+.badge {
+	padding: 1px;
+	padding-bottom: 0px;
+	padding-top: 0px;
+	-webkit-border-radius: 9px;
+	-moz-border-radius: 9px;
+	border-radius: 9px;
+	line-height: 16px;
+}
+
+.layer-opacity {
+	width: 40%;
+	display: inline-block;
+}
+.slider-value {
+	display: inline-block;
+	margin-left: 10px;
+}
+
+.custom-field-editor .left {
+	width: 40%;
+	display: inline-block;
+}
+
+.custom-field-editor .right {
+	width: 60%;
+	display: inline-table;
+}
+
+.custom-field-editor select {
+	margin-top: 5px;
+}
+
+.custom-field-editor .add-update-meta {
+	margin-top: 5px;
+}

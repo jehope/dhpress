@@ -1,316 +1,213 @@
+/** CSS styles specific to OpenLayers maps in DH Press
+ **/
+
 @charset "UTF-8";
-/* CSS Document */
 
-
-#map_div {
-	width:100%;
-	height:400px;
-	background: #fff;
+body.fullscreen {
+	overflow: hidden;
 }
-.fullscreen #map_div {
-	width:100%;
-	min-width: 100%;
-	height:100%;
-	position:absolute;
-	top: 0px;
-	left: 0px;
+#dhp-visual {
+	z-index: 1000;
+}
+	/* Controls on Map */
+#dhp-visual div.olControlZoom {
+	top:10px;
+}
+.fullscreen #dhp-visual div.olControlZoom {
+	top: 55px;
+	left: auto;
+	right: 20px;
+}
+.logged-in.fullscreen #dhp-visual div.olControlZoom {
+	top:70px;
+}
+.olControlZoom .reset-map {
+	margin-top: 5px;
+	padding-top: 2px;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+   	cursor: pointer;
+   	font-size: 18px;
+}
+.isMobile .olControlZoom .reset-map {
+	padding-top: 1px;
+	font-size: 16px;
+}
+	/* Foundation Icons required custom config */
+.olControlZoom a.olControlZoomIn {
+	padding-top: 2px;
+	font-size: 15px;
+	padding-left: 1px;
+}
+.olControlZoom a.olControlZoomOut {
+	font-size: 15px;
+	padding-top: 1px;
 }
 
+	/* OL error tiles */
+.olImageLoadError {
+ 	display: none;
+ 	visibility: hidden !important; 
+}
+
+.olMap .olControlAttribution {
+	bottom: 10px;
+	right: 10px;
+
+}
+
+	/* Overrides most theme settings for img tags in the map only */
+.entry-content .olMap img,
+.widget .olMap img {
+	max-width: none;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+	/* Current legend style */
 #legends {
 	position:relative;	
 	margin-left:0;
 	overflow: auto;
 	background: #fff;
-	background-color: rgba(255, 255, 255, .7);
+	background-color: rgba(255, 255, 255, .95);
+	max-width: 320px;
+	min-height: 300px;
+
+	/*foundation font style*/
+	color: #222;
+	font-family: "Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
+
+}
+#legends.mini {
+	min-height: 30px;
 }
 .fullscreen #legends {
 	position:absolute;
-	min-width:none;
-	top: 50px;
+	min-width: 220px;
+	top: 60px;
 	left: 20px;
 	bottom: 20px;
-	overflow: auto;
+	overflow: hidden;
+	z-index: 1103;
+	-moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+	-webkit-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+	box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
 }
-.dhp-nav {
-	z-index: 3000;
-	width: 100%;
-}
-.fullscreen .dhp-nav {
-	position: absolute;
-	left: 0px;
-	top: 0px;
-}
-.fullscreen #map_div div.olControlZoom {
-	top:50px;
-	left: 95%;
-}
-#map_div div.olControlZoom {
-	top:10px;
-}
-.olControlZoom .reset-map {
-	margin-top: 5px;
-	padding: 5px;
-	-webkit-border-radius: 4px;
-	-moz-border-radius: 4px;
-	border-radius: 4px;
-	width: 14px;
-	/* Fallback for web browsers that doesn't support RGBa */
-    background: rgb(0, 60, 136);
-    /* RGBa with 0.6 opacity */
-    background: rgba(0, 60, 136, 0.5);
-   	cursor: pointer;
-}
-.olControlZoom .reset-map:hover {
-    background: rgba(0, 60, 136, 0.7);
-}
-
-.logged-in.fullscreen #map_div div.olControlZoom {
-	
-top:80px;
-}
-.logged-in.fullscreen .dhp-nav {
-top: 30px; 
+@media all and (min-width: 1025px) {
+  .fullscreen #legends {
+  	min-width: 320px;
+  }
 }
 .logged-in.fullscreen #legends {
-	top:80px;
-}
-
-.fullscreen aside {
-	display: none;
+	top:70px;
 }
 .legend-row {
-	max-width: 270px;
-}
-.fullscreen .legend-row {
-	max-width: none;
-}
-#legends .nav a {
 	
-
-	} 
-.post-title {
-	font-size: 24px;
 }
 
-#map-div2 {
-    border : 0;
-    height : 250px;
-	width:300px;
-}
-#dhp_icon_cont {
-	min-height:50px;
-}
-.dhp_icon {
-	cursor:pointer;
-	float:left;
-	width:24px;
-	height:24px;
-}
-.dhp_icon img {
-	padding:2px
-}
-#dhp_icon_cont .selected {
-	background:#999;
-}
-#term-legend {
-	position:absolute;	
-	margin-left: 0px;
-}
 .legend-row .legend-div {
 	margin-left: 0px;
 }
-.legend-div h1 {
-	margin-left: 10px;
-	border-bottom: 1px solid #111;
-	margin-right: 10px;
-}
-.legend-div ul {
-list-style: none;
 
+.legend-div .legend-title {
+	padding-left: 10px;
+	padding-right: 20px;
+	border-bottom: 1px solid #111;
+	font-size: 22px;
+	font-weight: bold;
+	z-index: 20;
 }
-.legend-div ul li {
+
+.legend-div .terms {
+	position: absolute;
+	top:38px;
+	bottom: 0;
+	width: 100%;
+	z-index: 19;
+	overflow: auto;
+	margin-top: 1px;
+}
+
+.legend-div .terms .row {
 	width:100%;
-	display: inline-block;
 	cursor: pointer;
+	line-height: 15px;
 }
-.legend-div ul li:hover {
+.legend-div .terms .row:hover,
+.legend-div .terms .row.selected {
 	background: #e8f2e6;
 }
-.legend-div ul li.selected {
-	background: #e8f2e6;
-}
-.legend-div ul img {
+
+.legend-div .terms img {
 	float: left;
 }
-.legend-div ul.terms a {
-	padding: 10px;
-	width:212px;
+
+.legend-div .terms a {
+	line-height: 15px;
+	width: 100%;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	overflow: hidden;
+	display: inherit;
+}
+#layers-panel a {
+	line-height: 15px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	overflow: hidden;
 }
 .legend-div input[type='checkbox'] {
-	margin: 12px;
+	/*margin: 12px;*/
+	vertical-align: middle;
+	margin-top: 11px;
 }
-.legend-div p {
+
+.legend-div .icon-legend {
 	width: 15px;
 	height: 15px;
-	margin-top: 4px;
+	margin:0;
+	margin-top: 9px;
 }
+
+	/* Little resize button on legends */
+.legend-resize {
+	padding: 7px;
+	position: absolute;
+	right: 0px;
+}
+
+	/* Controls for opacity for each layer */
 #layers-panel {
 	margin-left:0px;
 }
-#layers-panel li a {
 
-}
-/*
- #map_div2 {
- 	width:30%;
- 	float: left;
- 	height:400px;
- 	left:35%;
- 	position: absolute;
- }*/
- #TB_window {
- 	z-index: 2000;
- 	opacity: .8;
- }
- #TB_overlay {
- 	z-index: 1999;
- 	opacity: .5;
- }
-.post:after {
- 	content:" ";
- 	clear: both;
-
- }
- #child_legend {
+	/* Legends for child terms TODO: add html to display child terms */
+#child_legend {
  	background: #e8f2e6;
  	padding: 5px;
  	border: 3px solid #ccc;
  	display: none;
- }
- #child_legend h3 { 
+}
+#child_legend h3 { 
  	padding-bottom: 5px;
- }
- #child_legend ul li {
+}
+#child_legend ul li {
   	padding-bottom: 5px;
-  }
-  #timeline {
-  	position: absolute;
-  	top: 320px;	
-  	width: 60%;
-  	z-index: 2200;
-}
-.olImageLoadError {
- 	display: none;
-}
-img {
-	max-width: none;
-}
-.modal { 
-	z-index: 1150;
-}
-.modal.transcript {
-position: fixed;
-top: 10%;
-left: 50%;
-width: 90%;
-margin-left: -45%;
 }
 
-.modal-backdrop {
-	z-index: 1140;
-}
-.modal-header h3 {
-	clear: none;
-}
-.modal-body li.thumb-right img {
-	float: right;
-	padding-left: 5px;
-	padding-bottom: 5px; 
-}
-.modal-body li.thumb-left img {
-	float: left;
-	padding-right: 5px;
-	padding-bottom: 5px;
-}
-.modal-backdrop, .modal-backdrop.fade.in {
-opacity: .6;
-filter: alpha(opacity=60);
+/* Default map view */
+#map_canvas {
+	width: 100%;
+	height: 100%;
+	min-height: 300px;
 }
 
-.new-content h3 {
-	clear: none;
-}
-.new-content p.thumb-right {
-	float: right;
-	padding-left: 5px;
-	padding-bottom: 5px; 	
-}
-.new-content p.thumb-left {
-	float: left;
-	padding-right: 5px;
-	padding-bottom: 5px;
-}
-.entrytext p {
-	line-height: 1.7;
-	margin-bottom: 10px;
-}
-.transcript-list .row {
-	display: table-row;
-}
-.type-timecode {
-	width: 20%;
-	display: table-cell;
-	padding: 2%;
-	cursor: pointer;
-}
-.odd-line .type-timecode,
-.odd-line .type-text,
-.type-timecode.odd-line,
-.type-text.odd-line {
-	background: #ddd;
-}
-.type-timecode.odd-line.current-clip,
-.type-timecode.current-clip {
-	background-color: #007fff;
-	font-weight: bold;
-	color: #fff;
-}
-.type-timecode:hover {
-	background-color: #007fff;
-	font-weight: bold;
-	color: #fff;
-}
-.transcript-list .type-text {
-	width: 76%;
-	display: table-cell;
-	vertical-align: top;
-	padding: 2%;
-}
-.transcript-list.two-column .type-text {
-	width: 40%;
-	display: table-cell;
-	vertical-align: top;
-	padding: 2%;
-}
 
-.transcript-list {
-	max-height: 300px;
-	overflow-y: scroll;
-}
-.legend-resize {
-	padding: 2px 5px;
-	float: right;
-	position: absolute;
-	right: 0px;
-}
-input[type="submit"] {
-	margin-bottom: 10px;
-}
-.single-project .main-navigation li ul {
-	z-index: 750;
-}
+/* enables mobile view TODO: take out when update to foundation is complete */
 @media (max-width: 767px) {
-[class*="span"], .uneditable-input[class*="span"], .row-fluid [class*="span"] {
-	width: 228px;
-}
+	[class*="span"], .uneditable-input[class*="span"], .row-fluid [class*="span"] {
+		width: 228px;
+	}
 }

@@ -1,0 +1,32 @@
+html, body {
+	min-height : 100%;
+	height     : 100%;
+	overflow : hidden;
+}
+.dhp-split-iframes {
+	position : fixed;
+	top      : 0;
+	left     : 0;
+	right    : 0;
+	bottom   : 0;
+}
+.dhp-split-iframes iframe {
+	overflow : hidden;
+}
+.left-iframe {
+	position : absolute;
+	height   : 100%;
+	width    : 50%;
+	left     : 0;
+	overflow : hidden;
+}
+.right-iframe {
+	position : absolute;
+	height   : 100%;
+	width    : 50%;
+	right    : 0;
+	overflow : hidden;
+}
+body.dual-map .site {
+	margin-top: 0;
+}

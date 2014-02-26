@@ -1,0 +1,5 @@
+    <!-- Handlebars Templates for Transcript Entry Point on Project page -->
+    <!-- currently unneeded -->
+<script id="dhp-script-transc" type="text/x-handlebars-template">
+
+</script>

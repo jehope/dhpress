@@ -15,8 +15,7 @@
  */
 (function($, version)
 {
-  var prefixUrl = window.location.pathname.split('wp-admin');
-
+  var prefixUrl = dhpDataLib.plugin_folder; 
 
   Math.precision = function(value, precision)
     {
@@ -1989,7 +1988,7 @@
         },
       images:
         {
-          clientPath: prefixUrl[0]+'wp-content/plugins/dhpress/js/jpicker/images/', /* Path to image files */
+          clientPath: prefixUrl+'/js/jpicker/images/', /* Path to image files */
           colorMap:
           {
             width: 256,
