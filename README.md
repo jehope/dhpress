@@ -35,8 +35,9 @@ Thus, building DH Press on top of the WordPress CMS results in a truly sustainab
 == Using a development version ==
 
 At your own risk:  
-1. Download zip 
-2. Rename trunk folder to 'dhpress-vX.X.X' 
+
+1. Download zip
+2. Rename trunk folder to 'dhpress-vX.X.X'
 3. Upload renamed folder to the '/wp-content/plugins/' directory 
 4. Activate the plugin through the 'Plugins' menu in WordPress 
 
