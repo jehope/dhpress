@@ -31,13 +31,14 @@ Thus, building DH Press on top of the WordPress CMS results in a truly sustainab
 2. Install the zip on your plugins page or upload unzipped to the '/wp-content/plugins/' directory.
 3. Activate the plugin through the 'Plugins' menu in WordPress
 
+
 == Using a development version ==
 
 At your own risk:  
-1. Download zip
-2. Rename trunk folder to 'dhpress-vX.X.X'
-3. Upload renamed folder to the '/wp-content/plugins/' directory
-4. Activate the plugin through the 'Plugins' menu in WordPress
+1. Download zip 
+2. Rename trunk folder to 'dhpress-vX.X.X' 
+3. Upload renamed folder to the '/wp-content/plugins/' directory 
+4. Activate the plugin through the 'Plugins' menu in WordPress 
 
 
 == Frequently Asked Questions ==
