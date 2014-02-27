@@ -3,12 +3,6 @@
 
 @charset "UTF-8";
 
-body.fullscreen {
-	overflow: hidden;
-}
-#dhp-visual {
-	z-index: 1000;
-}
 	/* Controls on Map */
 #dhp-visual div.olControlZoom {
 	top:10px;

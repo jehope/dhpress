@@ -403,20 +403,6 @@ jQuery(document).ready(function($) {
     addHTMLForViewsTab();
 
 
-      // All menus that depend upon mote defintions need to be rebuilt
-      //  dynamically whenever user changes them
-    // $('body').on('motes-changed', function(e) {
-    //     // First, check that all motes in project settings arrays still exist; remove if not
-    //     // TO DO
-    //  var geoCoords = ['Lat/Lon Coordinates']
-    //     // Now remove and rebuilt all menus
-    //   $('#map-marker-selection').remove();
-    //   $('#map-marker-div').append('<select class="span12" name="map-marker-selection" id="map-marker-selection">'+
-    //       buildHTMLForMotes(settings['marker-layer'],false,geoCoords)+'</select>');
-
-    // }
-
-
     //$('#create-mote .custom-fields').replaceWith(buildHTMLForCustomFields());
     $('#create-mote #create-btn').click(function() {
       createNewMote();
@@ -518,35 +504,37 @@ jQuery(document).ready(function($) {
     switch (epType) {
     case 'cards':
       tcCount = $('.legend-list li').length + 1;
-      entryTabContent = '<div class="row-fluid vars">\
-                      <div class="span5" id="tcard-title-div">\
+      entryTabContent = '<div class="row offset1" id="tcard-title-div">\
                       	<label>Card Title</label>\
-                          <select class="span12" name="tcard-title-selection" id="tcard-title-selection">\
+                          <select class="span4" name="tcard-title-selection" id="tcard-title-selection">\
                           <option selected="selected" value="the_title">Marker Title</option>'+
                           buildHTMLForMotes(settings['title'], false, textMoteType)+
                           '</select>\
                       </div>\
-                      <div class="span5 legend-list" id="tcard-color-div">\
+                      <div class="row offset1 legend-list" id="tcard-color-div">\
                         <label>Card Color</label>\
-                          <li id="legend-"'+tcCount+'">\
-                          <select class="span12" name="tcard-color-selection" id="tcard-color-selection">'+
+                          <li id="legend-'+tcCount+'">\
+                          <select name="tcard-color-selection" id="tcard-color-selection">'+
                           buildHTMLForMotes(settings['color'], true, textMoteType)+
                           '</select>\
+                          <button type="button" id="create-card-color-mote" class="btn-success hidden">Create Taxonomy</button>\
+                          <button type="button" id="config-card-color-mote" class="btn-danger hidden">Configure Taxonomy</button>\
+                          <button type="button" id="del-card-color-mote" class="btn-danger hidden">Delete Taxonomy</button>\
                           </li>\
                       </div>\
-                      <div class="span5" id="tcard-image-div">\
+                      <div class="row offset1" id="tcard-image-div">\
                         <label>Card Image</label>\
-                          <select class="span12" name="tcard-image-selection" id="tcard-image-selection">'+
+                          <select class="span4" name="tcard-image-selection" id="tcard-image-selection">'+
                           buildHTMLForMotes(settings['image'], true, imageMoteType)+
                           '</select>\
                       </div>\
-                      <div class="span5" id="tcard-text-div">\
+                      <div class="row offset1" id="tcard-text-div">\
                         <label>Card Text</label>\
-                          <select class="span12" name="tcard-text-selection" id="tcard-text-selection">'+
+                          <select class="span4" name="tcard-text-selection" id="tcard-text-selection">\
+                          <option selected="selected" value="the_content">Post Content</option>'+
                           buildHTMLForMotes(settings['text'], true, textMoteType)+
                           '</select>\
-                      </div>\
-                  </div>';
+                      </div>';
       break;
     case 'map':
       entryTabContent = '<div class="row-fluid vars">\
@@ -613,55 +601,38 @@ jQuery(document).ready(function($) {
       // Now, do things specific to certain types of Entry Points
     switch (epType) {
     case 'map':
-      bindLegendEvents();
-
-      $('.add-legend').unbind('click');
-      $('.add-legend').click(function(){   
-        $('.legend-list').append(buildHTMLForALegend(null, 0));
         bindLegendEvents();
-        projectNeedsToBeSaved();
-      });
-        //set sliders
-      _.each($('.layer-list li'), function(layer) {
-        var tempOpacity = 1;
-        if($(layer).find('select option:selected').attr('data-opacity')) {
-          tempOpacity = $(layer).find('select option:selected').attr('data-opacity');
-        }
-        $(layer).find('.layer-opacity').slider({
-            range: false,
-            min: 0,
-            max: 1,
-            step:.05,
-            values: [ tempOpacity ],
-            slide: function( event, ui ) {            
-              $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
-              $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
-            }
-          }); 
-      });
 
-        // Handle deleting layer
-      $('.delete-layer').click(function(){   
-        //console.log('delete')
-        $(this).closest('li').remove();
-      });
+        $('.add-legend').unbind('click');
+        $('.add-legend').click(function(){   
+          $('.legend-list').append(buildHTMLForALegend(null, 0));
+          bindLegendEvents();
+          projectNeedsToBeSaved();
+        });
+          //set sliders
+        _.each($('.layer-list li'), function(layer) {
+          var tempOpacity = 1;
+          if($(layer).find('select option:selected').attr('data-opacity')) {
+            tempOpacity = $(layer).find('select option:selected').attr('data-opacity');
+          }
+          $(layer).find('.layer-opacity').slider({
+              range: false,
+              min: 0,
+              max: 1,
+              step:.05,
+              values: [ tempOpacity ],
+              slide: function( event, ui ) {            
+                $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
+                $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
+              }
+            }); 
+        });
 
-        // Handle button for loading map -- doesn't seem to be used any longer
-      // $('.load-map').click(function(){
-      //   $('#projectModal').empty();
-      //   $('#projectModal').append('<div class="modal-header">\
-      //     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
-      //     <h3 id="myModalLabel">Map Setup</h3>\
-      //   </div>\
-      //   <div class="modal-body">\
-      //     <p>Zoom and drag to set your map\'s initial position.</p>\
-      //     <div id="map_canvas"></div>\
-      //   </div>\
-      //   <div class="modal-footer">\
-      //     <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\
-      //     <button class="btn btn-primary">Save changes</button>\
-      //   </div>');
-      // });
+          // Handle deleting layer
+        $('.delete-layer').click(function(){   
+          //console.log('delete')
+          $(this).closest('li').remove();
+        });
 
         $('.add-layer').unbind('click');
         $('.add-layer').click(function() {
@@ -681,12 +652,101 @@ jQuery(document).ready(function($) {
           });
           projectNeedsToBeSaved();
         });
-      break;        // map ep-type
+        break;        // map ep-type
 
     case 'cards':
-      break;
+        updateCardColorButtons();
+        bindCardColorButtons();
+        break;
     }
   } // addHTMLForEntryPoint()
+
+
+  function bindCardColorButtons()
+  {
+      // Dirty project settings if any selections made
+    $("#tcard-title-selection, #tcard-image-selection, #tcard-text-selection").change(projectNeedsToBeSaved);
+
+      // Check to see if mote selected for color has been created as category or not
+    $("#tcard-color-selection").change(function() {
+      projectNeedsToBeSaved();
+      updateCardColorButtons();
+    });
+
+      // Carry out Create or Delete button actions
+    $("#create-card-color-mote").click(function() {
+      var colorMoteName = $("#tcard-color-selection option:selected").val();
+console.log("Create color mote "+colorMoteName);
+      if (colorMoteName) {
+        doCreateLegend(colorMoteName, updateCardColorButtons);
+      }
+    });
+
+    $("#del-card-color-mote").click(function() {
+        var colorMoteName = $("#tcard-color-selection option:selected").val();
+        $('#deleteModal').remove();
+        $('body').append('<!-- Modal -->\
+            <div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
+              <div class="modal-header">\
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+                <h3 id="myModalLabel">Delete Category</h3>\
+              </div>\
+              <div class="modal-body">\
+                <p>This will delete all values associated with the '+colorMoteName+' category.</p>\
+              </div>\
+              <div class="modal-footer">\
+                <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
+                <button class="btn btn-danger delete-confirm">Delete Category</button>\
+              </div>\
+            </div>');
+        $('#deleteModal').modal('show');
+        $('.delete-confirm').click(function(){
+          $('#deleteModal .delete-confirm').text('deleting...');
+          deleteTerms(colorMoteName, updateCardColorButtons);
+          projectNeedsToBeSaved();
+        });
+    });
+
+    $("#config-card-color-mote").click(function() {
+        var colorMoteName = $("#tcard-color-selection option:selected").val();
+console.log("Configure color mote "+colorMoteName);
+        dhpConfigureMoteLegend(colorMoteName, false);
+        updateCardColorButtons();
+    });
+  } // bindCardColorButtons()
+
+
+    // PURPOSE: Show or hide the Create and Delete buttons for Card Color button acc. to existence of taxonomy
+  function updateCardColorButtons()
+  {
+    var colorMote, colorMoteName;
+
+    colorMoteName = $('#tcard-color-div option:selected').val();
+
+      // If something selected, need to check to see if it has category/tax values
+    if (colorMoteName && colorMoteName !== '') {
+      colorMote = getMote(colorMoteName);
+      getMoteLegendValues(colorMoteName, function(theMote, moteValues) {
+          // A mote is selected but no category yet exists
+        if (Object.keys(moteValues).length==0) {
+          $("#create-card-color-mote").removeClass("hidden");
+          $("#del-card-color-mote").addClass("hidden");
+          $("#config-card-color-mote").addClass("hidden");
+
+          // Category/Legend has been created
+        } else {
+          $("#create-card-color-mote").addClass("hidden");
+          $("#del-card-color-mote").removeClass("hidden");
+          $("#config-card-color-mote").removeClass("hidden");
+        }
+      });
+      // If nothing selected, can neither Create nor Delete it
+    } else {
+      $("#create-card-color-mote").addClass("hidden");
+      $("#del-card-color-mote").addClass("hidden");
+      $("#config-card-color-mote").addClass("hidden");
+    }
+  } // updateCardColorButtons()
 
 
     // RETURNS: First entry point within parentObj of type objType
@@ -774,12 +834,48 @@ jQuery(document).ready(function($) {
       $('#transc-content-view').append(htmlStr);
     }
 
+      // Need to update the Create and Delete buttons acc. to source
     $("#av-transcript-source").change(function() {
       projectNeedsToBeSaved();
       updateTranscButtons();
     });
+      // Just dirty project for any new setting
     $("#av-transcript-audio, #av-transcript-txt, #av-transcript-txt2, #av-transcript-clip").change(function () {
       projectNeedsToBeSaved();
+    });
+
+      // Carry out Create or Delete button actions
+    $("#create-transc-mote").click(function() {
+      var transcMoteName = $("#av-transcript-source option:selected").val();
+console.log("Create transcription mote "+transcMoteName);
+      if (transcMoteName) {
+        doCreateLegend(transcMoteName, updateTranscButtons);
+      }
+    });
+
+    $("#del-transc-mote").click(function() {
+        var transcMoteName = $("#av-transcript-source option:selected").val();
+        $('#deleteModal').remove();
+        $('body').append('<!-- Modal -->\
+            <div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
+              <div class="modal-header">\
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>\
+                <h3 id="myModalLabel">Delete Category</h3>\
+              </div>\
+              <div class="modal-body">\
+                <p>This will delete all values associated with the '+transcMoteName+' category.</p>\
+              </div>\
+              <div class="modal-footer">\
+                <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\
+                <button class="btn btn-danger delete-confirm">Delete Category</button>\
+              </div>\
+            </div>');
+        $('#deleteModal').modal('show');
+        $('.delete-confirm').click(function(){
+          $('#deleteModal .delete-confirm').text('deleting...');
+          deleteTerms(transcMoteName, updateTranscButtons);
+          projectNeedsToBeSaved();
+        });
     });
   } // addHTMLForTranscView()
 
@@ -956,7 +1052,7 @@ jQuery(document).ready(function($) {
 
   function bindDelContentMote()
   {
-      $('.del-sel-content').unbind('click');
+      $('.del-sel-content').off('click');
       $('.del-sel-content').on('click',function() {
           $(this).parent().remove();
           projectNeedsToBeSaved();
@@ -1068,7 +1164,8 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Show modal about creation of legend terms, invoke AJAX function
     // INPUT:   moteName
-  function doCreateLegend(moteName) {
+    //          updateCallBack = function to call for updating after finish, or null
+  function doCreateLegend(moteName, updateCallBack) {
     var mote = getMote(moteName);
     $('#createModal').remove();
     $('body').append('<!-- Modal -->\
@@ -1085,20 +1182,18 @@ jQuery(document).ready(function($) {
       </div>');
     $('#createModal').modal('show');
     //console.log(projectObj['motes'])
-    dhpCreateLegendTax(mote);
+    dhpCreateLegendTax(mote, updateCallBack);
   } // doCreateLegend()
 
 
     // PURPOSE: Bind all event listeners for Legend buttons
   function bindLegendEvents() {
       // Create Legend buttons
-      // There is a special case to handle: when a new entry point is created, the first mote Legend
-      //  is created as a default, but it doesn't actually exist yet!
     $('.create-legend').unbind('click');
     $('.create-legend').click(function() {
         var moteName = $(this).parent().find('.filter-mote option:selected').val();
         // var projectID = projectObj['project-details']['id'];
-        doCreateLegend(moteName);
+        doCreateLegend(moteName, changeToLoadBtn);
     });
 
       // Configure Legend buttons
@@ -1107,7 +1202,7 @@ jQuery(document).ready(function($) {
         var moteName = $(this).parent().find('.filter-mote option:selected').val();
         // var projectID = projectObj['project-details']['id'];
         //console.log(projectObj['motes'])
-        dhpConfigureMoteLegend(moteName);
+        dhpConfigureMoteLegend(moteName, true);
     });
 
       // Delete Legend buttons
@@ -1119,6 +1214,7 @@ jQuery(document).ready(function($) {
       // console.log($(createdYet).children().eq(1));
       var lineID = $(this).closest('li').attr('id');
       if($(createdYet).children().eq(1).hasClass('load-legend')) {
+        $('#deleteModal').remove();
         $('body').append('<!-- Modal -->\
             <div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\
               <div class="modal-header">\
@@ -1137,7 +1233,7 @@ jQuery(document).ready(function($) {
         $('.delete-confirm').click(function(){
           //console.log('delete '+moteName+' now delete terms and children');
           $('#deleteModal .delete-confirm').text('deleting...');
-          deleteTerms(moteName);
+          deleteTerms(moteName, null);
           $('#'+lineID).remove();
           projectNeedsToBeSaved();
         });
@@ -1581,17 +1677,23 @@ jQuery(document).ready(function($) {
     var termName = termData['name'];
     var termID = termData['term_id'];
     $('.cat-list .ui-sortable')
-      .prepend('<li id="'+termID+'" class="mjs-nestedSortable-leaf"><div><span class="disclose"><span></span></span><span class="term-name">'+termName+'</span><span class="term-count"> </span><span class="term-icon">Pick Icon</span></div></li>');
+      .prepend('<li id="'+termID+'" class="mjs-nestedSortable-leaf"><div><span class="disclose"><span></span></span><span class="term-name">'+termName+'</span><span class="term-count"> </span><span class="term-icon">Pick Visual</span></div></li>');
   }
 
     // PURPOSE: Create new modal to configure legend
     // INPUT:   title = name of mote (unused!)
     //          data = JSON Object of all of the unique values of the Mote
-  function createConfigureLegendModal(title,data) {
+    //          allowIcons = true if enable selection of icons; false if colors only
+  function createConfigureLegendModal(title,data,allowIcons) {
     $('#taxModal .modal-body').empty();
   	$('#taxModal .modal-body').append(buildHTMLForLegendValues(data));
-    $('#taxModal .modal-body').append('<div class="icons-color"><a class="use-icons">Icons</a> | <a class="use-colors">Colors</a></div>');
-  	$('#taxModal .modal-body .icons-color').append($('.icons').clone());
+    $('#taxModal .modal-body').append('<div class="icons-color">');
+    if (allowIcons) {
+      $('#taxModal .modal-body').append('<a class="use-icons">Icons</a> | ');
+      $('#taxModal .modal-body .icons-color').append($('.icons').clone());
+    }
+    $('#taxModal .modal-body').append('<a class="use-colors">Colors</a></div>');
+
     $('#taxModal .modal-footer').empty();
     $('#taxModal .modal-footer').append('<a class="save-array btn btn-danger pull-right">Save</a>');
   	$('ol.sortable').nestedSortable({
@@ -1668,7 +1770,7 @@ jQuery(document).ready(function($) {
   	$('.term-icon').click(function(e){
   		//console.log($(this).parents('li').attr('id'));
   		//$('.mjs-nestedSortable-expanded').toggleClass('mjs-nestedSortable-collapsed');
-  		$(this).empty().text('Choose icon ->');
+  		$(this).empty().text('Pick Visual ->');
   		var termID = $(this).parents('li').attr('id');
   		$('#taxModal .modal-body .icons a').click(function(){
   			var icon_url = $(this).find('img').attr('src');
@@ -1680,6 +1782,7 @@ jQuery(document).ready(function($) {
   		});
   	});
   } // createConfigureLegendModal()
+
 
   // function resizeTB() {
   // 	if($('#taxModal .modal-body').length>0) {
@@ -1786,7 +1889,7 @@ jQuery(document).ready(function($) {
   				  $('li#'+termObj[i].term_id+' div', result).append('<span class="term-icon"><img src="'+termObj[i].icon_url+'" height="20px" /></span>');
           }
   			} else {
-  				$('li#'+termObj[i].term_id+' div', result).append('<span class="term-icon">Pick Icon</span>');
+  				$('li#'+termObj[i].term_id+' div', result).append('<span class="term-icon">Pick Visual</span>');
           //$('li#'+obj[i].term_id+' div', result).append('<span class="term-color">Pick Color</span>');
   			}
   		}
@@ -1842,7 +1945,8 @@ jQuery(document).ready(function($) {
     // PURPOSE: Create terms for new legend
     // RETURNS: Object with terms
     // INPUT:   mote = record for mote
-  function dhpCreateLegendTax(mote) {
+    //          updateCallBack = function to call after completion, or null
+  function dhpCreateLegendTax(mote, updateCallBack) {
     // console.log("Create legend for mote " + mote + " for project " + projectID);
     jQuery.ajax({
           type: 'POST',
@@ -1854,7 +1958,9 @@ jQuery(document).ready(function($) {
           },
           success: function(data, textStatus, XMLHttpRequest){
               $('#createModal').modal('hide');
-              changeToLoadBtn();
+              if (updateCallBack) {
+                updateCallBack();
+              }
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1892,7 +1998,8 @@ jQuery(document).ready(function($) {
     // PURPOSE: Get term object for legend editor and open modal
     // RETURNS: Object with terms
     // INPUT:   moteName
-  function dhpConfigureMoteLegend(moteName) {
+    //          allowIcons = true if icons can be associated with Mote values, false if color only
+  function dhpConfigureMoteLegend(moteName, allowIcons) {
     var mote = getMote(moteName);
     // console.log("Getting mote values for project " + projectID);
       //create modal here to hold users attention. Data will be rendered on response
@@ -1920,7 +2027,7 @@ jQuery(document).ready(function($) {
               mote: mote
           },
           success: function(data, textStatus, XMLHttpRequest){
-              createConfigureLegendModal(mote['name'],data); 
+              createConfigureLegendModal(mote['name'], data, allowIcons);
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -2101,7 +2208,7 @@ jQuery(document).ready(function($) {
   } // deleteCustomField()
 
 
-  function deleteTerms(termName) {
+  function deleteTerms(termName, updateCallback) {
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -2111,8 +2218,10 @@ jQuery(document).ready(function($) {
               term_name: termName
           },
           success: function(data, textStatus, XMLHttpRequest){
-              console.log('dhpDeleteTerms');
-              $('#deleteModal').modal('hide');            
+              $('#deleteModal').modal('hide');
+              if (updateCallback) {
+                updateCallback();
+              }
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
