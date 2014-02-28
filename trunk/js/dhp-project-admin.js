@@ -633,6 +633,7 @@ jQuery(document).ready(function($) {
               slide: function( event, ui ) {            
                 $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
                 $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
+                projectNeedsToBeSaved();
               }
             }); 
         });
@@ -657,6 +658,7 @@ jQuery(document).ready(function($) {
             slide: function( event, ui ) {            
               $(this).parents('li').find('select option:selected').attr('data-opacity', ui.values[ 0 ]);
               $(this).next('.slider-value').text( "" + ui.values[ 0 ] );
+              projectNeedsToBeSaved();
             }
           });
           projectNeedsToBeSaved();
