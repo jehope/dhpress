@@ -494,9 +494,18 @@ jQuery(document).ready(function($) {
     var geoMoteType = ['Lat/Lon Coordinates'], textMoteType = ['Text'], imageMoteType = ['Image'];
     var epCount  = countEntryPoints(epType) +1;
 
+      // Is this a newly created entry point?
     if(!settings) {
       settings = new Object();
+
+        // Create default base layer
+      if (epType == 'map') {
+        settings['layers'] = [];
+        var defaultLayer = { 'id': 0, 'opacity': 1};
+        settings['layers'].push(defaultLayer);
+      }
     }
+
       // Create tab from top left
     $('#entryTabs').append('<li id="'+epType+epCount+'-tab"><a href="#'+epType+'-'+epCount+'" class="ep-'+epType+'" data-toggle="tab">'+epType+' '+epCount+'</a></li> ')
 
@@ -1121,7 +1130,7 @@ console.log("Create transcription mote "+transcMoteName);
     var layerHtml = $('<ul><li><label>Base Layer</label><select name="base-layer" id="base-layer"></select></li></ul>');
     $('select', layerHtml).append($('#hidden-layers .base-layer').clone());
 
-    if(layerArray != null && typeof layerArray === 'object') {
+    // if(layerArray != null && typeof layerArray === 'object') {
       for (var i =0; i < Object.keys(layerArray).length; i++) {
           // First item is Base Layer
         if(i==0) {
@@ -1137,7 +1146,7 @@ console.log("Create transcription mote "+transcMoteName);
           $('select option#'+layerArray[i]['id'], layerHtml).attr('data-opacity',layerArray[i]['opacity']);
         }
       }
-    }
+    // }
     return $(layerHtml).html();
   } // loadLayers()
 
