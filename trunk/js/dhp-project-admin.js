@@ -612,7 +612,7 @@ jQuery(document).ready(function($) {
     case 'map':
         bindLegendEvents();
 
-        $('.add-legend').unbind('click');
+        $('.add-legend').off('click');
         $('.add-legend').click(function(){   
           $('.legend-list').append(buildHTMLForALegend(null, 0));
           bindLegendEvents();
@@ -643,7 +643,7 @@ jQuery(document).ready(function($) {
           $(this).closest('li').remove();
         });
 
-        $('.add-layer').unbind('click');
+        $('.add-layer').off('click');
         $('.add-layer').click(function() {
           var layerHTML = addNewLayer();
           $('.layer-list').append(layerHTML);
@@ -999,7 +999,7 @@ console.log("Create transcription mote "+transcMoteName);
           //console.log(val);
           $('#modal-views').append(buildModalView(val));
         });
-        $('.delete-modal-view').unbind('click');
+        $('.delete-modal-view').off('click');
         $('.delete-modal-view').on('click',function(){
           $(this).parent().remove();
         });
@@ -1198,7 +1198,7 @@ console.log("Create transcription mote "+transcMoteName);
     // PURPOSE: Bind all event listeners for Legend buttons
   function bindLegendEvents() {
       // Create Legend buttons
-    $('.create-legend').unbind('click');
+    $('.create-legend').off('click');
     $('.create-legend').click(function() {
         var moteName = $(this).parent().find('.filter-mote option:selected').val();
         // var projectID = projectObj['project-details']['id'];
@@ -1206,7 +1206,7 @@ console.log("Create transcription mote "+transcMoteName);
     });
 
       // Configure Legend buttons
-    $('.load-legend').unbind('click');
+    $('.load-legend').off('click');
     $('.load-legend').click(function() {
         var moteName = $(this).parent().find('.filter-mote option:selected').val();
         // var projectID = projectObj['project-details']['id'];
@@ -1215,7 +1215,7 @@ console.log("Create transcription mote "+transcMoteName);
     });
 
       // Delete Legend buttons
-    $('.delete-legend').unbind('click');
+    $('.delete-legend').off('click');
     $('.delete-legend').click(function() {
       var moteName = $(this).parent().find('.filter-mote option:selected').val();
 
@@ -1458,7 +1458,7 @@ console.log("Create transcription mote "+transcMoteName);
           $(this).find('.close').html('&times;');
         }
       });
-      $('#mote-list #pickMultiple').unbind('click');
+      $('#mote-list #pickMultiple').off('click');
       $('#mote-list #pickMultiple').click(function(){
         if($('#mote-list #pickMultiple').is(':checked')) { 
           $('#mote-list .custom-fields').attr('multiple','multiple');
@@ -1740,7 +1740,7 @@ console.log("Create transcription mote "+transcMoteName);
 
       // If user selects "Colors" in Legend configure modal
     $('.use-colors').click(function(e){
-      $('.term-icon').unbind('click');
+      $('.term-icon').off('click');
       $('.term-icon').each(function() {
         if($(this).text().substring(0,1)!='#') {
           $(this).empty();
@@ -1787,7 +1787,7 @@ console.log("Create transcription mote "+transcMoteName);
   			$(img).css({'height':'20px','margin-top': '-3px'});
   			//console.log(termID+' '+icon_url);
   			$('.cat-list li#'+termID+' .term-icon').empty().append(img);
-  			$('#taxModal .modal-body .icons a').unbind('click');
+  			$('#taxModal .modal-body .icons a').off('click');
   		});
   	});
   } // createConfigureLegendModal()

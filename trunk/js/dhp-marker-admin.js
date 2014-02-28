@@ -39,7 +39,7 @@ jQuery(document).ready(function($) {
 	}
 
 		// Reload project-specific fields if Marker is associated with a different Project
-	// $('select#marker_project_id').bind('change',function(){
+	// $('select#marker_project_id').on('change',function(){
 	// 	//console.log('here'+$('#marker_project_id option:selected').val());
 	// 	getProjectSettings($('#marker_project_id option:selected').val());
 	// });
@@ -149,7 +149,7 @@ jQuery(document).ready(function($) {
 			$('.edit-custom-field').val(markerObject['project-details']['id']);
 
 				// Bind code to display value for whatever value is selected in dropdown options
-			$('.custom-field-editor select').bind('change',function(){
+			$('.custom-field-editor select').on('change',function(){
 				displayMetaValue(this.value);
 			});
 		} else {

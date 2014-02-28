@@ -347,8 +347,8 @@ var dhpMapsView = {
     createLegends: function(legendList)
     {
             // Custom event types bound to the document to be triggered elsewhere
-        jQuery(document).bind('order.findSelectedCats',function(){ dhpMapsView.catFilterSelect= dhpMapsView.findSelectedCats();});
-        jQuery(document).bind('order.updateLayerFeatures',function(){ dhpMapsView.updateLayerFeatures();});
+        jQuery(document).on('order.findSelectedCats',function(){ dhpMapsView.catFilterSelect= dhpMapsView.findSelectedCats();});
+        jQuery(document).on('order.updateLayerFeatures',function(){ dhpMapsView.updateLayerFeatures();});
 
         //console.log('here'+_.size(legendList));
         var legendHtml;
