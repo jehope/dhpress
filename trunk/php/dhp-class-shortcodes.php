@@ -15,7 +15,10 @@ if(!class_exists('DHP_Splitmap_Shortcode'))
 
 				// has to add scripts/styles to footer since shortcodes are registered after enqueue step
 			add_action('wp_footer', array(__CLASS__, 'print_scripts'));
+
+
 		}
+		
 			// USAGE: [dhpress_split_projects left="url" right="url"]
 		static function dhp_split_projects_function($atts)
 		{
@@ -39,16 +42,18 @@ if(!class_exists('DHP_Splitmap_Shortcode'))
 				// Register styles
 			wp_register_style('dhp-shortcode-styles', plugins_url('/css/dhp-shortcodes.css', dirname(__FILE__)), false, DHP_PLUGIN_VERSION );
 				// Register scripts
-			// wp_register_script('my-script', plugins_url('my-script.js', __FILE__), array('jquery'), '1.0', true);
+			wp_register_script('dhp-shortcode-script', plugins_url('/js/dhp-shortcode-script.js', dirname(__FILE__)), array( 'jquery' ), DHP_PLUGIN_VERSION, true);
 		}
+		
 		static function print_scripts()
 		{
 			if ( ! self::$add_script )
 				return;
+
 				// Load styles
 			wp_enqueue_style('dhp-shortcode-styles');
 				// Load scripts
-			// wp_enqueue_script('my-script');
+			wp_enqueue_script('dhp-shortcode-script');
 		}
 	}
 }

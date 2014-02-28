@@ -3,8 +3,8 @@
 Plugin Name: DH Press | Digital Humanities Toolkit
 Plugin URI: http://dhpress.org/download
 Description: DHPress is a flexible, repurposable, fully extensible digital humanities toolkit designed for non-technical users.
-Version: 1.8.1
-Author: DHPress Team: Joe E Hope, Bryan Gaston, Pam Lach
+Version: 1.8.3
+Author: DHPress Team: Joe E Hope, Michael Newton, Pam Lach, Bryan Gaston
 Author URI: http://dhpress.org/team
 License: GPLv2
 */
@@ -25,14 +25,12 @@ License: GPLv2
 */
 
 
-
 define( 'DHP_NAME', 'Digital Humanities Toolkit' );
-define( 'DHP_REQUIRED_PHP_VERSON', '5.2' );
+define( 'DHP_REQUIRED_PHP_VERSION', '5.2' );
 define( 'DHP_REQUIRED_WP_VERSION', '3.1' );
-define( 'DHP_PLUGIN_DIR', WP_PLUGIN_DIR."/".dirname(plugin_basename(__FILE__)) );
 define( 'DHP_PLUGIN_URL', plugins_url('', __FILE__ ) );
 define( 'DHP_MAPS_TABLE_VERSION', '0.1' );
-define( 'DHP_PLUGIN_VERSION', '1.8.1' );
+define( 'DHP_PLUGIN_VERSION', '1.8.3' );
 define( 'SCRIPT_DEBUG', true );
 
 /**
@@ -43,7 +41,7 @@ function dhp_requirements_met()
 {
 	global $wp_version;
 	
-	if( version_compare( PHP_VERSION, DHP_REQUIRED_PHP_VERSON, '<') )
+	if( version_compare( PHP_VERSION, DHP_REQUIRED_PHP_VERSION, '<') )
 		return false;
 	
 	if( version_compare( $wp_version, DHP_REQUIRED_WP_VERSION, "<") )
@@ -66,7 +64,7 @@ function dhp_requirements_not_met()
 			</p>
 		</div>',
 		DHP_NAME,
-		DHP_REQUIRED_PHP_VERSON,
+		DHP_REQUIRED_PHP_VERSION,
 		DHP_REQUIRED_WP_VERSION,
 		PHP_VERSION,
 		esc_html( $wp_version )

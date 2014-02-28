@@ -4,6 +4,7 @@
 .transcript-list {
 	max-height: 300px;
 	overflow-y: scroll;
+	resize: both;
 }
 
 .transcript-list .row {
