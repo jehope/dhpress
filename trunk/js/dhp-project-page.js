@@ -216,17 +216,17 @@ jQuery(document).ready(function($) {
             windowWidth  = jQuery(window).width();
             windowHeight = jQuery(window).height();
 
-                // Modify modal class size if window size is under/over certain sizes
+                // Override modal class size to/from medium if window size is under/over certain sizes
             if(windowWidth<800) {
                 jQuery('#markerModal').removeClass('medium');
-                jQuery('#markerModal').removeClass(modalSize);
+                jQuery('#markerModal').addClass(modalSize);
             }
             else if(modalSize==='tiny' && windowWidth >= 800 && windowWidth < 1200) {
-                jQuery('#markerModal').removeClass(modalSize);
+                jQuery('#markerModal').removeClass('tiny');
                 jQuery('#markerModal').addClass('medium');
             }
             else if(modalSize==='small' && windowWidth >= 800 && windowWidth < 1200) {
-                jQuery('#markerModal').removeClass(modalSize);
+                jQuery('#markerModal').removeClass('small');
                 jQuery('#markerModal').addClass('medium');
             }
             else {

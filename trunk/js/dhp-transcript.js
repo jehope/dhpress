@@ -71,7 +71,7 @@ var dhpTranscript = {
                         playingNow = false;
                     }
                 }
-                if (playingNow && document.getElementById("transcSyncOn").checked) {
+                if (playingNow) {
                     dhpTranscript.hightlightTranscriptLine(params.currentPosition);
                 }
             });
@@ -191,6 +191,7 @@ var dhpTranscript = {
 
 
         // PURPOSE: Given a millisecond reading, unhighlight any previous "playhead" and highlight new one
+        // NOTES:   Only scroll to that position if checkbox checked
     hightlightTranscriptLine: function (millisecond)
     {
         var match;
@@ -200,18 +201,18 @@ var dhpTranscript = {
             if (match) {
                 if(dhpTranscript.rowIndex!==index) {
                     dhpTranscript.rowIndex = index;
-                    var topDiff = jQuery('.transcript-list div.type-timecode').eq(index).offset().top - jQuery('.transcript-list').offset().top;
-                    var scrollPos = jQuery('.transcript-list').scrollTop() + topDiff;
-                    jQuery('.transcript-list').animate({
-                       scrollTop: scrollPos
-                    }, 500);
+                        // Should we synchronize audio and text transcript?
+                    if (document.getElementById("transcSyncOn").checked) {
+                        var topDiff = jQuery('.transcript-list div.type-timecode').eq(index).offset().top - jQuery('.transcript-list').offset().top;
+                        var scrollPos = jQuery('.transcript-list').scrollTop() + topDiff;
+                        jQuery('.transcript-list').animate({ scrollTop: scrollPos }, 300);
+                    }
                 }
                 jQuery('.transcript-list div.type-timecode').removeClass('current-clip');
                 jQuery('.transcript-list div.type-timecode').eq(index).addClass('current-clip');
             }
             return match;
         });
-        //$('.type-timecode').attr('data-timecode');
     }, // hightlightTranscriptLine()
 
 
@@ -262,7 +263,7 @@ var dhpTranscript = {
                     // Skip values with line breaks...basically empty items
                 if(val.length>1) {
                         // Does it begin with a timecode?
-                    if(val[0]==='['&&val[1]==='0'){
+                    if(val[0]==='[' && val[1]==='0'){
                         if(index>0) {
                             jQuery('.row', transcript_html).eq(index-1).append('<div class="type-text">'+textBlock+'</div>');
                         }
