@@ -1099,6 +1099,7 @@ function print_new_bootstrap_html($project_id)
           <div class="tab-content">
 
           	<div id="info" class="tab-pane fade in active">
+          	  <h3>DH Press version '.DHP_PLUGIN_VERSION.'</h3>
               <h4>Project Info</h4>
               <p>Project ID: '.$project_id.'</p>
               <p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy='.$projObj->getRootTaxName().'" >Category Manager</a></p>
@@ -1153,8 +1154,7 @@ function print_new_bootstrap_html($project_id)
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Create Entry Point<b class="caret"></b></a>
                   <ul class="dropdown-menu">
                     <li><a id="add-map" >Map</a></li>
-                    <!--<li><a id="add-cards">Topic Cards</a></li>
-                    <li class="disabled"><a id="add-timeline">Timeline</a></li>-->
+                    <li><a id="add-cards">Topic Cards</a></li>
                   </ul>
                 </li>
               </ul>
