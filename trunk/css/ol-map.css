@@ -13,10 +13,24 @@ body.fullscreen {
 #dhp-visual div.olControlZoom {
 	top:10px;
 }
-.fullscreen #dhp-visual div.olControlZoom {
-	top: 55px;
-	left: auto;
-	right: 20px;
+.fullscreen #dhp-visual div.olControlZoom,
+.fullscreen #dhp-visual .leaflet-control-zoom {
+	top: 110px;
+	
+}
+
+.leaflet-control.reset-control {
+	position: absolute;
+	top: 170px;
+	right: 0px;
+    padding: 6px 8px;
+    font: 14px/16px Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255,255,255,1);
+    box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    border-radius: 5px;
+    cursor:pointer;
+
 }
 .logged-in.fullscreen #dhp-visual div.olControlZoom {
 	top:70px;
@@ -59,12 +73,15 @@ body.fullscreen {
 
 	/* Overrides most theme settings for img tags in the map only */
 .entry-content .olMap img,
-.widget .olMap img {
+.widget .olMap img,
+.entry-content img.leaflet-tile {
 	max-width: none;
 	border-radius: 0;
 	box-shadow: none;
 }
+.leaflet-control-zoom {
 
+}
 	/* Current legend style */
 #legends {
 	position:relative;	
@@ -134,6 +151,9 @@ body.fullscreen {
 	width:100%;
 	cursor: pointer;
 	line-height: 15px;
+}
+.legend-div .terms .row.hasParent {
+	display: none;
 }
 .legend-div .terms .row:hover,
 .legend-div .terms .row.selected {
