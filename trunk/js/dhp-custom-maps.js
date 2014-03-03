@@ -26,8 +26,9 @@
 
     ns.API_GOOGLE = 1;
     ns.API_OPENLAYERS = 2;
+    ns.API_LEAFLET = 3;
 
-    _apis = [ns.API_GOOGLE, ns.API_OPENLAYERS];
+    _apis = [ns.API_GOOGLE, ns.API_OPENLAYERS, ns.API_LEAFLET];
 
     // Google Maps can use either a short namespace prefix 'G'
     // or a long one 'google.maps.'
@@ -111,7 +112,7 @@
         }
         map_id = map_id.toUpperCase();
         verifyMapId(map_id);
-
+        console.log(map_id)
         this.map_id = map_id; // Store the map id to access the metadata
         this.layer_obj = {};  // create storage for map layer objects
     };
@@ -179,6 +180,13 @@
                 lb.transform(new OpenLayers.Projection("EPSG:4326"),
                              new OpenLayers.Projection("EPSG:900913"));
                 return lb;
+            
+            case ns.API_LEAFLET:
+                var southWest = new L.latLng(thisMap.bounds.south, thisMap.bounds.west),
+                northEast = new L.latLng(thisMap.bounds.north, thisMap.bounds.north);
+                lb = new L.latLngBounds(southWest, northEast);
+
+                return lb;
             }
         }
         return thisMap.bounds;
@@ -231,6 +239,10 @@
                 pt.transform(new OpenLayers.Projection("EPSG:4326"),
                              new OpenLayers.Projection("EPSG:900913"));
                 return pt;
+
+            case ns.API_LEAFLET:
+                pt = new L.latLng(thisMap.centroid.lat, thisMap.centroid.lng);
+                return pt;
             }
         }
         return thisMap.centroid;
@@ -265,7 +277,6 @@
         if (!api_type) {
             api_type = ns._apiType;
         }
-
         // verify the api is valid and present
         verifyApiType(api_type, true);
 
@@ -380,6 +391,43 @@
                 options
             );
             return this.layer_obj[api_type];
+
+        case ns.API_LEAFLET:
+            layer_bounds = this.bounds(true, api_type);
+                     
+            getTileUrl = function (tilePoint) {
+                // Builds the url for the map tile showing the requested bounds 
+                // tilePoint.y has an incorrect value. this._tiles contains the correct numbers. 
+                // Stored as keys in _tiles object, last one in returns.
+                var xyKey = Object.keys(this._tiles)[Object.keys(this._tiles).length - 1]
+                // stored as key in _tiles. format: X:Y. 
+                // tilePoint.x seems more accurate than xySplit[0](less not found tiles)
+                var xySplit = xyKey.split(':');
+                // replace the coordinate placeholders in the url pattern
+                // with the actual values
+                url = this._url;
+                url = url.replace(/\{X\}/, tilePoint.x);
+                url = url.replace(/\{Y\}/, xySplit[1]);
+                url = url.replace(/\{Z\}/, tilePoint.z);
+
+                return url;
+            };
+            console.log(ns._maps[this.map_id])
+                // set options
+            options.type = 'png';
+            options.bounds = layer_bounds;
+            options.tms = true;
+            options.isBaseLayer = false;
+            options.layerName = ns._maps[this.map_id].title;
+            options.minZoom = ns._maps[this.map_id].min_zoom;
+            options.maxZoom = ns._maps[this.map_id].max_zoom;
+            options.attribution = "Layer created with DH Press";
+
+                // create layer
+            this.layer_obj[api_type] = new L.TileLayer(ns._maps[this.map_id].tile_url, options );
+            this.layer_obj[api_type].getTileUrl = getTileUrl; // custom tile handler for cdla layers
+            
+            return this.layer_obj[api_type];
         }
     };
 
@@ -434,6 +482,12 @@
             case ns.API_OPENLAYERS:
                 if (!window.OpenLayers) {
                     throw "dhpCustomMaps error: OpenLayers API not found";
+                }
+                break;
+
+            case ns.API_LEAFLET:
+                if (!window.L) {
+                    throw "dhpCustomMaps error: Leaflet API not found";
                 }
                 break;
             }
