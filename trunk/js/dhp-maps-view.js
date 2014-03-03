@@ -100,15 +100,27 @@ var dhpMapsView = {
             switch (thisLayer.dhp_map_type) {
             case 'OSM':            
                 var subDomains = thisLayer.dhp_map_subdomains.split(',');
-                newLayer = new L.TileLayer(thisLayer.dhp_map_url, { 
-                    subdomains: subDomains, 
-                    attribution: thisLayer.source, 
-                    maxZoom: 20, 
-                    opacity: thisLayer.opacity,
-                    layerName: thisLayer.dhp_map_shortname,
-                    layerType: thisLayer.dhp_map_category
-                });
-               
+                console.log(subDomains.length)
+                if(subDomains.length>1) {
+                    newLayer = new L.TileLayer(thisLayer.dhp_map_url, { 
+                        subdomains: subDomains, 
+                        attribution: thisLayer.source, 
+                        maxZoom: 20, 
+                        opacity: thisLayer.opacity,
+                        layerName: thisLayer.dhp_map_shortname,
+                        layerType: thisLayer.dhp_map_category
+                    });
+
+                }
+                else {
+                    newLayer = new L.TileLayer(thisLayer.dhp_map_url, { 
+                        attribution: thisLayer.source, 
+                        maxZoom: 20, 
+                        opacity: thisLayer.opacity,
+                        layerName: thisLayer.dhp_map_shortname,
+                        layerType: thisLayer.dhp_map_category
+                    });
+                }
 
                 newLayer.addTo(dhpMapsView.mapLeaflet);
                 break;
