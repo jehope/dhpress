@@ -85,7 +85,7 @@ jQuery(document).ready(function($) {
         $('#dhp-visual').after(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
             // all custom maps must have already been loaded into run-time "library"
-        dhpMapsView.initializeMap(ajaxURL, projectID, mapEP, dhpSettings['views']);
+        dhpMapsView.initMapInterface(ajaxURL, projectID, mapEP, dhpSettings.views);
 
             // Add user tips for map
         $('body').append(Handlebars.compile($("#dhp-script-map-joyride").html()));
