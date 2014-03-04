@@ -6,7 +6,7 @@ Donate link: http://dhpress.org/
 Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours  
 Requires at least: 3.4  
 Tested up to: 3.8  
-Stable tag: 1.8.3  
+Stable tag: 1.9.0  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html  
   
@@ -52,6 +52,9 @@ Go to DHPress > New Project and create a new project to get started
 == Changelog ==
 
 Posted on [release page](https://github.com/jehope/dhpress/releases).
+
+= 1.9.0 =
+* Removed OpenLayers and implemented [Leaflet](http://leafletjs.org) mapping API on project pages.
 
 = 1.8.0 = 
 * Created settings page with kiosk mode features
