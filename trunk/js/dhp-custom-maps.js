@@ -112,7 +112,6 @@
         }
         map_id = map_id.toUpperCase();
         verifyMapId(map_id);
-        console.log(map_id)
         this.map_id = map_id; // Store the map id to access the metadata
         this.layer_obj = {};  // create storage for map layer objects
     };
@@ -412,7 +411,6 @@
 
                 return url;
             };
-            console.log(ns._maps[this.map_id])
                 // set options
             options.type = 'png';
             options.bounds = layer_bounds;
