@@ -15,22 +15,70 @@ body.fullscreen {
 }
 .fullscreen #dhp-visual div.olControlZoom,
 .fullscreen #dhp-visual .leaflet-control-zoom {
-	top: 110px;
+	/*top: 110px;*/
 	
 }
+#dhp-visual .leaflet-control-layers {
+/*	-webkit-transition: all 1s ease-out;
+    -moz-transition: all 1s ease-out;
+    -o-transition: all 1s ease-out;
+	transition: all 1s ease-out;
+	overflow: hidden;
+	width: 36px;
+	height: 36px;*/
+}
+#dhp-visual .leaflet-control-layers.leaflet-control-layers-expanded {
+/*	width: auto;
+	height: auto;*/
+}
+#dhp-visual .leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	/*display: block;*/
+	
+	}
+#dhp-visual .leaflet-control-layers .leaflet-control-layers-list {
+/*	display: block;
+	-webkit-transition: all 1s ease-out;
+    -moz-transition: all 1s ease-out;
+    -o-transition: all 1s ease-out;
+	transition: all 1s ease-out;*/
+/*	width: 36px;
+	height: 36px;*/
+}
+#dhp-visual .leaflet-control-layers .leaflet-control-layers-list, #dhp-visual .leaflet-control-layers-expanded .leaflet-control-layers-toggle
+{
+	/*opacity: 0;*/
+}
+#dhp-visual .leaflet-control-layers-expanded .leaflet-control-layers-list {
+/*	opacity: 1;
+	position: relative;
+	width: auto;
+	height: auto;*/
+}
+#dhp-visual .leaflet-popup-content-wrapper {
+	text-align: center;
+}
+input.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+}
 
-.leaflet-control.reset-control {
-	position: absolute;
-	top: 170px;
-	right: 0px;
-    padding: 6px 8px;
-    font: 14px/16px Arial, Helvetica, sans-serif;
-    background: white;
-    background: rgba(255,255,255,1);
-    box-shadow: 0 0 15px rgba(0,0,0,0.4);
-    border-radius: 5px;
-    cursor:pointer;
+#dhp-visual .leaflet-bar a, #dhp-visual .leaflet-bar a:hover {
+	width: 36px;
+	height: 36px;
+	line-height: 36px;
+	font-size: 22px;
+}
+#dhp-visual .leaflet-control.reset-control {
 
+}
+#dhp-visual .leaflet-control.reset-control a {
+	line-height: 38px;
+	font-size: 20px;
+	color: #21759b;
+	/*text-align: center;
+	display: inline-block;
+	width: 100%;*/
 }
 .logged-in.fullscreen #dhp-visual div.olControlZoom {
 	top:70px;
