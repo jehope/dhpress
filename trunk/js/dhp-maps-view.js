@@ -98,7 +98,7 @@ var dhpMapsView = {
                         subdomains: subDomains, 
                         attribution: thisLayer.dhp_map_source, 
                         maxZoom: 20, 
-                        opacity: thisLayer.opacity,
+                        opacity: theLayer.opacity,
                         layerName: thisLayer.dhp_map_shortname,
                         layerType: thisLayer.dhp_map_category,
                     });
@@ -108,7 +108,7 @@ var dhpMapsView = {
                     newLayer = new L.TileLayer(thisLayer.dhp_map_url, { 
                         attribution: thisLayer.dhp_map_source, 
                         maxZoom: 20, 
-                        opacity: thisLayer.opacity,
+                        opacity: theLayer.opacity,
                         layerName: thisLayer.dhp_map_shortname,
                         layerType: thisLayer.dhp_map_category
                     });
@@ -125,6 +125,7 @@ var dhpMapsView = {
                 dhpCustomMaps.maps.defaultAPI(dhpCustomMaps.maps.API_LEAFLET);
                 var dhpObj = new dhpCustomMaps.maps.Map(thisLayer.dhp_map_typeid);
                 newLayer = dhpObj.layer();
+                newLayer.options.opacity = theLayer.opacity;
                 newLayer.options.attribution = 'Layer data &copy; ' + thisLayer.dhp_map_source;
                 newLayer.addTo(dhpMapsView.mapLeaflet);
                 break;
@@ -676,12 +677,14 @@ var dhpMapsView = {
         var layerSettings = dhpMapsView.mapEP.layers;
         _.each(dhpMapsView.mapLayers,function(thisLayer,index) {
             layerOpacity = 1;
-            if(layerSettings.index) {
-                layerOpacity = layerSettings.index.opacity;
+
+            if(layerSettings[index]) {
+                layerOpacity = layerSettings[index].opacity;
                 if(!layerOpacity){
                     layerOpacity = 1;
                 }
             }
+
             jQuery('#layers-panel').append('<div class="layer'+index+'">'+
                 '<div class="row"><div class="columns small-12 large-12"><input type="checkbox" checked="checked"> '+
                 '<a class="value" id="'+thisLayer.options.id+'">'+thisLayer.options.layerName+'</a></div></div>'+
