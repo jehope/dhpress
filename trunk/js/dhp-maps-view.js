@@ -336,19 +336,24 @@ var dhpMapsView = {
     {
         layer.bindPopup('<div><h1>'+feature.properties.title+'</h1><a class="button success" onclick="javascript:dhpMapsView.onFeatureSelect()">More</a></div>', {offset: new L.Point(0, -10)});
         layer.on({
-            mouseover: dhpMapsView.highlightFeature,
+            mouseover: dhpMapsView.hoverHighlightFeature,
             mouseout: dhpMapsView.resetHighlight,
-            click: dhpMapsView.highlightFeature
+            click: dhpMapsView.clickHighlightFeature
         });
     },
 
+    hoverHighlightFeature: function(e){
+        if(!dhpMapsView.isTouchSupported()) {
+            dhpMapsView.highlightFeature(e);
+        }
+    },
         // PURPOSE: Open popup on click, if popup is open(from hover) launch feature popup
     clickHighlightFeature: function(e){
-        if(dhpMapsView.anyPopupsOpen) {
+        if(!dhpMapsView.isTouchSupported()) {
             dhpMapsView.onFeatureSelect();
         }
         else {
-            dhpMapsView.highlightFeature(e);
+            dhpMapsView.highlightFeature(e);   
         }
     },
         // PURPOSE: Open popup
@@ -897,6 +902,16 @@ var dhpMapsView = {
     {
         return (_.find(dhpMapsView.viewParams.select['view-type'],
                     function(theName) { return (theName == modalName); }) != undefined);
+    },
+        // RETURNS: true if touch is supported
+    isTouchSupported: function () {
+        var msTouchEnabled = window.navigator.msMaxTouchPoints;
+        var generalTouchEnabled = "ontouchstart" in document.createElement("div");
+     
+            if (msTouchEnabled || generalTouchEnabled) {
+                return true;
+            }
+        return false;
     },
 
         // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
