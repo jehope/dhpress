@@ -419,8 +419,7 @@
             options.layerName = ns._maps[this.map_id].title;
             options.minZoom = ns._maps[this.map_id].min_zoom;
             options.maxZoom = ns._maps[this.map_id].max_zoom;
-            options.attribution = "Layer created with DH Press";
-
+            // options.attribution = "Layer created with DH Press";
                 // create layer
             this.layer_obj[api_type] = new L.TileLayer(ns._maps[this.map_id].tile_url, options );
             this.layer_obj[api_type].getTileUrl = getTileUrl; // custom tile handler for cdla layers

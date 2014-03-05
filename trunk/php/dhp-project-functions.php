@@ -2136,14 +2136,14 @@ function add_dhp_project_admin_scripts( $hook )
 
 function dhpGetMapLayerData($mapLayers)
 {
-	$mapMetaList = array(	"dhp_map_shortname"=> "dhp_map_shortname",
-							"dhp_map_typeid"   => "dhp_map_typeid",  "dhp_map_category"  => "dhp_map_category" ,
-							"dhp_map_type"     => "dhp_map_type",     "dhp_map_url"      => "dhp_map_url",
-							"dhp_map_subdomains"      => "dhp_map_subdomains",
-							"dhp_map_n_bounds" => "dhp_map_n_bounds", "dhp_map_s_bounds" => "dhp_map_s_bounds",
-							"dhp_map_e_bounds" => "dhp_map_w_bounds", "dhp_map_w_bounds" => "dhp_map_w_bounds",
-							"dhp_map_min_zoom" => "dhp_map_min_zoom", "dhp_map_max_zoom" => "dhp_map_max_zoom",
-							"dhp_map_cent_lat" => "dhp_map_cent_lat", "dhp_map_cent_lon" => "dhp_map_cent_lon"
+	$mapMetaList = array(	"dhp_map_shortname"  => "dhp_map_shortname",
+							"dhp_map_typeid"     => "dhp_map_typeid",  "dhp_map_category"  => "dhp_map_category" ,
+							"dhp_map_type"       => "dhp_map_type",     "dhp_map_url"      => "dhp_map_url",
+							"dhp_map_subdomains" => "dhp_map_subdomains", "dhp_map_source" => "dhp_map_source",
+							"dhp_map_n_bounds"   => "dhp_map_n_bounds", "dhp_map_s_bounds" => "dhp_map_s_bounds",
+							"dhp_map_e_bounds"   => "dhp_map_w_bounds", "dhp_map_w_bounds" => "dhp_map_w_bounds",
+							"dhp_map_min_zoom"   => "dhp_map_min_zoom", "dhp_map_max_zoom" => "dhp_map_max_zoom",
+							"dhp_map_cent_lat"   => "dhp_map_cent_lat", "dhp_map_cent_lon" => "dhp_map_cent_lon"
 						);
 	$mapArray = array();
 
@@ -2272,7 +2272,7 @@ function dhp_page_template( $page_template )
 			// wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
 			
 			//Leaflet - remove -src when tested
-			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet-src.js', dirname(__FILE__)));
+			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)));
 
 			wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
 			wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);

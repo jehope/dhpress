@@ -92,22 +92,21 @@ var dhpMapsView = {
 
             switch (thisLayer.dhp_map_type) {
             case 'OSM':            
-                var subDomains = thisLayer.dhp_map_subdomains.split(',');
-
+                var subDomains = thisLayer.dhp_map_subdomains.split(',');           
                 if(subDomains.length>1) {
                     newLayer = new L.TileLayer(thisLayer.dhp_map_url, { 
                         subdomains: subDomains, 
-                        attribution: thisLayer.source, 
+                        attribution: thisLayer.dhp_map_source, 
                         maxZoom: 20, 
                         opacity: thisLayer.opacity,
                         layerName: thisLayer.dhp_map_shortname,
-                        layerType: thisLayer.dhp_map_category
+                        layerType: thisLayer.dhp_map_category,
                     });
 
                 }
                 else {
                     newLayer = new L.TileLayer(thisLayer.dhp_map_url, { 
-                        attribution: thisLayer.source, 
+                        attribution: thisLayer.dhp_map_source, 
                         maxZoom: 20, 
                         opacity: thisLayer.opacity,
                         layerName: thisLayer.dhp_map_shortname,
@@ -126,7 +125,7 @@ var dhpMapsView = {
                 dhpCustomMaps.maps.defaultAPI(dhpCustomMaps.maps.API_LEAFLET);
                 var dhpObj = new dhpCustomMaps.maps.Map(thisLayer.dhp_map_typeid);
                 newLayer = dhpObj.layer();
-
+                newLayer.options.attribution = 'Layer data &copy; ' + thisLayer.dhp_map_source;
                 newLayer.addTo(dhpMapsView.mapLeaflet);
                 break;
             } // switch
@@ -676,7 +675,6 @@ var dhpMapsView = {
         var layerOpacity;
         var layerSettings = dhpMapsView.mapEP.layers;
         _.each(dhpMapsView.mapLayers,function(thisLayer,index) {
-            console.log(thisLayer)
             layerOpacity = 1;
             if(layerSettings.index) {
                 layerOpacity = layerSettings.index.opacity;
