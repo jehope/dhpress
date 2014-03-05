@@ -214,8 +214,9 @@ var dhpMapsView = {
         var new_terms = old_terms;
         var termArray = [];
         var allTerms = [];
-        for( var term in old_terms.terms ) {
-            termArray.push(dhpMapsView.crispTerm(old_terms.terms[term]))
+
+        for( var i=0, len=old_terms.terms.length; i < len; i++ ) {
+            termArray.push(dhpMapsView.crispTerm(old_terms.terms[i]))
         }
 
         new_terms.terms = _.flatten(termArray);
@@ -227,7 +228,7 @@ var dhpMapsView = {
         return new_terms;
     },
 
-        // PURPOSE: Creates a flattened array of terms (i.e. children terms are listed in in array not nested)
+        // PURPOSE: Creates a flattened array of terms (i.e. children terms are listed in array not nested)
     crispTerm: function(term) {
         var termGroup = [];
         if (typeof(term.icon_url) == 'undefined') {
@@ -235,17 +236,17 @@ var dhpMapsView = {
         }
         termGroup.push(term);
         if(term.children) {
-            for ( var child in term.children ){
+            for( var i=0, len=term.children.length; i < len; i++ ) {
                  var term_icon = '';
-                if(term.children[child].description) {
-                    term_icon = dhpMapsView.descToIcon(term.children[child].description);
+                if(term.children[i].description) {
+                    term_icon = dhpMapsView.descToIcon(term.children[i].description);
                 }
                 
                 termGroup.push( {
-                    id : term.children[child].term_id,
-                    parent : term.children[child].parent,
+                    id : term.children[i].term_id,
+                    parent : term.children[i].parent,
                     icon_url : term_icon,
-                    name : term.children[child].name
+                    name : term.children[i].name
                 })
             }
             
