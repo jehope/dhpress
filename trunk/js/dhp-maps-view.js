@@ -44,11 +44,12 @@ var dhpMapsView = {
 
         
         dhpMapsView.initializeMap2.call(this);
+
         dhpMapsView.createLayers.call(this);
         dhpMapsView.loadMapMarkers.call(this);
         dhpMapsView.createControls.call(this);
 
-        dhpMapsView.dhpUpdateSize();
+
     },
 
         // PURPOSE: Initialize map viewing area with controls
@@ -60,8 +61,9 @@ var dhpMapsView = {
         var opacity;
         var newLayer;
         dhpMapsView.anyPopupsOpen = false;
+        jQuery('#dhp-visual').append('<div id="dhpMap"/>');
            //create map with view
-        dhpMapsView.mapLeaflet = L.map('dhp-visual',{ zoomControl:false }).setView([dhpMapsView.mapEP.lat, dhpMapsView.mapEP.lon], dhpMapsView.mapEP.zoom);
+        dhpMapsView.mapLeaflet = L.map('dhpMap',{ zoomControl:false }).setView([dhpMapsView.mapEP.lat, dhpMapsView.mapEP.lon], dhpMapsView.mapEP.zoom);
         dhpMapsView.mapLeaflet.on('popupopen', function(e){
             dhpMapsView.anyPopupsOpen = true;
         });
@@ -73,6 +75,9 @@ var dhpMapsView = {
                 dhpMapsView.anyPopupsOpen = false;
             }
         });
+
+        // jQuery('#dhp-visual').height(jQuery('#dhp-visual')-45);
+        
     },
 
         // PURPOSE: Create base layers and overlays.
@@ -848,14 +853,14 @@ var dhpMapsView = {
                 // Non mobile admin bar height
             else if(dhpMapsView.wpAdminBarVisible && windowWidth < dhpMapsView.wpAdminBarWidth ) {
                 jQuery('body').height(windowHeight - dhpMapsView.wpMobileAdminBarHeight);
+                jQuery('#dhp-visual').height(windowHeight - dhpMapsView.wpMobileAdminBarHeight);
             }
                 //Non logged in users
             else {
                 jQuery('body').height(windowHeight);
             }
 
-            jQuery('#dhp-visual').css({ 'height': jQuery('body').height() - 45, 'top' : 45 });
-
+            // jQuery('#dhp-visual').css({ 'height': jQuery('body').height() - 45, 'top' : 45 });
         }
             //resize legend term position for long titles
         jQuery('.active-legend .terms').css({top:jQuery('.active-legend .legend-title').height()});
@@ -871,7 +876,7 @@ var dhpMapsView = {
             jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
         });
 
-            // This is an OL function to redraw the markers after map resize
+            // This is an Leaflet function to redraw the markers after map resize
         dhpMapsView.mapLeaflet.invalidateSize();
     }, // dhpUpdateSize()
     

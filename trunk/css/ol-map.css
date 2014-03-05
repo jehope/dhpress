@@ -9,6 +9,10 @@ body.fullscreen {
 #dhp-visual {
 	z-index: 1000;
 }
+#dhpMap {
+	width: 100%;
+	height: 100%;
+}
 	/* Controls on Map */
 #dhp-visual div.olControlZoom {
 	top:10px;
@@ -151,7 +155,7 @@ input.leaflet-control-layers-selector {
 .fullscreen #legends {
 	position:absolute;
 	min-width: 220px;
-	top: 60px;
+	top: 20px;
 	left: 20px;
 	bottom: 20px;
 	overflow: hidden;
@@ -166,7 +170,7 @@ input.leaflet-control-layers-selector {
   }
 }
 .logged-in.fullscreen #legends {
-	top:70px;
+	/*top:70px;*/
 }
 .legend-row {
 	

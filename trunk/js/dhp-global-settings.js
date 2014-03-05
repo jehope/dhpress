@@ -15,10 +15,13 @@ var dhpGlobalSettings = function($) {
         
 		// Only execute if not loaded in iframe
 	if(!inIframe()) {
-        console.log('start activity monitor')
+        
             // Monitor user activity, only if setting given
+        
         maxSecondsInactive = dhpGlobals.timeout_duration * 60;
+        console.log(maxSecondsInactive)
         if ((maxSecondsInactive !== null) && (maxSecondsInactive !== '') && (maxSecondsInactive !== '0') && (maxSecondsInactive !== 0)) {
+            console.log('start activity monitor')
             if (typeof(maxSecondsInactive) === "string") {
                 maxSecondsInactive = parseFloat(maxSecondsInactive);
             }
@@ -45,7 +48,11 @@ var dhpGlobalSettings = function($) {
             $('body').addClass('kiosk-mode-non-iframe');
             // For kiosk mode
             // 65px is height of bottom menu
-            $('#dhp-visual').height($('#dhp-visual').height()-65);
+            // $('#dhp-visual').height($('#dhp-visual').height()-65);
+            $('#dhp-visual').css({ 'height': $('body').height() - 110, 'top' : 45 });
+            if($('body').hasClass('logged-in')) {
+                $('#dhp-visual').css({ 'height': $('body').height() - 140, 'top' : 45 });
+            }
         
             $('body').append('<div class="kiosk-menu contain-to-grid"><nav class="top-bar" data-topbar><section class="top-bar-section"></section></nav></div>');
            
