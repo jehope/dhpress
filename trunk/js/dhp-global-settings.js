@@ -13,6 +13,10 @@ var dhpGlobalSettings = function($) {
     var kioskRE = new RegExp(dhpGlobals.kiosk_useragent, "i");
     var kioskDevice = kioskRE.test(navigator.userAgent.toLowerCase());
         
+        // Block links
+    blockLinks = dhpGlobals.kiosk_blockurls.split(',');
+    findAndBlockLinks.call(this,blockLinks);
+    
 		// Only execute if not loaded in iframe
 	if(!inIframe()) {
         
@@ -60,9 +64,7 @@ var dhpGlobalSettings = function($) {
             
             $(document).foundation();
             stretchKioskNav.call(this);
-            blockLinks = dhpGlobals.kiosk_blockurls.split(',');
-
-            findAndBlockLinks.call(this,blockLinks);
+            
         }
 	}
     else {
