@@ -92,7 +92,7 @@
 		    ],
 		    "entry-points": [										// contents of settings depends on type of entry point
 		    	Integer (index) : {
-		            "type": String ("map" or "topic-cards"),
+		            "type": String ("map" or "cards"),
 		            "settings": {									// map settings are as follows
 		                "lat": Number,
 		                "lon": Number,
@@ -108,7 +108,7 @@
 		                ],
 		                "marker-layer": String (name of mote),		// Mote used for geo coord
 		                "filter-data": [							// List of mote Legends/categories
-		                    Index : String (name of note), ...
+		                    Index : String (name of mote), ...
 		                ]
 		            }
 		            "settings" : {									// topic-cards settings are as follows
