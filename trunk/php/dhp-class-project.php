@@ -137,9 +137,11 @@
 			            Integer (index): String (mote name), ...
 			        ],
 			        "link" : [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
-			        "link2": [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
 			        "link-label" : String,
+			        "link-new-tab": true or false,
+			        "link2": [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
 			        "link2-label" : String
+			        "link2-new-tab": true or false,
 		    	}
 		        "transcript" : {
 					"audio" 	: Name of mote (that contains last part of URL to audio file)
