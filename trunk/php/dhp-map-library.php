@@ -186,6 +186,9 @@ function show_dhp_map_settings_box()
     case 'WMS':
         $selectWMS = 'selected';
         break;
+    case 'Blank':
+        $selectBlank = 'selected';
+        break;
     case 'KML':
         $selectKML = 'selected';
         break;
@@ -224,7 +227,7 @@ function show_dhp_map_settings_box()
     echo '<tr><td align=right>*Map ID:</td><td><input name="dhp_map_typeid" id="dhp_map_typeid" type="text" size="60" value="'.$mapAttributes['dhp_map_typeid'].'"/></td></tr>';
     echo '<tr><td align=right>*Short title:</td><td><input name="dhp_map_shortname" id="dhp_map_shortname" type="text" size="60" value="'.$mapAttributes['dhp_map_shortname'].'"/></td></tr>';
     echo '<tr><td align=right>*URL:</td><td><input name="dhp_map_url" id="dhp_map_url" type="text" size="30" value="'.$mapAttributes['dhp_map_url'].'"/></td></tr>';
-    echo '<tr><td align=right>*Type:</td><td><select name="dhp_map_type" id="dhp_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML" '.$selectKML.' >KML</option><option value="DHP" '.$selectDHP.'>Custom DHP</option><option value="OSM" '.$selectOSM.'>OSM</option><option value="OSM" '.$selectTMS.'>TMS</option><option value="Google" '.$selectGoogle.'>Google</option></select></td></tr>';
+    echo '<tr><td align=right>*Type:</td><td><select name="dhp_map_type" id="dhp_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="Blank" '.$selectBlank.' >Blank</option><option value="KML" '.$selectKML.' >KML</option><option value="DHP" '.$selectDHP.'>Custom DHP</option><option value="OSM" '.$selectOSM.'>OSM</option><option value="OSM" '.$selectTMS.'>TMS</option><option value="Google" '.$selectGoogle.'>Google</option></select></td></tr>';
     echo '<tr><td align=right>*Category:</td><td><select name="dhp_map_category" id="dhp_map_category"><option value="" '.$selectCategory.'>Please select a category</option><option value="base layer" '.$selectBaseLayer.'>Base Layer</option><option value="overlay" '.$selectOverlay.' >Overlay</option></select></td></tr>';
 
     echo '<tr><td align=right>*North bounds:</td><td><input name="dhp_map_n_bounds" id="dhp_map_n_bounds" type="text" size="10" value="'.$mapAttributes['dhp_map_n_bounds'].'"/></td></tr>';

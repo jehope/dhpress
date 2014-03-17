@@ -92,15 +92,16 @@ var dhpMapsView = {
         };
 
         dhpMapsView.catFilter = new Object();
-
             // Create layers for maps as well as controls for each
         _.each(mapEP.layers, function(theLayer, index) {
-
             opacity = 1;
             if(theLayer['opacity']) {
                 opacity = theLayer['opacity'];
             }
             switch (theLayer['mapType']) {
+            case 'type-Blank':
+                newLayer = new OpenLayers.Layer("Blank Base Layer", {numZoomLevels: 20, isBaseLayer: true});
+                break;
             case 'type-OSM':
                 var thisLayer = dhpData.vizParams.layerData[index];
                 var arrayOSM = thisLayer.dhp_map_url.split(',');
@@ -624,7 +625,6 @@ var dhpMapsView = {
         var layerSettings = dhpMapsView.mapEP.layers;
 
         _.each(dhpMapsView.olMap.layers,function(thisLayer,index) {
-            //console.log(layer.name)
             layerOpacity = 1;
             if(layerSettings[index]) {
                 layerOpacity = layerSettings[index]['opacity'];
@@ -646,7 +646,7 @@ var dhpMapsView = {
                 step:.05,
                 values: [ layerOpacity ],
                 slide: function( event, ui ) {
-                  thisLayer.setOpacity(ui.values[ 0 ]);                
+                  thisLayer.setOpacity(ui.values[ 0 ]);
                 }
             });
                 // Handle turning on and off map layer
