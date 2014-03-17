@@ -56,7 +56,9 @@ body.fullscreen {
 	right: 10px;
 
 }
-
+#dhp-visual.olMap{
+	background: #eeeeee;
+}
 	/* Overrides most theme settings for img tags in the map only */
 .entry-content .olMap img,
 .widget .olMap img {
