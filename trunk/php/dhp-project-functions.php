@@ -2141,7 +2141,7 @@ function dhpGetMapLayerData($mapLayers)
 							"dhp_map_type"       => "dhp_map_type",     "dhp_map_url"      => "dhp_map_url",
 							"dhp_map_subdomains" => "dhp_map_subdomains", "dhp_map_source" => "dhp_map_source",
 							"dhp_map_n_bounds"   => "dhp_map_n_bounds", "dhp_map_s_bounds" => "dhp_map_s_bounds",
-							"dhp_map_e_bounds"   => "dhp_map_w_bounds", "dhp_map_w_bounds" => "dhp_map_w_bounds",
+							"dhp_map_e_bounds"   => "dhp_map_e_bounds", "dhp_map_w_bounds" => "dhp_map_w_bounds",
 							"dhp_map_min_zoom"   => "dhp_map_min_zoom", "dhp_map_max_zoom" => "dhp_map_max_zoom",
 							"dhp_map_cent_lat"   => "dhp_map_cent_lat", "dhp_map_cent_lon" => "dhp_map_cent_lon"
 						);
