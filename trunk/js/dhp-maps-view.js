@@ -126,7 +126,6 @@ var dhpMapsView = {
             //                     { type: theLayer.mapTypeId, numZoomLevels: 20, opacity: opacity, animationEnabled: true });
             //     break;
             case 'DHP':
-
                 dhpCustomMaps.maps.defaultAPI(dhpCustomMaps.maps.API_LEAFLET);
                 var dhpObj = new dhpCustomMaps.maps.Map(thisLayer.dhp_map_typeid);
                 newLayer = dhpObj.layer();
@@ -134,6 +133,16 @@ var dhpMapsView = {
                 newLayer.options.attribution = 'Layer data &copy; ' + thisLayer.dhp_map_source;
                 newLayer.addTo(dhpMapsView.mapLeaflet);
                 break;
+
+            case 'Blank':
+                newLayer = [];
+                newLayer.options = [];
+                newLayer.options.layerName = 'Blank';
+                newLayer.options.isBaseLayer = true;
+                dhpMapsView.mapLeaflet.minZoom = 1;
+                dhpMapsView.mapLeaflet.maxZoom = 20;
+                break;
+
             } // switch
             dhpMapsView.mapLayers.push(newLayer);
 
