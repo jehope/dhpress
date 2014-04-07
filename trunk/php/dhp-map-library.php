@@ -294,8 +294,8 @@ function dhp_map_page_template( $page_template )
     if ( $post_type == 'dhp-maps' ) {
         $page_template = dirname( __FILE__ ) . '/dhp-map-template.php';
 
-        wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)));
-        wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)));
+        wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+        wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
         wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
             
         wp_enqueue_script('jquery');
@@ -306,7 +306,7 @@ function dhp_map_page_template( $page_template )
         wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)));
         wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
         wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
-        wp_enqueue_script('dhp-public-map-script', plugins_url('/js/dhp-map-page.js', dirname(__FILE__)), array('leaflet', 'dhp-custom-maps' ));
+        wp_enqueue_script('dhp-public-map-script', plugins_url('/js/dhp-map-page.js', dirname(__FILE__)), array('leaflet', 'dhp-custom-maps' ), DHP_PLUGIN_VERSION);
     }
     return $page_template;
 } // dhp_map_page_template()
