@@ -20,29 +20,29 @@ jQuery(document).ready(function($) {
     var baseLayer;
 
     /* Setup map */
-    var dhpMapTest = L.map('dhp-visual',{ zoomControl:true,layerControl:true })
+    var dhpMapTest = L.map('dhp-visual',{ zoomControl:true,layerControl:true });
 
-    /* Setup initial set of base map */
-    /* Only show one when users choose to view a base map layer */
-
-    var mpq = L.tileLayer('http://otile4.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',{maxZoom: 18}).addTo(dhpMapTest);;
-    var osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom: 18}).addTo(dhpMapTest);;
-    var dhpBaseLayers = {
-        'MapQuest': mpq,
-        'OpenStreetMap' : osm
-    };    
+    
 
     /* Check whether the overlay is a base layer or not.     */
     /* If it is a base layer, then only load the base layer. */
     /* If it is not a base layer, load a base layer first,   */
     /* then load the overlay.                                */
-    if(mapCategory == "Base Layer"){
+    if(mapCategory == "base layer"){
     	baseLayer = true;
-
+        dhpMapTest.setView([0,0], 1)
     } else {
     	baseLayer = false;
     	// add base layers
+        /* Setup initial set of base map */
+        /* Only show one when users choose to view a base map layer */
 
+        var mpq = L.tileLayer('http://otile4.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',{maxZoom: 18}).addTo(dhpMapTest);;
+        var osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom: 18}).addTo(dhpMapTest);;
+        var dhpBaseLayers = {
+            'MapQuest': mpq,
+            'OpenStreetMap' : osm
+        };    
         switch (mapType) {
         
             // create DHP custom map
