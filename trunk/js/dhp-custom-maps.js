@@ -182,7 +182,7 @@
             
             case ns.API_LEAFLET:
                 var southWest = new L.latLng(thisMap.bounds.south, thisMap.bounds.west),
-                northEast = new L.latLng(thisMap.bounds.north, thisMap.bounds.north);
+                northEast = new L.latLng(thisMap.bounds.north, thisMap.bounds.east);
                 lb = new L.latLngBounds(southWest, northEast);
 
                 return lb;
@@ -393,7 +393,7 @@
 
         case ns.API_LEAFLET:
             layer_bounds = this.bounds(true, api_type);
-                     
+
             getTileUrl = function (tilePoint) {
                 // Builds the url for the map tile showing the requested bounds 
                 // tilePoint.y has an incorrect value. this._tiles contains the correct numbers. 
