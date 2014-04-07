@@ -911,16 +911,20 @@ function createMarkerArray($project_id)
 		if (!is_null($audio)) {
 			$audio_val = get_post_meta($marker_id, $audio, true);
 			$thisFeaturesProperties["audio"] = $audio_val;
-
+		}
+		if (!is_null($transcript)) {
 			$transcript_val = get_post_meta($marker_id, $transcript, true);
 			$thisFeaturesProperties["transcript"]  = $transcript_val;
-
+		}
+		if (!is_null($transcript2)) {
 			$transcript2_val = get_post_meta($marker_id, $transcript2, true);
 			$thisFeaturesProperties["transcript2"] = $transcript2_val;
-
+		}
+		if (!is_null($timecode)) {
 			$timecode_val = get_post_meta($marker_id, $timecode, true);
 			$thisFeaturesProperties["timecode"]    = $timecode_val;
 		}
+		
 
 			// Now begin saving data about this marker
 		if($title_mote=='the_title') {
