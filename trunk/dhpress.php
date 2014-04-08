@@ -30,7 +30,7 @@ define( 'DHP_REQUIRED_PHP_VERSION', '5.2' );
 define( 'DHP_REQUIRED_WP_VERSION', '3.1' );
 define( 'DHP_PLUGIN_URL', plugins_url('', __FILE__ ) );
 define( 'DHP_MAPS_TABLE_VERSION', '0.1' );
-define( 'DHP_PLUGIN_VERSION', '1.9.3' );
+define( 'DHP_PLUGIN_VERSION', '1.9.4' );
 define( 'SCRIPT_DEBUG', true );
 
 /**
