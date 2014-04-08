@@ -20,77 +20,31 @@ jQuery(document).ready(function($) {
     var baseLayer;
 
     /* Setup map */
-    var gg = new OpenLayers.Projection("EPSG:4326");
-    var sm = new OpenLayers.Projection("EPSG:900913");
-    var map = new OpenLayers.Map({
-        div: "dhp-visual",
-        projection: sm,
-    	displayProjection: gg,
-    	numZoomLevels: 18
-    });
+    var dhpMapTest = L.map('dhp-visual',{ zoomControl:true,layerControl:true });
 
-    /* Setup initial set of base map */
-    /* Only show one when users choose to view a base map layer */
-
-    // create Google Mercator layers
-    var gphy = new OpenLayers.Layer.Google(
-        "Google Physical",
-        {type: google.maps.MapTypeId.TERRAIN}
-    );
-    var gmap = new OpenLayers.Layer.Google(
-        "Google Streets", // the default
-        {numZoomLevels: 20}
-    );
-    var ghyb = new OpenLayers.Layer.Google(
-        "Google Hybrid",
-        {type: google.maps.MapTypeId.HYBRID, numZoomLevels: 20}
-    );
-    var gsat = new OpenLayers.Layer.Google(
-        "Google Satellite",
-        {type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22}
-    );
-
-    var osm = new OpenLayers.Layer.OSM();
-    var wms = new OpenLayers.Layer.WMS(
-      "OpenLayers WMS",
-      "http://vmap0.tiles.osgeo.org/wms/vmap0",
-      {'layers':'basic'} 
-    );
+    
 
     /* Check whether the overlay is a base layer or not.     */
     /* If it is a base layer, then only load the base layer. */
     /* If it is not a base layer, load a base layer first,   */
     /* then load the overlay.                                */
-    if(mapCategory == "Base Layer"){
+    if(mapCategory == "base layer"){
     	baseLayer = true;
-
+        dhpMapTest.setView([0,0], 1)
     } else {
     	baseLayer = false;
     	// add base layers
-    	map.addLayers([gmap,osm,gphy,ghyb,gsat,wms]);
+        /* Setup initial set of base map */
+        /* Only show one when users choose to view a base map layer */
 
+        var mpq = L.tileLayer('http://otile4.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',{maxZoom: 18}).addTo(dhpMapTest);;
+        var osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom: 18}).addTo(dhpMapTest);;
+        var dhpBaseLayers = {
+            'MapQuest': mpq,
+            'OpenStreetMap' : osm
+        };    
         switch (mapType) {
-        case  "KML":
-            var mylayer = new OpenLayers.Layer.Vector("KML", {
-                projection: map.displayProjection,
-                strategies: [new OpenLayers.Strategy.Fixed()],
-                eventListeners:{
-                   'loadend': function (evt) {
-                        var deeds_extent = mylayer.getDataExtent();
-                        map.zoomToExtent(deeds_extent);
-                    }
-                },
-                protocol: new OpenLayers.Protocol.HTTP({
-                    url: mapUrl,
-                    format: new OpenLayers.Format.KML({
-                        extractStyles: true,
-                        extractAttributes: true
-                    })
-                })
-            });
-            map.addLayer(mylayer);
-            break;
-
+        
             // create DHP custom map
     	case "DHP":
                 // get hidden form parameters and pass to custom-maps; this is only map needed in Map set
@@ -105,46 +59,28 @@ jQuery(document).ready(function($) {
             mapBounds = mapBounds.split(",");
             mapCentroid = mapCentroid.split(",");
 
-// console.log("MapID: "+mapID+", URL: "+mapUrl+" NB: "+mapBounds[0]+", SB: "+mapBounds[1]+", EB: "+mapBounds[2]+", WB: "+mapBounds[3]+", CLat: "+mapCentroid[0]+", CLon: "+mapCentroid[1]+", zMin: "+mapZoomMin);
-
             dhpCustomMaps.maps.addMap(mapID, mapShortNm, mapBounds[0], mapBounds[1], mapBounds[2], mapBounds[3],
                                         mapCentroid[0], mapCentroid[1], mapZoomMin, mapZoomMax, mapUrl, mapDesc);
 
-                // set the default API type to OpenLayers
-    		dhpCustomMaps.maps.defaultAPI(dhpCustomMaps.maps.API_OPENLAYERS);
+                // set the default API type to Leaflet
+    		dhpCustomMaps.maps.defaultAPI(dhpCustomMaps.maps.API_LEAFLET);
                 // create the dhpCustomMaps.maps.Map object
     		var hwymap = new dhpCustomMaps.maps.Map(mapID);
+            var mapLayer = hwymap.layer();
+            mapLayer.addTo(dhpMapTest);
 
-                // add this map layer to base map (array of 1 item)
-    		map.addLayers([hwymap.layer()]);
+            var overlay = {
+                'Overlay': mapLayer
+            };
 
-                // center the map on the entire map layer
-    		map.zoomToExtent(hwymap.bounds());
+            L.control.layers(dhpBaseLayers,overlay).addTo(dhpMapTest);
 
-          	// make sure tiles are visible for the layer
-    		if (map.getZoom() < hwymap.minZoom()) {
-        	    map.zoomTo(hwymap.minZoom());
-    		}
+                // center the map on the entire map layer 
+            dhpMapTest.fitBounds(mapLayer.options.bounds);
             break;
 
-            // create TMS Overlay layer
-    	case "TMS":
-            var tmsoverlay = new OpenLayers.Layer.TMSREST(
-                "Historic Map Overlay",
-                    // TO DO: Replace this??
-                "http://www.lib.unc.edu/dc/maptiles/Maloney/tilemapresource.xml",
-                {   alpha: true,
-                    isBaseLayer: false
-            });
-            tmsoverlay.setOpacity(0.9);
-
-            var bounds = tmsoverlay.tmsbounds;
-            map.addLayers([tmsoverlay]);
-            break;
+           
         } // switch()
     } // if ()
 
-    map.addControl(new OpenLayers.Control.LayerSwitcher());
-    map.addControl(new OpenLayers.Control.Permalink());
-    map.addControl(new OpenLayers.Control.MousePosition());
 });

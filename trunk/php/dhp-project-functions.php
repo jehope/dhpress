@@ -911,16 +911,20 @@ function createMarkerArray($project_id)
 		if (!is_null($audio)) {
 			$audio_val = get_post_meta($marker_id, $audio, true);
 			$thisFeaturesProperties["audio"] = $audio_val;
-
+		}
+		if (!is_null($transcript)) {
 			$transcript_val = get_post_meta($marker_id, $transcript, true);
 			$thisFeaturesProperties["transcript"]  = $transcript_val;
-
+		}
+		if (!is_null($transcript2)) {
 			$transcript2_val = get_post_meta($marker_id, $transcript2, true);
 			$thisFeaturesProperties["transcript2"] = $transcript2_val;
-
+		}
+		if (!is_null($timecode)) {
 			$timecode_val = get_post_meta($marker_id, $timecode, true);
 			$thisFeaturesProperties["timecode"]    = $timecode_val;
 		}
+		
 
 			// Now begin saving data about this marker
 		if($title_mote=='the_title') {
@@ -2136,13 +2140,14 @@ function add_dhp_project_admin_scripts( $hook )
 
 function dhpGetMapLayerData($mapLayers)
 {
-	$mapMetaList = array(	"dhp_map_shortname"=> "dhp_map_shortname",
-							"dhp_map_typeid"   => "dhp_map_typeid",  "dhp_map_category"  => "dhp_map_category" ,
-							"dhp_map_type"     => "dhp_map_type",     "dhp_map_url"      => "dhp_map_url",
-							"dhp_map_n_bounds" => "dhp_map_n_bounds", "dhp_map_s_bounds" => "dhp_map_s_bounds",
-							"dhp_map_e_bounds" => "dhp_map_w_bounds", "dhp_map_w_bounds" => "dhp_map_w_bounds",
-							"dhp_map_min_zoom" => "dhp_map_min_zoom", "dhp_map_max_zoom" => "dhp_map_max_zoom",
-							"dhp_map_cent_lat" => "dhp_map_cent_lat", "dhp_map_cent_lon" => "dhp_map_cent_lon"
+	$mapMetaList = array(	"dhp_map_shortname"  => "dhp_map_shortname",
+							"dhp_map_typeid"     => "dhp_map_typeid",  "dhp_map_category"  => "dhp_map_category" ,
+							"dhp_map_type"       => "dhp_map_type",     "dhp_map_url"      => "dhp_map_url",
+							"dhp_map_subdomains" => "dhp_map_subdomains", "dhp_map_source" => "dhp_map_source",
+							"dhp_map_n_bounds"   => "dhp_map_n_bounds", "dhp_map_s_bounds" => "dhp_map_s_bounds",
+							"dhp_map_e_bounds"   => "dhp_map_e_bounds", "dhp_map_w_bounds" => "dhp_map_w_bounds",
+							"dhp_map_min_zoom"   => "dhp_map_min_zoom", "dhp_map_max_zoom" => "dhp_map_max_zoom",
+							"dhp_map_cent_lat"   => "dhp_map_cent_lat", "dhp_map_cent_lon" => "dhp_map_cent_lon"
 						);
 	$mapArray = array();
 
@@ -2262,16 +2267,27 @@ function dhp_page_template( $page_template )
     	$projectSettings_map = $projObj->getEntryPointByName('map');
     	if (!is_null($projectSettings_map)) {
 			wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+			wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+	    	
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-			wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers-2.13/OpenLayers.js', dirname(__FILE__)));
-			wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
-			wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
+			
+			// wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers-2.13/OpenLayers.js', dirname(__FILE__)));
+			// wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
+			// wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
+			
+			//Leaflet - remove -src when tested
+			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)));
+
+			wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
+			wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
 
 				// Get any DHP custom map parameters
 			$layerData = dhpGetMapLayerData($projectSettings_map['settings']['layers']);
 			$vizParams["layerData"] = $layerData;
 
-	    	array_push($dependencies, 'open-layers', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps');
+	    	// array_push($dependencies, 'open-layers', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps');
+	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps');
+	    
 	    }
 
 	    	// Transcript specific

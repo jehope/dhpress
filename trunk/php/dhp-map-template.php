@@ -73,13 +73,13 @@ Template Name: Map Template
             echo "<input type='hidden' id='map-category' name='map-category' value='".$mapMetaData['dhp_map_category']."'>";
             echo "<input type='hidden' id='map-type' name='map-type' value='".$mapMetaData['dhp_map_type']."'>";
             echo "<input type='hidden' id='map-typeid' name='map-typeid' value='".$mapMetaData['dhp_map_typeid']."'>";
-            echo "<input type='hidden' id='map-shortname' name='map-shortname' value='".$$mapMetaData['dhp_map_shortname']."'>";
+            echo "<input type='hidden' id='map-shortname' name='map-shortname' value='".$mapMetaData['dhp_map_shortname']."'>";
             echo "<input type='hidden' id='map-url' name='map-url' value='".$mapMetaData['dhp_map_url']."'>";
             echo "<input type='hidden' id='map-bounds' name='map-bounds' value='".$mapMetaData['dhp_map_n_bounds'].",".$mapMetaData['dhp_map_s_bounds'].",".$mapMetaData['dhp_map_e_bounds'].",".$mapMetaData['dhp_map_w_bounds']."'>";
             echo "<input type='hidden' id='map-zoom-min' name='map-zoom-min' value='".$mapMetaData['dhp_map_min_zoom']."'>";
             echo "<input type='hidden' id='map-zoom-max' name='map-zoom-max' value='".$mapMetaData['dhp_map_max_zoom']."'>";
             echo "<input type='hidden' id='map-centroid' name='map-centroid' value='".$mapMetaData['dhp_map_cent_lat'].",".$mapMetaData['dhp_map_cent_lon']."'>";
-            echo "<input type='hidden' id='map-desc' name='map-desc' value='".$$mapMetaData['dhp_map_desc']."'>";
+            echo "<input type='hidden' id='map-desc' name='map-desc' value='".$mapMetaData['dhp_map_desc']."'>";
             echo "</form>";
 
 

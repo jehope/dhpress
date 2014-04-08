@@ -64,9 +64,13 @@ code {
 body.fullscreen .site {
 	margin-top: 0px;
 }
+html.fullscreen {
+	overflow: hidden;
+}
 
 	/* Visualization frame */
 #dhp-visual {
+	position: relative;
 	width:100%;
 	height:400px;
 	background: #fff;
@@ -75,10 +79,11 @@ body.fullscreen .site {
 .fullscreen #dhp-visual {
 	width:100%;
 	min-width: 100%;
-	height:100%;
+	height: auto;
 	position:absolute;
-	top: 0px;
+	top: 45px;
 	left: 0px;
+	bottom: 0;
 }
 
 	/* Viewing Project content */

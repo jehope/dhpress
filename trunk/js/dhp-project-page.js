@@ -35,7 +35,7 @@ jQuery(document).ready(function($) {
     }
         // initialize fullscreen mode settings
     if(dhpSettings['views']['viz-fullscreen']===true){
-        $('body').addClass('fullscreen');
+        $('body, html').addClass('fullscreen');
         $('.dhp-nav .fullscreen').addClass('active');
     }
     $('.dhp-nav .title-area .name h1 a').text($('.entry-title').text());
@@ -82,10 +82,10 @@ jQuery(document).ready(function($) {
         $('.dhp-nav .top-bar-section .left').append(Handlebars.compile($("#dhp-script-map-menus").html()));
 
             // Insert Legend area on right sidebar
-        $('#dhp-visual').after(Handlebars.compile($("#dhp-script-map-legend-head").html()));
+        $('#dhp-visual').append(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
             // all custom maps must have already been loaded into run-time "library"
-        dhpMapsView.initializeMap(ajaxURL, projectID, mapEP, dhpSettings['views']);
+        dhpMapsView.initMapInterface(ajaxURL, projectID, mapEP, dhpSettings.views);
 
             // Add user tips for map
         $('body').append(Handlebars.compile($("#dhp-script-map-joyride").html()));
