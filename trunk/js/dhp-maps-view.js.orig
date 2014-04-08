@@ -76,6 +76,7 @@ var dhpMapsView = {
             }
         });
 
+<<<<<<< HEAD
         // jQuery('#dhp-visual').height(jQuery('#dhp-visual')-45);
         
     },
@@ -88,12 +89,18 @@ var dhpMapsView = {
         var opacity, newLayer;
             // Create layers for maps as well as controls for each
         _.each(dhpMapsView.mapEP.layers, function(theLayer, index) {
+=======
+        dhpMapsView.catFilter = new Object();
+            // Create layers for maps as well as controls for each
+        _.each(mapEP.layers, function(theLayer, index) {
+>>>>>>> master
             opacity = 1;
             
             var thisLayer = dhpData.vizParams.layerData[index];
             if(theLayer.opacity) {
                 opacity = thisLayer.opacity;
             }
+<<<<<<< HEAD
 
             switch (thisLayer.dhp_map_type) {
             case 'OSM':            
@@ -108,6 +115,17 @@ var dhpMapsView = {
                         layerType: thisLayer.dhp_map_category,
                     });
 
+=======
+            switch (theLayer['mapType']) {
+            case 'type-Blank':
+                newLayer = new OpenLayers.Layer("Blank Base Layer", {numZoomLevels: 20, isBaseLayer: true});
+                break;
+            case 'type-OSM':
+                var thisLayer = dhpData.vizParams.layerData[index];
+                var arrayOSM = thisLayer.dhp_map_url.split(',');
+                if(arrayOSM.length>1) {
+                    newLayer = new OpenLayers.Layer.OSM(thisLayer.dhp_map_shortname, arrayOSM, {numZoomLevels: 20} );
+>>>>>>> master
                 }
                 else {
                     newLayer = new L.TileLayer(thisLayer.dhp_map_url, { 
@@ -690,7 +708,12 @@ var dhpMapsView = {
     {
         var layerOpacity;
         var layerSettings = dhpMapsView.mapEP.layers;
+<<<<<<< HEAD
         _.each(dhpMapsView.mapLayers,function(thisLayer,index) {
+=======
+
+        _.each(dhpMapsView.olMap.layers,function(thisLayer,index) {
+>>>>>>> master
             layerOpacity = 1;
 
             if(layerSettings[index]) {
@@ -714,7 +737,11 @@ var dhpMapsView = {
                 step: 0.05,
                 values: [ layerOpacity ],
                 slide: function( event, ui ) {
+<<<<<<< HEAD
                     dhpMapsView.layerOpacity(thisLayer, ui);
+=======
+                  thisLayer.setOpacity(ui.values[ 0 ]);
+>>>>>>> master
                 }
             });
                 // Handle turning on and off map layer

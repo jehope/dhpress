@@ -92,7 +92,7 @@
 		    ],
 		    "entry-points": [										// contents of settings depends on type of entry point
 		    	Integer (index) : {
-		            "type": String ("map" or "topic-cards"),
+		            "type": String ("map" or "cards"),
 		            "settings": {									// map settings are as follows
 		                "lat": Number,
 		                "lon": Number,
@@ -108,7 +108,7 @@
 		                ],
 		                "marker-layer": String (name of mote),		// Mote used for geo coord
 		                "filter-data": [							// List of mote Legends/categories
-		                    Index : String (name of note), ...
+		                    Index : String (name of mote), ...
 		                ]
 		            }
 		            "settings" : {									// topic-cards settings are as follows
@@ -137,9 +137,11 @@
 			            Integer (index): String (mote name), ...
 			        ],
 			        "link" : [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
-			        "link2": [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
 			        "link-label" : String,
+			        "link-new-tab": true or false,
+			        "link2": [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
 			        "link2-label" : String
+			        "link2-new-tab": true or false,
 		    	}
 		        "transcript" : {
 					"audio" 	: Name of mote (that contains last part of URL to audio file)
