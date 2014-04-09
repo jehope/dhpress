@@ -2322,9 +2322,9 @@ function dhp_page_template( $page_template )
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
 
 	    	// I'm not sure if these 3 are needed
-			// wp_enqueue_script('jquery-ui' );
-			// wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__)));
-	 	// 	wp_enqueue_script('jquery-ui-slider' );
+			wp_enqueue_script('jquery-ui' );
+			wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__)));
+	 		wp_enqueue_script('jquery-ui-slider' );
 
 			//Leaflet - remove -src when tested
 			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)));

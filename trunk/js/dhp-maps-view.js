@@ -661,7 +661,7 @@ var dhpMapsView = {
         jQuery('#term-legend-0').show();
         jQuery('#term-legend-0').addClass('active-legend');
             //Set initial size of legend
-        dhpMapsView.updateVizSpace();
+        dhpMapsView.dhpUpdateSize();
 
             // Must be called to activate Foundation on the Legend 
         jQuery(document).foundation();
@@ -763,10 +763,9 @@ var dhpMapsView = {
         // var link1, link2, link1Target, link2Target;
         // var tagAtt;
 
-        if (feature.cluster)
+        if (feature.cluster) {
             selectedFeature = feature.cluster[0];
-        }
-        else {
+        } else {
             selectedFeature = feature;
         }
 
@@ -864,9 +863,7 @@ var dhpMapsView = {
             windowWidth  = jQuery(window).width();
             windowHeight = jQuery(window).height();
 
-            dhpMapsView.dhpIgnoreModalSize.call(this,windowWidth);
-
-
+            dhpMapsView.dhpIgnoreModalSize(windowWidth);
 
                 //New WordPress has a mobile admin bar with larger height(displays below 783px width)
             if(dhpMapsView.wpAdminBarVisible && windowWidth >= dhpMapsView.wpAdminBarWidth ) {
