@@ -91,22 +91,19 @@ var dhpMapsView = {
         var opacity, newLayer;
             // Create layers for maps as well as controls for each
         _.each(dhpMapsView.mapEP.layers, function(theLayer, index) {
-            opacity = 1;
-            
             var thisLayer = dhpData.vizParams.layerData[index];
-            if(theLayer.opacity) {
-                opacity = thisLayer.opacity;
-            }
+            opacity = theLayer.opacity || 1;
+console.log("Creating layer: "+JSON.stringify(thisLayer));
 
             switch (thisLayer.dhp_map_type) {
-            case 'OSM':            
+            case 'OSM':
                 var subDomains = thisLayer.dhp_map_subdomains.split(',');           
                 if(subDomains.length>1) {
                     newLayer = new L.TileLayer(thisLayer.dhp_map_url, { 
                         subdomains: subDomains, 
                         attribution: thisLayer.dhp_map_source, 
                         maxZoom: 20, 
-                        opacity: theLayer.opacity,
+                        opacity: opacity,
                         layerName: thisLayer.dhp_map_shortname,
                         layerType: thisLayer.dhp_map_category,
                     });
@@ -116,7 +113,7 @@ var dhpMapsView = {
                     newLayer = new L.TileLayer(thisLayer.dhp_map_url, { 
                         attribution: thisLayer.dhp_map_source, 
                         maxZoom: 20, 
-                        opacity: theLayer.opacity,
+                        opacity: opacity,
                         layerName: thisLayer.dhp_map_shortname,
                         layerType: thisLayer.dhp_map_category
                     });
@@ -132,14 +129,18 @@ var dhpMapsView = {
                 dhpCustomMaps.maps.defaultAPI(dhpCustomMaps.maps.API_LEAFLET);
                 var dhpObj = new dhpCustomMaps.maps.Map(thisLayer.dhp_map_typeid);
                 newLayer = dhpObj.layer();
-                newLayer.options.opacity = theLayer.opacity;
+                newLayer.options.opacity = opacity;
                 newLayer.options.attribution = 'Layer data &copy; ' + thisLayer.dhp_map_source;
                 newLayer.addTo(dhpMapsView.mapLeaflet);
                 break;
 
             case 'Blank':
-                newLayer = [];
-                newLayer.options = [];
+                // newLayer = [];
+                // newLayer.options = [];
+                // newLayer.options.layerName = 'Blank';
+                // newLayer.options.isBaseLayer = true;
+                newLayer = {};
+                newLayer.options = {};
                 newLayer.options.layerName = 'Blank';
                 newLayer.options.isBaseLayer = true;
                 dhpMapsView.mapLeaflet.minZoom = 1;
@@ -664,10 +665,10 @@ var dhpMapsView = {
         jQuery('#term-legend-0').show();
         jQuery('#term-legend-0').addClass('active-legend');
             //Set initial size of legend
-        // dhpMapsView.dhpUpdateSize();
+        dhpMapsView.dhpUpdateSize(); // -- try this fix (Joe had it on, I initially had it off)
 
-            // Must be called to activate Foundation on the Legend 
-        jQuery(document).foundation();
+            // Must be called to activate Foundation on the Legend -- try this fix (I initially had it, Joe didn't)
+        // jQuery(document).foundation();
 
             // Handle selection of different Legends
         jQuery('.dhp-nav .legend-dropdown a').on('click', function(evt){
@@ -761,10 +762,6 @@ var dhpMapsView = {
         feature = dhpMapsView.currentFeature.feature;
 
         var selectedFeature;
-        // var titleAtt='';
-        // var builtHTML;
-        // var link1, link2, link1Target, link2Target;
-        // var tagAtt;
 
         if (feature.cluster) {
             selectedFeature = feature.cluster[0];
@@ -774,85 +771,7 @@ var dhpMapsView = {
 
         dhpMapsView.callBacks.showMarkerModal(selectedFeature);
 
-        // if(dhpMapsView.viewParams.select.title) {
-        //     titleAtt =  selectedFeature.properties.title;
-        // }
-
-        // link1  = selectedFeature.properties.link;
-        // link2  = selectedFeature.properties.link2;
-        //     // Open in new tab?
-        // if(dhpMapsView.viewParams.select['link-new-tab']) {
-        //     link1Target = 'target="_blank"';
-        // }
-        // if(dhpMapsView.viewParams.select['link2-new-tab']) {
-        //     link2Target = 'target="_blank"';
-        // }
-        // // tagAtt = selectedFeature.attributes.categories;
-
-        //     // Remove anything currently in body -- will rebuild from scratch
-        // jQuery('#markerModal .modal-body').empty();
-
-        //     // Should Select Modal show transcript?
-        // if (dhpMapsView.modalViewHas("transcript"))
-        // {
-        //     jQuery('#markerModal').addClass('transcript');
-
-        //     var transcriptSettings = {
-        //         'audio'         : selectedFeature.properties.audio,
-        //         'transcript'    : selectedFeature.properties.transcript,
-        //         'transcript2'   : selectedFeature.properties.transcript2,
-        //         'timecode'      : selectedFeature.properties.timecode,
-        //         'startTime'     : -1,
-        //         'endTime'       : -1
-        //     };
-
-        //     if (transcriptSettings.timecode) {
-        //         var time_codes = transcriptSettings.timecode.split('-');
-        //         transcriptSettings.startTime = dhpTranscript.convertToMilliSeconds(time_codes[0]);
-        //         transcriptSettings.endTime   = dhpTranscript.convertToMilliSeconds(time_codes[1]);
-        //     }
-
-        //     dhpTranscript.prepareOneTranscript(dhpMapsView.ajaxURL, dhpMapsView.projectID, '#markerModal .modal-body', transcriptSettings);
-        //  }
-
-        //     // Create HTML for all of the data related to the Marker
-        //  if (dhpMapsView.viewParams.select.content) {
-        //     builtHTML = '<div><h3>Details:</h3></div>';
-        //     _.each(selectedFeature.properties.content, function(val) {       // Array of (hash) pairs
-        //          _.each(val,function(val1, key1) {
-
-        //             if (key1==='Thumbnail Right') {
-        //                 builtHTML += '<div class="thumb-right">'+val1+'</div>';
-        //             }
-        //             else if (key1==='Thumbnail Left') {
-        //                 builtHTML += '<div class="thumb-left">'+val1+'</div>';
-        //             }
-        //             else {
-        //                 if (val1) {
-        //                     builtHTML += '<div><span class="key-title">'+key1+'</span>: '+val1+'</div>';
-        //                 }
-        //             }
-        //         });
-        //     });
-        // }
-
-        // jQuery('#markerModal .modal-body').append(builtHTML);
-
-        //     // clear previous marker links
-        // jQuery('#markerModal .reveal-modal-footer .marker-link').remove();
-        //     // Change title
-        // jQuery('#markerModal #markerModalLabel').empty().append(titleAtt);
-
-        //     // setup links
-        // if (link1 && link1!='no-link') {
-        //     jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link1Target+' class="button success marker-link" href="'+link1+'">'+dhpMapsView.viewParams.select['link-label']+'</a></li>');
-        // }
-        // if (link2 && link2 !='no-link') {
-        //     jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link2Target+' class="button success marker-link" href="'+link2+'">'+dhpMapsView.viewParams.select['link2-label']+'</a></li>');
-        // }
-        //     //Open modal
-        // jQuery('#markerModal').foundation('reveal', 'open');
-    }, // onOLFeatureSelect()
+    }, // onFeatureSelect()
 
         // PURPOSE: Resizes dhp elements when browser size changes
         // 

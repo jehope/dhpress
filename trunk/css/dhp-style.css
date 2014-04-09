@@ -25,6 +25,7 @@
 	top:30px;
 }
 
+/* -- attempting fix
 body.fullscreen {
 	overflow: hidden;
 }
@@ -32,6 +33,7 @@ body.fullscreen {
 #dhp-visual {
 	z-index: 1000;
 }
+*/
 
 .top-bar-section ul li>a {
 	font-size: 1rem;
@@ -172,9 +174,11 @@ html.fullscreen {
 	filter: alpha(opacity=60);
 }
 
+/* -- attempting fix 
 #markerModal {
 	resize: both;
 }
+*/
 
 .entry-point {
 	min-height:200px;
