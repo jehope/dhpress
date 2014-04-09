@@ -62,6 +62,7 @@ var dhpMapsView = {
         var dhpDefaultStyle;
         var opacity;
         var newLayer;
+
         dhpMapsView.anyPopupsOpen = false;
         jQuery('#dhp-visual').append('<div id="dhpMap"/>');
            //create map with view
@@ -395,6 +396,7 @@ var dhpMapsView = {
             layer.bringToFront();
         }
     },
+
         // PURPOSE: Remove the hover style
     resetHighlight: function(e) {
         dhpMapsView.markerLayer.resetStyle(e.target);
@@ -415,7 +417,8 @@ var dhpMapsView = {
             return feature;
         }
 
-    }, 
+    },
+
     refreshMarkerLayer: function(){
         dhpMapsView.findSelectedCats();
         dhpMapsView.control.removeLayer(dhpMapsView.markerLayer);
@@ -425,7 +428,7 @@ var dhpMapsView = {
 
         // PURPOSE: Change legend and redraw elements
     switchLegend: function()
-    {       
+    {
         var action = jQuery(this).attr('href');
         var filter = jQuery(this).text();
         jQuery('.legend-div').hide();
@@ -661,7 +664,7 @@ var dhpMapsView = {
         jQuery('#term-legend-0').show();
         jQuery('#term-legend-0').addClass('active-legend');
             //Set initial size of legend
-        dhpMapsView.dhpUpdateSize();
+        // dhpMapsView.dhpUpdateSize();
 
             // Must be called to activate Foundation on the Legend 
         jQuery(document).foundation();
@@ -669,7 +672,7 @@ var dhpMapsView = {
             // Handle selection of different Legends
         jQuery('.dhp-nav .legend-dropdown a').on('click', function(evt){
             evt.preventDefault();
-            dhpMapsView.switchLegend(evt.target);
+            dhpMapsView.switchLegend();
         });
 
             // Handle selection of Layers button on top
@@ -920,7 +923,7 @@ var dhpMapsView = {
             jQuery('#markerModal').removeClass('medium');
             jQuery('#markerModal').addClass(dhpMapsView.modalSize);
         }
-    },
+    }, // dhpIgnoreModalSize()
 
         // RETURNS: true if there is a modal entry point defined whose name is modalName
     modalViewHas: function(modalName)
@@ -928,6 +931,7 @@ var dhpMapsView = {
         return (_.find(dhpMapsView.viewParams.select['view-type'],
                     function(theName) { return (theName == modalName); }) != undefined);
     },
+
         // RETURNS: true if touch is supported
     isTouchSupported: function () {
         var msTouchEnabled = window.navigator.msMaxTouchPoints;

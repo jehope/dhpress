@@ -52,6 +52,7 @@ jQuery(document).ready(function($) {
     }
     $('.dhp-nav .title-area .name h1 a').text($('.entry-title').text());
 
+
         // handle toggling fullscreen mode
     $('.dhp-nav .fullscreen').on('click', function(){
         if($('body').hasClass('fullscreen')) {
@@ -137,7 +138,7 @@ jQuery(document).ready(function($) {
             // Add map elements to nav bar
         $('.dhp-nav .top-bar-section .left').append(Handlebars.compile($("#dhp-script-map-menus").html()));
 
-            // Insert Legend area on right sidebar
+            // Insert Legend area
         $('#dhp-visual').after(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
             // all custom maps must have already been loaded into run-time "library"
