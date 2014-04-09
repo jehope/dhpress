@@ -35,9 +35,6 @@ body.kiosk-mode.fullscreen {
 .kiosk-mode #legends {
 	bottom: 20px;
 }
-.kiosk-mode-non-iframe  #legends {
-	bottom: 85px;
-}
 
 /* dual iframe layout */
 .kiosk-mode-non-iframe .dhp-split-iframes { 

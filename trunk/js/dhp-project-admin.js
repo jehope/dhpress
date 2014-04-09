@@ -1294,8 +1294,6 @@ console.log("Create transcription mote "+transcMoteName);
 
     // RETURNS: HMTL string to represent option list in Setup Links dropdown options in Modal Views
     // INPUT:   selected is the current selection
-    // NOTES:   Check to see which motes actually have categories created before adding as option?
-    //          Accumulate legend motes from visualizations (like maps)?
   function buildHTMLForSetupLinks(selected)
   {
     // var mapObject = getEntryPointByType(projectObj['entry-points'], 'map');
@@ -1308,37 +1306,40 @@ console.log("Create transcription mote "+transcMoteName);
       optionHtml = '<option name="no-link" value="no-link" >No Link</option><option name="marker" value="marker" >Marker Post</option>'; 
     }
 
-      // For linking to taxonomic pages
-    // _.each(mapObject['settings']['filter-data'], function(theFilter) {
-    //   if(theFilter===selected) {
-    //     optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" selected="selected" >'+theFilter+' (Legend)</option>';
-    //   } else {
-    //     optionHtml += '<option name="'+theFilter+'" value="'+theFilter+'" >'+theFilter+' (Legend)</option>';
-    //   }
-    // });
+      // Go through visualizations for defined Legend/Categories
+    _.each(projectObj['entry-points'], function(theEP) {
+      switch(theEP.type) {
+      case 'map':
+        _.each(theEP.settings['filter-data'], function (filterMoteName) {
+          var theFilter = getMote(filterMoteName);
+          if(theFilter.name===selected) {
+            optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+'" selected="selected" >'+theFilter.name+' (Legend)</option>';
+          } else {
+            optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+'" >'+theFilter.name+' (Legend)</option>';
+          }
+        });
+        break;
+      case 'cards':
+        if (theEP.settings.color && theEP.settings.color != '') {
+          var colorMote = getMote(theEP.settings.color);
+          if(colorMote.name===selected) {
+            optionHtml += '<option name="'+colorMote.name+'" value="'+colorMote.name+'" selected="selected" >'+colorMote.name+' (Legend)</option>';
+          } else {
+            optionHtml += '<option name="'+colorMote.name+'" value="'+colorMote.name+'" >'+colorMote.name+' (Legend)</option>';
+          }
+        }
+        break;
+      }
+    });
 
-      // For linking to mote values
+      // Only URL mote types can have values usable as links
     _.each(projectObj['motes'], function(theFilter) {
-      // console.log(theFilter.type)
-//      if( theFilter.name+' (Mote)' === selected && theFilter.type === 'URL' ) {
-//        optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" selected="selected" >'+theFilter.name+' (Mote)</option>';
-//      } else if( theFilter.type ==='URL' ) {
-//        optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" >'+theFilter.name+' (Mote)</option>';
-//      }
-
       switch (theFilter.type) {
       case 'URL':
         if( (theFilter.name+' (Mote)') === selected) {
           optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" selected="selected" >'+theFilter.name+' (Mote)</option>';
         } else {
           optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter.name+' (Mote)" >'+theFilter.name+' (Mote)</option>';
-        }
-        break;
-      default:
-        if(theFilter.name===selected) {
-          optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter+'" selected="selected" >'+theFilter.name+' (Legend)</option>';
-        } else {
-          optionHtml += '<option name="'+theFilter.name+'" value="'+theFilter+'" >'+theFilter.name+' (Legend)</option>';
         }
         break;
       }

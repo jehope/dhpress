@@ -6,7 +6,7 @@ Donate link: http://dhpress.org/
 Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours  
 Requires at least: 3.4  
 Tested up to: 3.8  
-Stable tag: 1.8.3  
+Stable tag: 1.9.4  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html  
   
@@ -27,9 +27,19 @@ Thus, building DH Press on top of the WordPress CMS results in a truly sustainab
 
 == Installation ==
 
-1. Rename trunk folder to 'dhpress'
-2. Upload 'dhpress' to the '/wp-content/plugins/' directory
+1. Download the [latest release](https://github.com/jehope/dhpress/releases).  
+2. Install the zip on your plugins page or upload unzipped to the '/wp-content/plugins/' directory.
 3. Activate the plugin through the 'Plugins' menu in WordPress
+
+
+== Using a development version ==
+
+At your own risk:  
+
+1. Download zip
+2. Rename trunk folder to 'dhpress-vX.X.X'
+3. Upload renamed folder to the '/wp-content/plugins/' directory 
+4. Activate the plugin through the 'Plugins' menu in WordPress 
 
 
 == Frequently Asked Questions ==
@@ -40,6 +50,23 @@ Go to DHPress > New Project and create a new project to get started
 
 
 == Changelog ==
+
+Posted on [release page](https://github.com/jehope/dhpress/releases).
+
+= 1.9.4 =
+* Implemented Leaflet on Map preview page
+* Deleted OpenLayers files
+* Minor error fixes
+
+= 1.9.0 =
+* Removed OpenLayers and implemented [Leaflet](http://leafletjs.org) mapping API on project pages.
+
+= 1.8.0 = 
+* Created settings page with kiosk mode features
+* Set base maps to have 20 zoom levels by default
+* Updated OpenLayers to 2.13
+* Switched to Zurb Foundation for frontend html
+* For more details see past [pull requests](https://github.com/jehope/dhpress/pulls?direction=desc&page=1&sort=created&state=closed)
 
 = 1.7.0 = 
 * Include two side by side transcripts

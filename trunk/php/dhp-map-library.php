@@ -8,6 +8,7 @@
 //              dhp_map_category    = [ "base" | "overlay" ]
 //              dhp_map_type        = [ "DHP" | "WMS" | "KML" | "Google" | "OSM" | "TMS" ]
 //              dhp_map_url         = URL for map on map server
+//              dhp_map_subdomains  = extra urls for tile server
 //              dhp_map_n_bounds    = latitude of northern bounds of map/overlay
 //              dhp_map_s_bounds    = latitude of southern bounds of map/overlay
 //              dhp_map_e_bounds    = longitude of eastern bounds of map/overlay
@@ -31,7 +32,7 @@
 //              http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/
 
     // A list of all of the custom fields associated with Map post types
-$dhp_map_custom_fields = array( 'dhp_map_typeid', 'dhp_map_shortname', 'dhp_map_category', 'dhp_map_type', 'dhp_map_url',
+$dhp_map_custom_fields = array( 'dhp_map_typeid', 'dhp_map_shortname', 'dhp_map_category', 'dhp_map_type', 'dhp_map_url','dhp_map_subdomains',
                                 'dhp_map_n_bounds', 'dhp_map_s_bounds', 'dhp_map_e_bounds', 'dhp_map_w_bounds',
                                 'dhp_map_min_zoom', 'dhp_map_max_zoom', 'dhp_map_cent_lat', 'dhp_map_cent_lon',
                                 'dhp_map_desc', 'dhp_map_state', 'dhp_map_county', 'dhp_map_city',
@@ -186,6 +187,9 @@ function show_dhp_map_settings_box()
     case 'WMS':
         $selectWMS = 'selected';
         break;
+    case 'Blank':
+        $selectBlank = 'selected';
+        break;
     case 'KML':
         $selectKML = 'selected';
         break;
@@ -224,6 +228,7 @@ function show_dhp_map_settings_box()
     echo '<tr><td align=right>*Map ID:</td><td><input name="dhp_map_typeid" id="dhp_map_typeid" type="text" size="60" value="'.$mapAttributes['dhp_map_typeid'].'"/></td></tr>';
     echo '<tr><td align=right>*Short title:</td><td><input name="dhp_map_shortname" id="dhp_map_shortname" type="text" size="60" value="'.$mapAttributes['dhp_map_shortname'].'"/></td></tr>';
     echo '<tr><td align=right>*URL:</td><td><input name="dhp_map_url" id="dhp_map_url" type="text" size="30" value="'.$mapAttributes['dhp_map_url'].'"/></td></tr>';
+    echo '<tr><td align=right>Subdomains:</td><td><input name="dhp_map_subdomains" id="dhp_map_subdomains" type="text" size="30" value="'.$mapAttributes['dhp_map_subdomains'].'"/></td></tr>';
     echo '<tr><td align=right>*Type:</td><td><select name="dhp_map_type" id="dhp_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML" '.$selectKML.' >KML</option><option value="DHP" '.$selectDHP.'>Custom DHP</option><option value="OSM" '.$selectOSM.'>OSM</option><option value="OSM" '.$selectTMS.'>TMS</option><option value="Google" '.$selectGoogle.'>Google</option></select></td></tr>';
     echo '<tr><td align=right>*Category:</td><td><select name="dhp_map_category" id="dhp_map_category"><option value="" '.$selectCategory.'>Please select a category</option><option value="base layer" '.$selectBaseLayer.'>Base Layer</option><option value="overlay" '.$selectOverlay.' >Overlay</option></select></td></tr>';
 
@@ -292,16 +297,19 @@ function dhp_map_page_template( $page_template )
     if ( $post_type == 'dhp-maps' ) {
         $page_template = dirname( __FILE__ ) . '/dhp-map-template.php';
 
-        wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)));
-        wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)));
-
+        wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+        wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+        wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+            
         wp_enqueue_script('jquery');
         wp_enqueue_script('underscore');
 
         wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-            wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers-2.13/OpenLayers.js', dirname(__FILE__)));
-        wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'open-layers');
-        wp_enqueue_script('dhp-public-map-script', plugins_url('/js/dhp-map-page.js', dirname(__FILE__)), array('open-layers', 'dhp-custom-maps' ));
+
+        wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)));
+        wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
+        wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
+        wp_enqueue_script('dhp-public-map-script', plugins_url('/js/dhp-map-page.js', dirname(__FILE__)), array('leaflet', 'dhp-custom-maps' ), DHP_PLUGIN_VERSION);
     }
     return $page_template;
 } // dhp_map_page_template()

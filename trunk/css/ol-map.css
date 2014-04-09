@@ -3,14 +3,82 @@
 
 @charset "UTF-8";
 
+body.fullscreen {
+	overflow: hidden;
+}
+#dhp-visual {
+	z-index: 1000;
+}
 	/* Controls on Map */
 #dhp-visual div.olControlZoom {
 	top:10px;
 }
-.fullscreen #dhp-visual div.olControlZoom {
-	top: 55px;
-	left: auto;
-	right: 20px;
+.fullscreen #dhp-visual div.olControlZoom,
+.fullscreen #dhp-visual .leaflet-control-zoom {
+	/*top: 110px;*/
+	
+}
+#dhp-visual .leaflet-control-layers {
+/*	-webkit-transition: all 1s ease-out;
+    -moz-transition: all 1s ease-out;
+    -o-transition: all 1s ease-out;
+	transition: all 1s ease-out;
+	overflow: hidden;
+	width: 36px;
+	height: 36px;*/
+}
+#dhp-visual .leaflet-control-layers.leaflet-control-layers-expanded {
+/*	width: auto;
+	height: auto;*/
+}
+#dhp-visual .leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	/*display: block;*/
+	
+	}
+#dhp-visual .leaflet-control-layers .leaflet-control-layers-list {
+/*	display: block;
+	-webkit-transition: all 1s ease-out;
+    -moz-transition: all 1s ease-out;
+    -o-transition: all 1s ease-out;
+	transition: all 1s ease-out;*/
+/*	width: 36px;
+	height: 36px;*/
+}
+#dhp-visual .leaflet-control-layers .leaflet-control-layers-list, #dhp-visual .leaflet-control-layers-expanded .leaflet-control-layers-toggle
+{
+	/*opacity: 0;*/
+}
+#dhp-visual .leaflet-control-layers-expanded .leaflet-control-layers-list {
+/*	opacity: 1;
+	position: relative;
+	width: auto;
+	height: auto;*/
+}
+#dhp-visual .leaflet-popup-content-wrapper {
+	text-align: center;
+}
+input.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+}
+
+#dhp-visual .leaflet-bar a, #dhp-visual .leaflet-bar a:hover {
+	width: 36px;
+	height: 36px;
+	line-height: 36px;
+	font-size: 22px;
+}
+#dhp-visual .leaflet-control.reset-control {
+
+}
+#dhp-visual .leaflet-control.reset-control a {
+	line-height: 38px;
+	font-size: 20px;
+	color: #21759b;
+	/*text-align: center;
+	display: inline-block;
+	width: 100%;*/
 }
 .logged-in.fullscreen #dhp-visual div.olControlZoom {
 	top:70px;
@@ -50,15 +118,20 @@
 	right: 10px;
 
 }
-
+#dhp-visual.olMap{
+	background: #eeeeee;
+}
 	/* Overrides most theme settings for img tags in the map only */
 .entry-content .olMap img,
-.widget .olMap img {
+.widget .olMap img,
+.entry-content img.leaflet-tile {
 	max-width: none;
 	border-radius: 0;
 	box-shadow: none;
 }
+.leaflet-control-zoom {
 
+}
 	/* Current legend style */
 #legends {
 	position:relative;	
@@ -80,7 +153,7 @@
 .fullscreen #legends {
 	position:absolute;
 	min-width: 220px;
-	top: 60px;
+	top: 20px;
 	left: 20px;
 	bottom: 20px;
 	overflow: hidden;
@@ -95,7 +168,7 @@
   }
 }
 .logged-in.fullscreen #legends {
-	top:70px;
+	/*top:70px;*/
 }
 .legend-row {
 	
@@ -128,6 +201,9 @@
 	width:100%;
 	cursor: pointer;
 	line-height: 15px;
+}
+.legend-div .terms .row.hasParent {
+	display: none;
 }
 .legend-div .terms .row:hover,
 .legend-div .terms .row.selected {

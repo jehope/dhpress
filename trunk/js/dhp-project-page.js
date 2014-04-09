@@ -47,7 +47,7 @@ jQuery(document).ready(function($) {
     }
         // initialize fullscreen mode settings
     if(dhpSettings['views']['viz-fullscreen']===true){
-        $('body').addClass('fullscreen');
+        $('body, html').addClass('fullscreen');
         $('.dhp-nav .fullscreen').addClass('active');
     }
     $('.dhp-nav .title-area .name h1 a').text($('.entry-title').text());
@@ -137,17 +137,17 @@ jQuery(document).ready(function($) {
             // Add map elements to nav bar
         $('.dhp-nav .top-bar-section .left').append(Handlebars.compile($("#dhp-script-map-menus").html()));
 
-            // Insert Legend area
+            // Insert Legend area on right sidebar
         $('#dhp-visual').after(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
             // all custom maps must have already been loaded into run-time "library"
-        dhpMapsView.initializeMap(ajaxURL, projectID, ep0['settings'], dhpSettings['views'], callBacks);
+        dhpMapsView.initMapInterface(ajaxURL, projectID, ep0['settings'], dhpSettings['views'], callBacks);
 
             // Add user tips for map
         $('body').append(Handlebars.compile($("#dhp-script-map-joyride").html()));
 
-        updateVizSpace = dhpMapsView.updateVizSpace;
-        closeModal     = dhpMapsView.onOLFeatureUnselect;
+        updateVizSpace = dhpMapsView.dhpUpdateSize;
+        closeModal     = dhpMapsView.onFeatureUnselect;
         break;
 
     case 'cards':
