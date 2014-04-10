@@ -59,12 +59,6 @@ var dhpMapsView = {
         // PURPOSE: Initialize map viewing area with controls
     initializeMap2: function()
     {
-        var dhpMarkerInterface;
-        var mapLayers = [];
-        var dhpDefaultStyle;
-        var opacity;
-        var newLayer;
-
         dhpMapsView.anyPopupsOpen = false;
         jQuery('#dhp-visual').append('<div id="dhpMap"/>');
            //create map with view
@@ -277,7 +271,7 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
     },
 
         // PURPOSE: Creates and draws marker layer on map. 
-        // Is called whenever the terms are filtered.
+        //          Called whenever the terms are filtered.
     createMarkerLayer: function(){
         dhpMapsView.markerOpacity = 1;
         dhpMapsView.markerLayer = L.geoJson(dhpMapsView.allMarkers, { 
@@ -417,7 +411,7 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
         }
     }, // filterMapMarkers()
 
-    refreshMarkerLayer: function(){
+    refreshMarkerLayer: function() {
         dhpMapsView.findSelectedCats();
         dhpMapsView.control.removeLayer(dhpMapsView.markerLayer);
         dhpMapsView.mapLeaflet.removeLayer(dhpMapsView.markerLayer);
@@ -615,12 +609,12 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
                 // a specific legend/category value (ID#)
             else {
                     // uncheck everything
-                jQuery('.active-legend .terms input').removeAttr('checked');
+                jQuery('.active-legend .terms input').prop('checked', false);
                 jQuery('.active-legend .terms .row.selected').removeClass('selected');
                     // select just this item
                 jQuery(this).closest('.row').addClass('selected');
-                jQuery(this).closest('.row').find('input').prop('checked',true);
-                
+                jQuery(this).closest('.row').find('input').prop('checked', true);
+
                     //child terms are now hidden in legend. This selects them if parent is checked
                 if(dhpMapsView.useParent) {
                     jQuery('.active-legend .terms .row').find('*[data-parent="'+spanName+'"]').each(function( index ) {
@@ -700,44 +694,47 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
     {
         var layerOpacity;
         var layerSettings = dhpMapsView.mapEP.layers;
-        _.each(dhpMapsView.mapLayers,function(thisLayer,index) {
-            layerOpacity = 1;
+        _.each(dhpMapsView.mapLayers, function(thisLayer,index) {
+            layerOpacity = layerSettings[index].opacity || 1;
 
-            if(layerSettings[index]) {
-                layerOpacity = layerSettings[index].opacity;
-                if(!layerOpacity){
-                    layerOpacity = 1;
-                }
+            // if(layerSettings[index]) {
+            //     layerOpacity = layerSettings[index].opacity;
+            //     if(!layerOpacity){
+            //         layerOpacity = 1;
+            //     }
+            // }
+
+                // Don't create checkbox or opacity slider for Blank layer
+            if (thisLayer.options.layerName != 'Blank') {
+                jQuery('#layers-panel').append('<div class="layer'+index+'">'+
+                    '<div class="row"><div class="columns small-12 large-12"><input type="checkbox" checked="checked"> '+
+                    '<a class="value" id="'+thisLayer.options.id+'">'+thisLayer.options.layerName+'</a></div></div>'+
+                    '<div class="row"><div class="columns small-12 large-12"><div class="layer-opacity"></div></div></div>'+
+                    '</div>');
+
+                jQuery('.layer'+index+' .layer-opacity').slider({
+                    range: false,
+                    min: 0,
+                    max: 1,
+                    step: 0.05,
+                    values: [ layerOpacity ],
+                    slide: function( event, ui ) {
+                        dhpMapsView.layerOpacity(thisLayer, ui);
+                    }
+                });
+                    // Handle turning on and off map layer
+                jQuery( '.layer'+index+' input').click(function() {
+                    if(jQuery(this).is(':checked')) {
+                        dhpMapsView.mapLeaflet.addLayer(thisLayer);
+                    } else {
+                        dhpMapsView.mapLeaflet.removeLayer(thisLayer);
+                    }
+                });
             }
-
-            jQuery('#layers-panel').append('<div class="layer'+index+'">'+
-                '<div class="row"><div class="columns small-12 large-12"><input type="checkbox" checked="checked"> '+
-                '<a class="value" id="'+thisLayer.options.id+'">'+thisLayer.options.layerName+'</a></div></div>'+
-                '<div class="row"><div class="columns small-12 large-12"><div class="layer-opacity"></div></div></div>'+
-                '</div>');
-
-                // Create slider to control layer opacity
-            jQuery('.layer'+index+' .layer-opacity').slider({
-                range: false,
-                min: 0,
-                max: 1,
-                step: 0.05,
-                values: [ layerOpacity ],
-                slide: function( event, ui ) {
-                    dhpMapsView.layerOpacity(thisLayer, ui);
-                }
-            });
-                // Handle turning on and off map layer
-            jQuery( '.layer'+index+' input').on('click', function(){
-                if(jQuery(this).attr('checked')) {
-                    dhpMapsView.mapLeaflet.addLayer(thisLayer);
-                } else {
-                    dhpMapsView.mapLeaflet.removeLayer(thisLayer);
-                }
-            });
         });
     }, // buildLayerControls()
 
+        // PURPOSE: Callback to handle user setting of opacity slider
     layerOpacity: function(layer, val) {
         if (layer.options.layerName=='Markers') {
             dhpMapsView.markerOpacity = val.values[ 0 ];
@@ -746,7 +743,7 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
         else {
             layer.setOpacity(val.values[ 0 ]);       
         }
-    },
+    }, // layerOpacity()
 
         // PURPOSE: Handle user selection of a marker on a map to bring up modal
         // INPUT:   feature = the feature selected on map
@@ -816,36 +813,6 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
         dhpMapsView.mapLeaflet.invalidateSize();
     }, // dhpUpdateSize()
 
-        // PURPOSE: Removes modal size if window size is under a certain threshold
-        // 
-    // dhpIgnoreModalSize: function(windowWidth)
-    // {
-    //     if(windowWidth<800) {
-    //         jQuery('#markerModal').removeClass('medium');
-    //         jQuery('#markerModal').removeClass(dhpMapsView.modalSize);
-    //     }
-    //         // Experimenting with different viewport sizes
-    //     else if(dhpMapsView.modalSize==='tiny' && windowWidth >= 800 && windowWidth < 1200) {
-    //         jQuery('#markerModal').removeClass(dhpMapsView.modalSize);
-    //         jQuery('#markerModal').addClass('medium');
-    //     }
-    //     else if(dhpMapsView.modalSize==='small' && windowWidth >= 800 && windowWidth < 1200) {
-    //         jQuery('#markerModal').removeClass(dhpMapsView.modalSize);
-    //         jQuery('#markerModal').addClass('medium');
-    //     }
-    //     else {
-    //         jQuery('#markerModal').removeClass('medium');
-    //         jQuery('#markerModal').addClass(dhpMapsView.modalSize);
-    //     }
-    // }, // dhpIgnoreModalSize()
-
-        // RETURNS: true if there is a modal entry point defined whose name is modalName
-    // modalViewHas: function(modalName)
-    // {
-    //     return (_.find(dhpMapsView.viewParams.select['view-type'],
-    //                 function(theName) { return (theName == modalName); }) != undefined);
-    // },
-
         // RETURNS: true if touch is supported
     isTouchSupported: function () {
         var msTouchEnabled = window.navigator.msMaxTouchPoints;
@@ -871,24 +838,13 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
             },
             success: function(data, textStatus, XMLHttpRequest)
             {
-                //dhpMapsView.createMapMarkers(JSON.parse(data));
                 dhpMapsView.createDataObjects(JSON.parse(data));
-                // console.log(JSON.parse(data))
-                //$('#markerModal').modal({backdrop:true});
                     // Remove Loading modal
-                // jQuery('#loading').foundation('reveal', 'close');
                 dhpMapsView.callBacks.remLoadingModal();
                 jQuery('.reveal-modal-bg').remove();
-                // jQuery('.reveal-modal-bg').css({'display':'none'});
 
                     // Enable joyride help tips
                 dhpMapsView.callBacks.userTipsOn();
-                // jQuery("#dhpress-tips").joyride({'tipLocation': 'right'});
-                // jQuery('.dhp-nav .tips').removeClass('active');
-                // jQuery('.joyride-close-tip').on('click', function() {
-                //     jQuery('.dhp-nav .tips').removeClass('active');
-                // });
-                //$('#markerModal .loading-content').remove();   
             },
             error: function(XMLHttpRequest, textStatus, errorThrown)
             {
