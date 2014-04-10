@@ -95,6 +95,7 @@ Template Name: Map Template
             echo "<tr><td><b>Category: </b></td><td>".$mapMetaData['dhp_map_category']."</td></tr>";
             echo "<tr><td><b>Type: </b></td><td>".$mapMetaData['dhp_map_type']."</td></tr>";
             echo "<tr><td><b>URL: </b></td><td>".$mapMetaData['dhp_map_url']."</td></tr>";
+            echo "<tr><td><b>Subdomains: </b></td><td>".$mapMetaData['dhp_map_subdomains']."</td></tr>";
             echo "<tr><td><b>Classification: </b></td><td>".$mapMetaData['dhp_map_classification']."</td></tr>";
             echo "<tr><td><b>State: </b></td><td>".$mapMetaData['dhp_map_state']."</td></tr>";
             echo "<tr><td><b>County: </b></td><td>".$mapMetaData['dhp_map_county']."</td></tr>";

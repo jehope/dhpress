@@ -6,8 +6,6 @@
 // USES:    jQuery, OpenLayers, dhp-custom-maps.js
 // NOTE:    Does not use dhp-maps-view.js (replaces that functionality)
 
-// TO DO:   Pass params to custom-maps, initialize and create maps-view
-
 jQuery(document).ready(function($) {
 
         // Get map parameters from the hidden input values

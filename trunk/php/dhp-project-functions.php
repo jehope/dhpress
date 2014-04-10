@@ -2190,7 +2190,7 @@ function add_dhp_project_admin_scripts( $hook )
 // INPUT:	$mapLayers = array of map layers (each containing Hash ['mapType'], ['id' = WP post ID])
 // RETURNS: Array of data about map layers
 // ASSUMES:	Custom Map data has been loaded into WP DB
-// TO DO:	Error handling if map data doesn't exist?
+// TO DO:	Further error handling if necessary map data doesn't exist?
 
 function dhpGetMapLayerData($mapLayers)
 {
@@ -2207,11 +2207,12 @@ function dhpGetMapLayerData($mapLayers)
 
 		// Loop thru all map layers, collecting essential data to pass
 	foreach($mapLayers as $layer) {
-		// if($layer['mapType'] == 'type-DHP')
-		// {
-			$mapData = getMapMetaData($layer['id'], $mapMetaList);
-			array_push($mapArray, $mapData);
-		// }
+		$mapData = getMapMetaData($layer['id'], $mapMetaList);
+			// Do basic error checking to ensure necessary fields exist
+		if ($mapData['dhp_map_typeid'] == '') {
+			trigger_error('No dhp_map_typeid metadata for map named '.$layer['name'].' of id '.$layer['id']);
+		}
+		array_push($mapArray, $mapData);
 	}
 	return $mapArray;
 } // dhpGetMapLayerData()
@@ -2295,7 +2296,7 @@ function dhp_page_template( $page_template )
     if ( $post_type == 'project' ) {
     	$projObj = new DHPressProject($post->ID);
 
-    		// Visualizations can send parameters via this array
+    		// Communicate to visualizations by sending parameters in this array
     	$vizParams = array();
 
 		//foundation styles
