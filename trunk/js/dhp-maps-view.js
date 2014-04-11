@@ -6,7 +6,7 @@
 //          Marker data is given to OpenLayers in GeoJSON format and converted to inter
 //          The class active-legend is added to whichever legend is currently visible and selected
 
-// USES:    JavaScript libraries jQuery, Underscore, Zurb Foundation
+// USES:    JavaScript libraries jQuery, Underscore, Zurb Foundation, Leaflet
 
 
 var dhpMapsView = {
@@ -21,7 +21,8 @@ var dhpMapsView = {
 
         //                  mapLayers = array of layer data to display (compiled in this code)
         //                  mapLeaflet = Leaflet map object
-        //                  control = 
+        //                  control = Leaflet map layer selection controller
+        //                  useParent = if true (always true?), actions on parent term affect child terms
 
         // PURPOSE: Initialize new leaflet map, layers, and markers                         
         // INPUT:   ajaxURL      = URL to WP
@@ -31,10 +32,6 @@ var dhpMapsView = {
         //          callBacks    = set of callback functions back to dhp-project-page functions
     initMapInterface: function(ajaxURL, projectID, mapEP, viewParams, callBacks) {
              // Constants
-        dhpMapsView.wpAdminBarWidth        = 783; // Width at which the admin bar changes to mobile version
-        dhpMapsView.wpAdminBarHeight       = 32;  // Default admin bar height
-        dhpMapsView.wpMobileAdminBarHeight = 46;  // Mobile admin bar height
-        dhpMapsView.wpAdminBarVisible      = jQuery('body').hasClass('admin-bar'); // check if admin bar is present
         dhpMapsView.checkboxHeight         = 12; // default checkbox height
 
             // Save reset data for later
@@ -44,7 +41,6 @@ var dhpMapsView = {
         dhpMapsView.viewParams     = viewParams;
         dhpMapsView.callBacks      = callBacks;
 
-        // dhpMapsView.modalSize      = dhpData.settings.views.select.width;
         dhpMapsView.mapLayers      = [];
             // expand to show/hide child terms and use their colors
         dhpMapsView.useParent = true;
@@ -81,18 +77,17 @@ var dhpMapsView = {
         // PURPOSE: Create base layers and overlays
         // NOTES:   While mapEP.layers specifies which predefined layers to use (and opacity),
         //              vizParams.layerData contains data defining those layers needed by dhp-custom-maps.js
+        // TO DO:   Make dhp-project-functions combine dhpMapsView.mapEP.layers and dhpData.vizParams.layerData objects
     createLayers: function() 
     {
-        // TODO: fix server side code to combine dhpMapsView.mapEP.layers and dhpData.vizParams.layerData objects.
         var opacity;
-            // Create layers for maps as well as controls for each
-        // _.each(dhpMapsView.mapEP.layers, function(theLayer, index) {
+            // Compile map layer data into mapLayers array and create with Leaflet
         _.each(dhpMapsView.mapEP.layers, function(layerToUse, index) {
             var layerDef = dhpData.vizParams.layerData[index];
             var newLayer;
 
             opacity = layerToUse.opacity || 1;
-console.log("Creating layer: "+JSON.stringify(layerDef));
+// console.log("Creating layer: "+JSON.stringify(layerDef));
 
             switch (layerDef.dhp_map_type) {
             case 'OSM':
@@ -130,8 +125,6 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
                 break;
 
             case 'Blank':
-                // newLayer = [];
-                // newLayer.options = [];
                 newLayer = {};
                 newLayer.options = {};
                 newLayer.options.layerName = 'Blank';
@@ -147,7 +140,7 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
             dhpMapsView.mapLayers.push(newLayer);
         }); // each sourceLayers
 
-            // ?? not sure what this line does
+            // The control object manages which layers are visible at any time (user selection)
         dhpMapsView.control = new L.control.layers().addTo(dhpMapsView.mapLeaflet);
             // Add each layer to the map object
         _.each(dhpMapsView.mapLayers, function(theLayer) {
@@ -186,7 +179,6 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
         // INPUT:   data = data as JSON object: Array of ["type", ...]
         //          mLayer = map layer into which the markers inserted 
         // SIDE-FX: assigns variables allMarkers, catFilter, rawAjaxData
-        // TO DO:   Generalize visualization types; should createLegends() be called elsewhere?
     createDataObjects: function(geoData) 
     {
         dhpMapsView.rawAjaxData = geoData;
@@ -355,7 +347,7 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
             mouseout: dhpMapsView.resetHighlight,
             click: dhpMapsView.clickHighlightFeature
         });
-    },
+    }, // onEachFeature()
 
     hoverHighlightFeature: function(e){
         if(!dhpMapsView.isTouchSupported()) {
@@ -454,6 +446,7 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
         var selCatFilter = [];
         var countTerms = 0;
         var i, tempSelCat, tempFilter;
+
         if(dhpMapsView.catFilter) {
             countTerms = Object.keys(dhpMapsView.catFilter.terms).length;
         }
@@ -533,40 +526,6 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
 
             //Initialize new foundation elements
         jQuery(document).foundation();
-            //configure marker modal
-        jQuery('#markerModal').foundation('reveal', {
-            animation: 'fadeAndPop',
-            animation_speed: 250,
-            close_on_background_click: true,
-            close_on_esc: true,
-            dismiss_modal_class: 'close-marker',
-            bg_class: 'reveal-modal-bg',
-            bg : jQuery('reveal-modal-bg'),
-            css : {
-                open : {
-                    'opacity': 0,
-                    'visibility': 'visible',
-                    'display' : 'block'
-                },
-                close : {
-                    'opacity': 1,
-                    'visibility': 'hidden',
-                    'display': 'none'
-                }
-            }
-        });
-            // Attach reveal bg listener for mobile devices(iPad bug)
-        if(jQuery('body').hasClass('isMobile')) {
-            jQuery('body').on('touchend', function(evt) {
-                if(jQuery(evt.target).hasClass('reveal-modal-bg')) {
-                    jQuery('#markerModal').foundation('reveal', 'close');
-                }            
-            });
-        }
-            // On modal close unselect features
-        // jQuery(document).on('closed', '#markerModal', function() {
-        //     dhpMapsView.resetHighlight();
-        // });
 
             // Handle resizing Legend (min/max)
         jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
@@ -655,11 +614,9 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
             // Show Legend 0 by default
         jQuery('#term-legend-0').show();
         jQuery('#term-legend-0').addClass('active-legend');
-            //Set initial size of legend
-        dhpMapsView.dhpUpdateSize(); // -- try this fix (Joe had it on, I initially had it off)
 
-            // Must be called to activate Foundation on the Legend -- try this fix (I initially had it, Joe didn't)
-        // jQuery(document).foundation();
+            //Set initial size of legend
+        // dhpMapsView.dhpUpdateSize();
 
             // Handle selection of different Legends
         jQuery('.dhp-nav .legend-dropdown a').click(function(evt){
@@ -677,12 +634,8 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
             jQuery(action).addClass('active-legend');
             jQuery(action).show();
         });
-
-        // $('.launch-timeline').on('click', function(){
-        //     loadTimeline('4233');  
-        // });
         
-        // findSelectedCats
+        // Show initially Legend selection
         dhpMapsView.findSelectedCats();
     }, // createLegends()
 
@@ -764,37 +717,11 @@ console.log("Creating layer: "+JSON.stringify(layerDef));
         dhpMapsView.callBacks.showMarkerModal(selectedFeature);
     }, // onFeatureSelect()
 
-        // PURPOSE: Resizes dhp elements when browser size changes
-        // 
+        // PURPOSE: Resizes map-specific elements when browser size changes
     dhpUpdateSize: function()
-    {   
-        var windowWidth, windowHeight, newRowHeight, checkboxMargin;
+    {
+        var newRowHeight, checkboxMargin;
 
-        //reset body height to viewport so user can't scroll map
-        if(jQuery('body').hasClass('fullscreen')){
-                // get new dimensions of browser
-            windowWidth  = jQuery(window).width();
-            windowHeight = jQuery(window).height();
-
-                // Shouldn't be needed with new code in dhp-project-page
-            // dhpMapsView.dhpIgnoreModalSize(windowWidth);
-
-                //New WordPress has a mobile admin bar with larger height(displays below 783px width)
-            if(dhpMapsView.wpAdminBarVisible && windowWidth >= dhpMapsView.wpAdminBarWidth ) {
-                jQuery('body').height(windowHeight - dhpMapsView.wpAdminBarHeight);
-            }
-                // Non mobile admin bar height
-            else if(dhpMapsView.wpAdminBarVisible && windowWidth < dhpMapsView.wpAdminBarWidth ) {
-                jQuery('body').height(windowHeight - dhpMapsView.wpMobileAdminBarHeight);
-                jQuery('#dhp-visual').height(windowHeight - dhpMapsView.wpMobileAdminBarHeight);
-            }
-                //Non logged in users
-            else {
-                jQuery('body').height(windowHeight);
-            }
-
-            // jQuery('#dhp-visual').css({ 'height': jQuery('body').height() - 45, 'top' : 45 });
-        }
             //resize legend term position for long titles
         jQuery('.active-legend .terms').css({top:jQuery('.active-legend .legend-title').height()});
 

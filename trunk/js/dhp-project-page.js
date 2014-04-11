@@ -138,8 +138,8 @@ jQuery(document).ready(function($) {
             // Add map elements to nav bar
         $('.dhp-nav .top-bar-section .left').append(Handlebars.compile($("#dhp-script-map-menus").html()));
 
-            // Insert Legend area
-        $('#dhp-visual').after(Handlebars.compile($("#dhp-script-map-legend-head").html()));
+            // Insert Legend area -- Joe had "after" but menu hidden if not "append"
+        $('#dhp-visual').append(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
             // all custom maps must have already been loaded into run-time "library"
         dhpMapsView.initMapInterface(ajaxURL, projectID, ep0['settings'], dhpSettings['views'], callBacks);
@@ -148,7 +148,7 @@ jQuery(document).ready(function($) {
         $('body').append(Handlebars.compile($("#dhp-script-map-joyride").html()));
 
         updateVizSpace = dhpMapsView.dhpUpdateSize;
-        closeModal     = dhpMapsView.onFeatureUnselect;
+        closeModal     = null;
         break;
 
     case 'cards':
@@ -209,7 +209,7 @@ jQuery(document).ready(function($) {
 
     function windowResized()
     {   
-        var windowWidth, windowHeight, newRowHeight, checkboxMargin;
+        var windowWidth, windowHeight;
 
             //reset body height to viewport so user can't scroll visualization area
         if(jQuery('body').hasClass('fullscreen')){
@@ -242,11 +242,14 @@ jQuery(document).ready(function($) {
                 // Non mobile admin bar height
             else if(wpAdminBarVisible && windowWidth < wpAdminBarWidth ) {
                 jQuery('body').height(windowHeight - wpMobileAdminBarHeight);
+                    // ?? Joe added this later -- remove?
+                jQuery('#dhp-visual').height(windowHeight - wpMobileAdminBarHeight);
             }
                 //Non logged in users
             else {
                 jQuery('body').height(windowHeight);
             }
+            // jQuery('#dhp-visual').css({ 'height': jQuery('body').height() - 45, 'top' : 45 });
         }
 
             // Do whatever needed for specific visualization
