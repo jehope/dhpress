@@ -480,14 +480,6 @@ var dhpMapsView = {
     {
         var legendHtml;
         var legendHeight;
-        var mapPosition       = jQuery('#dhp-visual').position();
-        var mapWidth          = jQuery('#dhp-visual').width();
-        var pageWidth         = jQuery('body').width();
-        // var pageHeight     = jQuery('body').height();
-        // var spaceRemaining = pageWidth-mapWidth;
-        
-        var rightDiv          = mapPosition.left + 50;
-        var topDiv            = mapPosition.top + 40;
 
             // Build Legend controls on the right (category toggles) for each legend value and insert Legend name into dropdown above
         _.each(legendList, function(theLegend, legIndex) {
@@ -555,7 +547,7 @@ var dhpMapsView = {
             }
         });
 
-            // Handle user selection of value name from current Legend on right
+            // Handle user selection of value name from current Legend
         jQuery('#legends div.terms .row a').on('click', function(event){
             var spanName = jQuery(this).data('id');
 
