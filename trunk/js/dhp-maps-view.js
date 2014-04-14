@@ -87,16 +87,15 @@ var dhpMapsView = {
             var newLayer;
 
             opacity = layerToUse.opacity || 1;
-// console.log("Creating layer: "+JSON.stringify(layerDef));
 
             switch (layerDef.dhp_map_type) {
             case 'OSM':
-                var subDomains = layerDef.dhp_map_subdomains.split(',');           
+                var subDomains = layerDef.dhp_map_subdomains.split('|');
                 if(subDomains.length>1) {
-                    newLayer = new L.TileLayer(layerDef.dhp_map_url, { 
-                        subdomains: subDomains, 
-                        attribution: layerDef.dhp_map_source, 
-                        maxZoom: 20, 
+                    newLayer = new L.TileLayer(layerDef.dhp_map_url, {
+                        subdomains: subDomains,
+                        attribution: layerDef.dhp_map_source,
+                        maxZoom: 20,
                         opacity: opacity,
                         layerName: layerDef.dhp_map_shortname,
                         layerType: layerDef.dhp_map_category
