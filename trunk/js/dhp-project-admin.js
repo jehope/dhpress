@@ -1617,18 +1617,16 @@ console.log("Create transcription mote "+transcMoteName);
        	projectObj['entry-points'][index]["settings"]['zoom'] = $(this).find('#zoom').val();
         //layers
         projectObj['entry-points'][index]["settings"]['layers'] = new Object();
-        $('.layer-list li option:selected').each(function(ind2) {
+        $('.layer-list li').each(function(ind2, element) {
           projectObj['entry-points'][index]["settings"]['layers'][ind2] = new Object();
-          projectObj['entry-points'][index]["settings"]['layers'][ind2]['id'] = $(this).attr('id'); 
-          // console.log($(this).attr('data-opacity')); 
-          projectObj['entry-points'][index]["settings"]['layers'][ind2]['opacity'] = $(this).attr('data-opacity'); 
-          projectObj['entry-points'][index]["settings"]['layers'][ind2]['name'] = $(this).text();
-          projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapType'] = $(this).attr('data-mapType'); 
-          projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapTypeId'] = $(this).val();
+          projectObj['entry-points'][index]["settings"]['layers'][ind2]['id'] = $('option:selected', element).attr('id');
+          projectObj['entry-points'][index]["settings"]['layers'][ind2]['opacity'] = parseFloat($('.slider-value', element).text());
+          projectObj['entry-points'][index]["settings"]['layers'][ind2]['name'] = $('option:selected', element).text();
+          projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapType'] = $('option:selected', element).attr('data-mapType'); 
+          projectObj['entry-points'][index]["settings"]['layers'][ind2]['mapTypeId'] = $('option:selected', element).val();
           //console.log($(this).attr('data-mapType'));
             //$("div[class^='apple-']")
         });
-
        	projectObj['entry-points'][index]["settings"]['marker-layer'] = $(this).find('#map-marker-selection').val();
         //legends
         projectObj['entry-points'][index]["settings"]['filter-data'] = new Object();
