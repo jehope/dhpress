@@ -13,15 +13,28 @@
 	z-index: 1102;
 	width: 100%;
 }
-.admin-bar .dhp-nav.fixed {
-	top:30px;
-}
+
 .fullscreen .dhp-nav {
 	position: absolute;
 	left: 0px;
 	top: 0px;
 	z-index: 1105;
 }
+
+.admin-bar .dhp-nav.fixed {
+	top:30px;
+}
+
+/* -- attempting fix
+body.fullscreen {
+	overflow: hidden;
+}
+
+#dhp-visual {
+	z-index: 1000;
+}
+*/
+
 .top-bar-section ul li>a {
 	font-size: 1rem;
 }
@@ -161,7 +174,11 @@ html.fullscreen {
 	filter: alpha(opacity=60);
 }
 
-	/* ==== Other styles -- need to group and document */
+/* -- attempting fix 
+#markerModal {
+	resize: both;
+}
+*/
 
 .entry-point {
 	min-height:200px;

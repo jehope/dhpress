@@ -6,8 +6,6 @@
 // USES:    jQuery, OpenLayers, dhp-custom-maps.js
 // NOTE:    Does not use dhp-maps-view.js (replaces that functionality)
 
-// TO DO:   Pass params to custom-maps, initialize and create maps-view
-
 jQuery(document).ready(function($) {
 
         // Get map parameters from the hidden input values
@@ -30,7 +28,34 @@ jQuery(document).ready(function($) {
     /* then load the overlay.                                */
     if(mapCategory == "base layer"){
     	baseLayer = true;
-        dhpMapTest.setView([0,0], 1)
+        dhpMapTest.setView([0,0], 1);
+        var newLayer;
+
+        switch (mapType) {
+        case 'OSM':
+            var subDomains = $('#map-subdomains').val();
+            subDomains = subDomains.split('|');
+            if(subDomains.length>1) {
+                newLayer = new L.TileLayer(mapUrl, {
+                    subdomains: subDomains,
+                    maxZoom: 20,
+                    opacity: 1,
+                    layerName: $('#map-shortname').val()
+                });
+            }
+            else {
+                newLayer = new L.TileLayer(mapUrl, { 
+                    maxZoom: 20, 
+                    opacity: 1,
+                    layerName: $('#map-shortname').val()
+                });
+            }
+            break;
+        }
+        if (newLayer) {
+            newLayer.addTo(dhpMapTest);
+        }
+
     } else {
     	baseLayer = false;
     	// add base layers

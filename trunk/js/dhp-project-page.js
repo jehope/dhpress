@@ -1,37 +1,49 @@
 // PURPOSE: Handle viewing Project content visualizations
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
-//          viewParams['layerData'] = array with all data needed for this visualization by dhp-custom-maps
-//          The sidebar is marked with HTML div as "secondary"
+//          viewParams['layerData'] = array with all data needed for dhp-custom-maps
 //          Section for marker modal is marked with HTML div as "markerModal"
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 // NOTES:   Format of project settings is documented in dhp-class-project.php
-// TO DO:   Seperate loading of markers from building of legends and other screen components ??
 
 jQuery(document).ready(function($) {
         // Project variables
     var dhpSettings, projectID, ajaxURL, viewParams;
         // Inactivity timeout
     var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive;
+        // modal and GUI support
+    var modalSize;
     var browserMobile = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
+        // For reaching functions in this file used by various visualization modules
+    var callBacks;
+        // Visualization-specific callbacks
+    var updateVizSpace, closeModal;
 
     if(browserMobile) {
         $('body').addClass('isMobile');
     }
-    // projectID      = $('.post').attr('id');
     ajaxURL        = dhpData.ajax_url;
     vizParams      = dhpData.vizParams;
     dhpSettings    = dhpData.settings;
     projectID      = dhpSettings["project-details"]["id"];
+
     jQuery(document).foundation();
 
-    //Add project nav bar
+        // Create callback object so that visualization modules can access functions in this file
+    callBacks = {
+        remLoadingModal: removeLoadingMessage,
+        userTipsOn:      enableUserTips,
+        showMarkerModal: showMarkerModal
+    };
+
+        //Add project nav bar
     createNavBar();
-    
+
         // Insert Marker modal window HTML
     $('body').append(Handlebars.compile($("#dhp-script-markerModal").html()));
         // Set modal width
-    if(dhpSettings['views']['select']['width']) {
-        jQuery('#markerModal').addClass(dhpSettings['views']['select']['width']);
+    modalSize      = dhpSettings['views']['select']['width'];
+    if(modalSize) {
+        jQuery('#markerModal').addClass(modalSize);
     }
         // initialize fullscreen mode settings
     if(dhpSettings['views']['viz-fullscreen']===true){
@@ -39,17 +51,20 @@ jQuery(document).ready(function($) {
         $('.dhp-nav .fullscreen').addClass('active');
     }
     $('.dhp-nav .title-area .name h1 a').text($('.entry-title').text());
+
+
         // handle toggling fullscreen mode
     $('.dhp-nav .fullscreen').on('click', function(){
         if($('body').hasClass('fullscreen')) {
             $('body').removeClass('fullscreen');
             $('.dhp-nav .fullscreen').removeClass('active');
-            dhpMapsView.dhpUpdateSize();
+            // dhpMapsView.dhpUpdateSize();
         } else {
             $('body').addClass('fullscreen');
             $('.dhp-nav .fullscreen').addClass('active');
-            dhpMapsView.dhpUpdateSize();
+            // dhpMapsView.dhpUpdateSize();
         }
+        windowResized();
     });
 
         // handle turning joyride tips on/off
@@ -65,9 +80,51 @@ jQuery(document).ready(function($) {
 
     $('<style type="text/css"> @media screen and (min-width: 600px) { #dhp-visual{ width:'+dhpSettings['views']['map-width']+'px; height:'+dhpSettings['views']['map-height']+'px;}} </style>').appendTo('head');
 
-        // Map visualization?
-    var mapEP   = getEntryPointByType('map');
-    if (mapEP) {
+        // Constants regarding GUI items
+    var wpAdminBarWidth        = 783; // Width at which the admin bar changes to mobile version
+    var wpAdminBarHeight       = 32;  // Default admin bar height
+    var wpMobileAdminBarHeight = 46;  // Mobile admin bar height
+    var wpAdminBarVisible      = jQuery('body').hasClass('admin-bar'); // check if admin bar is present
+
+    jQuery(window).resize( windowResized );
+
+        //configure marker modal for future selection
+    jQuery('#markerModal').foundation('reveal', {
+        animation: 'fadeAndPop',
+        animation_speed: 250,
+        close_on_background_click: true,
+        close_on_esc: true,
+        dismiss_modal_class: 'close-marker',
+        bg_class: 'reveal-modal-bg',
+        bg : jQuery('reveal-modal-bg'),
+        css : {
+            open : {
+                'opacity': 0,
+                'visibility': 'visible',
+                'display' : 'block'
+            },
+            close : {
+                'opacity': 1,
+                'visibility': 'hidden',
+                'display': 'none'
+            }
+        }
+    });
+        // Attach reveal bg listener for mobile devices(iPad bug)
+    if(jQuery('body').hasClass('isMobile')) {
+        jQuery('body').on('touchend', function(evt) {
+            if(jQuery(evt.target).hasClass('reveal-modal-bg')) {
+                jQuery('#markerModal').foundation('reveal', 'close');
+            }            
+        });
+    }
+
+    createLoadingMessage();
+
+        // Currently only supporting 1 visualization, the 1st entry point
+    var ep0 = dhpSettings['entry-points'][0];
+    switch (ep0['type']) {
+    case 'map':
             // vizParams.layerData must have array of DHP custom map layers to add to "library" -- not base maps (??)
         _.each(vizParams.layerData, function(theLayer) {
             dhpCustomMaps.maps.addMap(theLayer.dhp_map_typeid, theLayer.dhp_map_shortname,
@@ -78,25 +135,40 @@ jQuery(document).ready(function($) {
                                     theLayer.dhp_map_url,      null );
         });
 
-            // Add map elements to top nav bar
+            // Add map elements to nav bar
         $('.dhp-nav .top-bar-section .left').append(Handlebars.compile($("#dhp-script-map-menus").html()));
 
-            // Insert Legend area on right sidebar
+            // Insert Legend area -- Joe had "after" but menu hidden if not "append"
         $('#dhp-visual').append(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
             // all custom maps must have already been loaded into run-time "library"
-        dhpMapsView.initMapInterface(ajaxURL, projectID, mapEP, dhpSettings.views);
+        dhpMapsView.initMapInterface(ajaxURL, projectID, ep0['settings'], dhpSettings['views'], callBacks);
 
             // Add user tips for map
         $('body').append(Handlebars.compile($("#dhp-script-map-joyride").html()));
 
-        createLoadingMessage();
+        updateVizSpace = dhpMapsView.dhpUpdateSize;
+        closeModal     = null;
+        break;
+
+    case 'cards':
+        dhpCardsView.initializeCards(ajaxURL, projectID, ep0['settings'], dhpSettings['views'], callBacks);
+        updateVizSpace = dhpCardsView.updateVizSpace;
+        closeModal     = null;
+        break;
     }
 
-        // Transcription views?
+        // Transcription widget
     if (modalViewHas("transcript")) {
         dhpTranscript.initialize();
     }
+
+        // On modal close, allow visualization to unselect features as appropriate
+    jQuery(document).on('closed', '#markerModal', function () {
+        if (closeModal) {
+            closeModal();
+        }
+    });
 
         // Monitor user activity, only if setting given
     maxMinutesInactive = dhpSettings["project-details"]["max-inactive"];
@@ -118,6 +190,7 @@ jQuery(document).ready(function($) {
 
     // ========================= FUNCTIONS
 
+
         // PURPOSE: Called once a minute to see if user has done anything in that interval
     function monitorActivity()
     {
@@ -132,6 +205,59 @@ jQuery(document).ready(function($) {
             document.location.href = dhpSettings["project-details"]["home-url"];
         }
     } // monitorActivity()
+
+
+    function windowResized()
+    {   
+        var windowWidth, windowHeight;
+
+            //reset body height to viewport so user can't scroll visualization area
+        if(jQuery('body').hasClass('fullscreen')){
+                // get new dimensions of browser
+            windowWidth  = jQuery(window).width();
+            windowHeight = jQuery(window).height();
+
+                // Override modal class size to/from medium if window size is under/over certain sizes
+            if(windowWidth<800) {
+                jQuery('#markerModal').removeClass('medium');
+                jQuery('#markerModal').addClass(modalSize);
+            }
+            else if(modalSize==='tiny' && windowWidth >= 800 && windowWidth < 1200) {
+                jQuery('#markerModal').removeClass('tiny');
+                jQuery('#markerModal').addClass('medium');
+            }
+            else if(modalSize==='small' && windowWidth >= 800 && windowWidth < 1200) {
+                jQuery('#markerModal').removeClass('small');
+                jQuery('#markerModal').addClass('medium');
+            }
+            else {
+                jQuery('#markerModal').removeClass('medium');
+                jQuery('#markerModal').addClass(modalSize);
+            }
+
+                //New WordPress has a mobile admin bar with larger height(displays below 783px width)
+            if(wpAdminBarVisible && windowWidth >= wpAdminBarWidth ) {
+                jQuery('body').height(windowHeight - wpAdminBarHeight);
+            }
+                // Non mobile admin bar height
+            else if(wpAdminBarVisible && windowWidth < wpAdminBarWidth ) {
+                jQuery('body').height(windowHeight - wpMobileAdminBarHeight);
+                    // ?? Joe added this later -- remove?
+                jQuery('#dhp-visual').height(windowHeight - wpMobileAdminBarHeight);
+            }
+                //Non logged in users
+            else {
+                jQuery('body').height(windowHeight);
+            }
+            // jQuery('#dhp-visual').css({ 'height': jQuery('body').height() - 45, 'top' : 45 });
+        }
+
+            // Do whatever needed for specific visualization
+        if (updateVizSpace) {
+            updateVizSpace();
+        }
+    } // windowResized()
+
 
     function createNavBar()
     {
@@ -155,28 +281,13 @@ jQuery(document).ready(function($) {
     } // createNavBar()
 
 
-        // RETURNS: Entry point of dhpSettings array whose type is theType
-        // ASSUMES: dhpSettings loaded, in correct format
-    function getEntryPointByType(theType) {
-        var theEP;
-        theEP = _.find(dhpSettings['entry-points'],
-                        function(thisEP) { return (thisEP["type"] == theType); });
-        if (theEP !== undefined && theEP !== null) {
-            return theEP["settings"];
-        } else {
-            return null;
-        }
-    }
-
         // RETURNS: true if there is a modal entry point defined whose name is modalName
     function modalViewHas(modalName) {
         return (_.find(dhpSettings['views']['select']['view-type'],
-                        function(theName) {
-                            return (theName == modalName); })
-                != undefined);
+                        function(theName) { return (theName == modalName); }) != undefined);
     }
 
-        // PURPOSE: Bring up Loading pop-box modal dialog -- must be hidden by caller
+        // PURPOSE: Bring up Loading pop-box modal dialog
     function createLoadingMessage()
     {
         $('body').append(Handlebars.compile($("#dhp-script-modal-loading").html()));  
@@ -208,6 +319,124 @@ jQuery(document).ready(function($) {
         $('#loading').foundation('reveal', 'open');
         // $('.loading-reveal-modal-bg').remove();
     } // createLoadingMessage()
+
+
+        // PURPOSE: Remove the Loading pop-up modal dialog
+    function removeLoadingMessage()
+    {
+            // Remove Loading modal
+        $('#loading').foundation('reveal', 'close');
+    } // removeLoadingMessage()
+
+
+        // PURPOSE: Enable user tips (via Joyride)
+    function enableUserTips()
+    {
+            // Enable joyride help tips
+        $("#dhpress-tips").joyride({'tipLocation': 'right'});
+        $('.dhp-nav .tips').removeClass('active');
+        $('.joyride-close-tip').on('click', function() {
+            $('.dhp-nav .tips').removeClass('active');
+        });
+    } // enableUserTips()
+
+
+        // RETURNS: true if there is a modal entry point defined whose name is widgetName
+    function modalViewHas(widgetName)
+    {
+        return (_.find(dhpSettings['views']['select']['view-type'],
+                    function(theName) { return (theName === widgetName); }) != undefined);
+    }
+
+        // PURPOSE: Fill out and show modal for marker
+        // INPUT:   feature = the feature selected to show (in same format as generated by createMarkerArray())
+        // SIDE-FX: Modifies DOM to create modal dialog window
+    function showMarkerModal(feature)
+    {
+        var selectParams = dhpSettings['views']['select'];
+        var titleAtt='';
+        var builtHTML;
+        var link1, link2, link1Target, link2Target;
+
+        if(selectParams['title']) {
+            titleAtt =  feature.properties.title;
+        }
+
+        link1  = feature.properties.link;
+        link2  = feature.properties.link2;
+            // Open in new tab?
+        if(selectParams['link-new-tab']) {
+            link1Target = 'target="_blank"';
+        }
+        if(selectParams['link2-new-tab']) {
+            link2Target = 'target="_blank"';
+        }
+        // tagAtt = selectedFeature.properties.categories;
+
+            // Remove anything currently in body -- will rebuild from scratch
+        jQuery('.modal-body').empty();
+
+            // Should Select Modal show transcript?
+        if (modalViewHas("transcript"))
+        {
+            jQuery('#markerModal').addClass('transcript');
+
+            var transcriptSettings = {
+                'audio'         : feature.properties.audio,
+                'transcript'    : feature.properties.transcript,
+                'transcript2'   : feature.properties.transcript2,
+                'timecode'      : feature.properties.timecode,
+                'startTime'     : -1,
+                'endTime'       : -1
+            };
+
+            if (transcriptSettings.timecode) {
+                var time_codes = transcriptSettings.timecode.split('-');
+                transcriptSettings.startTime = dhpTranscript.convertToMilliSeconds(time_codes[0]);
+                transcriptSettings.endTime   = dhpTranscript.convertToMilliSeconds(time_codes[1]);
+            }
+
+            dhpTranscript.prepareOneTranscript(ajaxURL, projectID, '#markerModal .modal-body', transcriptSettings);
+         }
+
+            // Create HTML for all of the data related to the Marker
+         if (selectParams['content']) {
+            builtHTML = '<div><h3>Details:</h3></div>';
+            _.each(feature.properties.content, function(val) {       // Array of (hash) pairs
+                 _.each(val, function(val1, key1) {
+
+                    if (key1==='Thumbnail Right') {
+                        builtHTML += '<div class="thumb-right">'+val1+'</div>';
+                    }
+                    else if (key1==='Thumbnail Left') {
+                        builtHTML += '<div class="thumb-left">'+val1+'</div>';
+                    }
+                    else {
+                        if (val1) {
+                            builtHTML += '<div><span class="key-title">'+key1+'</span>: '+val1+'</div>';
+                        }
+                    }
+                });
+            });
+        }
+
+        jQuery('.modal-body').append(builtHTML);
+
+            // clear previous marker links
+        jQuery('#markerModal .reveal-modal-footer .marker-link').remove();
+            // Change title
+        jQuery('#markerModal #markerModalLabel').empty().append(titleAtt);
+
+            // setup links
+        if (link1 && link1!='no-link') {
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link1Target+' class="button success marker-link" href="'+link1+'">'+selectParams['link-label']+'</a></li>');
+        }
+        if (link2 && link2 !='no-link') {
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link2Target+' class="button success marker-link" href="'+link2+'">'+selectParams['link2-label']+'</a></li>');
+        }
+            //Open modal
+        jQuery('#markerModal').foundation('reveal', 'open');
+    } // showMarkerModal()
 
 
     // function createLookup(filter){
@@ -243,35 +472,4 @@ jQuery(document).ready(function($) {
     //     return check;
     // }
 
-    //     // TO DO:  Everything; get size from EP parameters…
-    // function createTimeline(data) {
-    //     //console.log(data);
-    //     createStoryJS({
-    //         type:       'timeline',
-    //         width:      '960',
-    //         height:     '600',
-    //         source:     'http://msc.renci.org/dev/wp-content/plugins/dhp/js/test.json',
-    //         embed_id:   'timeline'           // ID of the DIV you want to load the timeline into
-    //     });
-    // }
-
-    // function loadTimeline(projectID){
-    //     jQuery.ajax({
-    //         type: 'POST',
-    //         url: ajaxURL,
-    //         data: {
-    //             action: 'dhpGetTimeline',
-    //             project: projectID
-    //         },
-    //         success: function(data, textStatus, XMLHttpRequest){
-    //             //console.log(textStatus);
-    //             createTimeline(JSON.parse(data));
-    //         },
-    //         error: function(XMLHttpRequest, textStatus, errorThrown){
-    //            alert(errorThrown);
-    //         }
-    //     });
-    // }
-
 });
-

@@ -464,7 +464,7 @@ function invertLatLon($latlon)
 } // invertLatLon()
 
 
-// getIconsForTerms($parent_term, $taxonomy)
+// getCategoryValues($parent_term, $taxonomy)
 // PURPOSE: Get all of the visual features associated via metadata with the taxonomic terms associated with 1 Mote
 // INPUT:	$parent_term = Object for mote/top-level term
 //			$taxonomy = root name of taxonomy for Project
@@ -495,10 +495,11 @@ function invertLatLon($latlon)
 			// 		],
 			// 	}
 
-function getIconsForTerms($parent_term, $taxonomy)
+function getCategoryValues($parent_term, $taxonomy)
 {
-	$children_names  = array();
-	$filter_children = array();
+	$children_names = array();
+	$filter_object  = array();
+	$filter_parent  = array();
 
 	$filter_object['type']  = "filter";
 	$filter_object['name']  = $parent_term->name;
@@ -549,6 +550,7 @@ function getIconsForTerms($parent_term, $taxonomy)
 			trigger_error("Project cannot be viewed until legend ".$parent_term->name." is configured.");
 		}
 
+		$temp_child_filter				  = array();
 		$temp_child_filter['name']        = $child->name;
 		$temp_child_filter['id']          = intval($child->term_id);
 		$temp_child_filter['icon_url']    = $icon_url;
@@ -562,7 +564,7 @@ function getIconsForTerms($parent_term, $taxonomy)
 	$filter_parent['children'] = $children_terms;
 
 	return $filter_object;
-} // getIconsForTerms()
+} // getCategoryValues()
 
 
 // PURPOSE:	Get link to category page based on category value, if one of $terms appears in $link_terms
@@ -721,17 +723,23 @@ function dhp_get_group_feed($rootTaxName,$term_name)
 //			That is, return array describing all markers based on filter and visualization
 // INPUT:	$project_id = ID of Project to view
 // RETURNS: JSON object describing all markers associated with Project
-//			[0..n] is as getIconsForTerms above; [n+1] is as follows:
+//			[0..n-1] contains results from getCategoryValues() defined above;
+//			[n] is a FeatureCollection; exact contents will depend on visualization, but could include:
 			// {	"type": "FeatureCollection",
 			// 	 	"features" :
 			// 		[
 			// 			{ "type" : "Feature",
-			// 			  "geometry" : {"type" : "Point", "coordinates" : longlat}, 
+			//							// Only if map
+			// 			  "geometry" : {"type" : "Point", "coordinates" : longlat},
+			//							// Only if topic card
+			//			  "card" : {"title": String, "image": HTML String, "text": String},
 			// 			  "properties" :
 			// 				[
-			// 					"title" : String,
+			//							// For data corresponding to categories/legends
 			// 					"categories" : [ integer IDs of category terms ],
-			// 					"content" : [ { moteName : moteValue }, ... ],
+			//							// Data used to create modals
+			// 					"title" : String,
+			// 					"content" : [ { moteName : moteValue }, ... ],		// for modal values
 			// 					"link" : URL,
 			// 					"link2" : URL
 			//							// Those below only in the case of transcript markers
@@ -753,40 +761,58 @@ function createMarkerArray($project_id)
 	$rootTaxName  = $projObj->getRootTaxName();
 	$projSettings = $projObj->getAllSettings();
 
-    	// Initialize settings in case not used
-	$map_pointsMote = $cordMote = $filters = $audio = $transcript = $transcript2 = $timecode = null;
+    	// Initialize settings in case not used -- most of these are custom-field (not mote) names
+	$map_pointsMote = $coordMote = $filters = null;
+	$audio = $transcript = $transcript2 = $timecode = null;
+	$cardTitle = $cardText = $cardImage = null;
 
     	// If we support multiple entry points, we must accumulate settings that are specified
 		// For now, just the first entry point is implemented
-	// foreach( $projSettings['entry-points'] as $eps) {
-	// 	switch ($eps['type']) {
-		switch ($projSettings['entry-points'][0]['type']) {
-		case "map":
-				// Which field used to encode Lat-Long on map?
-			// $map_pointsMote = $projObj->getMoteByName( $eps['settings']['marker-layer'] );
-			$map_pointsMote = $projObj->getMoteByName( $projSettings['entry-points'][0]['settings']['marker-layer'] );
-			if($map_pointsMote['type']=='Lat/Lon Coordinates'){
-				if(!$map_pointsMote['delim']) { $map_pointsMote['delim']=','; }
-				$coordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
-				//array of custom fields
-				//$coordMote = $map_pointsMote['custom-fields'];
-			}
-				// Find all possible legends/filters for this map -- each marker needs these fields
-			// $filters = $eps['settings']['filter-data'];
-			$filters = $projSettings['entry-points'][0]['settings']['filter-data'];
-				// Collect all possible category values/tax names for each mote in all filters
-			foreach( $filters as $legend ) {
-				$parent = get_term_by('name', $legend, $rootTaxName);
-				$parent_term_id = $parent->term_id;
-				// $parent_terms = get_terms( $rootTaxName, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty' => false ) );
-				array_push($json_Object, getIconsForTerms($parent, $rootTaxName));
-			}
-			break;
-		case "cards":
-			// TO DO
-			break;
+	$eps0 = $projSettings['entry-points'][0];
+	switch ($eps0['type']) {
+	case "map":
+			// Which field used to encode Lat-Long on map?
+		// $map_pointsMote = $projObj->getMoteByName( $eps['settings']['marker-layer'] );
+		$map_pointsMote = $projObj->getMoteByName( $eps0['settings']['marker-layer'] );
+		if($map_pointsMote['type']=='Lat/Lon Coordinates'){
+			if(!$map_pointsMote['delim']) { $map_pointsMote['delim']=','; }
+			$coordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
+			//array of custom fields
+			//$coordMote = $map_pointsMote['custom-fields'];
 		}
-	// }
+			// Find all possible legends/filters for this map -- each marker needs these fields
+		// $filters = $eps['settings']['filter-data'];
+		$filters = $eps0['settings']['filter-data'];
+			// Collect all possible category values/tax names for each mote in all filters
+		foreach( $filters as $legend ) {
+			$term = get_term_by('name', $legend, $rootTaxName);
+			// $parent_term_id = $term->term_id;
+			// $parent_terms = get_terms( $rootTaxName, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty' => false ) );
+			array_push($json_Object, getCategoryValues($term, $rootTaxName));
+		}
+		break;
+
+	case "cards":
+		$cardTitle = $eps0['settings']['title'];
+		if ($cardTitle != 'the_title') {
+			$cardTitle = $projObj->getCustomFieldForMote($cardTitle);
+			if (is_null($cardTitle)) {
+				trigger_error("Card view title assigned to unknown mote");
+			}
+		} else if ($cardTitle == '') {
+			$cardTitle = null;
+		}
+		$cardColorMote = $eps0['settings']['color'];
+		if ($cardColorMote != null && $cardColorMote !== '') {
+				// Create a legend for the color values
+			$term = get_term_by('name', $cardColorMote, $rootTaxName);
+			array_push($json_Object, getCategoryValues($term, $rootTaxName));
+		}
+			// prepare image and text motes
+		$cardImage = $projObj->getCustomFieldForMote($eps0['settings']['image']);
+		$cardText  = $projObj->getCustomFieldForMote($eps0['settings']['text']);
+		break;
+	}
 
 		// If a marker is selected and leads to a transcript in modal, need those values also
 	if ($projObj->selectModalHas("transcript")) {
@@ -934,6 +960,34 @@ function createMarkerArray($project_id)
 		}
 		$thisFeaturesProperties["title"] = $title;
 
+			// Topic Card values
+		if ($cardTitle != null) {
+			$cardValues = array();
+			if($cardTitle=='the_title') {
+				$title = get_the_title();
+			} else {
+				$title = get_post_meta($marker_id, $cardTitle, true);
+			}
+			$cardValues['title'] = $title;
+			if ($cardImage != null) {
+				$image = get_post_meta($marker_id, $cardImage, true);
+				if ($image != null & $image !== '') {
+					$cardValues['image'] = '<img src="'.addslashes($image).'" />';
+				}
+			}
+			if ($cardText != null) {
+				if($cardText=='the_content') {
+					$text = apply_filters('the_content', get_post_field('post_content', $marker_id));
+				} else {
+					$text = get_post_meta($marker_id, $cardText, true);
+				}
+				if ($text != null && $text !== '') {
+					$cardValues['text'] = $text;
+				}
+			}
+			$thisFeature['card'] = $cardValues;
+		}
+
 			// Get all of the legend/category values associated with this marker post
 		$args = array('fields' => 'ids');
 		$post_terms = wp_get_post_terms( $marker_id, $rootTaxName, $args );
@@ -1049,6 +1103,7 @@ function print_new_bootstrap_html($project_id)
           <div class="tab-content">
 
           	<div id="info" class="tab-pane fade in active">
+          	  <h3>DH Press version '.DHP_PLUGIN_VERSION.'</h3>
               <h4>Project Info</h4>
               <p>Project ID: '.$project_id.'</p>
               <p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy='.$projObj->getRootTaxName().'" >Category Manager</a></p>
@@ -1103,8 +1158,7 @@ function print_new_bootstrap_html($project_id)
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Create Entry Point<b class="caret"></b></a>
                   <ul class="dropdown-menu">
                     <li><a id="add-map" >Map</a></li>
-                    <!--<li><a id="add-cards">Topic Cards</a></li>
-                    <li class="disabled"><a id="add-timeline">Timeline</a></li>-->
+                    <li><a id="add-cards">Topic Cards</a></li>
                   </ul>
                 </li>
               </ul>
@@ -2136,7 +2190,7 @@ function add_dhp_project_admin_scripts( $hook )
 // INPUT:	$mapLayers = array of map layers (each containing Hash ['mapType'], ['id' = WP post ID])
 // RETURNS: Array of data about map layers
 // ASSUMES:	Custom Map data has been loaded into WP DB
-// TO DO:	Error handling if map data doesn't exist?
+// TO DO:	Further error handling if necessary map data doesn't exist?
 
 function dhpGetMapLayerData($mapLayers)
 {
@@ -2153,11 +2207,12 @@ function dhpGetMapLayerData($mapLayers)
 
 		// Loop thru all map layers, collecting essential data to pass
 	foreach($mapLayers as $layer) {
-		// if($layer['mapType'] == 'type-DHP')
-		// {
-			$mapData = getMapMetaData($layer['id'], $mapMetaList);
-			array_push($mapArray, $mapData);
-		// }
+		$mapData = getMapMetaData($layer['id'], $mapMetaList);
+			// Do basic error checking to ensure necessary fields exist
+		if ($mapData['dhp_map_typeid'] == '') {
+			trigger_error('No dhp_map_typeid metadata for map named '.$layer['name'].' of id '.$layer['id']);
+		}
+		array_push($mapArray, $mapData);
 	}
 	return $mapArray;
 } // dhpGetMapLayerData()
@@ -2241,7 +2296,7 @@ function dhp_page_template( $page_template )
     if ( $post_type == 'project' ) {
     	$projObj = new DHPressProject($post->ID);
 
-    		// Visualizations can send parameters via this array
+    		// Communicate to visualizations by sending parameters in this array
     	$vizParams = array();
 
 		//foundation styles
@@ -2254,27 +2309,26 @@ function dhp_page_template( $page_template )
 
 		wp_enqueue_script('underscore');
 		wp_enqueue_script('jquery');
-		wp_enqueue_script('jquery-ui' );
-		wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__)));
- 		wp_enqueue_script('jquery-ui-slider' );
 		// wp_enqueue_script('dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
 
-    		// Map visualization specific
-    	$projectSettings_map = $projObj->getEntryPointByName('map');
-    	if (!is_null($projectSettings_map)) {
+    		// Visualization specific -- only 1st Entry Point currently supported
+    	$projectSettings_viz = $projObj->getEntryPointByIndex(0);
+    	switch ($projectSettings_viz['type']) {
+    	case 'map':
 			wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 			wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-	    	
+
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
-			
-			// wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers-2.13/OpenLayers.js', dirname(__FILE__)));
-			// wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
-			// wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'open-layers', DHP_PLUGIN_VERSION);
-			
+
+	    	// I'm not sure if these 3 are needed
+			wp_enqueue_script('jquery-ui' );
+			wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__)));
+	 		wp_enqueue_script('jquery-ui-slider' );
+
 			//Leaflet - remove -src when tested
 			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)));
 
@@ -2282,12 +2336,27 @@ function dhp_page_template( $page_template )
 			wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
 
 				// Get any DHP custom map parameters
-			$layerData = dhpGetMapLayerData($projectSettings_map['settings']['layers']);
+			$layerData = dhpGetMapLayerData($projectSettings_viz['settings']['layers']);
 			$vizParams["layerData"] = $layerData;
 
-	    	// array_push($dependencies, 'open-layers', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps');
 	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps');
-	    
+	    	break;
+	    case 'cards':
+			wp_enqueue_style('cards-style', plugins_url('/css/dhp-cards.css',  dirname(__FILE__)) );
+
+			// wp_enqueue_script('jquery-ui' );
+			// wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__)));
+
+			// wp_enqueue_script('imagesloaded', plugins_url('/js/imagesloaded.pkgd.js', dirname(__FILE__)));
+			wp_enqueue_script('masonry', plugins_url('/js/masonry.pkgd.js', dirname(__FILE__)));
+			wp_enqueue_script('dhp-cards-view', plugins_url('/js/dhp-cards-view.js', dirname(__FILE__)), 
+				'masonry' );
+
+	    	array_push($dependencies, 'masonry', 'dhp-cards-view');
+	    	break;
+	    default:
+	 		trigger_error("Unknown visualization type: ".$projectSettings_viz['type']);
+	    	break;
 	    }
 
 	    	// Transcript specific

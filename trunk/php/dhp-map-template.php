@@ -75,6 +75,7 @@ Template Name: Map Template
             echo "<input type='hidden' id='map-typeid' name='map-typeid' value='".$mapMetaData['dhp_map_typeid']."'>";
             echo "<input type='hidden' id='map-shortname' name='map-shortname' value='".$mapMetaData['dhp_map_shortname']."'>";
             echo "<input type='hidden' id='map-url' name='map-url' value='".$mapMetaData['dhp_map_url']."'>";
+            echo "<input type='hidden' id='map-subdomains' name='map-subdomains' value='".$mapMetaData['dhp_map_subdomains']."'>";
             echo "<input type='hidden' id='map-bounds' name='map-bounds' value='".$mapMetaData['dhp_map_n_bounds'].",".$mapMetaData['dhp_map_s_bounds'].",".$mapMetaData['dhp_map_e_bounds'].",".$mapMetaData['dhp_map_w_bounds']."'>";
             echo "<input type='hidden' id='map-zoom-min' name='map-zoom-min' value='".$mapMetaData['dhp_map_min_zoom']."'>";
             echo "<input type='hidden' id='map-zoom-max' name='map-zoom-max' value='".$mapMetaData['dhp_map_max_zoom']."'>";
@@ -95,6 +96,7 @@ Template Name: Map Template
             echo "<tr><td><b>Category: </b></td><td>".$mapMetaData['dhp_map_category']."</td></tr>";
             echo "<tr><td><b>Type: </b></td><td>".$mapMetaData['dhp_map_type']."</td></tr>";
             echo "<tr><td><b>URL: </b></td><td>".$mapMetaData['dhp_map_url']."</td></tr>";
+            echo "<tr><td><b>Subdomains: </b></td><td>".$mapMetaData['dhp_map_subdomains']."</td></tr>";
             echo "<tr><td><b>Classification: </b></td><td>".$mapMetaData['dhp_map_classification']."</td></tr>";
             echo "<tr><td><b>State: </b></td><td>".$mapMetaData['dhp_map_state']."</td></tr>";
             echo "<tr><td><b>County: </b></td><td>".$mapMetaData['dhp_map_county']."</td></tr>";

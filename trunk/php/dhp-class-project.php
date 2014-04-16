@@ -329,6 +329,20 @@ class DHPressProject
 	} // getEntryPointByName()
 
 
+    	// RETURNS: EntryPoint settings array at index, or null if $index > number of EP entries
+		// INPUT:   $index = 0..n-1
+	public function getEntryPointByIndex($index)
+	{
+		$this->ensureSettings();
+
+		$eps = $this->settings['entry-points'];
+		if ($index >= count($eps)) {
+			return null;
+		}
+		return $eps[$index];
+	} // getEntryPointByIndex()
+
+
     	// RETURNS: All EntryPoint settings in Project
 	public function getAllEntryPoints()
 	{
@@ -345,6 +359,7 @@ class DHPressProject
 		foreach($this->settings['motes'] as $mote)
 			if($mote['name']==$moteName)
 				return $mote;
+		return null;
 	} // getMoteByName()
 
 		// RETURNS: Name of Custom Field corresponding to mote
@@ -352,6 +367,9 @@ class DHPressProject
 	public function getCustomFieldForMote($moteName)
 	{
 		$mote = $this->getMoteByName($moteName);
+		if ($mote == null) {
+			return null;
+		}
 		return $mote['custom-fields'];
 	} // getCustomFieldForMote()
 

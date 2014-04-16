@@ -6,7 +6,7 @@
 //              dhp_map_typeid      = unique ID for this map (String)
 //              dhp_map_shortname   = a short title for map, does not need to be unique
 //              dhp_map_category    = [ "base" | "overlay" ]
-//              dhp_map_type        = [ "DHP" | "WMS" | "KML" | "Google" | "OSM" | "TMS" ]
+//              dhp_map_type        = [ "DHP" | "WMS" | "KML" | "OSM" | "TMS" ]
 //              dhp_map_url         = URL for map on map server
 //              dhp_map_subdomains  = extra urls for tile server
 //              dhp_map_n_bounds    = latitude of northern bounds of map/overlay
@@ -30,6 +30,8 @@
 
 // The data from CDLA library copied into default DH Press library from files in the directory
 //              http://docsouth.unc.edu/cdlamaps/api/mapdata/OASIS/
+
+// Since maps are implemented with Leaflet, support for Google base maps has been removed
 
     // A list of all of the custom fields associated with Map post types
 $dhp_map_custom_fields = array( 'dhp_map_typeid', 'dhp_map_shortname', 'dhp_map_category', 'dhp_map_type', 'dhp_map_url','dhp_map_subdomains',
@@ -196,9 +198,9 @@ function show_dhp_map_settings_box()
     case 'DHP':
         $selectDHP = 'selected';
         break;
-    case 'Google':
-        $selectGoogle = 'selected';
-        break;
+    // case 'Google':
+    //     $selectGoogle = 'selected';
+    //     break;
     case 'OSM':
         $selectOSM = 'selected';
         break;
@@ -229,7 +231,7 @@ function show_dhp_map_settings_box()
     echo '<tr><td align=right>*Short title:</td><td><input name="dhp_map_shortname" id="dhp_map_shortname" type="text" size="60" value="'.$mapAttributes['dhp_map_shortname'].'"/></td></tr>';
     echo '<tr><td align=right>*URL:</td><td><input name="dhp_map_url" id="dhp_map_url" type="text" size="30" value="'.$mapAttributes['dhp_map_url'].'"/></td></tr>';
     echo '<tr><td align=right>Subdomains:</td><td><input name="dhp_map_subdomains" id="dhp_map_subdomains" type="text" size="30" value="'.$mapAttributes['dhp_map_subdomains'].'"/></td></tr>';
-    echo '<tr><td align=right>*Type:</td><td><select name="dhp_map_type" id="dhp_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML" '.$selectKML.' >KML</option><option value="DHP" '.$selectDHP.'>Custom DHP</option><option value="OSM" '.$selectOSM.'>OSM</option><option value="OSM" '.$selectTMS.'>TMS</option><option value="Google" '.$selectGoogle.'>Google</option></select></td></tr>';
+    echo '<tr><td align=right>*Type:</td><td><select name="dhp_map_type" id="dhp_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML" '.$selectKML.' >KML</option><option value="DHP" '.$selectDHP.'>Custom DHP</option><option value="OSM" '.$selectOSM.'>OSM</option><option value="OSM" '.$selectTMS.'>TMS</option></select></td></tr>';
     echo '<tr><td align=right>*Category:</td><td><select name="dhp_map_category" id="dhp_map_category"><option value="" '.$selectCategory.'>Please select a category</option><option value="base layer" '.$selectBaseLayer.'>Base Layer</option><option value="overlay" '.$selectOverlay.' >Overlay</option></select></td></tr>';
 
     echo '<tr><td align=right>*North bounds:</td><td><input name="dhp_map_n_bounds" id="dhp_map_n_bounds" type="text" size="10" value="'.$mapAttributes['dhp_map_n_bounds'].'"/></td></tr>';
@@ -335,8 +337,8 @@ function dhp_maps_filter_restrict_manage_posts()
         //in 'label' => 'value' format
         $values = array(
                         'DHP' => 'DHP',
-                        'KML' => 'KML',
-                        'Google' => 'Google'
+                        'KML' => 'KML'
+                        // 'Google' => 'Google'
         );
         ?>
         <select name="dhp_map_type">

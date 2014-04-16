@@ -9,10 +9,13 @@ body.fullscreen {
 #dhp-visual {
 	z-index: 1000;
 }
+
+	/* added for fix */
 #dhpMap {
 	width: 100%;
 	height: 100%;
 }
+
 	/* Controls on Map */
 #dhp-visual div.olControlZoom {
 	top:10px;
