@@ -200,8 +200,6 @@ var dhpMapsView = {
         dhpMapsView.catFilter  = legends[0];
         dhpMapsView.createLegends(legends);
 
-        // dhpMapsView.buildLayerControls();
-
         dhpMapsView.createMarkerLayer();
         dhpMapsView.buildLayerControls();   
     }, // createDataObjects()
