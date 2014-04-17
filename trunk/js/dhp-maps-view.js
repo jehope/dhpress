@@ -80,10 +80,12 @@ var dhpMapsView = {
         // TO DO:   Make dhp-project-functions combine dhpMapsView.mapEP.layers and dhpData.vizParams.layerData objects
     createLayers: function() 
     {
-        var opacity;
+        var opacity, layerDef;
+console.log("Definition for layers: "+JSON.stringify(dhpMapsView.viewParams.layerData));
+
             // Compile map layer data into mapLayers array and create with Leaflet
         _.each(dhpMapsView.mapEP.layers, function(layerToUse, index) {
-            var layerDef = dhpData.vizParams.layerData[index];
+            layerDef = dhpMapsView.viewParams.layerData[index];
             var newLayer;
 
             opacity = layerToUse.opacity || 1;

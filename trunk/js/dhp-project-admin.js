@@ -503,6 +503,11 @@ jQuery(document).ready(function($) {
         settings['layers'] = [];
         var defaultLayer = { 'id': 0, 'opacity': 1};
         settings['layers'].push(defaultLayer);
+
+      } else if (epType == 'cards') {
+        settings['content'] = [];
+        settings['content'][0] = '';
+        settings['content'][1] = '';
       }
     }
 
@@ -517,14 +522,14 @@ jQuery(document).ready(function($) {
                       	<label>Card Title</label>\
                           <select class="span4" name="tcard-title-selection" id="tcard-title-selection">\
                           <option selected="selected" value="the_title">Marker Title</option>'+
-                          buildHTMLForMotes(settings['title'], false, textMoteType)+
+                          buildHTMLForMotes(settings.title, false, textMoteType)+
                           '</select>\
                       </div>\
                       <div class="row offset1 legend-list" id="tcard-color-div">\
                         <label>Card Color</label>\
                           <li id="legend-'+tcCount+'">\
                           <select name="tcard-color-selection" id="tcard-color-selection">'+
-                          buildHTMLForMotes(settings['color'], true, textMoteType)+
+                          buildHTMLForMotes(settings.color, true, textMoteType)+
                           '</select>\
                           <button type="button" id="create-card-color-mote" class="btn-success hidden">Create Taxonomy</button>\
                           <button type="button" id="config-card-color-mote" class="btn-danger hidden">Configure Taxonomy</button>\
@@ -534,14 +539,14 @@ jQuery(document).ready(function($) {
                       <div class="row offset1" id="tcard-image-div">\
                         <label>Card Image</label>\
                           <select class="span4" name="tcard-image-selection" id="tcard-image-selection">'+
-                          buildHTMLForMotes(settings['image'], true, imageMoteType)+
+                          buildHTMLForMotes(settings.content[0], true, imageMoteType)+
                           '</select>\
                       </div>\
                       <div class="row offset1" id="tcard-text-div">\
                         <label>Card Text</label>\
                           <select class="span4" name="tcard-text-selection" id="tcard-text-selection">\
                           <option selected="selected" value="the_content">Post Content</option>'+
-                          buildHTMLForMotes(settings['text'], true, textMoteType)+
+                          buildHTMLForMotes(settings.content[1], true, textMoteType)+
                           '</select>\
                       </div>';
       break;
@@ -720,7 +725,6 @@ console.log("Create color mote "+colorMoteName);
 
     $("#config-card-color-mote").click(function() {
         var colorMoteName = $("#tcard-color-selection option:selected").val();
-console.log("Configure color mote "+colorMoteName);
         dhpConfigureMoteLegend(colorMoteName, false);
         updateCardColorButtons();
     });
@@ -1638,8 +1642,17 @@ console.log("Create transcription mote "+transcMoteName);
       case 'cards':
         projectObj['entry-points'][index]["settings"]['title'] = $(this).find('#tcard-title-selection').val();
         projectObj['entry-points'][index]["settings"]['color'] = $(this).find('#tcard-color-selection').val();
-        projectObj['entry-points'][index]["settings"]['image'] = $(this).find('#tcard-image-selection').val();
-        projectObj['entry-points'][index]["settings"]['text']  = $(this).find('#tcard-text-selection').val();
+        // projectObj['entry-points'][index]["settings"]['image'] = $(this).find('#tcard-image-selection').val();
+        // projectObj['entry-points'][index]["settings"]['text']  = $(this).find('#tcard-text-selection').val();
+        projectObj['entry-points'][index]["settings"]['content'] = [];
+        projectObj['entry-points'][index]["settings"]['content'][0] = $(this).find('#tcard-image-selection').val();
+        projectObj['entry-points'][index]["settings"]['content'][1]  = $(this).find('#tcard-text-selection').val();
+          // Provide default settings for other fields
+        projectObj['entry-points'][index]["settings"]['width']  = 100;
+        projectObj['entry-points'][index]["settings"]['height']  = 120;
+        projectObj['entry-points'][index]["settings"]['defColor']  = 'DeepSkyBlue';
+        projectObj['entry-points'][index]["settings"]['filterMotes']  = [];
+        projectObj['entry-points'][index]["settings"]['sortMotes']  = [];
         break;
       }
   	});

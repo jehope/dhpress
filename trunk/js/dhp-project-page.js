@@ -1,13 +1,14 @@
 // PURPOSE: Handle viewing Project content visualizations
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
-//          viewParams['layerData'] = array with all data needed for dhp-custom-maps
+//          vizParams.layerData = array with all data needed for dhp-custom-maps
 //          Section for marker modal is marked with HTML div as "markerModal"
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 // NOTES:   Format of project settings is documented in dhp-class-project.php
 
 jQuery(document).ready(function($) {
         // Project variables
-    var dhpSettings, projectID, ajaxURL, viewParams;
+    var dhpSettings,            // all project settings
+        projectID, ajaxURL;
         // Inactivity timeout
     var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive;
         // modal and GUI support
@@ -22,7 +23,6 @@ jQuery(document).ready(function($) {
         $('body').addClass('isMobile');
     }
     ajaxURL        = dhpData.ajax_url;
-    vizParams      = dhpData.vizParams;
     dhpSettings    = dhpData.settings;
     projectID      = dhpSettings["project-details"]["id"];
 
@@ -125,8 +125,10 @@ jQuery(document).ready(function($) {
     var ep0 = dhpSettings['entry-points'][0];
     switch (ep0['type']) {
     case 'map':
+console.log("Project layer settings: "+JSON.stringify(ep0.settings.layers));
+
             // vizParams.layerData must have array of DHP custom map layers to add to "library" -- not base maps (??)
-        _.each(vizParams.layerData, function(theLayer) {
+        _.each(dhpData.vizParams.layerData, function(theLayer) {
             dhpCustomMaps.maps.addMap(theLayer.dhp_map_typeid, theLayer.dhp_map_shortname,
                                     theLayer.dhp_map_n_bounds, theLayer.dhp_map_s_bounds,
                                     theLayer.dhp_map_e_bounds, theLayer.dhp_map_w_bounds, 
@@ -142,7 +144,7 @@ jQuery(document).ready(function($) {
         $('#dhp-visual').append(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
             // all custom maps must have already been loaded into run-time "library"
-        dhpMapsView.initMapInterface(ajaxURL, projectID, ep0['settings'], dhpSettings['views'], callBacks);
+        dhpMapsView.initMapInterface(ajaxURL, projectID, ep0['settings'], dhpData.vizParams, callBacks);
 
             // Add user tips for map
         $('body').append(Handlebars.compile($("#dhp-script-map-joyride").html()));
@@ -152,7 +154,8 @@ jQuery(document).ready(function($) {
         break;
 
     case 'cards':
-        dhpCardsView.initializeCards(ajaxURL, projectID, ep0['settings'], dhpSettings['views'], callBacks);
+console.log("EP settings = "+JSON.stringify( ep0['settings'] ) );
+        dhpCardsView.initializeCards(ajaxURL, projectID, ep0['settings'], callBacks);
         updateVizSpace = dhpCardsView.updateVizSpace;
         closeModal     = null;
         break;

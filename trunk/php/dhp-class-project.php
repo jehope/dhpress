@@ -93,7 +93,7 @@
 		    "entry-points": [										// contents of settings depends on type of entry point
 		    	Integer (index) : {
 		            "type": String ("map" or "cards"),
-		            "settings": {									// map settings are as follows
+		            "settings": {									// Map settings are as follows
 		                "lat": Number,
 		                "lon": Number,
 		                "zoom": Number,
@@ -102,7 +102,7 @@
 		                    Index: {
 		                        "id": Number,
 		                        "name": String,
-		                        "mapType": String ("type-OSM" or "type-DHP"),
+		                        "mapType": String ("type-Blank", "type-OSM", "type-DHP"),
 		                        "mapTypeId": String,
 		                    }, ...
 		                ],
@@ -111,11 +111,22 @@
 		                    Index : String (name of mote), ...
 		                ]
 		            }
-		            "settings" : {									// topic-cards settings are as follows
+		            "settings" : {									// Topic Cards settings are as follows
 						"title": String (name of mote),				// to display on top of card
+		            	"width" : Number,							// Pixel width of cards
+		            	"height" : Number,							// Pixel height of cards
 						"color": String (name of mote),				// to determine color of card
-						"image": String (name of mote),				// image to show on card (first item)
-						"text" : String (name of mote)				// text to show on card (after image)
+						"defColor" : String (CSS color to use),		// as default when no mote value
+						"content" : [
+							// Array of mote names (or the_content) to show in card content
+							// In 1.9.5, 0 = image and 1 = text
+						],
+						"filterMotes": [
+							// Array of mote names to use to filter cards (Short Text, Number types)
+						],
+						"sortMotes": [
+							// Array of mote names to use to sort cards (Short Text, Number types)
+						]
 		            }
 		        }
 		    },

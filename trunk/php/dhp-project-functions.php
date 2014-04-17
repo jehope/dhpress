@@ -730,16 +730,19 @@ function dhp_get_group_feed($rootTaxName,$term_name)
 			// 		[
 			// 			{ "type" : "Feature",
 			//							// Only if map
-			// 			  "geometry" : {"type" : "Point", "coordinates" : longlat},
+			// 			  "geometry" : { "type" : "Point", "coordinates" : longlat },
 			//							// Only if topic card
-			//			  "card" : {"title": String, "image": HTML String, "text": String},
+			//			  "card" : { "title": String },
 			// 			  "properties" :
 			// 				[
-			//							// For data corresponding to categories/legends
+			//							// All data corresponding to categories/legends associated with marker
 			// 					"categories" : [ integer IDs of category terms ],
 			//							// Data used to create modals
 			// 					"title" : String,
-			// 					"content" : [ { moteName : moteValue }, ... ],		// for modal values
+			//							// Data needed by select modal or card filter/sort
+			// 					"content" : [
+			//						{ moteName : moteValue }, ...
+			//					],
 			// 					"link" : URL,
 			// 					"link2" : URL
 			//							// Those below only in the case of transcript markers
@@ -764,7 +767,17 @@ function createMarkerArray($project_id)
     	// Initialize settings in case not used -- most of these are custom-field (not mote) names
 	$map_pointsMote = $coordMote = $filters = null;
 	$audio = $transcript = $transcript2 = $timecode = null;
-	$cardTitle = $cardText = $cardImage = null;
+	$cardTitle = $cardColorMote = null;
+
+		// By default, a marker's content is the set of data needed by select modal, but some
+		//	views may need to augment this
+	// $selectContent = $projSettings['views']['select']['content'];
+	$selectContent = array();
+	if ($projSettings['views']['select']['content']) {
+		foreach ($projSettings['views']['select']['content'] as $theMote) {
+			array_push($selectContent, $theMote);
+		}
+	}
 
     	// If we support multiple entry points, we must accumulate settings that are specified
 		// For now, just the first entry point is implemented
@@ -776,9 +789,8 @@ function createMarkerArray($project_id)
 		$map_pointsMote = $projObj->getMoteByName( $eps0['settings']['marker-layer'] );
 		if($map_pointsMote['type']=='Lat/Lon Coordinates'){
 			if(!$map_pointsMote['delim']) { $map_pointsMote['delim']=','; }
-			$coordMote = split($map_pointsMote['delim'],$map_pointsMote['custom-fields']);
+			$coordMote = split($map_pointsMote['delim'], $map_pointsMote['custom-fields']);
 			//array of custom fields
-			//$coordMote = $map_pointsMote['custom-fields'];
 		}
 			// Find all possible legends/filters for this map -- each marker needs these fields
 		// $filters = $eps['settings']['filter-data'];
@@ -793,26 +805,33 @@ function createMarkerArray($project_id)
 		break;
 
 	case "cards":
+			// Convert title mote to custom field
 		$cardTitle = $eps0['settings']['title'];
-		if ($cardTitle != 'the_title') {
+		if ($cardTitle == null || $cardTitle == '') {
+			$cardTitle = null;
+		} else if ($cardTitle != 'the_title') {
 			$cardTitle = $projObj->getCustomFieldForMote($cardTitle);
 			if (is_null($cardTitle)) {
 				trigger_error("Card view title assigned to unknown mote");
 			}
-		} else if ($cardTitle == '') {
-			$cardTitle = null;
 		}
+			// Convert color mote to custom field
 		$cardColorMote = $eps0['settings']['color'];
 		if ($cardColorMote != null && $cardColorMote !== '') {
 				// Create a legend for the color values
 			$term = get_term_by('name', $cardColorMote, $rootTaxName);
 			array_push($json_Object, getCategoryValues($term, $rootTaxName));
 		}
-			// prepare image and text motes
-		$cardImage = $projObj->getCustomFieldForMote($eps0['settings']['image']);
-		$cardText  = $projObj->getCustomFieldForMote($eps0['settings']['text']);
+			// prepare card contents (for now, just image and text motes)
+			// TO DO: Prevent redundancies
+		if ($eps0['settings']['content'][0] != null && $eps0['settings']['content'][0] != '') {
+			array_push($selectContent, $eps0['settings']['content'][0]);
+		}
+		if ($eps0['settings']['content'][1] != null && $eps0['settings']['content'][1] != '') {
+			array_push($selectContent, $eps0['settings']['content'][1]);
+		}
 		break;
-	}
+	} // switch
 
 		// If a marker is selected and leads to a transcript in modal, need those values also
 	if ($projObj->selectModalHas("transcript")) {
@@ -825,6 +844,9 @@ function createMarkerArray($project_id)
 			$timecode   = $projObj->getCustomFieldForMote($projSettings['views']['transcript']['timecode']);
 		}
 	}
+
+		// TO DO: ensure that any new content requested from markers is not redundant
+	// $selectContent = array_unique($selectContent);
 
 	$feature_collection = array();
 	$feature_collection['type'] = 'FeatureCollection';
@@ -950,18 +972,18 @@ function createMarkerArray($project_id)
 			$timecode_val = get_post_meta($marker_id, $timecode, true);
 			$thisFeaturesProperties["timecode"]    = $timecode_val;
 		}
-		
 
-			// Now begin saving data about this marker
-		if($title_mote=='the_title') {
-			$title = get_the_title();
-		} else {
-			$title = get_post_meta($marker_id,$title_mote,true);
+		if ($title_mote) {
+			if($title_mote=='the_title') {
+				$title = get_the_title();
+			} else {
+				$title = get_post_meta($marker_id,$title_mote,true);
+			}
+			$thisFeaturesProperties["title"] = $title;
 		}
-		$thisFeaturesProperties["title"] = $title;
 
-			// Topic Card values
-		if ($cardTitle != null) {
+			// Special Topic Card values
+		if ($cardTitle != null || $cardTitle != '') {
 			$cardValues = array();
 			if($cardTitle=='the_title') {
 				$title = get_the_title();
@@ -969,22 +991,6 @@ function createMarkerArray($project_id)
 				$title = get_post_meta($marker_id, $cardTitle, true);
 			}
 			$cardValues['title'] = $title;
-			if ($cardImage != null) {
-				$image = get_post_meta($marker_id, $cardImage, true);
-				if ($image != null & $image !== '') {
-					$cardValues['image'] = '<img src="'.addslashes($image).'" />';
-				}
-			}
-			if ($cardText != null) {
-				if($cardText=='the_content') {
-					$text = apply_filters('the_content', get_post_field('post_content', $marker_id));
-				} else {
-					$text = get_post_meta($marker_id, $cardText, true);
-				}
-				if ($text != null && $text !== '') {
-					$cardValues['text'] = $text;
-				}
-			}
 			$thisFeature['card'] = $cardValues;
 		}
 
@@ -1002,22 +1008,32 @@ function createMarkerArray($project_id)
 		$content_att = array();
 
 			// Gather all values to be displayed in modal if marker selected
-		$selectContent = $projSettings['views']['select']['content'];
-		if($selectContent) {
+		if (count($selectContent)) {
 			foreach( $selectContent as $contentMoteName ) {
-				$content_mote = $projObj->getMoteByName( $contentMoteName );
-				if($content_mote['custom-fields']=='the_content') {
-					$content_val = apply_filters('the_content', get_post_field('post_content', $marker_id));
+				if ($contentMoteName == 'the_content') {
+					$content_val = apply_filters('the_content', get_post_field('the_content', $marker_id));
+				} elseif ($contentMoteName == 'the_title') {
+					$content_val = apply_filters('the_title', get_the_title());
 				} else {
-					$content_val = get_post_meta($marker_id,$content_mote['custom-fields'],true);
-				}
-				if (!is_null($content_val) && ($content_val !== '')) {
+					$content_mote = $projObj->getMoteByName( $contentMoteName );
+					$contentCF = $content_mote['custom-fields'];
+					if($contentCF =='the_content') {
+						$content_val = apply_filters('the_content', get_post_field($contentCF, $marker_id));
+					} elseif ($contentCF=='the_title') {
+						$content_val = apply_filters('the_title', get_the_title());
+					} else {
+						$content_val = get_post_meta($marker_id, $contentCF, true);
+					}
+						// Do we need to wrap data?
 					if($content_mote['type']=='Image'){
 						$content_val = '<img src="'.addslashes($content_val).'" />';
 					}
-					array_push($content_att, array($contentMoteName => $content_val));
 				}
-			}
+				if (!is_null($content_val) && ($content_val !== '')) {
+					$content_att[$contentMoteName] = $content_val;
+					// array_push($content_att, array($contentMoteName => $content_val));
+				}
+			} // foreach
 			$thisFeaturesProperties["content"]     = $content_att;
 		}
 
@@ -1031,7 +1047,7 @@ function createMarkerArray($project_id)
 			}
 			else {
 				$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $rootTaxName);
-			}			
+			}
 			if ($term_links)
 				$thisFeaturesProperties["link"] = addslashes($term_links);
 		}
@@ -1056,10 +1072,8 @@ function createMarkerArray($project_id)
 		array_push($feature_array,$thisFeature);
 	endwhile;
 
-	//$feature_collection .= ']';
 	$feature_collection['features'] = $feature_array;
 	array_push($json_Object, $feature_collection);
-	 //$result = array_unique($array)
 	return $json_Object;
 } // createMarkerArray()
 
@@ -1079,6 +1093,7 @@ function create_custom_field_option_list($cf_array)
 
 
 // PURPOSE:	Create the HTML for DHP admin panel for editing a Project
+// TO DO: 	Load this from a file
 
 function print_new_bootstrap_html($project_id)
 {
@@ -2347,12 +2362,11 @@ function dhp_page_template( $page_template )
 			// wp_enqueue_script('jquery-ui' );
 			// wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__)));
 
-			// wp_enqueue_script('imagesloaded', plugins_url('/js/imagesloaded.pkgd.js', dirname(__FILE__)));
-			wp_enqueue_script('masonry', plugins_url('/js/masonry.pkgd.js', dirname(__FILE__)));
+			wp_enqueue_script('isotope', plugins_url('/js/isotope.pkgd.js', dirname(__FILE__)));
 			wp_enqueue_script('dhp-cards-view', plugins_url('/js/dhp-cards-view.js', dirname(__FILE__)), 
-				'masonry' );
+				'isotope' );
 
-	    	array_push($dependencies, 'masonry', 'dhp-cards-view');
+	    	array_push($dependencies, 'isotope', 'dhp-cards-view');
 	    	break;
 	    default:
 	 		trigger_error("Unknown visualization type: ".$projectSettings_viz['type']);

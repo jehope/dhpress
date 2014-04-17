@@ -6,7 +6,7 @@
 //              dhp_map_typeid      = unique ID for this map (String)
 //              dhp_map_shortname   = a short title for map, does not need to be unique
 //              dhp_map_category    = [ "base" | "overlay" ]
-//              dhp_map_type        = [ "DHP" | "WMS" | "KML" | "OSM" | "TMS" ]
+//              dhp_map_type        = [ "Blank" | DHP" | "WMS" | "KML" | "OSM" | "TMS" ]
 //              dhp_map_url         = URL for map on map server
 //              dhp_map_subdomains  = extra urls for tile server
 //              dhp_map_n_bounds    = latitude of northern bounds of map/overlay
