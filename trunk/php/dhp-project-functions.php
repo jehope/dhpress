@@ -10,6 +10,7 @@
 
 // ================== Global Constants and Variables ===================
 
+define( 'DHP_HTML_ADMIN_EDIT',  'dhp-html-admin-edit.txt' );
 define( 'DHP_SCRIPT_PROJ_VIEW',  'dhp-script-proj-view.txt' );
 define( 'DHP_SCRIPT_MAP_VIEW',   'dhp-script-map-view.txt' );
 // define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unused
@@ -1092,179 +1093,28 @@ function create_custom_field_option_list($cf_array)
 
 
 // PURPOSE:	Create the HTML for DHP admin panel for editing a Project
-// TO DO: 	Load this from a file
+// NOTES:   Must also create invisible fields for passing parameters
 
 function print_new_bootstrap_html($project_id)
 {
 	// global $dhp_custom_fields, $post;
 	global $dhp_custom_fields;
 
+		// Insert HTML for edit panel
+	$projscript = dhp_get_script_text(DHP_HTML_ADMIN_EDIT);
+	echo $projscript;
+
 	$projObj = new DHPressProject($project_id);
 	$dhp_custom_fields = $projObj->getAllCustomFieldNames();
 
-	echo '<div class="new-bootstrap">
-    <div class="row-fluid">
-      <div class="span12">
-        <div class="tabbable tabs-left">
-          <ul class="nav nav-tabs">
-           <li class="active"><a href="#info" data-toggle="tab">Settings</a></li>
-           <li><a href="#motes" data-toggle="tab">Motes</a></li>
-           <li><a href="#entry-point" data-toggle="tab">Entry Points</a></li>
-           <li><a href="#views" data-toggle="tab">Views</a></li>
-            <a id="save-btn" type="button" class="btn" data-loading-text="Saving...">Save</a>
-          </ul>
+		// Insert data for Admin Edit panel in hidden panels
 
-          <div class="tab-content">
+		// Insert DHP_PLUGIN_VERSION
+		// Insert $project_id
+		// Insert <a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy='.$projObj->getRootTaxName().'
+		// Insert class="custom-fields">'.create_custom_field_option_list($dhp_custom_fields)
+		// Insert <select style="display:none;" id="hidden-layers" >'.dhp_build_HTML_maplayer_options(getLayerList()).'</select>'.'
 
-          	<div id="info" class="tab-pane fade in active">
-          	  <h3>DH Press version '.DHP_PLUGIN_VERSION.'</h3>
-              <h4>Project Info</h4>
-              <p>Project ID: '.$project_id.'</p>
-              <p><a href="'.get_bloginfo('wpurl').'/wp-admin/edit-tags.php?taxonomy='.$projObj->getRootTaxName().'" >Category Manager</a></p>
-              <p>Label for Home Button: <input id="home-label" type="text" name="home-label" placeholder="Home" size="15"/></p>
-              <p>Home URL: <input id="home-url" type="text" name="home-url" placeholder="http://www." size="20" /></p>
-              <p>Return Home after minutes of inactivity: <input id="max-inactive" type="text" name="max-inactive" placeholder="5" size="2" /></p>
-          	</div>
-
-            <div id="motes" class="tab-pane fade in form-inline">
-              <h4>Motes</h4>
-              <p>Create relational containers for the data in the custom fields</p>
-              <div id="create-mote">
-                <p>
-                  <input class="span4 mote-name" type="text" name="mote-name" placeholder="Mote Name" />
-                </p>
-                <div class="control-group">
-	                Choose a custom field<br/>
-	                <select name="custom-fields" class="custom-fields">'.create_custom_field_option_list($dhp_custom_fields).'</select> 
-	                <label class="checkbox">
-	                  	<input type="checkbox" id="pickMultiple" value="multiple"> Multiple
-	                </label>
-                </div>
-                <div class="control-group">
-	                <div class="btn-group">
-	              		<a class="btn btn-info" id="search-replace-btn" data-toggle="modal" href="#projectModal"><i class="icon-edit"></i></a>
-	              		<a class="btn btn-info" id="delete-cf-btn" data-toggle="modal" href="#projectModal"><i class="icon-trash"></i></a>
-	              		<a class="btn btn-info" id="create-new-custom" data-toggle="modal" href="#projectModal"><i class="icon-plus"></i></a> 
-	              	</div>
-                </div>
-                <div class="control-group">
-                  <select name="cf-type" class="cf-type">
-                    <option>Text</option>
-                    <option>Lat/Lon Coordinates</option>
-                    <option>Image</option>
-                    <option>URL</option>
-                  </select><span class="help-inline">Choose a data type</span>
-                </div>
-                <div class="control-group">
-                	<input class="delim" type="text" name="delim" placeholder="Delimiter" /> If multiple text indicate the delimiter
-                </div>
-                <p><a class="btn btn-success" id="create-btn">Create mote</a></p>
-              </div>           
-              <div class="accordion" id="mote-list">                
-              </div>              
-            </div>
-
-            <div id="entry-point" class="tab-pane fade in">
-              <h4>Entry Points</h4>
-              <ul id="entryTabs" class="nav nav-tabs">
-                <li class="active"><a href="#home" data-toggle="tab">Home</a></li>           
-                <li class="dropdown  pull-right">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Create Entry Point<b class="caret"></b></a>
-                  <ul class="dropdown-menu">
-                    <li><a id="add-map" >Map</a></li>
-                    <li><a id="add-cards">Topic Cards</a></li>
-                  </ul>
-                </li>
-              </ul>
-              <div id="entryTabContent" class="tab-content">
-                <div class="tab-pane fade in active" id="home">
-                  <p>Create entry points to the project using the right most tab above. </p>
-                </div>               
-              </div>
-            </div>
-
-            <div id="views" class="tab-pane fade in">
-              <h4>Views</h4>
-              
-              <div class="accordion" id="viewList">
-
-				  <div class="accordion-group">
-				    <div class="accordion-heading">
-				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#mapView">
-				        Main View
-				      </a>
-				    </div>
-				    <div id="mapView" class="accordion-body collapse in">
-				      <div class="accordion-inner">
-				       <p>
-				       <label class="checkbox">
-                    	<input class="save-view viz-fullscreen" type="checkbox" name="viz-fullscreen" value="fullscreen">Visualization takes full screen
-                  		</label>
-                  		</p>
-                  		<p>
-				       <input class="span3 save-view viz-width" name="viz-width" type="text" placeholder="Viz Width" />             
-				       <input class="span3 save-view viz-height" name="viz-height" type="text" placeholder="Viz Height" />
-				       </p>
-				       <!--<p>
-				       <select name="legend-pos" class="legend-pos save-view">                          
-                	    <option>Left</option>
-              		    <option>Right</option>
-               		   </select><span class="help-inline">Legend Location</span>
-               		   </p>-->
-				      </div>
-				    </div>
-				  </div>
-
-				  <div class="accordion-group">
-				    <div class="accordion-heading">
-				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#modalView">
-				        Modal View (item selected from visualization)
-				      </a>
-				    </div>
-				    <div id="modalView" class="accordion-body collapse">
-				      <div class="accordion-inner">
-				      	<a href="#projectModal" role="button" class="setup-modal-view btn" data-toggle="modal">
-                        	<i class="icon-wrench"></i> Setup Modal
-                        </a>
-				      </div>
-				    </div>
-				  </div>
-
-				  <div class="accordion-group">
-				    <div class="accordion-heading">
-				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#linkView">
-				        Post View (marker pages)
-				      </a>
-				    </div>
-				    <div id="linkView" class="accordion-body collapse">
-				      <div class="accordion-inner marker-view">
-				      </div>
-				    </div>
-				  </div>
-
-				  <div class="accordion-group">
-				    <div class="accordion-heading">
-				      <a class="accordion-toggle" data-toggle="collapse" data-parent="#viewList" href="#transcView">
-				        Taxonomy/Transcript View (modal and archive pages)
-				      </a>
-				    </div>
-				    <div id="transcView" class="accordion-body collapse">
-				      <div class="accordion-inner transc-view">
-				      </div>
-				    </div>
-				  </div>
-
-				</div> <!-- accordian -->
-            </div> <!-- div views -->
-          </div> <!-- tab content -->
-        </div> <!-- tabbable tabs-left -->
-      </div>  <!-- span12 -->
-    </div> <!-- row-fluid -->
-</div><!-- new-bootstrap -->
-<select style="display:none;" id="hidden-layers" >'.dhp_build_HTML_maplayer_options(getLayerList()).'</select>'.'
-<!-- This modal used for all pop-ups -->
-<div id="projectModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-</div>';
 } // print_new_bootstrap_html()
 
 
@@ -2148,43 +1998,48 @@ function add_dhp_project_admin_scripts( $hook )
 
  		// Editing a specific project in admin panel
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
-        if ( $post->post_type == 'project' ) {    
-			wp_enqueue_style('dhp-sortable-style', plugins_url('/css/sortable.css',  dirname(__FILE__) ));
-			wp_enqueue_style('dhp-bootstrap-style', plugins_url('/lib/bootstrap/css/bootstrap.min.css',  dirname(__FILE__) ));
-			// wp_enqueue_style('dhp-bootstrap-responsive-style', plugins_url('/lib/bootstrap/css/bootstrap-responsive.min.css',  dirname(__FILE__) ));
-			wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
+        if ( $post->post_type == 'project' ) {
+        		// First load library styles
+			wp_enqueue_style('jquery-ui-style', plugins_url('/lib/jquery-ui-1.10.4/themes/base/jquery.ui.all.css', dirname(__FILE__) ));
+			wp_enqueue_style('jquery-colorpicker-style', plugins_url('/lib/colorpicker/jquery.colorpicker.css',  dirname(__FILE__) ));
+			wp_enqueue_style('maki-sprite-style', plugins_url('/lib/maki-sprite.css',  dirname(__FILE__) ));
+			wp_enqueue_style('leaflet-style', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__) ));
+				// Lastly, our plug-in specific styles
 			wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__) ));
 
-			// wp_enqueue_script( 'jquery' );
-			// wp_enqueue_script( 'jquery-ui' );
+				// JavaScript libraries
+			wp_enqueue_script('jquery');		// Loaded by default?
+			wp_enqueue_script('underscore', plugins_url('/lib/underscore-min.js', dirname(__FILE__) ));
+				// jQuery UI widgets
+			wp_enqueue_script('jquery-ui-core', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.core.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-ui-widget', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.widget.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-ui-mouse', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.mouse.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-ui-button', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.button.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-ui-draggable', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.draggable.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-ui-position', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.position.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-ui-dialog', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.dialog.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-ui-accordion', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.accordion.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-ui-slider', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.slider.js', dirname(__FILE__) ));
 
-				// There is a conflict between default jQuery and nestedSortable, so we must replace it with a different
-				//	version of jQuery
-			wp_dequeue_script('jquery' ); 
-			wp_dequeue_script('jquery-ui' );
-			wp_enqueue_script('dhp-jquery', plugins_url('/lib/jquery-1.7.2.min.js', dirname(__FILE__) ));
-			wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.8.16.custom.min.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-nestable', plugins_url('/lib/jquery.nestable.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-colorpicker', plugins_url('/lib/colorpicker/jquery.colorpicker.js', dirname(__FILE__) ));
+			wp_enqueue_script('jquery-colorpicker-en', plugins_url('/lib/colorpicker/i18n/jquery.ui.colorpicker-en.js', dirname(__FILE__) ));
 
-	 		wp_enqueue_script('jquery-ui-slider' );
-			wp_enqueue_script('dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__) ),'jquery');
-
+				// For touch-screen mechanisms
 			wp_enqueue_script('dhp-touch-punch', plugins_url('/lib/jquery.ui.touch-punch.js', dirname(__FILE__) ));
-            // wp_enqueue_script('open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
 
-             //wp_enqueue_script(  'open-layers', plugins_url('/js/OpenLayers/OpenLayers.js', dirname(__FILE__) ));
-			wp_enqueue_script('dhp-nested-sortable', plugins_url('/lib/jquery.mjs.nestedSortable.js', dirname(__FILE__) ));
-			wp_enqueue_style('dhp-jPicker-style1', plugins_url('/js/jpicker/css/jPicker-1.1.6.min.css',  dirname(__FILE__) ));
-			wp_enqueue_style('dhp-jPicker-style2', plugins_url('/js/jpicker/jPicker.css',  dirname(__FILE__) ));
-			
+				// Mapping
+			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__) ));
+
+			wp_enqueue_script('knockout', plugins_url('/lib/knockout-3.1.0.js', dirname(__FILE__) ));
+
+				// Custom JavaScript for Admin Edit Panel
 			wp_enqueue_script('dhp-project-script', plugins_url('/js/dhp-project-admin.js', dirname(__FILE__) ));
 			wp_localize_script('dhp-project-script', 'dhpDataLib', array(
 				'ajax_url' => $dev_url,
 				'projectID' => $postID,
 				'plugin_folder' => $plugin_folder
 			) );
-				// jpicker requires knowing where the plugin is located(and named) to load images. Location is passed in the dataLib object
-			wp_enqueue_script('dhp-jPicker', plugins_url('/js/jpicker/jpicker-1.1.6.js', dirname(__FILE__) ),'dhpDataLib');
-
 
         } else if ( $post->post_type == 'dhp-markers' ) {
         	wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__) ));
@@ -2193,7 +2048,7 @@ function add_dhp_project_admin_scripts( $hook )
         // Shows list of all Project in admin panel
     } else if ( $hook == 'edit.php'  ) {
         if ( $post->post_type == 'project' ) {
-			// wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__) ));
+			// wp_enqueue_style('dhp-map', plugins_url('/css/dhp-map.css',  dirname(__FILE__) ));
 			wp_enqueue_script('jquery' );
         }
     }
@@ -2232,18 +2087,12 @@ function dhpGetMapLayerData($mapLayers)
 } // dhpGetMapLayerData()
 
 
-// PURPOSE: Called to retrieve Handlebar script to insert into HTML for a particular DH Press page
+// PURPOSE: Called to retrieve file content to insert into HTML for a particular DH Press page
 // INPUT:   $scriptname = base name of script file (not pathname)
 // RETURNS: Contents of file as string
-// NOTES:   First check for attachments to Project with appropriate names; by default, text files loaded from scripts directory
-// TO DO:   Write code to check for attachment file in the Media Library
 
 function dhp_get_script_text($scriptname)
 {
-		// First, look for attachment file for Project View
-		// TO DO
-
-		// Failing that, load the default text file
  	$scriptpath = plugin_dir_path( __FILE__ ).'scripts/'.$scriptname;
  	if (!file_exists($scriptpath)) {
  		trigger_error("Script file ".$scriptpath." not found");
@@ -2275,9 +2124,6 @@ function dhp_mod_page_content($content) {
 	    if (!is_null($projObj->getEntryPointByName('map'))) {
 	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_MAP_VIEW);
 	    }
-	    // if (!is_null($projObj->getEntryPointByName('transcript'))) {		// currently unneeded
-	    // 	$projscript .= dhp_get_script_text(DHP_SCRIPT_TRANS_VIEW);
-	    // }
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
 		break;
 	default:
@@ -2333,14 +2179,14 @@ function dhp_page_template( $page_template )
     	$projectSettings_viz = $projObj->getEntryPointByIndex(0);
     	switch ($projectSettings_viz['type']) {
     	case 'map':
-			wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+			wp_enqueue_style('dhp-map', plugins_url('/css/dhp-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 			wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
 
 	    	// I'm not sure if these 3 are needed
 			wp_enqueue_script('jquery-ui' );
-			wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__)));
+			wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.4/jquery-ui.js', dirname(__FILE__)));
 	 		wp_enqueue_script('jquery-ui-slider' );
 
 			//Leaflet - remove -src when tested
@@ -2361,7 +2207,7 @@ function dhp_page_template( $page_template )
 			// wp_enqueue_script('jquery-ui' );
 			// wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__)));
 
-			wp_enqueue_script('isotope', plugins_url('/js/isotope.pkgd.js', dirname(__FILE__)));
+			wp_enqueue_script('isotope', plugins_url('/lib/isotope.pkgd.js', dirname(__FILE__)));
 			wp_enqueue_script('dhp-cards-view', plugins_url('/js/dhp-cards-view.js', dirname(__FILE__)), 
 				'isotope' );
 
