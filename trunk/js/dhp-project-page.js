@@ -399,22 +399,17 @@ jQuery(document).ready(function($) {
             // Create HTML for all of the data related to the Marker
          if (selectParams['content']) {
             builtHTML = '<div><h3>Details:</h3></div>';
-            _.each(feature.properties.content, function(val) {       // Array of (hash) pairs
-                 _.each(val, function(val1, key1) {
-
-                    if (key1==='Thumbnail Right') {
-                        builtHTML += '<div class="thumb-right">'+val1+'</div>';
-                    }
-                    else if (key1==='Thumbnail Left') {
-                        builtHTML += '<div class="thumb-left">'+val1+'</div>';
-                    }
-                    else {
-                        if (val1) {
-                            builtHTML += '<div><span class="key-title">'+key1+'</span>: '+val1+'</div>';
-                        }
-                    }
-                });
-            });
+                // Go through each of the motes specified to be shown in select modal
+            _.each(dhpData.settings.views.select.content, function(cMote) {
+                var mVal = feature.properties.content[cMote];
+                if (cMote==='Thumbnail Right') {
+                    builtHTML += '<div class="thumb-right">'+mVal+'</div>';
+                } else if (cMote==='Thumbnail Left') {
+                    builtHTML += '<div class="thumb-left">'+mVal+'</div>';
+                } else if (mVal) {
+                    builtHTML += '<div><span class="key-title">'+cMote+'</span>: '+mVal+'</div>';
+                }
+            }); // _.each()
         }
 
         jQuery('.modal-body').append(builtHTML);

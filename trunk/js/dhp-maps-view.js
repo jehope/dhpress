@@ -81,7 +81,6 @@ var dhpMapsView = {
     createLayers: function() 
     {
         var opacity, layerDef;
-console.log("Definition for layers: "+JSON.stringify(dhpMapsView.viewParams.layerData));
 
             // Compile map layer data into mapLayers array and create with Leaflet
         _.each(dhpMapsView.mapEP.layers, function(layerToUse, index) {
