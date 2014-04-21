@@ -771,7 +771,6 @@ function createMarkerArray($project_id)
 
 		// By default, a marker's content is the set of data needed by select modal, but some
 		//	views may need to augment this
-	// $selectContent = $projSettings['views']['select']['content'];
 	$selectContent = array();
 	if ($projSettings['views']['select']['content']) {
 		foreach ($projSettings['views']['select']['content'] as $theMote) {
@@ -845,8 +844,8 @@ function createMarkerArray($project_id)
 		}
 	}
 
-		// TO DO: ensure that any new content requested from markers is not redundant
-	// $selectContent = array_unique($selectContent);
+		// Ensure that any new content requested from markers is not redundant
+	$selectContent = array_unique($selectContent);
 
 	$feature_collection = array();
 	$feature_collection['type'] = 'FeatureCollection';
