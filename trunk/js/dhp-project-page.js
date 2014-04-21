@@ -1,13 +1,14 @@
 // PURPOSE: Handle viewing Project content visualizations
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
-//          viewParams['layerData'] = array with all data needed for dhp-custom-maps
+//          vizParams.layerData = array with all data needed for dhp-custom-maps
 //          Section for marker modal is marked with HTML div as "markerModal"
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 // NOTES:   Format of project settings is documented in dhp-class-project.php
 
 jQuery(document).ready(function($) {
         // Project variables
-    var dhpSettings, projectID, ajaxURL, viewParams;
+    var dhpSettings,            // all project settings
+        projectID, ajaxURL;
         // Inactivity timeout
     var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive;
         // modal and GUI support
@@ -22,7 +23,6 @@ jQuery(document).ready(function($) {
         $('body').addClass('isMobile');
     }
     ajaxURL        = dhpData.ajax_url;
-    vizParams      = dhpData.vizParams;
     dhpSettings    = dhpData.settings;
     projectID      = dhpSettings["project-details"]["id"];
 
@@ -58,11 +58,9 @@ jQuery(document).ready(function($) {
         if($('body').hasClass('fullscreen')) {
             $('body').removeClass('fullscreen');
             $('.dhp-nav .fullscreen').removeClass('active');
-            // dhpMapsView.dhpUpdateSize();
         } else {
             $('body').addClass('fullscreen');
             $('.dhp-nav .fullscreen').addClass('active');
-            // dhpMapsView.dhpUpdateSize();
         }
         windowResized();
     });
@@ -126,7 +124,7 @@ jQuery(document).ready(function($) {
     switch (ep0['type']) {
     case 'map':
             // vizParams.layerData must have array of DHP custom map layers to add to "library" -- not base maps (??)
-        _.each(vizParams.layerData, function(theLayer) {
+        _.each(dhpData.vizParams.layerData, function(theLayer) {
             dhpCustomMaps.maps.addMap(theLayer.dhp_map_typeid, theLayer.dhp_map_shortname,
                                     theLayer.dhp_map_n_bounds, theLayer.dhp_map_s_bounds,
                                     theLayer.dhp_map_e_bounds, theLayer.dhp_map_w_bounds, 
@@ -142,7 +140,7 @@ jQuery(document).ready(function($) {
         $('#dhp-visual').append(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
             // all custom maps must have already been loaded into run-time "library"
-        dhpMapsView.initMapInterface(ajaxURL, projectID, ep0['settings'], dhpSettings['views'], callBacks);
+        dhpMapsView.initMapInterface(ajaxURL, projectID, ep0['settings'], dhpData.vizParams, callBacks);
 
             // Add user tips for map
         $('body').append(Handlebars.compile($("#dhp-script-map-joyride").html()));
@@ -152,7 +150,7 @@ jQuery(document).ready(function($) {
         break;
 
     case 'cards':
-        dhpCardsView.initializeCards(ajaxURL, projectID, ep0['settings'], dhpSettings['views'], callBacks);
+        dhpCardsView.initializeCards(ajaxURL, projectID, ep0['settings'], callBacks);
         updateVizSpace = dhpCardsView.updateVizSpace;
         closeModal     = null;
         break;
@@ -208,7 +206,7 @@ jQuery(document).ready(function($) {
 
 
     function windowResized()
-    {   
+    {
         var windowWidth, windowHeight;
 
             //reset body height to viewport so user can't scroll visualization area
@@ -277,7 +275,6 @@ jQuery(document).ready(function($) {
             var homeBtnHTML = '<li ><a href="'+ homeBtnURL +'"><i class="fi-home"></i> ' + homeBtnLabel + ' </a></li>';
             $('.top-bar-section .right').prepend(homeBtnHTML);
         }
-
     } // createNavBar()
 
 
@@ -402,22 +399,17 @@ jQuery(document).ready(function($) {
             // Create HTML for all of the data related to the Marker
          if (selectParams['content']) {
             builtHTML = '<div><h3>Details:</h3></div>';
-            _.each(feature.properties.content, function(val) {       // Array of (hash) pairs
-                 _.each(val, function(val1, key1) {
-
-                    if (key1==='Thumbnail Right') {
-                        builtHTML += '<div class="thumb-right">'+val1+'</div>';
-                    }
-                    else if (key1==='Thumbnail Left') {
-                        builtHTML += '<div class="thumb-left">'+val1+'</div>';
-                    }
-                    else {
-                        if (val1) {
-                            builtHTML += '<div><span class="key-title">'+key1+'</span>: '+val1+'</div>';
-                        }
-                    }
-                });
-            });
+                // Go through each of the motes specified to be shown in select modal
+            _.each(dhpData.settings.views.select.content, function(cMote) {
+                var mVal = feature.properties.content[cMote];
+                if (cMote==='Thumbnail Right') {
+                    builtHTML += '<div class="thumb-right">'+mVal+'</div>';
+                } else if (cMote==='Thumbnail Left') {
+                    builtHTML += '<div class="thumb-left">'+mVal+'</div>';
+                } else if (mVal) {
+                    builtHTML += '<div><span class="key-title">'+cMote+'</span>: '+mVal+'</div>';
+                }
+            }); // _.each()
         }
 
         jQuery('.modal-body').append(builtHTML);
