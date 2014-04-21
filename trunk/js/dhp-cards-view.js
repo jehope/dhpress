@@ -29,7 +29,7 @@ var dhpCardsView = {
         // 
     updateVizSpace: function()
     {
-        // jQuery(".card-container").masonry();
+        jQuery("#card-container").isotope();
     }, // updateVizSpace()
 
         // PURPOSE: Called by createCards to determine color to use for marker
@@ -113,7 +113,7 @@ var dhpCardsView = {
         // ASSUMES: rawdata assigned to JSON object (as outlined in createMarkerArray() in dhp-project-functions.php)
     createCards: function()
     {
-        jQuery('#dhp-visual').append('<div id="card-container"></div>"');
+        jQuery('#dhp-visual').append('<div id="card-container"></div>');
         var cardHolder = jQuery('#card-container');
 
             // Find array of color values in AJAX data
@@ -148,17 +148,19 @@ var dhpCardsView = {
             if (theFeature.type !== 'Feature') {
                 throw new Error("Error in marker array");
             }
-            theTitle = theFeature.card.title || '';
+            theTitle = theFeature.card.title;
 
             if (dhpCardsView.colorValues) {
                 colorStr = dhpCardsView.getHighestParentColor(theFeature.properties.categories);
             }
 
                 // Create element for the card
-            theCard = jQuery('<div class="card" id="cardID'+index+'" '+colorStr+'><p style="font-weight: bold">'+theTitle+'</p></div>');
+            theCard = jQuery('<div class="card" id="cardID'+index+'" '+colorStr+'></div');
+            if (theTitle && theTitle != '') {
+                jQuery(theCard).append('<p style="font-weight: bold">'+theTitle+'</p></div>');
+            }
 
                 // Go through all content motes specified for each card view
-                // Should we take mote type into consideration?
             _.each(dhpCardsView.cardsEP.content, function(moteName) {
                 if (moteName && moteName != '') {
                     contentData = theFeature.properties.content[moteName];

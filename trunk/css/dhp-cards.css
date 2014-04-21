@@ -3,6 +3,21 @@
  ** TopicCards
  **/
 
+/* First, we need to disable some WP/Theme defaults, or they ruin card formatting */
+
+.entry-content p,
+.entry-summary p,
+.comment-content p,
+.mu_register p {
+    line-height: 1rem !important;
+    margin-bottom: 1rem !important;
+    margin: 0 0 0 0 !important;
+}
+
+p {
+    margin-bottom: 0 !important;
+}
+
 #dhp-visual {
     overflow: auto;
 }
@@ -21,25 +36,30 @@
     background: #00BFFF;
     border-radius: 5px;
     font-size: 11px;
-    line-height: 1.4em;
+    line-height: 13px;
     margin: 5px;
     padding: 5px;
     border: 2px solid gray;
     overflow: hidden;
+    margin-bottom: 2px;
 /*    float: left; */
 }
 
 .card p {
     font-size: 11px;
-    line-height: 12px;
-    margin: 2px;
-    padding: 2px;
+    line-height: 13px;
+    margin: 0 0 0 0;
+    padding: 1px;
+    margin-bottom: 2px;
 }
 
 .card p img {
 	display: block;
-	padding: 2px;
+	padding: 1px;
     margin: 1px;
+    margin-top: 1px;
+    border: 1px black solid;
+    margin-bottom: 2px;
 /*   max-width: 98%; */
   max-width: 102px;
 }

@@ -58,11 +58,9 @@ jQuery(document).ready(function($) {
         if($('body').hasClass('fullscreen')) {
             $('body').removeClass('fullscreen');
             $('.dhp-nav .fullscreen').removeClass('active');
-            // dhpMapsView.dhpUpdateSize();
         } else {
             $('body').addClass('fullscreen');
             $('.dhp-nav .fullscreen').addClass('active');
-            // dhpMapsView.dhpUpdateSize();
         }
         windowResized();
     });
@@ -125,8 +123,6 @@ jQuery(document).ready(function($) {
     var ep0 = dhpSettings['entry-points'][0];
     switch (ep0['type']) {
     case 'map':
-console.log("Project layer settings: "+JSON.stringify(ep0.settings.layers));
-
             // vizParams.layerData must have array of DHP custom map layers to add to "library" -- not base maps (??)
         _.each(dhpData.vizParams.layerData, function(theLayer) {
             dhpCustomMaps.maps.addMap(theLayer.dhp_map_typeid, theLayer.dhp_map_shortname,
@@ -154,7 +150,6 @@ console.log("Project layer settings: "+JSON.stringify(ep0.settings.layers));
         break;
 
     case 'cards':
-console.log("EP settings = "+JSON.stringify( ep0['settings'] ) );
         dhpCardsView.initializeCards(ajaxURL, projectID, ep0['settings'], callBacks);
         updateVizSpace = dhpCardsView.updateVizSpace;
         closeModal     = null;
@@ -211,7 +206,7 @@ console.log("EP settings = "+JSON.stringify( ep0['settings'] ) );
 
 
     function windowResized()
-    {   
+    {
         var windowWidth, windowHeight;
 
             //reset body height to viewport so user can't scroll visualization area
@@ -280,7 +275,6 @@ console.log("EP settings = "+JSON.stringify( ep0['settings'] ) );
             var homeBtnHTML = '<li ><a href="'+ homeBtnURL +'"><i class="fi-home"></i> ' + homeBtnLabel + ' </a></li>';
             $('.top-bar-section .right').prepend(homeBtnHTML);
         }
-
     } // createNavBar()
 
 
