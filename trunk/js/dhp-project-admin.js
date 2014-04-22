@@ -3,18 +3,24 @@
 // ASSUMES: dhpDataLib is used to pass parameters to this function via wp_localize_script()
 //          Hidden data in DIV ID hidden-layers for info about map layers
 //          Initial project settings embedded in HTML in DIV ID project_settings by show_dhp_project_settings_box()
-// USES:    Libraries jQuery, Underscore, Knockout, jQuery UI, jQuery.nestable, ...
-// NOTES:   HTML generated in show_dhp_project_settings_box() and print_new_bootstrap_html() of dhp-project-functions.php
+// USES:    Libraries jQuery, Underscore, Knockout, jQuery UI, jQuery.nestable, jquery-colorpicker
+// NOTES:   Relies on some HTML data generated in show_dhp_project_settings_box() of dhp-project-functions.php
+//          Data that relies on WP queries cannot be passed in via "localization" pf dhpDataLib because that
+//            causes WP globals (like $post) to be overwritten
 
 jQuery(document).ready(function($) {
+    // Parameters passed via localization
+  var ajax_url     = dhpDataLib.ajax_url;
+  var projectID    = dhpDataLib.projectID;
 
-  //console.log(dhpDataLib);
+    // Parameters passed via HTML elements
+  var customFieldsParam = $('#custom-fields').text();
+  customFieldsParam = JSON.parse(customFieldsParam);
+  var mapLayersParam = $('#map-layers').text();
+  mapLayersParam = JSON.parse(mapLayersParam);
 
-  var ajax_url  = dhpDataLib.ajax_url;
-  var projectID = dhpDataLib.projectID;
-
-      // This contains a copy of the last saved version of the settings
-  var savedSettings;
+    // Get initial project settings
+  var savedSettings = JSON.parse($('#project_settings').val());
 
       // Constants
   var _blankSettings = { 'project-details': { 'version': 2, 'home-label': '', 'home-url': '', 'max-inactive': 0 },
@@ -116,9 +122,6 @@ jQuery(document).ready(function($) {
     ko.utils.arrayForEach(normalizeArray(epSettings.settings.sortMotes), function(sMote) {
       self.settings.sortMotes.push(new ArrayString(sMote));
     });
-
-    // self.settings.image = ko.observable(epSettings.settings.image);
-    // self.settings.text  = ko.observable(epSettings.settings.text);
   } // CardsEntryPoint()
 
     // Create new "blank" layer
@@ -136,8 +139,9 @@ jQuery(document).ready(function($) {
 
 //=================================== MAIN OBJECT ===================================
 
-  var ProjectSettings = function() {
+  var ProjectSettings = function(allCustomFields, allMapLayers) {
     var self = this;
+
 
       // PURPOSE: For debug -- spit out all of the editable data
     self.showSettings = function() {
@@ -321,10 +325,7 @@ jQuery(document).ready(function($) {
     self.edMoteCF = ko.observable();
     self.edMoteDelim = ko.observable('');
 
-      // Values for edit mote modal
-    // self.edMoteModalType = ko.observable();
-    // self.edMoteModalCF = ko.observable();
-    // self.edMoteModalDelim = ko.observable();
+    self.optionsCF = allCustomFields;
 
       // Configurable data
     self.allMotes = ko.observableArray([]);
@@ -435,7 +436,7 @@ jQuery(document).ready(function($) {
 
             self.allMotes.remove(theMote);
 
-              // TO DO -- remove any category definition via deleteTerms()
+            deleteTerms(moteName);
 
             self.settingsDirty(true);
             $( this ).dialog('close');
@@ -580,7 +581,9 @@ jQuery(document).ready(function($) {
                   } // if treeItem.children
                 }); // arrayForEach
 // console.log("WP Flat Array Results"+JSON.stringify(flatArray));
-                  // TO DO -- save via AJAX
+
+                  // TO DO -- save via createTaxTerms
+
                 $(this).dialog('close');
               }
             }
@@ -1230,11 +1233,6 @@ jQuery(document).ready(function($) {
     // Initialize jQuery components
   $("#accordion, #subaccordion").accordion({ collapsible: true, heightStyle: 'content' });
 
-  var projObj;
-  projObj = new ProjectSettings();
-
-  savedSettings = JSON.parse($('#project_settings').val());
-
     // Add decimal formatting extension (X.X) for observable (opacity)
   ko.extenders.onedigit = function(target) {
     //create a writeable computed observable to intercept writes to our observable
@@ -1262,7 +1260,12 @@ jQuery(document).ready(function($) {
  
       //return the new computed observable
     return result;
-  };
+  }; // onedigit
+
+
+    // Need to Initialize project here first so that object properties and methods visible when
+    //    Knockout is activated
+  var projObj = new ProjectSettings(customFieldsParam, mapLayersParam);
 
     // Manually load the Project Settings object from JSON string
   projObj.setDetails(savedSettings['project-details']);
@@ -1362,6 +1365,7 @@ jQuery(document).ready(function($) {
     // PURPOSE: Saves project settings data object
   function updateProjectSettings() {
     var settingsData = projObj.bundleSettings();
+    settingsData = JSON.stringify(settingsData);
 
     jQuery.ajax({
           type: 'POST',
@@ -1385,7 +1389,7 @@ jQuery(document).ready(function($) {
     // PURPOSE: Create terms for new legend
     // RETURNS: Object with terms
     // INPUT:   mote = record for mote
-    // TO DO:   Change parameters passed?
+    // TO DO:   Change parameters passed
   function dhpCreateLegendTax(mote) {
     // console.log("Create legend for mote " + mote + " for project " + projectID);
     jQuery.ajax({
@@ -1415,22 +1419,7 @@ jQuery(document).ready(function($) {
       //            count     = # times value/tag used
       //            icon_url  = visual metadata (either #number for color or http://.. for icon)
   function getMoteLegendValues(moteName, funcToCall) {
-
-    var testMoteLegend = [
-      { term_id: 1, name: 'Retail', count: 1, parent: 0, icon_url: '.circle' },
-      { term_id: 2, name: 'Stocker', count: 5, parent: 1, icon_url: '.triangle' },
-      { term_id: 3, name: 'Register', count: 8, parent: 1, icon_url: '.star' },
-      { term_id: 4, name: 'CPA', count: 2, parent: 0, icon_url: '.bank' },
-      { term_id: 5, name: 'Professor', count: 3, parent: 10, icon_url: '' },
-      { term_id: 6, name: 'Dept Secretary', count: 3, parent: 10, icon_url: '#338822' },
-      { term_id: 7, name: 'Dean (Academic)', count: 1, parent: 10, icon_url: '' },
-      { term_id: 8, name: 'Trucker', count: 12, parent: 0, icon_url: '' },
-      { term_id: 9, name: 'Police', count: 7, parent: 0, icon_url: '' },
-      { term_id: 10, name: 'Education', count: 0, parent: 0, icon_url: '.college' }
-    ];
-    funcToCall(testMoteLegend);
-
-/*    jQuery.ajax({
+    jQuery.ajax({
           type: 'POST',
           url: ajax_url,
           data: {
@@ -1446,7 +1435,7 @@ jQuery(document).ready(function($) {
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
           }
-      }); */
+      });
   } // getMoteLegendValues()
 
 
@@ -1491,7 +1480,6 @@ jQuery(document).ready(function($) {
       },
       success: function(data, textStatus, XMLHttpRequest){
           //console.log(textStatus); 
-          $('#projectModal').modal('hide');        
       },
       error: function(XMLHttpRequest, textStatus, errorThrown){
          alert(errorThrown);
@@ -1514,7 +1502,6 @@ jQuery(document).ready(function($) {
       },
       success: function(data, textStatus, XMLHttpRequest){
           //console.log(textStatus); 
-          $('#projectModal').modal('hide');        
       },
       error: function(XMLHttpRequest, textStatus, errorThrown){
          alert(errorThrown);
@@ -1535,7 +1522,6 @@ jQuery(document).ready(function($) {
           },
           success: function(data, textStatus, XMLHttpRequest){
               //console.log(textStatus); 
-              $('#projectModal').modal('hide');           
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1557,7 +1543,6 @@ jQuery(document).ready(function($) {
           },
           success: function(data, textStatus, XMLHttpRequest){
               //console.log(textStatus); 
-              $('#projectModal').modal('hide');           
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1577,7 +1562,6 @@ jQuery(document).ready(function($) {
           },
           success: function(data, textStatus, XMLHttpRequest){
               //console.log(textStatus); 
-              $('#projectModal').modal('hide');           
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1596,8 +1580,7 @@ jQuery(document).ready(function($) {
               term_name: termName
           },
           success: function(data, textStatus, XMLHttpRequest){
-              console.log('dhpDeleteTerms');
-              $('#deleteModal').modal('hide');            
+              console.log('dhpDeleteTerms completed');
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);

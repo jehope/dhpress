@@ -1,9 +1,7 @@
 
 <div id="ko-dhp">
     <button data-bind ="click: showSettings">Show Settings</button>
-
-	  <h1>Project Info</h1>
-	  <p><b>DH Press version XXX</b>&nbsp;&nbsp;Project ID XXX&nbsp;&nbsp;<button data-bind="jqButton, style: { color: settingsDirty() ? 'red' : 'green' }">Save Settings</button></p>
+    <button data-bind="jqButton, style: { color: settingsDirty() ? 'red' : 'green' }">Save Settings</button>
 
       <div id="accordion">
         <h3>General Settings</h3>
@@ -33,7 +31,7 @@
                     <option value="Timestamp">Timestamp</option>
             	</select>
             </li>
-            <li>Custom Field: <input data-bind="value: edMoteCF" type="text" size="20"/></li>
+            <li>Custom Field: <select data-bind="value: edMoteCF, options: optionsCF"></select></li>
             <li>Value delimiter:  <input data-bind="value: edMoteDelim" type="text" size="2"/></li>
           </ul>
           <button data-bind="jqButton, click: createMote">Create New</button>
@@ -266,7 +264,7 @@
             <option value="Transcript">Transcript</option>
             <option value="Timestamp">Timestamp</option>
         </select><br/>
-        Custom Field: <input id="edMoteModalCF" type="text" size="20"/><br/>
+        Custom Field: <select data-bind="value: edMoteModalCF, options: optionsCF"></select><br/>
         Value delimiter:  <input id="edMoteModalDelim" type="text" size="2"/><br/>
         <p>WARNING: Editing the mote definition will reset it in the rest of the settings. <span id="edMoteModalSTWarn">Changing type from Short Text to another will not remove Legends you may have created.</span></p>
     </div> <!-- Edit Mote Modal -->

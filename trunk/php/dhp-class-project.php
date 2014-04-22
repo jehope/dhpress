@@ -247,7 +247,7 @@ class DHPressProject
 			foreach($temp_custom_field_keys as $key => $value) {
 				$valuet = trim($value);
 					// exclude WP internal fields
-	     		if ( '_' == $valuet{0} )
+	     		if ( $valuet{0} == '_' )
 	      			continue;
 				array_push($custom_field_array, $value);
 			}
