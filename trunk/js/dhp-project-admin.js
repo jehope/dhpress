@@ -13,11 +13,13 @@ jQuery(document).ready(function($) {
   var ajax_url     = dhpDataLib.ajax_url;
   var projectID    = dhpDataLib.projectID;
 
-    // Parameters passed via HTML elements
+    // Parameters passed via HTML elements; need to ensure encoded as arrays (not Object properties)
   var customFieldsParam = $('#custom-fields').text();
   customFieldsParam = JSON.parse(customFieldsParam);
+  customFieldsParam = normalizeArray(customFieldsParam);
   var mapLayersParam = $('#map-layers').text();
   mapLayersParam = JSON.parse(mapLayersParam);
+  mapLayersParam = normalizeArray(mapLayersParam);
 
     // Get initial project settings
   var savedSettings = JSON.parse($('#project_settings').val());
@@ -149,6 +151,17 @@ jQuery(document).ready(function($) {
       console.log("Current settings are: "+ JSON.stringify(currentSettings));
     };
 
+      // PURPOSE: Handle user selection to save Project Settings to WP
+    self.saveSettings = function() {
+      var currentSettings = self.bundleSettings();
+      var settingsData = JSON.stringify(settingsData);
+      updateProjectSettings(settingsData);
+    };
+
+    self.cleanSettings = function() {
+      self.settingsDirty(false);
+    };
+
       // PURPOSE: Read all of the settings and package into an object
       // RETURNS: The settings object
       // NOTES:   Need to copy some data from original settings object
@@ -159,7 +172,7 @@ jQuery(document).ready(function($) {
       projSettings['project-details'].id = savedSettings['project-details'].id;
       projSettings['project-details'].name = savedSettings['project-details'].name;
       projSettings['project-details'].version = 2;
-      projSettings['project-details']['marker-custom-fields'] = savedSettings['project-details']['marker-custom-fields'];
+      projSettings['project-details']['marker-custom-fields'] = allCustomFields;
 
       projSettings['project-details']['home-label'] = self.edHomeBtnLbl();
       projSettings['project-details']['home-url'] = self.edHomeURL();
@@ -278,12 +291,12 @@ jQuery(document).ready(function($) {
 
 //----------------------------------- Project Info ----------------------------------
 
+    self.settingsDirty = ko.observable(false);
+
       // User-editable values
     self.edHomeBtnLbl = ko.observable('');
     self.edHomeURL = ko.observable('');
     self.edInactiveTimeout = ko.observable(20);
-
-    self.settingsDirty = ko.observable(false);
 
       // Methods
     self.setDetails = function(theDetails) {
@@ -1303,12 +1316,13 @@ jQuery(document).ready(function($) {
       $(element).button();
     }
   };
+
     // Add new functionality for geoLocation editor
-    // NOTE: There is a CSS bug that happens if map is created initially, because jQueryUI hasn't
-    //        finished adjusting all of the relative positions of div's -- so user must init map afterwards
+    // NOTE:   There is a CSS bug that happens if map is created initially, because jQueryUI hasn't
+    //          finished adjusting all of the relative positions of div's -- so user must init map afterwards
+    // ASSUMES: Specific DOM structure with classes identifying buttons
   ko.bindingHandlers.geoLoc = {
     init: function (element) {
-        // Need index of this EP to create unique div IDs
       var thisMap;
       var thisLat, thisLon;
       var latElem, lonElem;
@@ -1363,10 +1377,7 @@ jQuery(document).ready(function($) {
   //=================================== AJAX FUNCTIONS ==================================
 
     // PURPOSE: Saves project settings data object
-  function updateProjectSettings() {
-    var settingsData = projObj.bundleSettings();
-    settingsData = JSON.stringify(settingsData);
-
+  function updateProjectSettings(settingsData) {
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1378,6 +1389,7 @@ jQuery(document).ready(function($) {
           success: function(data, textStatus, XMLHttpRequest) {
             console.log("Settings saved successfully!");
             console.log(data);
+            projObj.cleanSettings();
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1508,7 +1520,6 @@ jQuery(document).ready(function($) {
       }
     });
   } // replaceCustomFieldFilter()
-
 
   function createCustomField(fieldName,fieldValue) { 
     jQuery.ajax({

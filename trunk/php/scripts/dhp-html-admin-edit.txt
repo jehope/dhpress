@@ -1,7 +1,7 @@
 
 <div id="ko-dhp">
-    <button data-bind ="click: showSettings">Show Settings</button>
-    <button data-bind="jqButton, style: { color: settingsDirty() ? 'red' : 'green' }">Save Settings</button>
+    <button data-bind="jqButton, click: saveSettings, style: { color: settingsDirty() ? 'red' : 'green' }">Save Settings</button>
+    <button data-bind ="jqButton, click: showSettings">Show Settings in Console</button>
 
       <div id="accordion">
         <h3>General Settings</h3>
@@ -179,7 +179,7 @@
     <ul>
         <li>Card Title <select data-bind="value: theEP.settings.title, options: $root.anyTxtDMoteNames"></select></li>
         <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select></li>
-        <li>Card Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="10"/></li>
+        <li>Card Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="16"/></li>
 
         <div data-bind="template: { name: 'cards-content-template', foreach: theEP.settings.content }"></div>
         <button data-bind="jqButton, click: $root.addCardContent.bind(theEP)">Add Content Mote</button>
@@ -264,7 +264,7 @@
             <option value="Transcript">Transcript</option>
             <option value="Timestamp">Timestamp</option>
         </select><br/>
-        Custom Field: <select data-bind="value: edMoteModalCF, options: optionsCF"></select><br/>
+        Custom Field: <select id="edMoteModalCF" data-bind="options: optionsCF"></select><br/>
         Value delimiter:  <input id="edMoteModalDelim" type="text" size="2"/><br/>
         <p>WARNING: Editing the mote definition will reset it in the rest of the settings. <span id="edMoteModalSTWarn">Changing type from Short Text to another will not remove Legends you may have created.</span></p>
     </div> <!-- Edit Mote Modal -->
