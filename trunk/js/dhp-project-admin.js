@@ -425,7 +425,6 @@ jQuery(document).ready(function($) {
       // Methods
 
       // PURPOSE: Create new mote definition via user interface
-      // TO DO:   Add drop-down list of custom fields
     self.createMote = function() {
       if (self.edMoteName() !== '') {
           // Only add if name is unique
@@ -492,7 +491,8 @@ jQuery(document).ready(function($) {
 
             self.allMotes.remove(theMote);
 
-            deleteTerms(moteName);
+              // In case any Legend exists
+            deleteTermInTax(moteName);
 
             self.settingsDirty(true);
             $( this ).dialog('close');
@@ -552,18 +552,6 @@ jQuery(document).ready(function($) {
       newModal.dialog('open');
     }; // editMote()
 
-      // PURPOSE: Handle user selection to create a category legend based on the mote
-      // SIDE-FX: Hide Create and show Configure buttons
-      // NOTES:   Due to using jQueryUI, need to go up extra layer in DOM hierarchy
-      // TO DO
-    // self.createCat = function(theMote, event) {
-    //     // For now, just hide Create and show Config
-    //   var createBtn;
-
-    //   createBtn = $(event.target).parent();
-    //   createBtn.addClass('hide');
-    //   createBtn.parent().find('.configCat').removeClass('hide');
-    // };
 
       // PURPOSE: Handle user selection to configure associations of legend category: color, Maki icon, or image
       // SIDE-FX: Hide Create and show Configure buttons
@@ -892,17 +880,20 @@ jQuery(document).ready(function($) {
           var newTerm;
           newTerm = $('#ed-new-term').val();
           if (newTerm != null && newTerm != '') {
-              // TO DO -- Call AJAX function to WP to get newTermID
-            var newTermID = 1111;
             var defaultViz = getDefaultViz();
-              // Insert new item (without parent) at top of list, binding Assign code to section
-            var totalElement = $('<li class="dd-item dd3-item" data-id="'+newTermID+'" data-name="'+
-                newTerm+'" data-parent="0"> <div class="dd-handle dd3-handle">Drag</div><div class="dd3-content">'+
-                newTerm+' (0) '+'&nbsp;&nbsp;<div class="select-legend">Assign '+defaultViz.html+'</div></div></li>');
-            $('.select-legend', totalElement).click(handleAssign);
-            $('#category-tree > .dd-list').prepend(totalElement);
               // Clear out new term field
             $('#ed-new-term').val('');
+
+              // Callback when new term created
+            function insertNewTerm(newTermID) {
+                // Insert new item (without parent) at top of list, binding Assign code to section
+              var totalElement = $('<li class="dd-item dd3-item" data-id="'+newTermID+'" data-name="'+
+                  newTerm+'" data-parent="0"> <div class="dd-handle dd3-handle">Drag</div><div class="dd3-content">'+
+                  newTerm+' (0) '+'&nbsp;&nbsp;<div class="select-legend">Assign '+defaultViz.html+'</div></div></li>');
+              $('.select-legend', totalElement).click(handleAssign);
+              $('#category-tree > .dd-list').prepend(totalElement);
+            }
+            dhpCreateTaxTerms(newTerm, theMote.name, insertNewTerm);
           }
         });
 
@@ -1495,6 +1486,49 @@ jQuery(document).ready(function($) {
   } // saveLegendValuesInWP()
 
 
+  function dhpCreateTermInTax(newTermName, moteName, callBack) {
+    jQuery.ajax({
+          type: 'POST',
+          url: ajax_url,
+          data: {
+              action: 'dhpCreateTermInTax',
+              project: projectID,
+              newTerm: newTermName,
+              legendName: moteName
+          },
+          success: function(data, textStatus, XMLHttpRequest){
+              //console.log(textStatus);
+              console.log("New legend term: "+data);
+              var termID = JSON.parse(data);
+              if (typeof(termID) == 'string') { termID = parseInt(termID); }
+              callBack(termID);
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown){
+             alert(errorThrown);
+          }
+      });
+  } // dhpCreateTermInTax()
+
+
+  function deleteTermInTax(termName) {
+    jQuery.ajax({
+          type: 'POST',
+          url: ajax_url,
+          data: {
+              action: 'dhpDeleteTerm',
+              project: projectID,
+              term_name: termName
+          },
+          success: function(data, textStatus, XMLHttpRequest){
+              console.log('deleteTermInTax completed: '+data);
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown){
+             alert(errorThrown);
+          }
+      });
+  } // deleteTermInTax()
+
+
     // PURPOSE: Update a custom field using a subset of markers filtered by a custom field and value
   function updateCustomFieldFilter(fieldName,currentValue,newValue,filterKey,filterValue){
     jQuery.ajax({
@@ -1600,25 +1634,6 @@ jQuery(document).ready(function($) {
   } // deleteCustomField()
 
 
-  function deleteTerms(termName) {
-    jQuery.ajax({
-          type: 'POST',
-          url: ajax_url,
-          data: {
-              action: 'dhpDeleteTerms',
-              project: projectID,
-              term_name: termName
-          },
-          success: function(data, textStatus, XMLHttpRequest){
-              console.log('dhpDeleteTerms completed');
-          },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
-             alert(errorThrown);
-          }
-      });
-  } // deleteTerms()
-
-
   function dhpGetCustomFields() {
     jQuery.ajax({
           type: 'POST',
@@ -1655,29 +1670,5 @@ jQuery(document).ready(function($) {
           }
       });
   } // dhpGetFieldValues()
-
-    // INPUT: new_term is name of new term
-    //        parent_term is name of mote
-  function dhpCreateTermInTax(new_term, parent_term) {
-    jQuery.ajax({
-          type: 'POST',
-          url: ajax_url,
-          data: {
-              action: 'dhpCreateTermInTax',
-              project: projectID,
-              term_name: new_term,
-              parent_term_name: parent_term
-          },
-          success: function(data, textStatus, XMLHttpRequest){
-              //console.log(textStatus);
-              console.log("New legend term: "+data);
-                // result is Object with fields 'name' and 'term_id'
-              addNewTermToLegend(JSON.parse(data));
-          },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
-             alert(errorThrown);
-          }
-      });
-  } // dhpCreateTermInTax()
 
 });

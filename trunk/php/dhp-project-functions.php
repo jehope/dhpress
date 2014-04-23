@@ -1796,44 +1796,37 @@ add_action( 'wp_ajax_dhpCreateTermInTax', 'dhpCreateTermInTax' );
 
 // PURPOSE:	Handle adding new terms to taxonomy (that don't pre-exist in Marker data)
 // INPUT:	$_POST['project'] = ID of Project
-//			$_POST['term_name'] = name of taxonomy term to add
-//			$_POST['parent_term_name'] = name of parent term under which it should be added
-// RETURNS:	JSON Object describing new term
+//			$_POST['newTerm'] = name of taxonomy term to add
+//			$_POST['legendName'] = name of parent term (mote/Legend) under which it should be added
+// RETURNS:	ID of new term
 
 function dhpCreateTermInTax()
 {
 	$projectID 			= $_POST['project'];
-	$dhp_term_name		= $_POST['term_name'];
-	$parent_term_name	= $_POST['parent_term_name'];
+	$dhp_term_name		= $_POST['newTerm'];
+	$parent_term_name	= $_POST['legendName'];
 
-	if (!is_null($dhp_term_name) && $dhp_term_name != '') {
-		$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-		$parent_term = term_exists( $parent_term_name, $projRootTaxName );
-			// TO DO: Check and handle non-existing term?
+	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
+	$parent_term = term_exists( $parent_term_name, $projRootTaxName );
+	$parent_term_id = $parent_term['term_id'];
+	$args = array( 'parent' => $parent_term_id );
+	// create new term
+	$newTermId = wp_insert_term( $dhp_term_name, $projRootTaxName, $args );
+	// $newTerm = get_term_by('id', $newTermId['term_id'], $projRootTaxName);
+		// Clear term taxonomy
+	delete_option("{$projRootTaxName}_children");
 
-		$parent_term_id = $parent_term['term_id'];
-		$args = array( 'parent' => $parent_term_id );
-		// create new term
-		$newTermId = wp_insert_term( $dhp_term_name, $projRootTaxName, $args );
-		$newTerm = get_term_by('id', $newTermId['term_id'], $projRootTaxName);
-			// Clear term taxonomy
-		delete_option("{$projRootTaxName}_children");
-
-		die(json_encode($newTerm));
-	} else {
-		die('');
-	}
+	die(json_encode($newTermId));
 } // dhpCreateTermInTax()
 
 
-add_action( 'wp_ajax_dhpDeleteTerms', 'dhpDeleteTerms' );
+add_action( 'wp_ajax_dhpDeleteTerm', 'dhpDeleteTerm' );
 
 // PURPOSE:	Delete taxonomic terms in Project and all terms derived from it (as parent)
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['term_name'] = name of taxonomy term to delete
-// RETURNS:	Array of all children that were deleted
 
-function dhpDeleteTerms()
+function dhpDeleteTerm()
 {
 	$projectID = $_POST['project'];
 	$dhp_term_name = $_POST['term_name'];
@@ -1841,9 +1834,10 @@ function dhpDeleteTerms()
 	$dhp_project_slug = $dhp_project->post_name;
 
 	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-	//get term id, get children term ids
-	$dhp_delete_parent_term = get_term_by('name',$dhp_term_name,$projRootTaxName);
+		// Get ID of term to delete
+	$dhp_delete_parent_term = get_term_by('name', $dhp_term_name, $projRootTaxName);
 	$dhp_delete_parent_id = $dhp_delete_parent_term->term_id;
+		// Must gather all children and delete them too (first!)
 	$dhp_delete_children = get_term_children($dhp_delete_parent_id,$projRootTaxName);
 	foreach ($dhp_delete_children as $delete_term) {
 		wp_delete_term($delete_term, $projRootTaxName);
@@ -1851,6 +1845,7 @@ function dhpDeleteTerms()
 	wp_delete_term($dhp_delete_parent_id, $projRootTaxName);
 
 	die(json_encode($dhp_delete_children));
+	// die('');
 } // dhpDeleteTerms()
 
 
