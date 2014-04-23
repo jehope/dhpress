@@ -758,9 +758,9 @@ function createMarkerArray($project_id)
 		//$parent_id = get_term_by('name', $link_parent, $rootTaxName);
 			$child_terms = 'marker';
 		}
-		elseif($link_parent=='no-link') {
-			$term_links = 'no-link';
-			$child_terms = 'no-link';
+		elseif($link_parent=='disable') {
+			$term_links = 'disable';
+			$child_terms = 'disable';
 		}
 			// Link to mote value
 		elseif(strpos($link_parent, '(Mote)') !== FALSE) {
@@ -781,9 +781,9 @@ function createMarkerArray($project_id)
 		//$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
 			$child_terms2 = 'marker';
 		}
-		elseif($link_parent2=='no-link') {
-			$term_links2 = 'no-link';
-			$child_terms2 = 'no-link';
+		elseif($link_parent2=='disable') {
+			$term_links2 = 'disable';
+			$child_terms2 = 'disable';
 		}
 			// Link to mote value
 		elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
@@ -935,7 +935,7 @@ function createMarkerArray($project_id)
 		}
 
 			// Does item link to its own Marker page, Taxonomy page, or Mote value?
-		if ($link_parent && $child_terms && $child_terms != 'no-link') {
+		if ($link_parent && $child_terms && $child_terms != 'disable') {
 			if ($child_terms=='marker') {
 				$term_links = get_permalink();
 			}
@@ -949,7 +949,7 @@ function createMarkerArray($project_id)
 				$thisFeaturesProperties["link"] = addslashes($term_links);
 		}
 
-		if ($link_parent2 && $child_terms2 && $child_terms2 != 'no-link') {
+		if ($link_parent2 && $child_terms2 && $child_terms2 != 'disable') {
 			if ($child_terms2=='marker') {
 				$term_links2 = get_permalink();
 			}
@@ -1051,7 +1051,8 @@ function dhpGetLegendValues()
 	$custom_field 	= $_POST['customField'];
 	$projectID 		= $_POST['project'];
 
-	if ($mote_delim == '') { $mote_delim = null; }
+		// Nullify empty string or space
+	if ($mote_delim == '' || $mote_delim == ' ') { $mote_delim = null; }
 
 	$projObj      = new DHPressProject($projectID);
 	$rootTaxName  = $projObj->getRootTaxName();

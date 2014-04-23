@@ -355,7 +355,7 @@ jQuery(document).ready(function($) {
         var builtHTML;
         var link1, link2, link1Target, link2Target;
 
-        if(selectParams['title']) {
+        if(selectParams.title) {
             titleAtt =  feature.properties.title;
         }
 
@@ -420,10 +420,10 @@ jQuery(document).ready(function($) {
         jQuery('#markerModal #markerModalLabel').empty().append(titleAtt);
 
             // setup links
-        if (link1 && link1!='no-link') {
+        if (link1 && link1!='disable') {
             jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link1Target+' class="button success marker-link" href="'+link1+'">'+selectParams['link-label']+'</a></li>');
         }
-        if (link2 && link2 !='no-link') {
+        if (link2 && link2 !='disable') {
             jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link2Target+' class="button success marker-link" href="'+link2+'">'+selectParams['link2-label']+'</a></li>');
         }
             //Open modal
