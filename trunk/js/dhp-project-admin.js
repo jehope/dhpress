@@ -18,6 +18,8 @@ jQuery(document).ready(function($) {
   customFieldsParam = JSON.parse(customFieldsParam);
   customFieldsParam = normalizeArray(customFieldsParam);
   var mapLayersParam = $('#map-layers').text();
+console.log("Map layer info = "+mapLayersParam);
+
   mapLayersParam = JSON.parse(mapLayersParam);
   mapLayersParam = normalizeArray(mapLayersParam);
 
@@ -143,7 +145,6 @@ jQuery(document).ready(function($) {
 
   var ProjectSettings = function(allCustomFields, allMapLayers) {
     var self = this;
-
 
       // PURPOSE: For debug -- spit out all of the editable data
     self.showSettings = function() {

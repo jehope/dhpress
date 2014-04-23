@@ -371,6 +371,7 @@ function show_dhp_project_admin_edit()
 	// echo '<input type="hidden" name="project_icons" id="project_icons" value="'.get_post_meta($post->ID, 'project_icons', true).'" />';
 	echo '</table>'; // end table
 
+		// Insert list of custom fields -- getAllCustomFieldNames() will reset WP globals
 	$dhp_custom_fields = $projObj->getAllCustomFieldNames();
 	echo '<div style="display:none" id="custom-fields">'.json_encode($dhp_custom_fields).'</div>';
 
@@ -2027,32 +2028,28 @@ function dhp_page_template( $page_template )
         wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
 		wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
-		wp_enqueue_style('joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__)));
 		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		wp_enqueue_style('joyride-css', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__)));
 
 		wp_enqueue_script('underscore');
 		wp_enqueue_script('jquery');
-		// wp_enqueue_script('dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
-		wp_enqueue_script('joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
+		wp_enqueue_script('joyride', plugins_url('/lib/jquery.joyride-2.1.js', dirname(__FILE__)), 'jquery');
 
     		// Visualization specific -- only 1st Entry Point currently supported
     	$projectSettings_viz = $projObj->getEntryPointByIndex(0);
     	switch ($projectSettings_viz['type']) {
     	case 'map':
-			wp_enqueue_style('dhp-map', plugins_url('/css/dhp-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+			wp_enqueue_style('dhp-map-css', plugins_url('/css/dhp-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 			wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
 
-	    	// I'm not sure if these 3 are needed
-			wp_enqueue_script('jquery-ui' );
-			wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.4/jquery-ui.js', dirname(__FILE__)));
-	 		wp_enqueue_script('jquery-ui-slider' );
+			wp_enqueue_script('jquery-ui-core', plugins_url('/lib/jquery-ui-1.10.4/jquery-ui.core.js', dirname(__FILE__)), 'jquery' );
+	 		wp_enqueue_script('jquery-ui-slider', plugins_url('/lib/jquery-ui-1.10.4/jquery-ui.slider.js', dirname(__FILE__)), 'jquery-ui-core' );
 
-			//Leaflet - remove -src when tested
 			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)));
 
 			wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
@@ -2062,13 +2059,11 @@ function dhp_page_template( $page_template )
 			$layerData = dhpGetMapLayerData($projectSettings_viz['settings']['layers']);
 			$vizParams["layerData"] = $layerData;
 
-	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps');
+	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps',
+	    							'jquery-ui-slider', 'joyride');
 	    	break;
 	    case 'cards':
-			wp_enqueue_style('cards-style', plugins_url('/css/dhp-cards.css',  dirname(__FILE__)) );
-
-			// wp_enqueue_script('jquery-ui' );
-			// wp_enqueue_script('dhp-jquery-ui', plugins_url('/lib/jquery-ui-1.10.3.custom.min.js', dirname(__FILE__)));
+			wp_enqueue_style('dhp-cards-css', plugins_url('/css/dhp-cards.css',  dirname(__FILE__)) );
 
 			wp_enqueue_script('isotope', plugins_url('/lib/isotope.pkgd.js', dirname(__FILE__)));
 			wp_enqueue_script('dhp-cards-view', plugins_url('/js/dhp-cards-view.js', dirname(__FILE__)), 
@@ -2108,16 +2103,12 @@ function dhp_page_template( $page_template )
 		wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
 		wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
-		// wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));	
 		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('jquery');
-		// wp_enqueue_script( 'dhp-bootstrap', plugins_url('/lib/bootstrap/js/bootstrap.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
-		//wp_enqueue_script( 'mediaelement', plugins_url('/js/mediaelement/mediaelement-and-player.min.js', dirname(__FILE__),array('jquery') ));
 		wp_enqueue_script('underscore');
-		// wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
 
 			// Enqueue last, after dependencies determined
 		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION);
