@@ -18,7 +18,6 @@ jQuery(document).ready(function($) {
   customFieldsParam = JSON.parse(customFieldsParam);
   customFieldsParam = normalizeArray(customFieldsParam);
   var mapLayersParam = $('#map-layers').text();
-console.log("Map layer info = "+mapLayersParam);
 
   mapLayersParam = JSON.parse(mapLayersParam);
   mapLayersParam = normalizeArray(mapLayersParam);
@@ -128,7 +127,7 @@ console.log("Map layer info = "+mapLayersParam);
     });
   } // CardsEntryPoint()
 
-    // Create new "blank" layer
+    // Create new "blank" layer to store in Map entry point
     // NOTES: opacity is the only property that needs double binding
   var MapLayer = function(theLayer) {
     var self = this;
@@ -140,11 +139,44 @@ console.log("Map layer info = "+mapLayersParam);
     self.mapTypeId = theLayer.mapTypeId;
   } // MapLayer()
 
+    // Object to store data about Maps in map library (both base and overlay types)
+  var MapOption = function(name, mapType, typeID, layerID) {
+    var self = this;
+
+    self.name    = name;
+    self.mapType = mapType;
+    self.typeID  = typeID;
+    self.layerID = layerID;
+  } // MapOption()
+
 
 //=================================== MAIN OBJECT ===================================
 
+    // PURPOSE: "Controller" Object that coordinates between Knockout and business layer
+    // INPUT:   allCustomFields = array of custom fields used by Project
+    //          allMapLayers = complete list of all map selections
   var ProjectSettings = function(allCustomFields, allMapLayers) {
     var self = this;
+
+      // Need to copy into separate arrays according to Base and Overlay
+    self.baseLayers = [ ];
+    self.overLayers = [ ];
+
+    ko.utils.arrayForEach(allMapLayers, function(theLayer) {
+      var newLayer = new MapOption(theLayer.layerName, theLayer.layerType, theLayer.layerTypeId,
+                                  theLayer.layerID);
+      switch (theLayer.layerCat) {
+      case 'base layer':
+        self.baseLayers.push(newLayer);
+        break;
+      case 'overlay':
+        self.overLayers.push(newLayer);
+        break;
+      default:
+        throw new Error('Unsupported map category '+theLayer.layerCat);
+        break;
+      }
+    });
 
       // PURPOSE: For debug -- spit out all of the editable data
     self.showSettings = function() {
@@ -200,15 +232,23 @@ console.log("Map layer info = "+mapLayersParam);
           savedEP.settings.lon    = theEP.settings.lon();
           savedEP.settings.zoom   = theEP.settings.zoom();
           savedEP.settings.layers = [];
+
           ko.utils.arrayForEach(theEP.settings.layers(), function(theLayer) {
             var savedLayer = {};
 
-              // TO DO -- Handle copying id, mapType and mapTypeId values
-            // savedLayer.id        = theLayer.id;
-            savedLayer.name      = theLayer.name;
             savedLayer.opacity   = theLayer.opacity();
-            // savedLayer.mapType   = theLayer.mapType;
-            // savedLayer.mapTypeId = theLayer.mapTypeId;
+            savedLayer.id        = theLayer.id;
+
+              // Copy name, mapType and mapTypeId values given ID by searching in original maplayer arrays
+            ko.utils.arrayFirst(allMapLayers, function(layerItem) {
+              if (theLayer.id != layerItem.layerID) {
+                return false;
+              }
+              savedLayer.name      = layerItem.layerName;
+              savedLayer.mapType   = layerItem.layerType;
+              savedLayer.mapTypeId = layerItem.layerTypeId;
+              return true;
+            });
             savedEP.settings.layers.push(savedLayer);
           } );
           savedEP.settings['marker-layer'] = theEP.settings['marker-layer']();
@@ -426,8 +466,10 @@ console.log("Map layer info = "+mapLayersParam);
               case 'cards':
                 if (theEP.settings.title() == moteName) { theEP.settings.title(''); }
                 if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
-                if (theEP.settings.image() == moteName) { theEP.settings.image(''); }
-                if (theEP.settings.text()  == moteName) { theEP.settings.text(''); }
+
+                theEP.settings.content.remove(function(mote) { return mote.name() === moteName; });
+                theEP.settings.filterMotes.remove(function(mote) { return mote.name() === moteName; });
+                theEP.settings.sortMotes.remove(function(mote) { return mote.name() === moteName; });
                 break;
               }
             });
@@ -990,10 +1032,6 @@ console.log("Map layer info = "+mapLayersParam);
       theEP.settings.layers.splice(index, 1);
       self.settingsDirty(true);
     };
-
-      // TO DO: Load these from HTML -- create as objects with properties (not just strings)
-    self.baseLayers = ['Google Base', 'OpenLayers Street'];
-    self.overLayers = ['Overlay 1', 'Overlay 2', 'Overlay 3'];
 
       // PURPOSE: Handle user selection to create new map legend
     self.addMapLegend = function(theEP) {

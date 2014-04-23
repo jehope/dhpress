@@ -153,11 +153,11 @@
     <li>
         <span data-bind="if: $index() == 0">
             <b>Base Layer</b>
-            <select data-bind="value: theLayer.name, options: $root.baseLayers"></select>
+            <select data-bind="value: theLayer.id, options: $root.baseLayers, optionsText: 'name', optionsValue: 'layerID'"></select>
         </span>
         <span data-bind="if: $index() > 0">
             <b>Overlay Layer <span data-bind="text: $index"></span></b>
-            <select data-bind="value: theLayer.name, options: $root.overLayers"></select>
+            <select data-bind="value: theLayer.id, options: $root.overLayers, optionsText: 'name', optionsValue: 'layerID'"></select>
             <button data-bind="jqButton, click: function() { $root.delLayer($data, theEP, $index()); }">Delete</button>
         </span>
         Opacity <span data-bind="text: theLayer.opacity"></span>
