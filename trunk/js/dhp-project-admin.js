@@ -17,8 +17,8 @@ jQuery(document).ready(function($) {
   var customFieldsParam = $('#custom-fields').text();
   customFieldsParam = JSON.parse(customFieldsParam);
   customFieldsParam = normalizeArray(customFieldsParam);
-  var mapLayersParam = $('#map-layers').text();
 
+  var mapLayersParam = $('#map-layers').text();
   mapLayersParam = JSON.parse(mapLayersParam);
   mapLayersParam = normalizeArray(mapLayersParam);
 
@@ -188,7 +188,7 @@ jQuery(document).ready(function($) {
     self.saveSettings = function() {
       var currentSettings = self.bundleSettings();
       var settingsData = JSON.stringify(settingsData);
-      updateProjectSettings(settingsData);
+      saveSettingsInWP(settingsData);
     };
 
     self.cleanSettings = function() {
@@ -638,8 +638,8 @@ jQuery(document).ready(function($) {
                 }); // arrayForEach
 // console.log("WP Flat Array Results"+JSON.stringify(flatArray));
 
-                  // TO DO -- save via createTaxTerms
-
+                saveLegendValuesInWP(theMote.name, flatArray);
+                  // Close modal on assumption that save works
                 $(this).dialog('close');
               }
             }
@@ -934,7 +934,7 @@ jQuery(document).ready(function($) {
       newModal.dialog('open');
 
         // Asynchronous AJAX load which needs to modify HTML
-      getMoteLegendValues(theMote.name, unpackLegendData);
+      getLegendValuesInWP(theMote.name, theMote['custom-fields'], theMote.delim, unpackLegendData);
     }; // configCat()
 
 
@@ -1416,7 +1416,7 @@ jQuery(document).ready(function($) {
   //=================================== AJAX FUNCTIONS ==================================
 
     // PURPOSE: Saves project settings data object
-  function updateProjectSettings(settingsData) {
+  function saveSettingsInWP(settingsData) {
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1434,50 +1434,30 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  } // updateProjectSettings()
+  } // saveSettingsInWP()
 
 
-    // PURPOSE: Create terms for new legend
-    // RETURNS: Object with terms
-    // INPUT:   mote = record for mote
-    // TO DO:   Change parameters passed
-  function dhpCreateLegendTax(mote) {
-    // console.log("Create legend for mote " + mote + " for project " + projectID);
-    jQuery.ajax({
-          type: 'POST',
-          url: ajax_url,
-          data: {
-              action: 'dhpCreateLegendTax',
-              project: projectID,
-              mote: mote
-          },
-          success: function(data, textStatus, XMLHttpRequest){
-              // TO DO - callback??
-          },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
-             alert(errorThrown);
-          }
-      });
-  } // dhpCreateLegendTax()
-
-
-    // PURPOSE: Get the array of values/terms for moteName
+    // PURPOSE: Create legend (if doesn't exist yet) and collect the array of values/terms
     // INPUT:   moteName = name of mote whose category names need to be fetched
-    //          funcToCall = closure to invoke upon completion with mote record and data
-      //            term_id   = ID of this term
-      //            name      = label for this term
-      //            parent    = ID of parent term, or 0
-      //            count     = # times value/tag used
-      //            icon_url  = visual metadata (either #number for color or http://.. for icon)
-  function getMoteLegendValues(moteName, funcToCall) {
+    //          moteCF = custom field associated with mote
+    //          dataDelim = character used as delimiter
+    //          funcToCall = callback to invoke upon completion with mote record and data
+    // RETURNS: Array with data:
+    //            term_id   = ID of this term
+    //            name      = label for this term
+    //            parent    = ID of parent term, or 0
+    //            count     = # times value/tag used
+    //            icon_url  = visual metadata (either #number for color or http://.. for icon)
+  function getLegendValuesInWP(moteName, moteCF, dataDelim, funcToCall) {
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
           data: {
-              action: 'dhpGetMoteValues',
+              action: 'dhpGetLegendValues',
               project: projectID,
-              associate: false,
-              motename: moteName                     // TO DO: Change parameters to pass ??
+              delim: dataDelim,
+              customField: moteCF,
+              moteName: moteName
           },
           success: function(data, textStatus, XMLHttpRequest){
                 // data is a JSON object
@@ -1487,33 +1467,33 @@ jQuery(document).ready(function($) {
              alert(errorThrown);
           }
       });
-  } // getMoteLegendValues()
+  } // getLegendValuesInWP()
 
 
     // PURPOSE: Update term structure for legend(introduces icon_url field)
     // RETURNS: Object with terms
-    // INPUT:   treeParentID = Top level term id (legend name)
-    //          taxTerms = termObject to update terms in wordpress(introduces icon_url)
-  function createTaxTerms(treeParentID, taxTerms) {
+    // INPUT:   legendName = Top level term id (legend name)
+    //          taxTermsList = flat list containing data for updating terms in WP
+  function saveLegendValuesInWP(legendName, taxTermsList) {
     // console.log("Create legend for treeParentID " + treeParentID + " in Project ID " + projectID);
-    var termData = taxTerms;
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
           data: {
-              action: 'dhpCreateTaxTerms',
-              mote_name: treeParentID,
-              project: projectID,           // TO DO Need to get this value somehow!!
-              terms: termData
+              action: 'dhpSaveLegendValues',
+              mote_name: legendName,
+              project: projectID,
+              terms: taxTermsList
           },
           success: function(data, textStatus, XMLHttpRequest){
-              // TO DO -- callback function??
+              // Need to add callback function??
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
           }
       });
-  } // createTaxTerms()
+  } // saveLegendValuesInWP()
+
 
     // PURPOSE: Update a custom field using a subset of markers filtered by a custom field and value
   function updateCustomFieldFilter(fieldName,currentValue,newValue,filterKey,filterValue){
@@ -1669,7 +1649,6 @@ jQuery(document).ready(function($) {
           },
           success: function(data, textStatus, XMLHttpRequest){
               console.log(data);
-              $('.filter-field-values').empty().append(buildHTMLForOptionList(data));
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1691,7 +1670,7 @@ jQuery(document).ready(function($) {
           },
           success: function(data, textStatus, XMLHttpRequest){
               //console.log(textStatus);
-              console.log(JSON.parse(data));
+              console.log("New legend term: "+data);
                 // result is Object with fields 'name' and 'term_id'
               addNewTermToLegend(JSON.parse(data));
           },
