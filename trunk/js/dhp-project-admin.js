@@ -707,7 +707,7 @@ jQuery(document).ready(function($) {
         } else {
           return '<div class="viz-div"></div>';
         }
-          // return '<img class="viz-div" src="'+vizData+'"/>';     // this will work for inserting image selections
+          // return '<img class="viz-div" src="'+vizData+'"/>';     // can use for uploaded image selections
       } // getVizHTML()
 
         // FUNCTION: Create default visualization data based on current setting of icons-vs-color radio buttons
@@ -739,6 +739,8 @@ jQuery(document).ready(function($) {
 
           // which modal to use depends on setting of "viz-type-setting" radio button
         var useSetting = $('input[name="viz-type-setting"]:checked').val();
+console.log("Will assign via "+useSetting);
+
         if (useSetting === 'icons') {
             // Replace current viz type with icon if necessary
           var iconListDiv = $('.maki-icon:first', selLegDiv);
@@ -830,44 +832,61 @@ jQuery(document).ready(function($) {
         }
       } // handleAssign()
 
+
+        // INPUT:  termArray is JSON object returned by getLegendValuesInWP
+        // NOTES:  termArray contains entry for head term, which we don't wish to display
+        //          (or cause extra level in hierarchy), so we must find it and exclude from
+        //          building of nested
       function unpackLegendData(termArray) {
+        var headTermID;
+        ko.utils.arrayFirst(termArray, function(thisTerm) {
+          if (thisTerm.parent == 0 || thisTerm.parent == "0") {
+            headTermID = thisTerm.term_id;
+            return true;
+          }
+          return false;
+        });
+
           // Create data attributes for most term data in the HTML
-        ko.utils.arrayForEach(termArray, function(term) {
-          var termViz = getVizHTML(term.icon_url, true);
-          var termElement = $('<li class="dd-item dd3-item" data-id="'+term.term_id+'" data-name="'+
-                term.name+'" data-parent="'+term.parent+'"> <div class="dd-handle dd3-handle">Drag</div><div class="dd3-content">'+
-                term.name+' ('+term.count+') '+'&nbsp;&nbsp;<div class="select-legend"><span class="assign">Assign</span> '+termViz+'</div></div></li>');
+        ko.utils.arrayForEach(termArray, function(thisTerm) {
+            // Don't include the head term (Legend parent) itself
+          if (thisTerm.term_id != headTermID) {
+            var termViz = getVizHTML(thisTerm.icon_url, true);
+            var termElement = $('<li class="dd-item dd3-item" data-id="'+thisTerm.term_id+'" data-name="'+
+                  thisTerm.name+'" data-parent="'+thisTerm.parent+'"> <div class="dd-handle dd3-handle">Drag</div><div class="dd3-content">'+
+                  thisTerm.name+' ('+thisTerm.count+') '+'&nbsp;&nbsp;<div class="select-legend"><span class="assign">Assign</span> '+termViz+'</div></div></li>');
 
-            // If has no parent, check to see if any items exist which are children of this parent
-          if (term.parent == 0) {
-              // Are there any pre-existing children that can be detached?
-            var childElements = $('li[data-parent="'+term.term_id+'"]').detach();
-              // Put at the end of this item (their parent)
-            if (childElements.length > 0) {
-                // Create new nesting for children, append saved children to it, and append to parent
-              var sublist = $('<ol class="dd-list"></ol>');
-              $(sublist).append(childElements);
-              $(termElement).append(sublist);
-            }
-              // Append this item and any "rescued" children to top level of hierarchy
-            $('#category-tree > .dd-list').append(termElement);
-
-            // Term has a parent (it may or may not have been created already)
-          } else {
-              // Search to see if parent HTML already exists
-            var parentElement = $('li[data-id="'+term.parent+'"]');
-              // Append under if so
-            if (parentElement.length > 0) {
-                // Check to see if parent already has a nested sublist yet; create if not
-              var sublist = $('.dd-list', parentElement);
-              if (sublist.length == 0) {
-                $(parentElement).append('<ol class="dd-list"></ol>');
+              // If parent is the head term (Legend parent), check to see if any items exist which are children of this parent
+            if (thisTerm.parent == headTermID) {
+                // Are there any pre-existing children that can be detached?
+              var childElements = $('li[data-parent="'+thisTerm.term_id+'"]').detach();
+                // Put at the end of this item (their parent)
+              if (childElements.length > 0) {
+                  // Create new nesting for children, append saved children to it, and append to parent
+                var sublist = $('<ol class="dd-list"></ol>');
+                $(sublist).append(childElements);
+                $(termElement).append(sublist);
               }
-              $('.dd-list', parentElement).append(termElement);
-
-              // Otherwise, just append for now to main list -- parent will arrive later
-            } else {
+                // Append this item and any "rescued" children to top level of hierarchy
               $('#category-tree > .dd-list').append(termElement);
+
+              // Term has a parent (it may or may not have been created already)
+            } else {
+                // Search to see if parent HTML already exists
+              var parentElement = $('li[data-id="'+thisTerm.parent+'"]');
+                // Append under if so
+              if (parentElement.length > 0) {
+                  // Check to see if parent already has a nested sublist yet; create if not
+                var sublist = $('.dd-list', parentElement);
+                if (sublist.length == 0) {
+                  $(parentElement).append('<ol class="dd-list"></ol>');
+                }
+                $('.dd-list', parentElement).append(termElement);
+
+                // Otherwise, just append for now to main list -- parent will arrive later
+              } else {
+                $('#category-tree > .dd-list').append(termElement);
+              }
             }
           }
         }); // arrayForEach
@@ -880,20 +899,17 @@ jQuery(document).ready(function($) {
           var newTerm;
           newTerm = $('#ed-new-term').val();
           if (newTerm != null && newTerm != '') {
+              // TO DO -- Call AJAX function to WP to get newTermID
+            var newTermID = 1111;
             var defaultViz = getDefaultViz();
+              // Insert new item (without parent) at top of list, binding Assign code to section
+            var totalElement = $('<li class="dd-item dd3-item" data-id="'+newTermID+'" data-name="'+
+                newTerm+'" data-parent="0"> <div class="dd-handle dd3-handle">Drag</div><div class="dd3-content">'+
+                newTerm+' (0) '+'&nbsp;&nbsp;<div class="select-legend">Assign '+defaultViz.html+'</div></div></li>');
+            $('.select-legend', totalElement).click(handleAssign);
+            $('#category-tree > .dd-list').prepend(totalElement);
               // Clear out new term field
             $('#ed-new-term').val('');
-
-              // Callback when new term created
-            function insertNewTerm(newTermID) {
-                // Insert new item (without parent) at top of list, binding Assign code to section
-              var totalElement = $('<li class="dd-item dd3-item" data-id="'+newTermID+'" data-name="'+
-                  newTerm+'" data-parent="0"> <div class="dd-handle dd3-handle">Drag</div><div class="dd3-content">'+
-                  newTerm+' (0) '+'&nbsp;&nbsp;<div class="select-legend">Assign '+defaultViz.html+'</div></div></li>');
-              $('.select-legend', totalElement).click(handleAssign);
-              $('#category-tree > .dd-list').prepend(totalElement);
-            }
-            dhpCreateTaxTerms(newTerm, theMote.name, insertNewTerm);
           }
         });
 
@@ -1434,11 +1450,11 @@ jQuery(document).ready(function($) {
     //          dataDelim = character used as delimiter
     //          funcToCall = callback to invoke upon completion with mote record and data
     // RETURNS: Array with data:
-    //            term_id   = ID of this term
+    //            term_id   = ID of this term (string not integer!)
     //            name      = label for this term
-    //            parent    = ID of parent term, or 0
-    //            count     = # times value/tag used
-    //            icon_url  = visual metadata (either #number for color or http://.. for icon)
+    //            parent    = ID of parent term, or 0 (string not integer!)
+    //            count     = # times value/tag used (string not integer!)
+    //            icon_url  = visual metadata (#number for color, "." for Maki-icon)
   function getLegendValuesInWP(moteName, moteCF, dataDelim, funcToCall) {
     jQuery.ajax({
           type: 'POST',
@@ -1463,7 +1479,7 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Update term structure for legend(introduces icon_url field)
     // RETURNS: Object with terms
-    // INPUT:   legendName = Top level term id (legend name)
+    // INPUT:   legendName = Head term id (legend name)
     //          taxTermsList = flat list containing data for updating terms in WP
   function saveLegendValuesInWP(legendName, taxTermsList) {
     // console.log("Create legend for treeParentID " + treeParentID + " in Project ID " + projectID);

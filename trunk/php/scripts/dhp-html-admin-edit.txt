@@ -266,7 +266,7 @@
         </select><br/>
         Custom Field: <select id="edMoteModalCF" data-bind="options: optionsCF"></select><br/>
         Value delimiter:  <input id="edMoteModalDelim" type="text" size="2"/><br/>
-        <p>WARNING: Editing the mote definition will reset it in the rest of the settings. <span id="edMoteModalSTWarn">Changing type from Short Text to another will not remove Legends you may have created.</span></p>
+        <p>WARNING: Editing the mote definition will reset it in the rest of the settings. <span id="edMoteModalSTWarn">Delete this mote and recreate it if you have already created the corresponding legend and need to specify a different delimiter or custom field.</span></p>
     </div> <!-- Edit Mote Modal -->
 
     <div id="mdl-del-ep" title="Delete entry point?">

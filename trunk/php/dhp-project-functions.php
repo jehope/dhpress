@@ -1042,7 +1042,8 @@ add_action( 'wp_ajax_dhpGetLegendValues', 'dhpGetLegendValues' );
 // PURPOSE:	Handle Ajax call to retrieve Legend values; create if does not exist already
 // INPUT:	Through $_POST['mote'] array: ['type', 'delim', 'custom-fields', 'name']
 //			$_POST['project'] = ID of Project
-// RETURN:	Array of unique values/tax-terms as JSON object
+// RETURNS:	Array of unique values/tax-terms as JSON object
+//			This array includes the "head term" (legend/mote name)
 
 function dhpGetLegendValues()
 {
@@ -1068,7 +1069,7 @@ function dhpGetLegendValues()
 		$legendObject = dhpUpdateTaxonomy($mArray, $mote_name, $rootTaxName);
 	}
 
-		// Find all of the terms derived from mote (head term) name in the Project's taxonomy
+		// Find all of the terms derived from mote (parent/head term) in the Project's taxonomy
 	$parent_term = get_term_by('name', $mote_name, $rootTaxName);
 	$parent_id = $parent_term->term_id;
 	$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
@@ -1109,38 +1110,39 @@ function dhpGetLegendValues()
 	// }
 
 		// Create comma-separated string listing terms derived from other motes
-	$exclude_string;
-	$exclude_count = 0;
+	$exclude_string='';
+	$initial = true;
 	foreach ( $parent_terms_to_exclude as $term ) {
 		if($term->term_id != $parent_id) {
-			if($exclude_count >0) {
+			if(!$initial) {
 				$exclude_string.=',';
 			}
 			$exclude_string.= $term->term_id;
-			$exclude_count = 1;
+			$initial = false;
 		}
   	    //array_push($exclude_array, $term->term_id);
 	}
 
-		// Now, get all taxonomic terms for project, excluding all other motes
+		// Get all taxonomic terms for project, excluding all other motes
 	$terms_loaded = get_terms($rootTaxName, 'exclude_tree='.$exclude_string.'&orderby=term_group&hide_empty=0');
-	//$terms = get_terms($rootTaxName, array( 'orderby' => 'term_id' ) );
  	$t_count = count($terms_loaded);
 
- 	//return wp tax id,name,count,order
  	//$dhp_top_term = get_term_by('name', $term_name, $rootTaxName);
+	//$terms = get_terms($rootTaxName, array( 'orderby' => 'term_id' ) );
+
+ 		//return tax id, name, count, order
  	if ( $t_count > 0 ){
    		foreach ( $terms_loaded as $term ) {
-			// if term doesn't have a length for description load from term_meta
+   				// Set icon_url field value
+				// If term doesn't have a description field, load data from term_meta
    			if(strlen($term->description) > 0){
    				$desc_object = json_decode($term->description);
    				$term_url = $desc_object->icon_url;
-   			}
-   			else {
+
+   			} else {
    				if(function_exists(get_term_meta)){
    					$term_url = get_term_meta($term->term_id, 'icon_url', true);
-   				}
-   				else {
+   				} else {
    					$term_url = null;
    				}		
    			}
@@ -1733,40 +1735,25 @@ add_action( 'wp_ajax_dhpSaveLegendValues', 'dhpSaveLegendValues' );
 // PURPOSE:	Handle Ajax function to create or save all terms associated with all of the values defined
 //			by a mote in a Project (Saving results of Configure Legend function)
 // INPUT:	$_POST['project'] = ID of Project
-//			$_POST['mote_name'] = name of mote (which is also legend name)
+//			$_POST['mote_name'] = name of mote (which is also head term/Legend name)
 //			$_POST['terms'] = flat array of mote/legend values
 
 function dhpSaveLegendValues()
 {
 	$mote_parent = $_POST['mote_name'];
-	$dhp_projectID = $_POST['project'];
+	$projectID = $_POST['project'];
 	$dhp_project_terms = stripslashes($_POST['terms']);
 
-	$dhp_project_terms1 = json_decode($dhp_project_terms);
+	$dhp_project_terms = json_decode($dhp_project_terms);
 	// $termDetailsArray = array('parentTerm'=>$mote_parent, 'projectID' => $dhp_projectID, 'termsArray'=>$dhp_project_terms1);
 
-	$newArgs = loopTermHierarchy($mote_parent, $dhp_projectID, $dhp_project_terms1);
-	// delete_option("{$projRootTaxName}_children");	// shouldn't need as done in loopTermHierarchy()
-	// die(json_encode($newArgs));
-	die();
-} // dhpSaveLegendValues()
-
-
-// PURPOSE: Saving taxonomy hierarchy in WP and updating display of icon URL
-// INPUT:	$mote_parent = name of parent mote
-//			$projectID = ID of Project
-//			$dhp_project_terms = array of taxonomy terms
-
-function loopTermHierarchy($mote_parent, $projectID, $dhp_project_terms)
-{
-	//convert mote_parent to id
+		// Convert mote_parent to id
 	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-	$mote_parentID = get_term_by('name', $mote_parent, $projRootTaxName);
-	$meta_key = 'icon_url';
+	// $mote_parentID = get_term_by('name', $mote_parent, $projRootTaxName);
 	$myCount = count($dhp_project_terms);
 
 	foreach ($dhp_project_terms as $term) {
-		$term_name      = $term->name;
+		// $term_name      = $term->name;
 		$parent_term_id = $term->parent;
 		$term_id        = $term->term_id;
 		$term_order     = $term->term_order;
@@ -1774,23 +1761,27 @@ function loopTermHierarchy($mote_parent, $projectID, $dhp_project_terms)
 
 		if($meta_value=='undefined') { $meta_value = '';}
 
-		if( ($parent_term_id==0||$parent_term_id==""||$parent_term_id==null) && ($term_id!=$mote_parent) ) {
-			$parent_term_id = $mote_parent;
-		}
-		// add arg to update description field with icon_url
-		$new_icon_url = json_encode(array($meta_key => $meta_value));
+			// If set parent to Legend head term by default if empty parent ID (and not term itself)
+			// -- This code shouldn't be necessary if input data is correct
+		// if( ($parent_term_id==0||$parent_term_id==""||$parent_term_id==null) && ($term_id!=$mote_parent) ) {
+		// 	$parent_term_id = $mote_parent;
+		// }
+			// Add icon_url metadata
+		$new_icon_url = json_encode(array('icon_url' => $meta_value));
 		$args = array( 'parent' => $parent_term_id, 'term_group' =>  $term_order, 'description' => $new_icon_url );
-		//update term(insert takes place on legend setup)
+			// Update term settings
 		wp_update_term( $term_id, $projRootTaxName, $args );
-		
+
 		// NO LONGER NEEDED. SAVES IN DESCRIPTION ABOVE
-		// delete_term_meta($term_id, $meta_key);
-		// add_term_meta($term_id, $meta_key, $meta_value);
+		// delete_term_meta($term_id, 'icon_url');
+		// add_term_meta($term_id, 'icon_url', $meta_value);
 	}
 	delete_option("{$projRootTaxName}_children");
-	// $oldArgs = array('parentTerm'=>$mote_parent, 'projectID' => $projectID, 'termsArray'=> $dhp_project_terms, 'count'=> $myCount);
-	// return $oldArgs;
-} // loopTermHierarchy()
+	// $newArgs = array('parentTerm'=>$mote_parent, 'projectID' => $projectID, 'termsArray'=> $dhp_project_terms, 'count'=> $myCount);
+
+	// die(json_encode($newArgs));
+	die();
+} // dhpSaveLegendValues()
 
 
 add_action( 'wp_ajax_dhpCreateTermInTax', 'dhpCreateTermInTax' );
@@ -1924,21 +1915,21 @@ function add_dhp_project_admin_scripts( $hook )
 				// Lastly, our plug-in specific styles
 			wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)) );
 
-				// JavaScript libraries
-			wp_enqueue_script('jquery');		// Loaded by default?
-			wp_enqueue_script('underscore', plugins_url('/lib/underscore-min.js', dirname(__FILE__)) );
-				// jQuery UI widgets
-			wp_enqueue_script('jquery-ui-core', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.core.js', dirname(__FILE__)), 'jquery' );
-			$jqui = array( 'jquery', 'jquery-ui-core');
-			wp_enqueue_script('jquery-ui-widget', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.widget.js', dirname(__FILE__)), $jqui );
-			wp_enqueue_script('jquery-ui-mouse', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.mouse.js', dirname(__FILE__)), $jqui );
-			wp_enqueue_script('jquery-ui-button', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.button.js', dirname(__FILE__)), $jqui );
-			wp_enqueue_script('jquery-ui-draggable', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.draggable.js', dirname(__FILE__)), $jqui );
-			wp_enqueue_script('jquery-ui-position', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.position.js', dirname(__FILE__)), $jqui );
-			wp_enqueue_script('jquery-ui-dialog', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.dialog.js', dirname(__FILE__)), $jqui );
-			wp_enqueue_script('jquery-ui-accordion', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.accordion.js', dirname(__FILE__)), $jqui );
-			wp_enqueue_script('jquery-ui-slider', plugins_url('/lib/jquery-ui-1.10.4/ui/jquery.ui.slider.js', dirname(__FILE__)), $jqui );
+				// JavaScript libraries registered by WP
+			wp_enqueue_script('jquery');
+			wp_enqueue_script('underscore');
 
+			wp_enqueue_script('jquery-ui-core');
+			wp_enqueue_script('jquery-ui-widget');
+			wp_enqueue_script('jquery-ui-mouse');
+			wp_enqueue_script('jquery-ui-button');
+			wp_enqueue_script('jquery-ui-draggable');
+			wp_enqueue_script('jquery-ui-position');
+			wp_enqueue_script('jquery-ui-dialog');
+			wp_enqueue_script('jquery-ui-accordion');
+			wp_enqueue_script('jquery-ui-slider');
+
+				// JS libraries specific to DH Press
 			wp_enqueue_script('jquery-nestable', plugins_url('/lib/jquery.nestable.js', dirname(__FILE__)), 'jquery' );
 			wp_enqueue_script('jquery-colorpicker', plugins_url('/lib/colorpicker/jquery.colorpicker.js', dirname(__FILE__)), 'jquery' );
 			wp_enqueue_script('jquery-colorpicker-en', plugins_url('/lib/colorpicker/i18n/jquery.ui.colorpicker-en.js', dirname(__FILE__)),
@@ -2104,8 +2095,8 @@ function dhp_page_template( $page_template )
 
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
 
-			wp_enqueue_script('jquery-ui-core', plugins_url('/lib/jquery-ui-1.10.4/jquery-ui.core.js', dirname(__FILE__)), 'jquery' );
-	 		wp_enqueue_script('jquery-ui-slider', plugins_url('/lib/jquery-ui-1.10.4/jquery-ui.slider.js', dirname(__FILE__)), 'jquery-ui-core' );
+			wp_enqueue_script('jquery-ui-core');
+	 		wp_enqueue_script('jquery-ui-slider');
 
 			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)));
 
