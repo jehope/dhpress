@@ -294,23 +294,3 @@ ul.wp-submenu {
   visibility: hidden;  
 }
 
-
-/* =============================== */
-
-.custom-field-editor .left {
-	width: 40%;
-	display: inline-block;
-}
-
-.custom-field-editor .right {
-	width: 60%;
-	display: inline-table;
-}
-
-.custom-field-editor select {
-	margin-top: 5px;
-}
-
-.custom-field-editor .add-update-meta {
-	margin-top: 5px;
-}

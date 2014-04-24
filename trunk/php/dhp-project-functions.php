@@ -1811,32 +1811,36 @@ function dhpCreateTermInTax()
 } // dhpCreateTermInTax()
 
 
-add_action( 'wp_ajax_dhpDeleteTerm', 'dhpDeleteTerm' );
+add_action( 'wp_ajax_dhpDeleteHeadTerm', 'dhpDeleteHeadTerm' );
 
 // PURPOSE:	Delete taxonomic terms in Project and all terms derived from it (as parent)
 // INPUT:	$_POST['project'] = ID of Project
-//			$_POST['term_name'] = name of taxonomy term to delete
+//			$_POST['term_name'] = name of taxonomy head term to delete
 
-function dhpDeleteTerm()
+function dhpDeleteHeadTerm()
 {
 	$projectID = $_POST['project'];
 	$dhp_term_name = $_POST['term_name'];
 	$dhp_project = get_post($projectID);
 	$dhp_project_slug = $dhp_project->post_name;
 
+		// By default (mote has no corresponding Legend)
+	$dhp_delete_children = array();
+
 	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-		// Get ID of term to delete
+		// Get ID of term to delete -- don't do anything more if it doesn't exist
 	$dhp_delete_parent_term = get_term_by('name', $dhp_term_name, $projRootTaxName);
-	$dhp_delete_parent_id = $dhp_delete_parent_term->term_id;
-		// Must gather all children and delete them too (first!)
-	$dhp_delete_children = get_term_children($dhp_delete_parent_id,$projRootTaxName);
-	foreach ($dhp_delete_children as $delete_term) {
-		wp_delete_term($delete_term, $projRootTaxName);
+	if ($dhp_delete_parent_term) {
+		$dhp_delete_parent_id = $dhp_delete_parent_term->term_id;
+			// Must gather all children and delete them too (first!)
+		$dhp_delete_children = get_term_children($dhp_delete_parent_id, $projRootTaxName);
+		foreach ($dhp_delete_children as $delete_term) {
+			wp_delete_term($delete_term, $projRootTaxName);
+		}
+		wp_delete_term($dhp_delete_parent_id, $projRootTaxName);
 	}
-	wp_delete_term($dhp_delete_parent_id, $projRootTaxName);
 
 	die(json_encode($dhp_delete_children));
-	// die('');
 } // dhpDeleteTerms()
 
 
@@ -1906,9 +1910,10 @@ function add_dhp_project_admin_scripts( $hook )
 			$projObj = new DHPressProject($postID);
 			// $customFields = $projObj->getAllCustomFieldNames();
 
-        		// First load library styles
+        		// Library styles
 			wp_enqueue_style('jquery-ui-style', plugins_url('/lib/jquery-ui-1.10.4/themes/base/jquery.ui.all.css', dirname(__FILE__)) );
 			wp_enqueue_style('jquery-colorpicker-style', plugins_url('/lib/colorpicker/jquery.colorpicker.css',  dirname(__FILE__)) );
+			// wp_enqueue_style('wp-jquery-ui-dialog' );
 			wp_enqueue_style('maki-sprite-style', plugins_url('/lib/maki-sprite.css',  dirname(__FILE__)) );
 			wp_enqueue_style('leaflet-style', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)) );
 				// Lastly, our plug-in specific styles

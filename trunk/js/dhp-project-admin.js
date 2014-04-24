@@ -188,6 +188,7 @@ jQuery(document).ready(function($) {
     self.saveSettings = function() {
       var currentSettings = self.bundleSettings();
       var settingsData = JSON.stringify(settingsData);
+      console.log("Saving current settings: "+settingsData);
       saveSettingsInWP(settingsData);
     };
 
@@ -449,7 +450,11 @@ jQuery(document).ready(function($) {
       var moteName = theMote.name;
 
       $( "#mdl-del-mote" ).dialog({
-        resizable: false, height:'auto', width: 'auto', modal: true,
+        resizable: false,
+        height:'auto',
+        width: 'auto',
+        modal: true,
+        dialogClass: 'wp-dialog',
         buttons: {
           'Delete': function() {
 
@@ -489,10 +494,12 @@ jQuery(document).ready(function($) {
             if (self.edTrnsTime()  == moteName)   { self.edTrnsTime(''); }
             if (self.edTrnsSrc()  == moteName)    { self.edTrnsSrc('disable'); }
 
-            self.allMotes.remove(theMote);
-
               // In case any Legend exists
-            deleteTermInTax(moteName);
+            if (theMote.type == 'Short Text') {
+              deleteHeadTermInWP(moteName);
+            }
+
+            self.allMotes.remove(theMote);
 
             self.settingsDirty(true);
             $( this ).dialog('close');
@@ -528,6 +535,7 @@ jQuery(document).ready(function($) {
           height: 300,
           modal : true,
           autoOpen: false,
+          dialogClass: 'wp-dialog',
           buttons: [
             {
               text: 'Cancel',
@@ -585,6 +593,7 @@ jQuery(document).ready(function($) {
           height: 500,
           modal : true,
           autoOpen: false,
+          dialogClass: 'wp-dialog',
           buttons: [
             {
               text: 'Cancel',
@@ -739,7 +748,6 @@ jQuery(document).ready(function($) {
 
           // which modal to use depends on setting of "viz-type-setting" radio button
         var useSetting = $('input[name="viz-type-setting"]:checked').val();
-console.log("Will assign via "+useSetting);
 
         if (useSetting === 'icons') {
             // Replace current viz type with icon if necessary
@@ -758,6 +766,7 @@ console.log("Will assign via "+useSetting);
               height: 300,
               modal : true,
               autoOpen: false,
+              dialogClass: 'wp-dialog',
               buttons: [
                 {
                   text: 'Cancel',
@@ -858,7 +867,7 @@ console.log("Will assign via "+useSetting);
           if (thisTerm.term_id != headTermID) {
             var termViz = getVizHTML(thisTerm.icon_url, true);
             var termElement = $('<li class="dd-item dd3-item" data-id="'+thisTerm.term_id+'" data-name="'+
-                  thisTerm.name+'" data-parent="'+thisTerm.parent+'"> <div class="dd-handle dd3-handle">Drag</div><div class="dd3-content">'+
+                  thisTerm.name+'" data-parent="'+thisTerm.parent+'"> <div class="dd-handle dd3-handle"></div><div class="dd3-content">'+
                   thisTerm.name+' ('+thisTerm.count+') '+'&nbsp;&nbsp;<div class="select-legend"><span class="assign">Assign</span> '+termViz+'</div></div></li>');
 
               // If parent is the head term (Legend parent), check to see if any items exist which are children of this parent
@@ -1006,7 +1015,10 @@ console.log("Will assign via "+useSetting);
       // PURPOSE: Handle user selection to delete this entry point
     self.delEP = function(theEP) {
       $('#mdl-del-ep').dialog({
-        resizable: false, height:160, modal: true,
+        resizable: false,
+        height:160,
+        modal: true,
+        dialogClass: 'wp-dialog',
         buttons: {
           'Delete': function() {
             self.entryPoints.remove(theEP);
@@ -1439,7 +1451,6 @@ console.log("Will assign via "+useSetting);
           },
           success: function(data, textStatus, XMLHttpRequest) {
             console.log("Settings saved successfully!");
-            console.log(data);
             projObj.cleanSettings();
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
@@ -1531,7 +1542,8 @@ console.log("Will assign via "+useSetting);
   } // dhpCreateTermInTax()
 
 
-  function deleteTermInTax(termName) {
+    // PURPOSE: Remove the head term of a Legend (if it exists)
+  function deleteHeadTermInWP(termName) {
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1547,7 +1559,7 @@ console.log("Will assign via "+useSetting);
              alert(errorThrown);
           }
       });
-  } // deleteTermInTax()
+  } // deleteHeadTermInWP()
 
 
     // PURPOSE: Update a custom field using a subset of markers filtered by a custom field and value

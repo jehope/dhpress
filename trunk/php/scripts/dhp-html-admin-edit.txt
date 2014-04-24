@@ -5,13 +5,11 @@
 
       <div id="accordion">
         <h3>General Settings</h3>
-        <div>
-    	  <ul>
+        <div><ul>
     	    <li>Label for Home Button: <input data-bind="value: edHomeBtnLbl" type="text" size="12" placeholder="Home"/></li>
     	    <li>Home URL: <input data-bind="value: edHomeURL" type="text" size="30" placeholder="http://"/></li>
-            <li>Return home after minutes of activity: <input data-bind="value: edInactiveTimeout" type="text" size="2"/> (Blank or 0 disables)</li>
-    	  </ul>
-        </div>
+          <li>Return home after minutes of activity: <input data-bind="value: edInactiveTimeout" type="text" size="2"/> (Blank or 0 disables)</li>
+    	  </ul></div>
 
       <h3>Motes</h3>
       <div>
