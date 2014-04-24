@@ -1120,7 +1120,6 @@ function dhpGetLegendValues()
 			$exclude_string.= $term->term_id;
 			$initial = false;
 		}
-  	    //array_push($exclude_array, $term->term_id);
 	}
 
 		// Get all taxonomic terms for project, excluding all other motes
@@ -1754,9 +1753,9 @@ function dhpSaveLegendValues()
 
 	foreach ($dhp_project_terms as $term) {
 		// $term_name      = $term->name;
-		$parent_term_id = $term->parent;
-		$term_id        = $term->term_id;
-		$term_order     = $term->term_order;
+		$parent_term_id = $term->parent;		if (is_string($parent_term_id)) { $parent_term_id = (int)$parent_term_id; }
+		$term_id        = $term->term_id;		if (is_string($term_id)) { $term_id = (int)$term_id; }
+		$term_order     = $term->term_order;	if (is_string($term_order)) { $term_order = (int)$term_order; }
 		$meta_value     = $term->icon_url;
 
 		if($meta_value=='undefined') { $meta_value = '';}

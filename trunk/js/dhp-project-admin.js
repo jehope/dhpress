@@ -839,12 +839,17 @@ console.log("Will assign via "+useSetting);
         //          building of nested
       function unpackLegendData(termArray) {
         var headTermID;
-        ko.utils.arrayFirst(termArray, function(thisTerm) {
-          if (thisTerm.parent == 0 || thisTerm.parent == "0") {
-            headTermID = thisTerm.term_id;
-            return true;
+          // Ensure IDs are integers (not strings) and find head term's ID
+        ko.utils.arrayForEach(termArray, function(thisTerm) {
+          if (typeof(thisTerm.term_id) === 'string') {
+            thisTerm.term_id = parseInt(thisTerm.term_id);
           }
-          return false;
+          if (typeof(thisTerm.parent) === 'string') {
+            thisTerm.parent = parseInt(thisTerm.parent);
+          }
+          if (thisTerm.parent == 0) {
+            headTermID = thisTerm.term_id;
+          }
         });
 
           // Create data attributes for most term data in the HTML
