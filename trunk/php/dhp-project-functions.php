@@ -464,13 +464,14 @@ function save_dhp_project_settings($post_id)
 		delete_metadata('post', $post_id, 'project_settings', $old);
 	}
 
-	$old = get_post_meta($srcToCheck, 'project_icons', true);
-	$new = $_POST['project_icons'];
-	if ($new && $new != $old) {
-		update_metadata('post', $post_id, 'project_icons', $new);
-	} elseif ($new == '' && $old) {
-		delete_metadata('post', $post_id, 'project_icons', $old);
-	}
+		// Not currently supporting project icons
+	// $old = get_post_meta($srcToCheck, 'project_icons', true);
+	// $new = $_POST['project_icons'];
+	// if ($new && $new != $old) {
+	// 	update_metadata('post', $post_id, 'project_icons', $new);
+	// } elseif ($new == '' && $old) {
+	// 	delete_metadata('post', $post_id, 'project_icons', $old);
+	// }
 } // save_dhp_project_settings()
 
 
@@ -536,8 +537,6 @@ function getCategoryValues($parent_term, $taxonomy)
 		// Begin with top-level mote name
 	$filter_parent['name']     = $parent_term->name;
 	$filter_parent['id']       = intval($parent_term->term_id);
-	// $icon_url        = get_term_meta($parent_term->term_id,'icon_url',true);
-	// $filter_parent['icon_url'] = $icon_url;
 
 	array_push($filter_object['terms'], $filter_parent);
 
@@ -562,20 +561,10 @@ function getCategoryValues($parent_term, $taxonomy)
 			array_push($children_names2, $child2->name);
 		}
 		if($child->description) {
-			$desc_object = json_decode($child->description);
+			$desc_object = json_decode(stripslashes($child->description));
 			$icon_url = $desc_object->icon_url;
-		}
-		else {
-			if(function_exists(get_term_meta)){
-				$icon_url = get_term_meta($child->term_id,'icon_url',true);
-			}
-			else {
-				$icon_url = null;
-			}
-		}
-
-		if ($icon_url == "Pick Icon") {
-			trigger_error("Project cannot be viewed until legend ".$parent_term->name." is configured.");
+		} else {
+			$icon_url = null;
 		}
 
 		$temp_child_filter				  = array();
@@ -996,16 +985,12 @@ function dhpSaveProjectSettings()
 
 // PURPOSE:	Initialize the taxonomy terms for a single legend
 // INPUT:	$mArray = array of unique values for mote
-//			$mote_name = name of mote itself (parent term)
+//			$parent_id = ID of head tax term
 //			$projRootTaxName = root taxonomy term for Project
 // RETURNS:	array of taxonomic terms belonging to $mote_name
 
-function dhpUpdateTaxonomy($mArray, $mote_name, $projRootTaxName)
-{ 
-	$term_counts = array_count_values($mArray);	
-
-	$parent_term = get_term_by('name', $mote_name, $projRootTaxName);
-	$parent_id = $parent_term->term_id;
+function dhpInitializeTaxonomy($mArray, $parent_id, $projRootTaxName)
+{
 	$args = array('parent' => $parent_id);
 
 	// $updateTaxObject['debug']['tax'] = $projRootTaxName;
@@ -1023,8 +1008,7 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $projRootTaxName)
 	   		if(!$termIs) {
 	   			//if term doesn't exist, create
 	   			wp_insert_term($value, $projRootTaxName, $args);
-	   		}
-	   		else {
+	   		} else {
 	   			//update term using id
 	   			wp_update_term($termIs->term_id, $projRootTaxName, $args);
 	   		}
@@ -1032,8 +1016,45 @@ function dhpUpdateTaxonomy($mArray, $mote_name, $projRootTaxName)
 	}
 	// This is needed to create the terms which do not display until they are added to posts(markers in this case).
 	// Code that was removed was not neccessary as it is run in the configure legend step with dhpGetMoteValues()
-	return 'terms created';
-} // dhpUpdateTaxonomy()
+} // dhpInitializeTaxonomy()
+
+	// PURPOSE: To associate taxonomic terms with Markers in this Project with associated values
+	// INPUT: 	$projObj = Object of DHPressProject class
+	//			$custom_field = custom field defined for Project's markers
+	//			$parent_id = ID of head term of taxonomy
+	//			$rootTaxName = name of root for all taxonomies belonging to this project
+function dhpBindTaxonomyToMarkers($projObj, $custom_field, $parent_id, $rootTaxName, $mote_delim)
+{
+		// Empty out any pre-existing subterms in this taxonomy
+	wp_update_term($parent_id, $rootTaxName);
+		// Now (re)create all subterms
+	$loop = $projObj->setAllMarkerLoop();
+	while ( $loop->have_posts() ) : $loop->the_post();
+		$marker_id = get_the_ID();
+		$tempMoteValue = get_post_meta($marker_id, $custom_field, true);
+
+			// ignore empty or null values
+		if (!is_null($tempMoteValue) && $tempMoteValue != '') {
+			$tempMoteArray = array();
+			if ($mote_delim) {
+				$tempMoteArray = split($mote_delim, $tempMoteValue );
+			} else {
+				$tempMoteArray = array($tempMoteValue);
+			}
+			$theseTerms = array();
+			foreach ($tempMoteArray as $value) {
+					// Since we are specifying $parent_id, term_exists() will return 0/NULL or array
+				$term = term_exists($value, $rootTaxName, $parent_id);
+	   		 	if ($term) {
+	   		 		array_push($theseTerms, $term['term_id']);
+	   		 	}
+			}
+				// Ensure that marker is tagged with category terms for this mote
+			wp_set_post_terms($marker_id, $theseTerms, $rootTaxName, true);
+		}
+	endwhile;
+	delete_option("{$rootTaxName}_children");
+} // dhpBindTaxonomyToMarkers()
 
 
 // creates terms in taxonomy when a legend is created
@@ -1059,56 +1080,28 @@ function dhpGetLegendValues()
 	$rootTaxName  = $projObj->getRootTaxName();
 
 		// Does term have to be created? -- Do all the work if so
-	if (!term_exists($mote_name, $projRootTaxName)) {
-		wp_insert_term($term_name, $projRootTaxName);
+	if (!term_exists($mote_name, $rootTaxName)) {
+		wp_insert_term($mote_name, $rootTaxName);
+		$parent_term = get_term_by('name', $mote_name, $rootTaxName);
+		$parent_id = $parent_term->term_id;
 
 			// Get unique values used by the related custom field
 		$mArray = $projObj->getCustomFieldUniqueDelimValues($custom_field, $mote_delim);
 
 			// Initialize terms with mArray
-		$legendObject = dhpUpdateTaxonomy($mArray, $mote_name, $rootTaxName);
+		dhpInitializeTaxonomy($mArray, $parent_id, $rootTaxName);
+
+			// Bind project's markers to the taxonomic terms
+		dhpBindTaxonomyToMarkers($projObj, $custom_field, $parent_id, $rootTaxName, $mote_delim);
+	} else {
+		$parent_term = get_term_by('name', $mote_name, $rootTaxName);
+		$parent_id = $parent_term->term_id;
 	}
 
+	$results = array();
+	$results['cfValues'] = $mArray;
 		// Find all of the terms derived from mote (parent/head term) in the Project's taxonomy
-	$parent_term = get_term_by('name', $mote_name, $rootTaxName);
-	$parent_id = $parent_term->term_id;
 	$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
-
-		// Loop through markers for this Project, getting values for mote in each marker
-		//	and (re)-associating the marker with the taxonomic term
-		// This code is not currently used but may be revived if there is need to incorporate
-		//	CF values that are added after Legend initially created
-	// if ($doAssociate) {
-	// 	$loop = $projObj->setAllMarkerLoop();
-	// 	while ( $loop->have_posts() ) : $loop->the_post();
-	// 		$marker_id = get_the_ID();
-	// 		$tempMoteValue = get_post_meta($marker_id, $custom_field, true);
-
-	// 			// ignore empty or null values
-	// 		if (!is_null($tempMoteValue) && $tempMoteValue != '') {
-	// 			$tempMoteArray = array();
-	// 			if($mote_delim) {
-	// 				$tempMoteArray = split($mote_delim, $tempMoteValue );
-	// 			}
-	// 			else {
-	// 				$tempMoteArray = array($tempMoteValue);
-	// 			}
-	// 			$theseTerms = array();
-	// 			// $debugArray['terms'] = array();
-	// 			foreach ($tempMoteArray as &$value) {
-	// 				// array_push($debugArray, $value);
-	// 				$term = term_exists( $value, $rootTaxName, $parent_id );
-	// 	   		 	if($term) {
-	// 	   		 		array_push($theseTerms, $term['term_id']);
-	// 	   		 		// array_push($debugArray['terms'], $term['term_id']);
-	// 	   		 	}
-	// 			}
-	// 				// Ensure that marker is tagged with category terms for this mote
-	// 			wp_set_post_terms( $marker_id, $theseTerms, &$rootTaxName, true );
-	// 		}
-	// 	endwhile;
-	// 	delete_option("{$rootTaxName}_children");
-	// }
 
 		// Create comma-separated string listing terms derived from other motes
 	$exclude_string='';
@@ -1130,132 +1123,142 @@ function dhpGetLegendValues()
  	//$dhp_top_term = get_term_by('name', $term_name, $rootTaxName);
 	//$terms = get_terms($rootTaxName, array( 'orderby' => 'term_id' ) );
 
- 		//return tax id, name, count, order
+ 		// Need to parse icon_url data from the description metadata
  	if ( $t_count > 0 ){
    		foreach ( $terms_loaded as $term ) {
-   				// Set icon_url field value
-				// If term doesn't have a description field, load data from term_meta
+   				// First try to retrieve icon_url field value from description
    			if(strlen($term->description) > 0){
-   				$desc_object = json_decode($term->description);
+   				$desc_object = json_decode(stripslashes($term->description));
    				$term_url = $desc_object->icon_url;
 
+				// If term has no description field, load data from term_meta
    			} else {
-   				if(function_exists(get_term_meta)){
+   				if(function_exists(get_term_meta)) {
    					$term_url = get_term_meta($term->term_id, 'icon_url', true);
    				} else {
    					$term_url = null;
-   				}		
+   				}
    			}
 			$term->icon_url = $term_url;
 		}
 	}
 
-	die(json_encode($terms_loaded));
+	$results['terms'] = $terms_loaded;
+
+	die(json_encode($results));
 } // dhpGetLegendValues()
 
 
-//Lists all the terms in taxonomies(already created)
-// add_action( 'wp_ajax_dhpGetMoteValues', 'dhpGetMoteValues' );
+add_action( 'wp_ajax_dhpSaveLegendValues', 'dhpSaveLegendValues' );
 
-// // PURPOSE:	Handle Ajax call to get the unique values for a mote
-// // INPUT:	$_POST['project'] = ID of Project
-// //			$_POST['associate'] = true if need to (re-)associate mote values w/Markers; false if just collect what exists
-// //			$_POST['mote'] = mote record
-// // RETURNS:	JSON Object of all of the unique values of the Mote
+// PURPOSE:	Handle Ajax function to create or save terms associated with values defined
+//			by a mote in a Project (Saving results of Configure Legend function)
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['mote_name'] = name of mote (which is also head term/Legend name)
+//			$_POST['terms'] = flat array of mote/legend values
+// NOTES:	This function only expects and saves the parent, term_id, term_order and icon_url fields
 
-// function dhpGetMoteValues()
-// {
-// 	$mote        = $_POST['mote'];
-// 	$doAssociate = $_POST['associate'];
-// 	$projectID   = $_POST['project'];
-// 	$projObj     = new DHPressProject($projectID);
-// 	$rootTaxName = $projObj->getRootTaxName();
+function dhpSaveLegendValues()
+{
+	$mote_parent = $_POST['mote_name'];
+	$projectID = $_POST['project'];
 
-// 	// $debugArray = array();
-// 	// $debugArray['name'] = $mote['name'];
+	// $raw_term_data = stripslashes($_POST['terms']);
+	// $raw_term_data = stripslashes_deep($_POST['terms']);
+	// $raw_term_data = $_POST['terms'];
+	// $project_terms = json_decode($raw_term_data);
 
-// 		// Find all of the terms derived from $mote['name'] in the Project's taxonomy
-// 	$parent_term = get_term_by('name', $mote['name'], $rootTaxName);
-// 	$parent_id = $parent_term->term_id;
-// 	$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
+	$project_terms = $_POST['terms'];
 
-// 		// Loop through markers for this Project, getting values for mote in each marker
-// 		//	and associating the marker with the taxonomic term
+		// Convert mote_parent to id
+	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
 
-// 	if ($doAssociate) {
-// 		$loop = $projObj->setAllMarkerLoop();
-// 		while ( $loop->have_posts() ) : $loop->the_post();
-// 			$marker_id = get_the_ID();
-// 			$tempMoteValue = get_post_meta($marker_id, $mote['custom-fields'], true);
+$results = array();
+$results['original'] = $project_terms;
 
-// 				// ignore empty or null values
-// 			if (!is_null($tempMoteValue) && $tempMoteValue != '') {
-// 				$tempMoteArray = array();
-// 				if($mote['delim']) {
-// 					$tempMoteArray = split( $mote['delim'], $tempMoteValue );
-// 				}
-// 				else {
-// 					$tempMoteArray = array($tempMoteValue);
-// 				}
-// 				$theseTerms = array();
-// 				// $debugArray['terms'] = array();
-// 				foreach ($tempMoteArray as &$value) {
-// 					// array_push($debugArray, $value);
-// 					$term = term_exists( $value, $rootTaxName, $parent_id );
-// 		   		 	if($term) {
-// 		   		 		array_push($theseTerms, $term['term_id']);
-// 		   		 		// array_push($debugArray['terms'], $term['term_id']);
-// 		   		 	}
-// 				}
-// 					// Ensure that marker is tagged with category terms for this mote
-// 				wp_set_post_terms( $marker_id, $theseTerms, &$rootTaxName, true );
-// 			}
-// 		endwhile;
-// 		delete_option("{$rootTaxName}_children");
-// 	}
+	foreach ($project_terms as $term) {
+		// $term_name      = $term->name;
+		$parent_term_id = $term->parent;
+		$term_id        = $term->term_id;
+		$term_order     = $term->term_order;
+		$meta_value     = $term->icon_url;
 
-// 		// Create comma-separated string listing terms derived from other motes
-// 	$exclude_string;
-// 	$exclude_count = 0;
-// 	foreach ( $parent_terms_to_exclude as $term ) {
-// 		if($term->term_id != $parent_id) {
-// 			if($exclude_count >0) {
-// 				$exclude_string.=',';
-// 			}
-// 			$exclude_string.= $term->term_id;
-// 			$exclude_count = 1;
-// 		}
-//   	    //array_push($exclude_array, $term->term_id);
-// 	}
+		if ($meta_value=='undefined') { $meta_value = '';}
 
-// 		// Now, get all taxonomic terms for project, excluding all other motes
-// 	$terms_loaded = get_terms($rootTaxName, 'exclude_tree='.$exclude_string.'&orderby=term_group&hide_empty=0');
-// 	//$terms = get_terms($rootTaxName, array( 'orderby' => 'term_id' ) );
-//  	$t_count = count($terms_loaded);
+			// Encode and append icon_url metadata
+		$icon_url = add_magic_quotes(json_encode(array('icon_url' => $meta_value)));
+		$args = array('parent' => $parent_term_id, 'term_group' =>  $term_order, 'description' => $icon_url);
+			// Update term settings
+		wp_update_term($term_id, $projRootTaxName, $args);
+array_push($results, array($term_id => $args));
+	}
+	delete_option("{$projRootTaxName}_children");
 
-//  	//return wp tax id,name,count,order
-//  	//$dhp_top_term = get_term_by('name', $term_name, $rootTaxName);
-//  	if ( $t_count > 0 ){
-//    		foreach ( $terms_loaded as $term ) {
-// 			// if term doesn't have a length for description load from term_meta
-//    			if(strlen($term->description) > 0){
-//    				$desc_object = json_decode($term->description);
-//    				$term_url = $desc_object->icon_url;
-//    			}
-//    			else {
-//    				if(function_exists(get_term_meta)){
-//    					$term_url = get_term_meta($term->term_id, 'icon_url', true);
-//    				}
-//    				else {
-//    					$term_url = null;
-//    				}		
-//    			}
-// 			$term->icon_url = $term_url;
-// 		}
-// 	}
+	die(json_encode($results));
+} // dhpSaveLegendValues()
 
-// 	die(json_encode($terms_loaded));
-// } // dhpGetMoteValues()
+
+add_action( 'wp_ajax_dhpCreateTermInTax', 'dhpCreateTermInTax' );
+
+// PURPOSE:	Handle adding new terms to taxonomy (that don't pre-exist in Marker data)
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['newTerm'] = name of taxonomy term to add
+//			$_POST['legendName'] = name of parent term (mote/Legend) under which it should be added
+// RETURNS:	ID of new term
+
+function dhpCreateTermInTax()
+{
+	$projectID 			= $_POST['project'];
+	$dhp_term_name		= $_POST['newTerm'];
+	$parent_term_name	= $_POST['legendName'];
+
+	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
+	$parent_term = term_exists( $parent_term_name, $projRootTaxName );
+	$parent_term_id = $parent_term['term_id'];
+	$args = array( 'parent' => $parent_term_id );
+	// create new term
+	$newTermId = wp_insert_term( $dhp_term_name, $projRootTaxName, $args );
+	// $newTerm = get_term_by('id', $newTermId['term_id'], $projRootTaxName);
+		// Clear term taxonomy
+	delete_option("{$projRootTaxName}_children");
+
+	die(json_encode($newTermId));
+} // dhpCreateTermInTax()
+
+
+add_action( 'wp_ajax_dhpDeleteHeadTerm', 'dhpDeleteHeadTerm' );
+
+// PURPOSE:	Delete taxonomic terms in Project and all terms derived from it (as parent)
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['term_name'] = name of taxonomy head term to delete
+
+function dhpDeleteHeadTerm()
+{
+	$projectID = $_POST['project'];
+	$dhp_term_name = $_POST['term_name'];
+	$dhp_project = get_post($projectID);
+	$dhp_project_slug = $dhp_project->post_name;
+
+		// By default (mote has no corresponding Legend)
+	$dhp_delete_children = array();
+
+	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
+		// Get ID of term to delete -- don't do anything more if it doesn't exist
+	$dhp_delete_parent_term = get_term_by('name', $dhp_term_name, $projRootTaxName);
+	if ($dhp_delete_parent_term) {
+		$dhp_delete_parent_id = $dhp_delete_parent_term->term_id;
+			// Must gather all children and delete them too (first!)
+		$dhp_delete_children = get_term_children($dhp_delete_parent_id, $projRootTaxName);
+		if ($dhp_delete_children != WP_Error) {
+			foreach ($dhp_delete_children as $delete_term) {
+				wp_delete_term($delete_term, $projRootTaxName);
+			}
+		}
+		wp_delete_term($dhp_delete_parent_id, $projRootTaxName);
+	}
+
+	die(json_encode($dhp_delete_children));
+} // dhpDeleteHeadTerm()
 
 
 // Enable for both editing and viewing
@@ -1728,121 +1731,6 @@ function dhpDeleteCustomField()
 	
 	die();
 } // dhpDeleteCustomField()
-
-
-add_action( 'wp_ajax_dhpSaveLegendValues', 'dhpSaveLegendValues' );
-
-// PURPOSE:	Handle Ajax function to create or save all terms associated with all of the values defined
-//			by a mote in a Project (Saving results of Configure Legend function)
-// INPUT:	$_POST['project'] = ID of Project
-//			$_POST['mote_name'] = name of mote (which is also head term/Legend name)
-//			$_POST['terms'] = flat array of mote/legend values
-
-function dhpSaveLegendValues()
-{
-	$mote_parent = $_POST['mote_name'];
-	$projectID = $_POST['project'];
-	$dhp_project_terms = stripslashes($_POST['terms']);
-
-	$dhp_project_terms = json_decode($dhp_project_terms);
-	// $termDetailsArray = array('parentTerm'=>$mote_parent, 'projectID' => $dhp_projectID, 'termsArray'=>$dhp_project_terms1);
-
-		// Convert mote_parent to id
-	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-	// $mote_parentID = get_term_by('name', $mote_parent, $projRootTaxName);
-	$myCount = count($dhp_project_terms);
-
-	foreach ($dhp_project_terms as $term) {
-		// $term_name      = $term->name;
-		$parent_term_id = $term->parent;		if (is_string($parent_term_id)) { $parent_term_id = (int)$parent_term_id; }
-		$term_id        = $term->term_id;		if (is_string($term_id)) { $term_id = (int)$term_id; }
-		$term_order     = $term->term_order;	if (is_string($term_order)) { $term_order = (int)$term_order; }
-		$meta_value     = $term->icon_url;
-
-		if($meta_value=='undefined') { $meta_value = '';}
-
-			// If set parent to Legend head term by default if empty parent ID (and not term itself)
-			// -- This code shouldn't be necessary if input data is correct
-		// if( ($parent_term_id==0||$parent_term_id==""||$parent_term_id==null) && ($term_id!=$mote_parent) ) {
-		// 	$parent_term_id = $mote_parent;
-		// }
-			// Add icon_url metadata
-		$new_icon_url = json_encode(array('icon_url' => $meta_value));
-		$args = array( 'parent' => $parent_term_id, 'term_group' =>  $term_order, 'description' => $new_icon_url );
-			// Update term settings
-		wp_update_term( $term_id, $projRootTaxName, $args );
-
-		// NO LONGER NEEDED. SAVES IN DESCRIPTION ABOVE
-		// delete_term_meta($term_id, 'icon_url');
-		// add_term_meta($term_id, 'icon_url', $meta_value);
-	}
-	delete_option("{$projRootTaxName}_children");
-	// $newArgs = array('parentTerm'=>$mote_parent, 'projectID' => $projectID, 'termsArray'=> $dhp_project_terms, 'count'=> $myCount);
-
-	// die(json_encode($newArgs));
-	die();
-} // dhpSaveLegendValues()
-
-
-add_action( 'wp_ajax_dhpCreateTermInTax', 'dhpCreateTermInTax' );
-
-// PURPOSE:	Handle adding new terms to taxonomy (that don't pre-exist in Marker data)
-// INPUT:	$_POST['project'] = ID of Project
-//			$_POST['newTerm'] = name of taxonomy term to add
-//			$_POST['legendName'] = name of parent term (mote/Legend) under which it should be added
-// RETURNS:	ID of new term
-
-function dhpCreateTermInTax()
-{
-	$projectID 			= $_POST['project'];
-	$dhp_term_name		= $_POST['newTerm'];
-	$parent_term_name	= $_POST['legendName'];
-
-	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-	$parent_term = term_exists( $parent_term_name, $projRootTaxName );
-	$parent_term_id = $parent_term['term_id'];
-	$args = array( 'parent' => $parent_term_id );
-	// create new term
-	$newTermId = wp_insert_term( $dhp_term_name, $projRootTaxName, $args );
-	// $newTerm = get_term_by('id', $newTermId['term_id'], $projRootTaxName);
-		// Clear term taxonomy
-	delete_option("{$projRootTaxName}_children");
-
-	die(json_encode($newTermId));
-} // dhpCreateTermInTax()
-
-
-add_action( 'wp_ajax_dhpDeleteHeadTerm', 'dhpDeleteHeadTerm' );
-
-// PURPOSE:	Delete taxonomic terms in Project and all terms derived from it (as parent)
-// INPUT:	$_POST['project'] = ID of Project
-//			$_POST['term_name'] = name of taxonomy head term to delete
-
-function dhpDeleteHeadTerm()
-{
-	$projectID = $_POST['project'];
-	$dhp_term_name = $_POST['term_name'];
-	$dhp_project = get_post($projectID);
-	$dhp_project_slug = $dhp_project->post_name;
-
-		// By default (mote has no corresponding Legend)
-	$dhp_delete_children = array();
-
-	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-		// Get ID of term to delete -- don't do anything more if it doesn't exist
-	$dhp_delete_parent_term = get_term_by('name', $dhp_term_name, $projRootTaxName);
-	if ($dhp_delete_parent_term) {
-		$dhp_delete_parent_id = $dhp_delete_parent_term->term_id;
-			// Must gather all children and delete them too (first!)
-		$dhp_delete_children = get_term_children($dhp_delete_parent_id, $projRootTaxName);
-		foreach ($dhp_delete_children as $delete_term) {
-			wp_delete_term($delete_term, $projRootTaxName);
-		}
-		wp_delete_term($dhp_delete_parent_id, $projRootTaxName);
-	}
-
-	die(json_encode($dhp_delete_children));
-} // dhpDeleteTerms()
 
 
 add_action( 'wp_ajax_dhpGetCustomFields', 'dhpGetCustomFields' );

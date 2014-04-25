@@ -307,18 +307,16 @@ class DHPressProject
 			//$temp_post = get_post($marker_id);
 
 				// Get the value in this marker for the custom field
-			$tempMoteValue = get_post_meta($marker_id, $custom_name, true);
+			$moteValue = get_post_meta($marker_id, $custom_name, true);
 
-			if($delim) {
-				$tempMoteArray = split($delim,$tempMoteValue);
+			if ($delim && $delim != '') {
+				$valueArray = split($delim, $moteValue);
+				foreach ($valueArray as $value) {
+		   		 	array_push($moteArray, $value);
+				}
 			} else {
-				$tempMoteArray = array($tempMoteValue);
+	   		 	array_push($moteArray, $moteValue);
 			}
-
-			foreach ($tempMoteArray as &$value) {
-	   		 	array_push($moteArray,$value);
-			}
-			
 		endwhile;
 
 		$result = array_unique($moteArray);

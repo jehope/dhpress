@@ -10,6 +10,18 @@
 //          Problems with jQueryUI in WordPress means that must set dialogs to 'draggable: false'
 
 jQuery(document).ready(function($) {
+
+      // Constants
+  var _blankSettings = {
+        'project-details': { 'version': 2, 'home-label': '', 'home-url': '', 'max-inactive': 0 },
+        'motes': [],
+        'entry-points': [],
+        'views': { 'post': {},
+              'select': { 'view-type': [], 'content': [] },
+              'transcript': { content: [] }
+            }
+        };
+
     // Parameters passed via localization
   var ajax_url     = dhpDataLib.ajax_url;
   var projectID    = dhpDataLib.projectID;
@@ -23,17 +35,14 @@ jQuery(document).ready(function($) {
   mapLayersParam = JSON.parse(mapLayersParam);
   mapLayersParam = normalizeArray(mapLayersParam);
 
-    // Get initial project settings
-  var savedSettings = JSON.parse($('#project_settings').val());
+    // Get initial project settings -- make blank settings if new project
+  var savedSettings = $('#project_settings').val();
+  if (savedSettings.length < 2) {
+    savedSettings = _blankSettings;
+  } else {
+    savedSettings = JSON.parse(savedSettings);
+  }
 
-      // Constants
-  var _blankSettings = { 'project-details': { 'version': 2, 'home-label': '', 'home-url': '', 'max-inactive': 0 },
-        'motes': [], 'entry-points': [],
-        'views': { 'post': {},
-              'select': { 'view-type': [], 'content': [] },
-              'transcript': { content: [] }
-            }
-        };
 
 //===================================== UTILITIES ===================================
 
@@ -188,7 +197,7 @@ jQuery(document).ready(function($) {
       // PURPOSE: Handle user selection to save Project Settings to WP
     self.saveSettings = function() {
       var currentSettings = self.bundleSettings();
-      var settingsData = JSON.stringify(settingsData);
+      var settingsData = JSON.stringify(currentSettings);
       console.log("Saving current settings: "+settingsData);
       saveSettingsInWP(settingsData);
     };
@@ -583,6 +592,8 @@ jQuery(document).ready(function($) {
     self.configCat = function(theMote, event) {
         // Whether we seem to be using icons or colors in this legend
       var useIcons=false;
+        // The taxonomic ID of the head term of the Legend
+      var headTermID;
 
         // Remove previous legend data from modal
       $('#mdl-config-cat #category-tree .dd-list').empty();
@@ -610,13 +621,12 @@ jQuery(document).ready(function($) {
                   // Need to convert from nestable's format to flat format used by WP:
                   //    Disregard old parent field, as data- attributes not updated and user may have changed hierarchy
                 var savedTree = $('#category-tree').nestable('serialize');
-// console.log("Serialized Results"+JSON.stringify(savedTree));
                 var flatArray = [], termOrder=0;
                 ko.utils.arrayForEach(savedTree, function(treeItem) {
                   var newItem = {};
                   var domItem;
                   newItem.term_id = treeItem.id;
-                  newItem.parent = 0;
+                  newItem.parent = headTermID;
                   newItem.term_order = termOrder++;
                     // Extract data from the visual div for this item
                   domItem = $('li[data-id="'+treeItem.id+'"] .viz-div');
@@ -637,7 +647,6 @@ jQuery(document).ready(function($) {
                     }); // arrayForEach
                   } // if treeItem.children
                 }); // arrayForEach
-// console.log("WP Flat Array Results"+JSON.stringify(flatArray));
 
                 saveLegendValuesInWP(theMote.name, flatArray);
                   // Close modal on assumption that save works
@@ -852,7 +861,6 @@ jQuery(document).ready(function($) {
         //          (or cause extra level in hierarchy), so we must find it and exclude from
         //          building of nested
       function unpackLegendData(termArray) {
-        var headTermID;
           // Ensure IDs are integers (not strings) and find head term's ID
         ko.utils.arrayForEach(termArray, function(thisTerm) {
           if (typeof(thisTerm.term_id) === 'string') {
@@ -915,20 +923,20 @@ jQuery(document).ready(function($) {
 
           // Bind code to handle adding a new term
         $('#add-new-term').click(function() {
-          var newTerm;
-          newTerm = $('#ed-new-term').val();
+          var newTerm = $('#ed-new-term').val();
           if (newTerm != null && newTerm != '') {
-              // TO DO -- Call AJAX function to WP to get newTermID
-            var newTermID = 1111;
             var defaultViz = getDefaultViz();
-              // Insert new item (without parent) at top of list, binding Assign code to section
-            var totalElement = $('<li class="dd-item dd3-item" data-id="'+newTermID+'" data-name="'+
-                newTerm+'" data-parent="0"> <div class="dd-handle dd3-handle">Drag</div><div class="dd3-content">'+
-                newTerm+' (0) '+'&nbsp;&nbsp;<div class="select-legend">Assign '+defaultViz.html+'</div></div></li>');
-            $('.select-legend', totalElement).click(handleAssign);
-            $('#category-tree > .dd-list').prepend(totalElement);
-              // Clear out new term field
-            $('#ed-new-term').val('');
+            function insertNewTerm(newTermID) {
+                // Insert new item (without parent) at top of list, binding Assign code to section
+              var totalElement = $('<li class="dd-item dd3-item" data-id="'+newTermID+'" data-name="'+
+                  newTerm+'" data-parent="0"> <div class="dd-handle dd3-handle"></div><div class="dd3-content">'+
+                  newTerm+' (0) '+'&nbsp;&nbsp;<div class="select-legend">Assign '+defaultViz.html+'</div></div></li>');
+              $('.select-legend', totalElement).click(handleAssign);
+              $('#category-tree > .dd-list').prepend(totalElement);
+                // Clear out new term field
+              $('#ed-new-term').val('');
+            }
+            dhpCreateTermInTax(newTerm, theMote.name, insertNewTerm);
           }
         });
 
@@ -1039,7 +1047,7 @@ jQuery(document).ready(function($) {
     }; // delEP()
 
       // PURPOSE: Direct Knockout to which template to use to display this entry point
-    self.calcTemplate = function(theEP) {
+    self.calcEPTemplate = function(theEP) {
       switch (theEP.type) {
       case 'map':
         return 'ep-map-template';
@@ -1447,6 +1455,7 @@ jQuery(document).ready(function($) {
 
     // PURPOSE: Saves project settings data object
   function saveSettingsInWP(settingsData) {
+console.log("Project settings = "+settingsData);
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1456,7 +1465,7 @@ jQuery(document).ready(function($) {
               settings: settingsData
           },
           success: function(data, textStatus, XMLHttpRequest) {
-            console.log("Settings saved successfully!");
+            console.log("Save settings returned "+data);
             projObj.cleanSettings();
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
@@ -1478,20 +1487,22 @@ jQuery(document).ready(function($) {
     //            count     = # times value/tag used (string not integer!)
     //            icon_url  = visual metadata (#number for color, "." for Maki-icon)
   function getLegendValuesInWP(moteName, moteCF, dataDelim, funcToCall) {
+console.log("Get Legend values for "+moteCF+" w/delim "+dataDelim+" in Project "+projectID);
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
           data: {
               action: 'dhpGetLegendValues',
-              project: projectID,
+              moteName: moteName,
               delim: dataDelim,
               customField: moteCF,
-              moteName: moteName
+              project: projectID
           },
           success: function(data, textStatus, XMLHttpRequest){
 console.log("get Legends returns: "+data);
                 // data is a JSON object
-              funcToCall(JSON.parse(data));
+            var results = JSON.parse(data);
+            funcToCall(results.terms);
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1505,7 +1516,7 @@ console.log("get Legends returns: "+data);
     // INPUT:   legendName = Head term id (legend name)
     //          taxTermsList = flat list containing data for updating terms in WP
   function saveLegendValuesInWP(legendName, taxTermsList) {
-    // console.log("Create legend for treeParentID " + treeParentID + " in Project ID " + projectID);
+console.log("Save legend for " + legendName + " in Project ID " + projectID + " as "+JSON.stringify(taxTermsList));
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1515,10 +1526,10 @@ console.log("get Legends returns: "+data);
               project: projectID,
               terms: taxTermsList
           },
-          success: function(data, textStatus, XMLHttpRequest){
-              // Need to add callback function??
+          success: function(data, textStatus, XMLHttpRequest) {
+console.log("Saved return data: "+data);
           },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
              alert(errorThrown);
           }
       });
@@ -1536,8 +1547,7 @@ console.log("get Legends returns: "+data);
               legendName: moteName
           },
           success: function(data, textStatus, XMLHttpRequest){
-              //console.log(textStatus);
-              console.log("New legend term: "+data);
+console.log("New legend term: "+data);
               var termID = JSON.parse(data);
               if (typeof(termID) == 'string') { termID = parseInt(termID); }
               callBack(termID);
@@ -1555,12 +1565,12 @@ console.log("get Legends returns: "+data);
           type: 'POST',
           url: ajax_url,
           data: {
-              action: 'dhpDeleteTerm',
+              action: 'dhpDeleteHeadTerm',
               project: projectID,
               term_name: termName
           },
           success: function(data, textStatus, XMLHttpRequest){
-              console.log('deleteTermInTax completed: '+data);
+console.log('deleteTermInTax completed: '+data);
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);

@@ -44,7 +44,7 @@
             <button data-bind="jqButton, click: createMapEP">Create Map</button>
             <button data-bind="jqButton, click: createCardsEP">Create Cards</button>
           </p>
-          <div data-bind="template: { name: calcTemplate, foreach: entryPoints, as: 'theEP' }"></div>
+          <div data-bind="template: { name: calcEPTemplate, foreach: entryPoints, as: 'theEP' }"></div>
       </div>
 
       <h3>Views</h3>
