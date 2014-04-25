@@ -61,7 +61,7 @@ jQuery(document).ready(function($) {
   }
 
   var mapLayersParam = $('#map-layers').text();
-  if (mapLayersParam > 2) {
+  if (mapLayersParam.length > 2) {
     mapLayersParam = JSON.parse(mapLayersParam);
     mapLayersParam = normalizeArray(mapLayersParam);
   } else {
@@ -1489,7 +1489,6 @@ console.log("Using blank settings")
 
     // PURPOSE: Saves project settings data object
   function saveSettingsInWP(settingsData) {
-console.log("Project settings = "+settingsData);
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1521,7 +1520,6 @@ console.log("Project settings = "+settingsData);
     //            count     = # times value/tag used (string not integer!)
     //            icon_url  = visual metadata (#number for color, "." for Maki-icon)
   function getLegendValuesInWP(moteName, moteCF, dataDelim, funcToCall) {
-console.log("Get Legend values for "+moteCF+" w/delim "+dataDelim+" in Project "+projectID);
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1581,7 +1579,6 @@ console.log("Saved return data: "+data);
               legendName: moteName
           },
           success: function(data, textStatus, XMLHttpRequest){
-console.log("New legend term: "+data);
               var termID = JSON.parse(data);
               if (typeof(termID) == 'string') { termID = parseInt(termID); }
               callBack(termID);
