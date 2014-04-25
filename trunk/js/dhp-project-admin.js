@@ -13,31 +13,65 @@ jQuery(document).ready(function($) {
 
       // Constants
   var _blankSettings = {
-        'project-details': { 'version': 2, 'home-label': '', 'home-url': '', 'max-inactive': 0 },
-        'motes': [],
+        'project-details': {
+          version: 2,
+          'home-label': '',
+          'home-url': '',
+          'max-inactive': 0
+        },
+        motes: [],
         'entry-points': [],
-        'views': { 'post': {},
-              'select': { 'view-type': [], 'content': [] },
-              'transcript': { content: [] }
-            }
-        };
+        views: {
+          'viz-fullscreen': true, 'viz-width': 500, 'viz-height': 500,
+          select: {
+            title: '',
+            width: 'medium',
+            link: 'disable',  'link-label': '',  'link-new-tab': true,
+            link2: 'disable', 'link2-label': '', 'link2-new-tab': true,
+            'view-type': [],
+            content: []
+          },
+          post: {
+            title: '',
+            content: [],
+          },
+          transcript: {
+            audio: 'disable',
+            transcript: 'disable',
+            transcript2: 'disable',
+            timecode: 'disable',
+            source: 'disable',
+            content: []
+          }
+        }
+    };
 
     // Parameters passed via localization
   var ajax_url     = dhpDataLib.ajax_url;
   var projectID    = dhpDataLib.projectID;
 
-    // Parameters passed via HTML elements; need to ensure encoded as arrays (not Object properties)
+    // Parameters passed via HTML elements
+    // Need to ensure encoded as arrays (not Object properties) and handle empty params
   var customFieldsParam = $('#custom-fields').text();
-  customFieldsParam = JSON.parse(customFieldsParam);
-  customFieldsParam = normalizeArray(customFieldsParam);
+  if (customFieldsParam.length > 2) {
+    customFieldsParam = JSON.parse(customFieldsParam);
+    customFieldsParam = normalizeArray(customFieldsParam);
+  } else {
+    customFieldsParam = [];
+  }
 
   var mapLayersParam = $('#map-layers').text();
-  mapLayersParam = JSON.parse(mapLayersParam);
-  mapLayersParam = normalizeArray(mapLayersParam);
+  if (mapLayersParam > 2) {
+    mapLayersParam = JSON.parse(mapLayersParam);
+    mapLayersParam = normalizeArray(mapLayersParam);
+  } else {
+    mapLayersParam = [];
+  }
 
     // Get initial project settings -- make blank settings if new project
   var savedSettings = $('#project_settings').val();
   if (savedSettings.length < 2) {
+console.log("Using blank settings")
     savedSettings = _blankSettings;
   } else {
     savedSettings = JSON.parse(savedSettings);
@@ -975,7 +1009,7 @@ jQuery(document).ready(function($) {
 //-------------------------------------- Entry Points --------------------------------------
 
       // User-editable values
-    self.entryPoints = ko.observableArray();
+    self.entryPoints = ko.observableArray([]);
 
       // Methods
 
@@ -1135,13 +1169,13 @@ jQuery(document).ready(function($) {
     self.edSelLink2Mt  = ko.observable('');
     self.edSelLink2Lbl = ko.observable('');
     self.edSelLink2NewTab = ko.observable(true);
-    self.widgetList = ko.observableArray();
-    self.selMoteList = ko.observableArray();
+    self.widgetList = ko.observableArray([]);
+    self.selMoteList = ko.observableArray([]);
 
     self.edPostTitle = ko.observable('');
-    self.postMoteList = ko.observableArray();
+    self.postMoteList = ko.observableArray([]);
 
-    self.taxMoteList = ko.observableArray();
+    self.taxMoteList = ko.observableArray([]);
 
     self.edTrnsAudio = ko.observable('');
     self.edTrnsTransc = ko.observable('');

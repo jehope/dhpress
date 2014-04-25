@@ -402,20 +402,6 @@ function dhp_build_HTML_maplayer_options($layerArray)
 } // dhp_build_HTML_maplayer_options()
 
 
-// PURPOSE:	Create HTML for option buttons for listing custom fields in print_new_bootstrap_html()
-// INPUT:	$cf_array = list of custom fields
-// RETURNS:	String containing HTML
-
-// function create_custom_field_option_list($cf_array)
-// {
-// 	$optionHtml .='<option value="">--</option><option value="the_content">Post Content</option>';
-// 	foreach ($cf_array as $key => $value) {
-// 		$optionHtml .='<option value="'.$value.'">'.$value.'</option>';
-// 	}
-// 	return $optionHtml;
-// } // create_custom_field_option_list()
-
-
 // 'save_post' is called after post is created or updated
 add_action('save_post', 'save_dhp_project_settings');
 
