@@ -1075,8 +1075,9 @@ function dhpGetLegendValues()
 	$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
 
 		// Loop through markers for this Project, getting values for mote in each marker
-		//	and associating the marker with the taxonomic term
-		// --- This code should not be needed now
+		//	and (re)-associating the marker with the taxonomic term
+		// This code is not currently used but may be revived if there is need to incorporate
+		//	CF values that are added after Legend initially created
 	// if ($doAssociate) {
 	// 	$loop = $projObj->setAllMarkerLoop();
 	// 	while ( $loop->have_posts() ) : $loop->the_post();

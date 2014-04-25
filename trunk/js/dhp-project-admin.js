@@ -7,6 +7,7 @@
 // NOTES:   Relies on some HTML data generated in show_dhp_project_settings_box() of dhp-project-functions.php
 //          Data that relies on WP queries cannot be passed in via "localization" pf dhpDataLib because that
 //            causes WP globals (like $post) to be overwritten
+//          Problems with jQueryUI in WordPress means that must set dialogs to 'draggable: false'
 
 jQuery(document).ready(function($) {
     // Parameters passed via localization
@@ -455,6 +456,7 @@ jQuery(document).ready(function($) {
         width: 'auto',
         modal: true,
         dialogClass: 'wp-dialog',
+        draggable: false,
         buttons: {
           'Delete': function() {
 
@@ -531,11 +533,12 @@ jQuery(document).ready(function($) {
 
       var newModal = $('#mdl-edit-mote');
       newModal.dialog({
-          width: 350,
-          height: 300,
+          width: 370,
+          height: 320,
           modal : true,
           autoOpen: false,
           dialogClass: 'wp-dialog',
+          draggable: false,
           buttons: [
             {
               text: 'Cancel',
@@ -594,6 +597,7 @@ jQuery(document).ready(function($) {
           modal : true,
           autoOpen: false,
           dialogClass: 'wp-dialog',
+          draggable: false,
           buttons: [
             {
               text: 'Cancel',
@@ -767,6 +771,7 @@ jQuery(document).ready(function($) {
               modal : true,
               autoOpen: false,
               dialogClass: 'wp-dialog',
+              draggable: false,
               buttons: [
                 {
                   text: 'Cancel',
@@ -1019,6 +1024,7 @@ jQuery(document).ready(function($) {
         height:160,
         modal: true,
         dialogClass: 'wp-dialog',
+        draggable: false,
         buttons: {
           'Delete': function() {
             self.entryPoints.remove(theEP);
@@ -1483,6 +1489,7 @@ jQuery(document).ready(function($) {
               moteName: moteName
           },
           success: function(data, textStatus, XMLHttpRequest){
+console.log("get Legends returns: "+data);
                 // data is a JSON object
               funcToCall(JSON.parse(data));
           },
