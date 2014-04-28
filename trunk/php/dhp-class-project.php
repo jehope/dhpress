@@ -424,8 +424,8 @@ class DHPressProject
 	{
 		$this->ensureSettings();
 
-		foreach($this->settings['entry-points'] as $eps) {
-			if($eps['type'] == $typeName) {
+		foreach($this->settings->{'entry-points'} as $eps) {
+			if($eps->type == $typeName) {
 				return $eps;
 			}
 		}
@@ -439,7 +439,7 @@ class DHPressProject
 	{
 		$this->ensureSettings();
 
-		$eps = $this->settings['entry-points'];
+		$eps = $this->settings->{'entry-points'};
 		if ($index >= count($eps)) {
 			return null;
 		}
@@ -451,7 +451,7 @@ class DHPressProject
 	public function getAllEntryPoints()
 	{
 		$this->ensureSettings();
-		return $this->settings['entry-points'];
+		return $this->settings->{'entry-points'};
 	} // getAllEntryPoints()
 
 
@@ -460,9 +460,11 @@ class DHPressProject
 	{ 
 		$this->ensureSettings();
 
-		foreach($this->settings['motes'] as $mote)
-			if($mote['name']==$moteName)
+		foreach($this->settings->motes as $mote) {
+			if($mote->name==$moteName) {
 				return $mote;
+			}
+		}
 		return null;
 	} // getMoteByName()
 
@@ -474,15 +476,15 @@ class DHPressProject
 		if ($mote == null) {
 			return null;
 		}
-		return $mote['custom-fields'];
+		return $mote->{'custom-fields'};
 	} // getCustomFieldForMote()
 
 		// RETURNS: true if the Select Modal contains $viewType
 	public function selectModalHas($viewType)
 	{
 		$this->ensureSettings();
-		if($this->settings['views']['select']['view-type']) {
-			foreach($this->settings['views']['select']['view-type'] as $vt) {
+		if($this->settings->views->select->{'view-type'}) {
+			foreach($this->settings->views->select->{'view-type'} as $vt) {
 				if ($vt === $viewType) {
 					return true;
 				}
@@ -493,26 +495,11 @@ class DHPressProject
 	} // selectModalHas()
 
 
-		// RETURNS: Map type ID for layer whose type is typeName in epList
-	public function getMapLayerTypeID($typeName, $layerList)
-	{
-		$this->ensureSettings();
-
-		foreach($layerList as $layer) {
-			if($layer['mapType'] == $typeName) {
-				$map_id = get_post_meta($layer['id'],'dhp_map_typeid');
-				return $map_id[0];
-			}
-		}
-		return null;
-	} // getMapLayerTypeID()
-
-
 		// RETURNS: All Mote settings in Project
 	public function getAllMotes()
 	{ 
 		$this->ensureSettings();
-		return $this->settings['motes'];
+		return $this->settings->motes;
 	} // getAllMotes()
 
 
@@ -580,93 +567,97 @@ class DHPressProject
     		if (empty($settingsString)) {
     			return;
     		}
-    		$this->settings = json_decode($settingsString, true);
+    		$this->settings = json_decode($settingsString, false);
     		if (is_null($this->settings)) {
 	    		trigger_error("Cannot decode project settings as JSON");
     		}
 
 	 		$settingsArray = $this->settings;
+
 	 			// Do we need to update format from 1 to 2?
-	 		if (is_null($settingsArray['project-details']['version'])) {
-	 			$newSettings = array();
-	 			$newSettings['project-details'] = new ArrayObject($settingsArray['project-details']);
-	 			$newSettings['project-details']['version'] = 2;
+	 			// NO LONGER SUPPORTING version 1 settings
+	 		// if (is_null($settingsArray->{'project-details'}->version)) {
+	 		// 	$newSettings = array();
+	 		// 	$newSettings['project-details'] = new ArrayObject($settingsArray['project-details']);
+	 		// 	$newSettings['project-details']['version'] = 2;
 
-	 			$newSettings['motes'] = DHPressProject::doCloneArray($settingsArray['motes']);
+	 		// 	$newSettings['motes'] = DHPressProject::doCloneArray($settingsArray['motes']);
 
-	 				// prepare views setting for values
-	 			$newSettings['views'] = array();
-	 			$newSettings['views']['transcript'] = array();
-				$newSettings['views']['transcript']['audio']       = '';
-				$newSettings['views']['transcript']['transcript']  = '';
-				$newSettings['views']['transcript']['transcript2'] = '';
-				$newSettings['views']['transcript']['timecode']    = '';
-				$newSettings['views']['transcript']['source']  	   = '';
-				$newSettings['views']['transcript']['content']     = array();
+	 		// 		// prepare views setting for values
+	 		// 	$newSettings['views'] = array();
+	 		// 	$newSettings['views']['transcript'] = array();
+				// $newSettings['views']['transcript']['audio']       = '';
+				// $newSettings['views']['transcript']['transcript']  = '';
+				// $newSettings['views']['transcript']['transcript2'] = '';
+				// $newSettings['views']['transcript']['timecode']    = '';
+				// $newSettings['views']['transcript']['source']  	   = '';
+				// $newSettings['views']['transcript']['content']     = array();
 
-	 			$newSettings['entry-points'] = array();
+	 		// 	$newSettings['entry-points'] = array();
 
-	 			foreach ($settingsArray['entry-points'] as $epSetting) {
-	 					// Just copy map settings over
-	 				if ($epSetting['type'] == 'map') {
-	 					array_push($newSettings['entry-points'], DHPressProject::doCloneArray($epSetting));
+	 		// 	foreach ($settingsArray['entry-points'] as $epSetting) {
+	 		// 			// Just copy map settings over
+	 		// 		if ($epSetting['type'] == 'map') {
+	 		// 			array_push($newSettings['entry-points'], DHPressProject::doCloneArray($epSetting));
 
-	 					// Must copy transcript settings to new variables
-	 				} elseif ($epSetting['type'] == 'transcript') {
-						$newSettings['views']['transcript']['audio']       = DHPressProject::doCloneObject($epSetting['settings']['audio']);
-						$newSettings['views']['transcript']['transcript']  = DHPressProject::doCloneObject($epSetting['settings']['transcript']);
-						$newSettings['views']['transcript']['transcript2'] = DHPressProject::doCloneObject($epSetting['settings']['transcript2']);
-						$newSettings['views']['transcript']['timecode']    = DHPressProject::doCloneObject($epSetting['settings']['timecode']);
+	 		// 			// Must copy transcript settings to new variables
+	 		// 		} elseif ($epSetting['type'] == 'transcript') {
+				// 		$newSettings['views']['transcript']['audio']       = DHPressProject::doCloneObject($epSetting['settings']['audio']);
+				// 		$newSettings['views']['transcript']['transcript']  = DHPressProject::doCloneObject($epSetting['settings']['transcript']);
+				// 		$newSettings['views']['transcript']['transcript2'] = DHPressProject::doCloneObject($epSetting['settings']['transcript2']);
+				// 		$newSettings['views']['transcript']['timecode']    = DHPressProject::doCloneObject($epSetting['settings']['timecode']);
 
-	 				} else {
-	    				trigger_error("Unknown entry point type: ".$epSetting['type']);
-	 				}
-	 			}
+	 		// 		} else {
+	   //  				trigger_error("Unknown entry point type: ".$epSetting['type']);
+	 		// 		}
+	 		// 	}
 
-				$newSettings['views']['viz-fullscreen'] = $settingsArray['views']['map-fullscreen'];
-				$newSettings['views']['viz-width']      = $settingsArray['views']['map-width'];
-				$newSettings['views']['viz-height']     = $settingsArray['views']['map-height'];
+				// $newSettings['views']['viz-fullscreen'] = $settingsArray['views']['map-fullscreen'];
+				// $newSettings['views']['viz-width']      = $settingsArray['views']['map-width'];
+				// $newSettings['views']['viz-height']     = $settingsArray['views']['map-height'];
 
-				$newSettings['views']['post']     		= array();
-				$newSettings['views']['post']['title']	= DHPressProject::doCloneObject($settingsArray['views']['post-view-title']);
-				$newSettings['views']['post']['content']= DHPressProject::doCloneArray($settingsArray['views']['post-view-content']);
+				// $newSettings['views']['post']     		= array();
+				// $newSettings['views']['post']['title']	= DHPressProject::doCloneObject($settingsArray['views']['post-view-title']);
+				// $newSettings['views']['post']['content']= DHPressProject::doCloneArray($settingsArray['views']['post-view-content']);
 
-				$newSettings['views']['select']     	= array();
-				$newSettings['views']['select']['title']= DHPressProject::doCloneObject($settingsArray['views']['title']);
-				$newSettings['views']['select']['content']= DHPressProject::doCloneArray($settingsArray['views']['content']);
-				$newSettings['views']['select']['link'] = DHPressProject::doCloneObject($settingsArray['views']['link']);
-				$newSettings['views']['select']['link2']= DHPressProject::doCloneObject($settingsArray['views']['link2']);
-				$newSettings['views']['select']['link-label'] = DHPressProject::doCloneObject($settingsArray['views']['link-label']);
-				$newSettings['views']['select']['link2-label']= DHPressProject::doCloneObject($settingsArray['views']['link2-label']);
+				// $newSettings['views']['select']     	= array();
+				// $newSettings['views']['select']['title']= DHPressProject::doCloneObject($settingsArray['views']['title']);
+				// $newSettings['views']['select']['content']= DHPressProject::doCloneArray($settingsArray['views']['content']);
+				// $newSettings['views']['select']['link'] = DHPressProject::doCloneObject($settingsArray['views']['link']);
+				// $newSettings['views']['select']['link2']= DHPressProject::doCloneObject($settingsArray['views']['link2']);
+				// $newSettings['views']['select']['link-label'] = DHPressProject::doCloneObject($settingsArray['views']['link-label']);
+				// $newSettings['views']['select']['link2-label']= DHPressProject::doCloneObject($settingsArray['views']['link2-label']);
 
-					// Must exclude "map" from previous settings
-				$oldModalEPs = array();
-				foreach ($settingsArray['views']['modal-ep'] as $val) {
-					array_push($oldModalEPs, $val);
-				}
-				$oldModalEPs = array_diff($oldModalEPs, array('map'));
-				$newSettings['views']['select']['view-type']= DHPressProject::doCloneArray($oldModalEPs);
+				// 	// Must exclude "map" from previous settings
+				// $oldModalEPs = array();
+				// foreach ($settingsArray['views']['modal-ep'] as $val) {
+				// 	array_push($oldModalEPs, $val);
+				// }
+				// $oldModalEPs = array_diff($oldModalEPs, array('map'));
+				// $newSettings['views']['select']['view-type']= DHPressProject::doCloneArray($oldModalEPs);
 
-	 				// Save new settings format
-	 			$this->settings = $settingsArray = $newSettings;
-	 		}
+	 		// 		// Save new settings format
+	 		// 	$this->settings = $settingsArray = $newSettings;
+	 		// }
+
 	 			// Do we need to upgrade from 2 to 3?
-	 		if ($settingsArray['project-details']['version'] < 3) {
-	 			$settingsArray['project-details']['version'] = 3;
-	 				// Change motes of type "Text" to "Short Text" by default
-	 			foreach ($settingsArray['motes'] as $thisMote) {
-	 				if ($thisMote['type'] === 'Text') {
-	 					$thisMote['type'] = 'Short Text';
-	 				}
-	 			}
-	 				// Give default labels for EPs
-	 			$index = 0;
-	 			foreach ($settingsArray['entry-points'] as $epSetting) {
-	 				$epSetting['label'] = 'ep '.$index++;
-	 			}
-	 		}
+	 		// if ($settingsArray->{'project-details'}->version < 3) {
+	 		// 	$settingsArray->{'project-details'}->version = 3;
 
-	 		if ($settingsArray['project-details']['version'] > 3) {
+	 		// 		// Change motes of type "Text" to "Short Text" by default
+	 		// 	foreach ($settingsArray->motes as $thisMote) {
+	 		// 		if ($thisMote->type === 'Text') {
+	 		// 			$thisMote->type = 'Short Text';
+	 		// 		}
+	 		// 	}
+	 		// 		// Give default labels for EPs
+	 		// 	$index = 0;
+	 		// 	foreach ($settingsArray->{'entry-points'} as $epSetting) {
+	 		// 		$epSetting->label = 'ep '.$index++;
+	 		// 	}
+	 		// }
+
+	 		if ($settingsArray->{'project-details'}->version > 3) {
 	    		trigger_error("Unknown project settings format");
 	 		}
     	} // if need to read settings

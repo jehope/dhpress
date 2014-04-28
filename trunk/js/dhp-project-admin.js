@@ -71,7 +71,6 @@ jQuery(document).ready(function($) {
     // Get initial project settings -- make blank settings if new project
   var savedSettings = $('#project_settings').val();
   if (savedSettings.length < 2) {
-console.log("Using blank settings")
     savedSettings = _blankSettings;
   } else {
     savedSettings = JSON.parse(savedSettings);
@@ -234,7 +233,7 @@ console.log("Using blank settings")
     self.saveSettings = function() {
       var currentSettings = self.bundleSettings();
       var settingsData = JSON.stringify(currentSettings);
-      console.log("Saving current settings: "+settingsData);
+      // console.log("Saving current settings: "+settingsData);
       saveSettingsInWP(settingsData);
     };
 
@@ -249,7 +248,7 @@ console.log("Using blank settings")
       var projSettings = {};
 
       projSettings['project-details'] = {};
-      projSettings['project-details'].id = savedSettings['project-details'].id;
+      projSettings['project-details'].id = savedSettings['project-details'].id || projectID;
       projSettings['project-details'].name = savedSettings['project-details'].name;
       projSettings['project-details'].version = 3;
       projSettings['project-details']['marker-custom-fields'] = allCustomFields;
@@ -1604,7 +1603,6 @@ console.log("Using blank settings")
               term_name: termName
           },
           success: function(data, textStatus, XMLHttpRequest){
-console.log('deleteTermInTax completed: '+data);
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);

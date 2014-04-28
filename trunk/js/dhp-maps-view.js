@@ -755,6 +755,7 @@ var dhpMapsView = {
             },
             success: function(data, textStatus, XMLHttpRequest)
             {
+console.log("Returned data = "+data);
                 dhpMapsView.createDataObjects(JSON.parse(data));
                     // Remove Loading modal
                 dhpMapsView.callBacks.remLoadingModal();

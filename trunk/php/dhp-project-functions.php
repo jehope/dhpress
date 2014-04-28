@@ -645,28 +645,28 @@ function createMarkerArray($project_id)
 		// By default, a marker's content is the set of data needed by select modal, but some
 		//	views may need to augment this
 	$selectContent = array();
-	if ($projSettings['views']['select']['content']) {
-		foreach ($projSettings['views']['select']['content'] as $theMote) {
+	if ($projSettings->views->select->content) {
+		foreach ($projSettings->views->select->content as $theMote) {
 			array_push($selectContent, $theMote);
 		}
 	}
 
     	// If we support multiple entry points, we must accumulate settings that are specified
 		// For now, just the first entry point is implemented
-	$eps0 = $projSettings['entry-points'][0];
-	switch ($eps0['type']) {
+	$eps0 = $projSettings->{'entry-points'}[0];
+	switch ($eps0->type) {
 	case "map":
 			// Which field used to encode Lat-Long on map?
 		// $map_pointsMote = $projObj->getMoteByName( $eps['settings']['marker-layer'] );
-		$map_pointsMote = $projObj->getMoteByName( $eps0['settings']['marker-layer'] );
-		if($map_pointsMote['type']=='Lat/Lon Coordinates'){
-			if(!$map_pointsMote['delim']) { $map_pointsMote['delim']=','; }
-			$coordMote = split($map_pointsMote['delim'], $map_pointsMote['custom-fields']);
+		$map_pointsMote = $projObj->getMoteByName( $eps0->settings->{'marker-layer'} );
+		if($map_pointsMote->type=='Lat/Lon Coordinates'){
+			if(!$map_pointsMote->delim) { $map_pointsMote->delim=','; }
+			$coordMote = split($map_pointsMote->delim, $map_pointsMote->{'custom-fields'});
 			//array of custom fields
 		}
 			// Find all possible legends/filters for this map -- each marker needs these fields
 		// $filters = $eps['settings']['filter-data'];
-		$filters = $eps0['settings']['filter-data'];
+		$filters = $eps0->settings->{'filter-data'};
 			// Collect all possible category values/tax names for each mote in all filters
 		foreach( $filters as $legend ) {
 			$term = get_term_by('name', $legend, $rootTaxName);
@@ -678,7 +678,7 @@ function createMarkerArray($project_id)
 
 	case "cards":
 			// Convert title mote to custom field
-		$cardTitle = $eps0['settings']['title'];
+		$cardTitle = $eps0->settings->title;
 		if ($cardTitle == null || $cardTitle == '') {
 			$cardTitle = null;
 		} else if ($cardTitle != 'the_title') {
@@ -688,7 +688,7 @@ function createMarkerArray($project_id)
 			}
 		}
 			// Convert color mote to custom field
-		$cardColorMote = $eps0['settings']['color'];
+		$cardColorMote = $eps0->settings->color;
 		if ($cardColorMote != null && $cardColorMote !== '') {
 				// Create a legend for the color values
 			$term = get_term_by('name', $cardColorMote, $rootTaxName);
@@ -696,24 +696,24 @@ function createMarkerArray($project_id)
 		}
 			// prepare card contents (for now, just image and text motes)
 			// TO DO: Prevent redundancies
-		if ($eps0['settings']['content'][0] != null && $eps0['settings']['content'][0] != '') {
-			array_push($selectContent, $eps0['settings']['content'][0]);
+		if ($eps0->settings->content[0] != null && $eps0->settings->content[0] != '') {
+			array_push($selectContent, $eps0->settings->content[0]);
 		}
-		if ($eps0['settings']['content'][1] != null && $eps0['settings']['content'][1] != '') {
-			array_push($selectContent, $eps0['settings']['content'][1]);
+		if ($eps0->settings->content[1] != null && $eps0->settings->content[1] != '') {
+			array_push($selectContent, $eps0->settings->content[1]);
 		}
 		break;
 	} // switch
 
 		// If a marker is selected and leads to a transcript in modal, need those values also
 	if ($projObj->selectModalHas("transcript")) {
-		$audio = $projSettings['views']['transcript']['audio'];
+		$audio = $projSettings->views->transcript->audio;
 			// Translate from Mote Name to Custom Field name
 		if (!is_null($audio) && ($audio !== '')) {
 			$audio = $projObj->getCustomFieldForMote($audio);
-			$transcript = $projObj->getCustomFieldForMote($projSettings['views']['transcript']['transcript']);
-			$transcript2= $projObj->getCustomFieldForMote($projSettings['views']['transcript']['transcript2']);
-			$timecode   = $projObj->getCustomFieldForMote($projSettings['views']['transcript']['timecode']);
+			$transcript = $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript);
+			$transcript2= $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript2);
+			$timecode   = $projObj->getCustomFieldForMote($projSettings->views->transcript->timecode);
 		}
 	}
 
@@ -727,7 +727,7 @@ function createMarkerArray($project_id)
 
 		// Link parent enables linking to either the Post page for this Marker,
 		//	or to the category/taxonomy which includes this Marker
-	$link_parent = $projSettings['views']['select']['link'];
+	$link_parent = $projSettings->views->select->link;
 	if($link_parent) {
 		if($link_parent=='marker') {
 		//$parent_id = get_term_by('name', $link_parent, $rootTaxName);
@@ -750,7 +750,7 @@ function createMarkerArray($project_id)
 		}
 	}
 
-	$link_parent2 = $projSettings['views']['select']['link2'];
+	$link_parent2 = $projSettings->views->select->link2;
 	if($link_parent2) {
 		if($link_parent2=='marker') {
 		//$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
@@ -764,21 +764,20 @@ function createMarkerArray($project_id)
 		elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
 			$link2MoteName = str_replace(' (Mote)', '', $link_parent2);
 			$child_terms2 = $projObj->getMoteByName( $link2MoteName );
-		}
-		else {
+		} else {
 			$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
 			$child_terms2 = get_term_children($parent_id2->term_id, $rootTaxName);
 		}
 	}
 
 		// Determine whether title is default title of marker post or another (custom) field
-	$title_mote = $projSettings['views']['select']['title'];
+	$title_mote = $projSettings->views->select->title;
 	if ($title_mote != 'the_title') {
 		$temp_mote = $projObj->getMoteByName($title_mote);
 		if (is_null($temp_mote)) {
 			trigger_error("Modal view title assigned to unknown mote");
 		}
-		$title_mote = $temp_mote['custom-fields'];
+		$title_mote = $temp_mote->{'custom-fields'};
 	}
 
 	// $feature_collection['debugmsg'] = "coordMote count = ".count($coordMote)." moteName = ".$map_pointsMote["name"];
@@ -888,7 +887,7 @@ function createMarkerArray($project_id)
 					$content_val = apply_filters('the_title', get_the_title());
 				} else {
 					$content_mote = $projObj->getMoteByName( $contentMoteName );
-					$contentCF = $content_mote['custom-fields'];
+					$contentCF = $content_mote->{'custom-fields'};
 					if($contentCF =='the_content') {
 						$content_val = apply_filters('the_content', get_post_field($contentCF, $marker_id));
 					} elseif ($contentCF=='the_title') {
@@ -897,7 +896,7 @@ function createMarkerArray($project_id)
 						$content_val = get_post_meta($marker_id, $contentCF, true);
 					}
 						// Do we need to wrap data?
-					if($content_mote['type']=='Image'){
+					if($content_mote->type=='Image'){
 						$content_val = '<img src="'.addslashes($content_val).'" />';
 					}
 				}
@@ -915,7 +914,7 @@ function createMarkerArray($project_id)
 				$term_links = get_permalink();
 			}
 			elseif(strpos($link_parent, '(Mote)') !== FALSE) {
-				$term_links = get_post_meta($marker_id, $child_terms['custom-fields'], true);
+				$term_links = get_post_meta($marker_id, $child_terms->{'custom-fields'}, true);
 			}
 			else {
 				$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $rootTaxName);
@@ -929,7 +928,7 @@ function createMarkerArray($project_id)
 				$term_links2 = get_permalink();
 			}
 			elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
-				$term_links2 = get_post_meta($marker_id, $child_terms2['custom-fields'], true);
+				$term_links2 = get_post_meta($marker_id, $child_terms2->{'custom-fields'}, true);
 			}
 			else {
 				$term_links2 = dhp_get_term_by_parent($child_terms2, $post_terms, $rootTaxName);
@@ -1781,7 +1780,7 @@ function add_dhp_project_admin_scripts( $hook )
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( $post->post_type == 'project' ) {
         		// Get the object for the Project so we can pass the custom fields
-			$projObj = new DHPressProject($postID);
+			// $projObj = new DHPressProject($postID);
 			// $customFields = $projObj->getAllCustomFieldNames();
 
         		// Library styles
@@ -1846,7 +1845,7 @@ function add_dhp_project_admin_scripts( $hook )
 
 
 // PURPOSE: Extract DHP custom map data from Map Library so they can be rendered
-// INPUT:	$mapLayers = array of map layers (each containing Hash ['mapType'], ['id' = WP post ID])
+// INPUT:	$mapLayers = array of EP Map layers (each containing Hash ['mapType'], ['id' = WP post ID])
 // RETURNS: Array of data about map layers
 // ASSUMES:	Custom Map data has been loaded into WP DB
 // TO DO:	Further error handling if necessary map data doesn't exist?
@@ -1866,10 +1865,10 @@ function dhpGetMapLayerData($mapLayers)
 
 		// Loop thru all map layers, collecting essential data to pass
 	foreach($mapLayers as $layer) {
-		$mapData = getMapMetaData($layer['id'], $mapMetaList);
+		$mapData = getMapMetaData($layer->id, $mapMetaList);
 			// Do basic error checking to ensure necessary fields exist
 		if ($mapData['dhp_map_typeid'] == '') {
-			trigger_error('No dhp_map_typeid metadata for map named '.$layer['name'].' of id '.$layer['id']);
+			trigger_error('No dhp_map_typeid metadata for map named '.$layer->name.' of id '.$layer->id);
 		}
 		array_push($mapArray, $mapData);
 	}
@@ -1966,7 +1965,7 @@ function dhp_page_template( $page_template )
 
     		// Visualization specific -- only 1st Entry Point currently supported
     	$projectSettings_viz = $projObj->getEntryPointByIndex(0);
-    	switch ($projectSettings_viz['type']) {
+    	switch ($projectSettings_viz->type) {
     	case 'map':
 			wp_enqueue_style('dhp-map-css', plugins_url('/css/dhp-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 			wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
@@ -1982,7 +1981,7 @@ function dhp_page_template( $page_template )
 			wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
 
 				// Get any DHP custom map parameters
-			$layerData = dhpGetMapLayerData($projectSettings_viz['settings']['layers']);
+			$layerData = dhpGetMapLayerData($projectSettings_viz->settings->layers);
 			$vizParams["layerData"] = $layerData;
 
 	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps',
@@ -1998,7 +1997,7 @@ function dhp_page_template( $page_template )
 	    	array_push($dependencies, 'isotope', 'dhp-cards-view');
 	    	break;
 	    default:
-	 		trigger_error("Unknown visualization type: ".$projectSettings_viz['type']);
+	 		trigger_error("Unknown visualization type: ".$projectSettings_viz->type);
 	    	break;
 	    }
 
