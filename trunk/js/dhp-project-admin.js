@@ -248,7 +248,7 @@ jQuery(document).ready(function($) {
       var projSettings = {};
 
       projSettings['project-details'] = {};
-      projSettings['project-details'].id = savedSettings['project-details'].id || projectID;
+      projSettings['project-details'].id = projectID;
       projSettings['project-details'].name = savedSettings['project-details'].name;
       projSettings['project-details'].version = 3;
       projSettings['project-details']['marker-custom-fields'] = allCustomFields;

@@ -1399,19 +1399,19 @@ function dhpGetTaxTranscript()
 	$dhp_object = array();
 
 		// What custom field holds appropriate data? Fetch it from Marker
-	$dhp_audio_mote = $projObj->getMoteByName($proj_settings['views']['transcript']['audio']);
-	$dhp_transcript_mote = $projObj->getMoteByName($proj_settings['views']['transcript']['transcript']);
+	$dhp_audio_mote = $projObj->getMoteByName($proj_settings->views->transcript->audio);
+	$dhp_transcript_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript);
 
-	$dhp_transcript_cfield = $dhp_transcript_mote['custom-fields'];
+	$dhp_transcript_cfield = $dhp_transcript_mote->{'custom-fields'};
 	$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
 	if($dhp_transcript!='none') {
 		$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
 	}
 
 		//if project has two transcripts
-	if($proj_settings['views']['transcript']['transcript2']) {
-		$dhp_transcript2_mote = $projObj->getMoteByName($proj_settings['views']['transcript']['transcript2']);
-		$dhp_transcript2_cfield = $dhp_transcript2_mote['custom-fields'];
+	if($proj_settings->views->transcript->transcript2) {
+		$dhp_transcript2_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript2);
+		$dhp_transcript2_cfield = $dhp_transcript2_mote->{'custom-fields'};
 		$dhp_transcript2 = $marker_meta[$dhp_transcript2_cfield][0];
 		if ($dhp_transcript2 != 'none') {
 			$dhp_object['transcript2'] = loadTranscriptFromFile($dhp_transcript2);
@@ -1419,7 +1419,7 @@ function dhpGetTaxTranscript()
 	}
 
 	$dhp_object['settings'] = $dhp_transcript_ep;
-	$dhp_object['audio'] = $marker_meta[$dhp_audio_mote['custom-fields']][0];
+	$dhp_object['audio'] = $marker_meta[$dhp_audio_mote->{'custom-fields'}][0];
 	$dhp_object['transcript'] = $dhp_transcript;
 
 	die(json_encode($dhp_object));
@@ -1928,8 +1928,6 @@ add_filter( 'single_template', 'dhp_page_template' );
 // PURPOSE:	Called by WP to modify output for rendering page, inc template to be used, acc to Project
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
-// NOTES:   Use of Google maps dependent upon Open Layers code (so must be loaded regardless); DHP custom maps use both OL & Google
-// TO DO:   Add visualization to Marker pages??
 
 function dhp_page_template( $page_template )
 {
@@ -2080,7 +2078,7 @@ function dhp_tax_template( $page_template )
 	    $project_settings = $projObj->getAllSettings();
 
 	    	// Are we on a taxonomy/archive page that corresponds to transcript "source"?
-	    $isTranscript = ($project_settings['views']['transcript']['source'] == $term_parent->name);
+	    $isTranscript = ($project_settings->views->transcript->source == $term_parent->name);
 	    	// If above doesn't work, try comparing $term->taxonomy
 
 	    	// mediaelement for timelines -- not currently used

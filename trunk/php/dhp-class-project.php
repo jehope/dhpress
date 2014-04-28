@@ -657,7 +657,7 @@ class DHPressProject
 	 		// 	}
 	 		// }
 
-	 		if ($settingsArray->{'project-details'}->version > 3) {
+	 		if ($settingsArray->{'project-details'}->version != 3) {
 	    		trigger_error("Unknown project settings format");
 	 		}
     	} // if need to read settings
