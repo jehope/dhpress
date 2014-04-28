@@ -72,7 +72,7 @@
 		        "link-label2" : String
 		    } 
  
- **		VERSION 2 (latest iteration of DH Press)
+ **		VERSION 2 (DH Press 1.3.0+)
  **			"project-details": {
 		        "id": Integer,										// ID of Project
 		        "name": String,
@@ -165,7 +165,102 @@
 					]
 		        }
 		    }
- **/
+
+ **		VERSION 3 (DH Press 2.0+)
+ **			"project-details": {
+		        "id": Integer,										// ID of Project
+		        "name": String,
+		        "version": Integer,									// Should = 2
+		        "marker-custom-fields": [ String, ... ],			// list of custom fields <=> motes
+		        "home-label": String,
+		        "home-url": String,
+		        "max-inactive": Number (in minutes)
+		    },
+		    "motes": [
+		        {
+		            "name": String,
+		            "type": String, (name of data type)
+		            "custom-fields": String, (name of custom field which holds value)
+		            "delim": String (containing a character or empty string)
+		        }, ...
+		    ],
+		    "entry-points": [										// contents of settings depends on type of entry point
+		    	{
+		            "type": String ("map" or "cards"),
+		            "label" : String (short and unique across entry points),
+		            "settings": {									// Map settings are as follows
+		                "lat": Number,
+		                "lon": Number,
+		                "zoom": Number,
+		                "opacity": Number,
+		                "layers": [
+		                    Index: {
+		                        "id": Number,
+		                        "name": String,
+		                        "mapType": String ("type-Blank", "type-OSM", "type-DHP"),
+		                        "mapTypeId": String,
+		                    }, ...
+		                ],
+		                "marker-layer": String (name of mote),		// Mote used for geo coord
+		                "filter-data": [							// List of mote Legends/categories
+		                    Index : String (name of mote), ...
+		                ]
+		            }
+		            "settings" : {									// Topic Cards settings are as follows
+						"title": String (name of mote),				// to display on top of card
+		            	"width" : Number,							// Pixel width of cards
+		            	"height" : Number,							// Pixel height of cards
+						"color": String (name of mote),				// to determine color of card
+						"defColor" : String (CSS color to use),		// as default when no mote value
+						"content" : [
+							// Array of mote names (or the_content) to show in card content
+							// In 1.9.5, 0 = image and 1 = text
+						],
+						"filterMotes": [
+							// Array of mote names to use to filter cards (Short Text, Number types)
+						],
+						"sortMotes": [
+							// Array of mote names to use to sort cards (Short Text, Number types)
+						]
+		            }
+		        }
+		    },
+		    "views": {
+		        "viz-fullscreen": false | true,
+		        "viz-width": Integer,						// Size of visualization window (non-full screen)
+		        "viz-height": Integer,
+		    	"post" : {									// For Marker post pages
+			        "title": String,						// Title to give Marker modal
+			        "content": [ String, ...  ]				// Names of motes to show
+		    	},
+		    	"select" : {								// For modal when item selected from visualation
+			        "title": String (name of mote),
+			        "width": "tiny" | "small" | "medium" | "large" | "x-large",
+			        "view-type": [							// Types of views to display in selected Marker modal
+			        	Integer (index) : 'transcript'
+			        ],
+			        "content": [							// Motes to show when Marker selected in visualization
+			            Integer (index): String (mote name), ...
+			        ],
+			        "link" : [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
+			        "link-label" : String,
+			        "link-new-tab": true or false,
+			        "link2": [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
+			        "link2-label" : String
+			        "link2-new-tab": true or false,
+		    	}
+		        "transcript" : {
+					"audio" 	: Name of mote (that contains last part of URL to audio file)
+					"transcript" : Name of mote (that contains URL to textual transcription of original),
+					"transcript2" : Name of mote (that contains URL to textual transcription of any translation),
+					"timecode" : Name of mote (that contains the timecode),
+					"source"	: Name of mote with common value across excerpts of transcripts (taxonomy category),
+					"content"	: [							// Motes to show when tax/archive page shown
+			            Integer (index): String (mote name), ...
+					]
+		        }
+		    }
+  **/
 
 class DHPressProject
 {
@@ -491,7 +586,7 @@ class DHPressProject
     		}
 
 	 		$settingsArray = $this->settings;
-	 			// Do we need to convert to new format?
+	 			// Do we need to update format from 1 to 2?
 	 		if (is_null($settingsArray['project-details']['version'])) {
 	 			$newSettings = array();
 	 			$newSettings['project-details'] = new ArrayObject($settingsArray['project-details']);
@@ -553,9 +648,25 @@ class DHPressProject
 				$newSettings['views']['select']['view-type']= DHPressProject::doCloneArray($oldModalEPs);
 
 	 				// Save new settings format
-	 			$this->settings = $newSettings;
+	 			$this->settings = $settingsArray = $newSettings;
+	 		}
+	 			// Do we need to upgrade from 2 to 3?
+	 		if ($settingsArray['project-details']['version'] < 3) {
+	 			$settingsArray['project-details']['version'] = 3;
+	 				// Change motes of type "Text" to "Short Text" by default
+	 			foreach ($settingsArray['motes'] as $thisMote) {
+	 				if ($thisMote['type'] === 'Text') {
+	 					$thisMote['type'] = 'Short Text';
+	 				}
+	 			}
+	 				// Give default labels for EPs
+	 			$index = 0;
+	 			foreach ($settingsArray['entry-points'] as $epSetting) {
+	 				$epSetting['label'] = 'ep '.$index++;
+	 			}
+	 		}
 
-	 		} elseif ($settingsArray['project-details']['version'] != 2) {
+	 		if ($settingsArray['project-details']['version'] > 3) {
 	    		trigger_error("Unknown project settings format");
 	 		}
     	} // if need to read settings

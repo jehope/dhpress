@@ -132,6 +132,7 @@
 <script type="text/html" id="ep-map-template">
     <h2><b>Map Entry Point</b> <button data-bind="jqButton, click: $root.delEP">Delete Map</button></h2>
     <ul>
+        <li>Map short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Map Center (Lat/Lon) <button class="create-map-btn">Show map</button><br/>
             <div class="geo-locate-widget hide" data-bind="geoLoc"></div>
             <input class="ed-lat-id" data-bind="value: theEP.settings.lat" type="text" size="6"/>
@@ -175,6 +176,7 @@
 <script type="text/html" id="ep-cards-template">
     <h2><b>Cards Entry Point</b> <button data-bind="jqButton, click: $root.delEP">Delete Cards</button></h2>
     <ul>
+        <li>Map short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Card Title <select data-bind="value: theEP.settings.title, options: $root.anyTxtDMoteNames"></select></li>
         <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select></li>
         <li>Card Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="16"/></li>

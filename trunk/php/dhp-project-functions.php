@@ -1004,7 +1004,7 @@ function dhpInitializeTaxonomy($mArray, $parent_id, $projRootTaxName)
 	// Code that was removed was not neccessary as it is run in the configure legend step with dhpGetMoteValues()
 } // dhpInitializeTaxonomy()
 
-	// PURPOSE: To associate taxonomic terms with Markers in this Project with associated values
+	// PURPOSE: To associate taxonomic terms with Markers in this Project with corresponding values
 	// INPUT: 	$projObj = Object of DHPressProject class
 	//			$custom_field = custom field defined for Project's markers
 	//			$parent_id = ID of head term of taxonomy
@@ -1029,14 +1029,15 @@ function dhpBindTaxonomyToMarkers($projObj, $custom_field, $parent_id, $rootTaxN
 			}
 			$theseTerms = array();
 			foreach ($tempMoteArray as $value) {
-					// Since we are specifying $parent_id, term_exists() will return 0/NULL or array
+					// Since we are specifying $parent_id, term_exists() will return 0/NULL or hash
 				$term = term_exists($value, $rootTaxName, $parent_id);
-	   		 	if ($term) {
-	   		 		array_push($theseTerms, $term['term_id']);
+	   		 	if ($term !== 0 && $term !== null) {
+	   		 		array_push($theseTerms, intval($term['term_id']));
 	   		 	}
 			}
 				// Ensure that marker is tagged with category terms for this mote
-			wp_set_post_terms($marker_id, $theseTerms, $rootTaxName, true);
+			wp_set_object_terms($marker_id, $theseTerms, $rootTaxName, true);
+			// wp_set_post_terms($marker_id, $theseTerms, $rootTaxName, true);
 		}
 	endwhile;
 	delete_option("{$rootTaxName}_children");
@@ -1085,7 +1086,7 @@ function dhpGetLegendValues()
 	}
 
 	$results = array();
-	$results['cfValues'] = $mArray;
+	$results = $mArray;
 		// Find all of the terms derived from mote (parent/head term) in the Project's taxonomy
 	$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
 
@@ -1129,7 +1130,7 @@ function dhpGetLegendValues()
 		}
 	}
 
-	$results['terms'] = $terms_loaded;
+	$results = $terms_loaded;
 
 	die(json_encode($results));
 } // dhpGetLegendValues()
@@ -1150,7 +1151,7 @@ function dhpSaveLegendValues()
 	$projectID = $_POST['project'];
 
 	// $raw_term_data = stripslashes($_POST['terms']);
-	// $raw_term_data = stripslashes_deep($_POST['terms']);
+	// $raw_term_data = stripslashes_deep($_POST['terms'])
 	// $raw_term_data = $_POST['terms'];
 	// $project_terms = json_decode($raw_term_data);
 
@@ -1159,28 +1160,26 @@ function dhpSaveLegendValues()
 		// Convert mote_parent to id
 	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
 
-$results = array();
-$results['original'] = $project_terms;
-
 	foreach ($project_terms as $term) {
-		// $term_name      = $term->name;
-		$parent_term_id = $term->parent;
-		$term_id        = $term->term_id;
-		$term_order     = $term->term_order;
-		$meta_value     = $term->icon_url;
+		// $term_name      = $term['name'];	// name not passed in
 
-		if ($meta_value=='undefined') { $meta_value = '';}
+		$parent_term_id = intval($term['parent']);
+		$term_id        = intval($term['term_id']);
+		$term_order     = intval($term['term_order']);
+		$meta_value     = $term['icon_url'];
+
+		if ($meta_value=='undefined') { $meta_value = ''; }
 
 			// Encode and append icon_url metadata
 		$icon_url = add_magic_quotes(json_encode(array('icon_url' => $meta_value)));
-		$args = array('parent' => $parent_term_id, 'term_group' =>  $term_order, 'description' => $icon_url);
+		$updateArgs = array('parent' => $parent_term_id, 'term_group' =>  $term_order, 'description' => $icon_url);
 			// Update term settings
-		wp_update_term($term_id, $projRootTaxName, $args);
-array_push($results, array($term_id => $args));
+		wp_update_term($term_id, $projRootTaxName, $updateArgs);
 	}
 	delete_option("{$projRootTaxName}_children");
 
-	die(json_encode($results));
+	// die(json_encode($results));
+	die('');
 } // dhpSaveLegendValues()
 
 

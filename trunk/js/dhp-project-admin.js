@@ -14,7 +14,7 @@ jQuery(document).ready(function($) {
       // Constants
   var _blankSettings = {
         'project-details': {
-          version: 2,
+          version: 3,
           'home-label': '',
           'home-url': '',
           'max-inactive': 0
@@ -129,6 +129,7 @@ console.log("Using blank settings")
     var self = this;
 
     self.type = 'map';
+    self.label= ko.observable(epSettings.label || 'name me');
     self.settings = { };
     self.settings.lat = ko.observable(epSettings.settings.lat);
     self.settings.lon = ko.observable(epSettings.settings.lon);
@@ -150,6 +151,7 @@ console.log("Using blank settings")
     var self = this;
 
     self.type = 'cards';
+    self.label= ko.observable(epSettings.label || 'name me');
     self.settings = { };
     self.settings.title = ko.observable(epSettings.settings.title);
     self.settings.color = ko.observable(epSettings.settings.color);
@@ -249,7 +251,7 @@ console.log("Using blank settings")
       projSettings['project-details'] = {};
       projSettings['project-details'].id = savedSettings['project-details'].id;
       projSettings['project-details'].name = savedSettings['project-details'].name;
-      projSettings['project-details'].version = 2;
+      projSettings['project-details'].version = 3;
       projSettings['project-details']['marker-custom-fields'] = allCustomFields;
 
       projSettings['project-details']['home-label'] = self.edHomeBtnLbl();
@@ -270,6 +272,7 @@ console.log("Using blank settings")
       ko.utils.arrayForEach(self.entryPoints(), function(theEP) {
         var savedEP = {};
         savedEP.type      = theEP.type;
+        savedEP.label     = theEP.label();
         savedEP.settings  = {};
         switch(theEP.type) {
         case 'map':
@@ -1017,6 +1020,7 @@ console.log("Using blank settings")
     self.createMapEP = function() {
       var _blankMapEP = {
         type: 'map',
+        label: 'name me',
         settings: {
             lat: 0, lon: 0, zoom: 10,
             layers: [ { id: 0, name: '', opacity: 1, mapType: '', mapTypeId: '' } ],
@@ -1032,6 +1036,7 @@ console.log("Using blank settings")
     self.createCardsEP = function() {
       var _blankCardsEP = {
         type: 'cards',
+        label: 'name me',
         settings: { 
           title: 'disable',
           color: 'disable',
@@ -1420,7 +1425,8 @@ console.log("Using blank settings")
       if (isNaN(value)) value=0;
       $(element).slider('value', value);
     }
-  };
+  }; // bindingHandlers.opacitySlider
+
     // Add new functionality for jQueryUI button
   ko.bindingHandlers.jqButton = {
     init: function (element) {
@@ -1431,7 +1437,7 @@ console.log("Using blank settings")
     // Add new functionality for geoLocation editor
     // NOTE:   There is a CSS bug that happens if map is created initially, because jQueryUI hasn't
     //          finished adjusting all of the relative positions of div's -- so user must init map afterwards
-    // ASSUMES: Specific DOM structure with classes identifying buttons
+    // ASSUMES: Specific DOM structure with inter-related elements of classes identifying buttons
   ko.bindingHandlers.geoLoc = {
     init: function (element) {
       var thisMap;
@@ -1478,7 +1484,7 @@ console.log("Using blank settings")
         }
       });
     }
-  };
+  }; // bindingHandlers.geoLoc
 
 
     // Initialize use of Knockout within the inserted HTML (after bindingHandlers added)
@@ -1531,10 +1537,9 @@ console.log("Using blank settings")
               project: projectID
           },
           success: function(data, textStatus, XMLHttpRequest){
-console.log("get Legends returns: "+data);
                 // data is a JSON object
             var results = JSON.parse(data);
-            funcToCall(results.terms);
+            funcToCall(results);
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
@@ -1548,7 +1553,6 @@ console.log("get Legends returns: "+data);
     // INPUT:   legendName = Head term id (legend name)
     //          taxTermsList = flat list containing data for updating terms in WP
   function saveLegendValuesInWP(legendName, taxTermsList) {
-console.log("Save legend for " + legendName + " in Project ID " + projectID + " as "+JSON.stringify(taxTermsList));
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1559,7 +1563,6 @@ console.log("Save legend for " + legendName + " in Project ID " + projectID + " 
               terms: taxTermsList
           },
           success: function(data, textStatus, XMLHttpRequest) {
-console.log("Saved return data: "+data);
           },
           error: function(XMLHttpRequest, textStatus, errorThrown) {
              alert(errorThrown);
