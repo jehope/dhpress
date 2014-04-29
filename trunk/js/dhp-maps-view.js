@@ -47,7 +47,7 @@ var dhpMapsView = {
 
         dhpMapsView.markerOpacity  = 1;     // default marker opacity
         dhpMapsView.markerSize     = 8;     // default marker radius
-        dhpMapsView.makiMarkers    = [];    // array of Maki-markers
+        dhpMapsView.makiIcons      = [];    // array of Maki-icons to be used by markers
 
         dhpMapsView.mapLayers      = [];
             // expand to show/hide child terms and use their colors
@@ -352,14 +352,14 @@ var dhpMapsView = {
         case '.':
                 // See if maki-icon has already been created and if not create it
             var iName = fColor.substring(1);
-            var mIcon = makiIcons[iName];
+            var mIcon = dhpMapsView.makiIcons[iName];
             if (mIcon == undefined || mIcon == null) {
                 mIcon = L.MakiMarkers.icon({
                     icon: iName,
                     color: "#12a",
                     size: "m"
                 });
-                makiIcons[iName] = mIcon;
+                dhpMapsView.makiIcons[iName] = mIcon;
             }
             return new L.marker(latlng, { icon: mIcon });
         default:
@@ -397,22 +397,26 @@ var dhpMapsView = {
 
         // PURPOSE: Open popup
     highlightFeature: function(e){
-        var layer = e.target;
-        dhpMapsView.currentFeature = layer;
+        var theFeature = e.target;
+        dhpMapsView.currentFeature = theFeature;
 
-        layer.openPopup();
+        theFeature.openPopup();
 
-            // TO DO: Change according to type of feature (Maki-icon, etc)
-        layer.setStyle({ // highlight the feature
-            weight: 3,
-            color: '#666',
-            dashArray: '',
-            fillOpacity: 0.6
-        });
+        // ?? theFeature.properties ??
 
-        if (!L.Browser.ie && !L.Browser.opera) {
-            layer.bringToFront();
-        }
+            // Now that there are several types of map features, can't generically assume
+            //    that it's a circle
+        // theFeature.setStyle({ // highlight the feature
+        //     weight: 3,
+        //     color: '#666',
+        //     dashArray: '',
+        //     fillOpacity: 0.6
+        // });
+
+            // Can't support popup for Internet Explorer or Opera
+        // if (!L.Browser.ie && !L.Browser.opera) {
+        //     theFeature.bringToFront();
+        // }
     },
 
         // PURPOSE: Remove the hover style
@@ -530,25 +534,24 @@ var dhpMapsView = {
                         hasParentClass = 'hasParent';
                     }
                     var firstIconChar = theTerm.icon_url.substring(0,1);
-                    var icon;
+                    var htmlStr;
                     switch (firstIconChar) {
                     case '#':
-                        icon = '<div class="small-4 large-2 columns" style="background:'+theTerm.icon_url+'">';
+                        htmlStr = '<div class="small-4 large-2 columns" style="background:'+theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
                         break;
                     case '.':
-                        icon = '<div class="small-4 large-2 columns maki-icon '+theTerm.icon_url.substring(1)+'">';
+                        htmlStr = '<div class="small-4 large-2 columns"><div class="maki-icon '+theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
                         break;
                     default:
+                            // TO DO: Support uploaded images!
                         // icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat right; background-size: 50%;';
                         throw new Error('Unknown visual feature: '+theTerm.icon_url);
-                        break;
                     }
 
-                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+icon+
-                          '<input type="checkbox" checked="checked"></div>'+
-                          // '<div class="small-1 large-1 columns"><div class="icon-legend" style="'+icon+'"></div></div>'+
-                          '<div class="small-8 large-10 columns"><a class="value" data-id="'+theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div>'+
-                        '</div>');
+                        // Append new legend value to menu according to type
+                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+htmlStr+
+                                                    '<div class="small-6 large-8 columns"><a class="value" data-id="'+theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
+                                                    // '<div class="small-8 large-10 columns"><a class="value" data-id="'+theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                 }
             });
             jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-map-legend-hideshow").html()));
@@ -685,13 +688,6 @@ var dhpMapsView = {
         var layerSettings = dhpMapsView.mapEP.layers;
         _.each(dhpMapsView.mapLayers, function(thisLayer,index) {
             layerOpacity = layerSettings[index].opacity || 1;
-
-            // if(layerSettings[index]) {
-            //     layerOpacity = layerSettings[index].opacity;
-            //     if(!layerOpacity){
-            //         layerOpacity = 1;
-            //     }
-            // }
 
                 // Don't create checkbox or opacity slider for Blank layer
             if (thisLayer.options.layerName != 'Blank') {

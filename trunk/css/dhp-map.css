@@ -61,6 +61,7 @@ body.fullscreen {
 	width: auto;
 	height: auto;*/
 }
+
 #dhp-visual .leaflet-popup-content-wrapper {
 	text-align: center;
 }
@@ -76,9 +77,10 @@ input.leaflet-control-layers-selector {
 	line-height: 36px;
 	font-size: 22px;
 }
-#dhp-visual .leaflet-control.reset-control {
 
+#dhp-visual .leaflet-control.reset-control {
 }
+
 #dhp-visual .leaflet-control.reset-control a {
 	line-height: 38px;
 	font-size: 20px;
@@ -87,9 +89,11 @@ input.leaflet-control-layers-selector {
 	display: inline-block;
 	width: 100%;*/
 }
+
 .logged-in.fullscreen #dhp-visual div.olControlZoom {
 	top:70px;
 }
+
 .olControlZoom .reset-map {
 	margin-top: 5px;
 	padding-top: 2px;
@@ -99,6 +103,7 @@ input.leaflet-control-layers-selector {
    	cursor: pointer;
    	font-size: 18px;
 }
+
 .isMobile .olControlZoom .reset-map {
 	padding-top: 1px;
 	font-size: 16px;
@@ -217,8 +222,16 @@ input.leaflet-control-layers-selector {
 	background: #e8f2e6;
 }
 
+/*
 .legend-div .terms img {
 	float: left;
+}*/
+
+.legend-div .terms .maki-icon {
+	margin: 0;
+	padding: 0;
+	float: left !important;
+	display: inline !important;
 }
 
 .legend-div .terms a {
@@ -229,12 +242,14 @@ input.leaflet-control-layers-selector {
 	overflow: hidden;
 	display: inherit;
 }
+
 #layers-panel a {
 	line-height: 15px;
 	padding-top: 10px;
 	padding-bottom: 10px;
 	overflow: hidden;
 }
+
 .legend-div input[type='checkbox'] {
 	/*margin: 12px;*/
 	vertical-align: middle;
