@@ -2,8 +2,8 @@
 // ASSUMES: The sidebar is marked with HTML div as "secondary"
 //          An area for the map has been marked with HTML div as "dhp-visual"
 //          That the custom maps "library" has already been loaded with corresponding map entries
-// NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
-//          Marker data is given to OpenLayers in GeoJSON format and converted to inter
+// NOTES:   Format of Marker and Legend data (GeoJSON) is documented in dhp-project-functions.php
+//          Once size of Marker array increases, may need to make filter more efficient
 //          The class active-legend is added to whichever legend is currently visible and selected
 
 // USES:    JavaScript libraries jQuery, Underscore, Zurb Foundation, Leaflet
@@ -18,6 +18,10 @@ var dhpMapsView = {
         //					allMarkers = All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
         //                  catFilter = All values for currently selected Legend; see data desc in getIconsForTerms() of dhp-project-functions.php
         //                  catFilterSelect = Current selection of legend/categories; Subset of catFilter.terms
+
+        //                  markerOpacity = opacity of marker layer (for all markers)
+        //                  markerSize = radius of markers
+        //                  makiIcons = array of maki icons
 
         //                  mapLayers = array of layer data to display (compiled in this code)
         //                  mapLeaflet = Leaflet map object
@@ -40,6 +44,10 @@ var dhpMapsView = {
         dhpMapsView.mapEP          = mapEP;
         dhpMapsView.viewParams     = viewParams;
         dhpMapsView.callBacks      = callBacks;
+
+        dhpMapsView.markerOpacity  = 1;     // default marker opacity
+        dhpMapsView.markerSize     = 8;     // default marker radius
+        dhpMapsView.makiMarkers    = [];    // array of Maki-markers
 
         dhpMapsView.mapLayers      = [];
             // expand to show/hide child terms and use their colors
@@ -176,8 +184,7 @@ var dhpMapsView = {
     }, // createControls()
 
         // PURPOSE: Create marker objects for map visualization; called by loadMapMarkers()
-        // INPUT:   data = data as JSON object: Array of ["type", ...]
-        //          mLayer = map layer into which the markers inserted 
+        // INPUT:   geoData = all AJAX data as JSON object: Array of ["type", ...]
         // SIDE-FX: assigns variables allMarkers, catFilter, rawAjaxData
     createDataObjects: function(geoData) 
     {
@@ -260,83 +267,107 @@ var dhpMapsView = {
         return icon;
     },
 
-        // PURPOSE: Creates and draws marker layer on map. 
-        //          Called whenever the terms are filtered.
-    createMarkerLayer: function(){
-        dhpMapsView.markerOpacity = 1;
+        // PURPOSE: Creates and draws marker layer on map
+        //          Called whenever the terms are filtered (inc initial display)
+    createMarkerLayer: function() {
         dhpMapsView.markerLayer = L.geoJson(dhpMapsView.allMarkers, { 
-            style: dhpMapsView.style,
+            // style: dhpMapsView.style,
             onEachFeature: dhpMapsView.onEachFeature,
             pointToLayer: dhpMapsView.pointToLayer,
             filter: dhpMapsView.filterMapMarkers 
         }).addTo(dhpMapsView.mapLeaflet);
         dhpMapsView.markerLayer.options.layerName = 'Markers';
-        
+
         dhpMapsView.control.addOverlay(dhpMapsView.markerLayer, "Markers" );
 
         // dhpMapsView.mapLayers.push(dhpMapsView.markerLayer);
     }, // createMarkerLayer()
 
-        // PURPOSE: Apply the style of the marker based on category
-    style: function(feature) {
-        return {
-           radius: 8,
-            fillColor: dhpMapsView.getActiveTermColor(feature.properties.categories),
-            color: "#000",
-            weight: 1,
-            opacity: dhpMapsView.checkOpacity,
-            fillOpacity: 1
-        };
-    },
+        // PURPOSE: Specify the style of a simple circle marker based on category
+        // NOTES:   This is the minimal implementation of a map marker -- we need icons, etc, too
+    // style: function(feature) {
+    //     return {
+    //        radius: 8,
+    //         fillColor: dhpMapsView.getActiveTermColor(feature.properties.categories),
+    //         color: "#000",
+    //         weight: 1,
+    //         opacity: dhpMapsView.checkOpacity,
+    //         fillOpacity: 1
+    //     };
+    // },
 
     checkOpacity: function() {
         return dhpMapsView.markerOpacity;
     },
 
         // PURPOSE: Determine what color to use for marker
+        // INPUT:   cats = the array of legend categories for this marker
+        // TO DO:   Make more efficient -- goes through 2 to 3 exhaustive searches each marker
     getActiveTermColor: function(cats) {
         var returnColor;
+            // Find which of this item's legend values match current legend selection
         var matchID = _.intersection(dhpMapsView.catFilterSelect, cats);
+            // Now, look through the current legend values for which matches first overlap
+            // TO DO: Make this more efficient: the search is done (exhaustively) twice here!
         var term = _.filter(dhpMapsView.catFilter.terms, function(item){
             if(item.id == matchID[0]) {
                 return item;
             }
         });
 
-        if (typeof(term[0]) !== 'undefined') {
-            if( term[0].parent && dhpMapsView.useParent ) {
-                var parentTerm = _.filter(dhpMapsView.catFilter.terms, function(parent){
-                if(parent.id == term[0].parent) {
-                        return parent;
-                    }
-                });             
-                returnColor = parentTerm[0]['icon_url'];
-            }
-            else {
-                dhpMapsView.parentIcon = term[0]['icon_url'];
-                returnColor = term[0]['icon_url'];
-            }
-        }
-        else {
-            returnColor = dhpMapsView.parentIcon;
+            // Does this term have a parent? Get color from parent
+        if( term[0].parent && dhpMapsView.useParent ) {
+                // Search through filter for parent's term entry
+                // NOTE: Further inefficiency: 3rd exhaustive search!!
+            var parentTerm = _.filter(dhpMapsView.catFilter.terms, function(parent){
+            if(parent.id == term[0].parent) {
+                    return parent;
+                }
+            });
+            returnColor = parentTerm[0]['icon_url'];
+
+            // No parent, get this icon's color
+        } else {
+            dhpMapsView.parentIcon = term[0]['icon_url'];
+            returnColor = term[0]['icon_url'];
         }
 
         return returnColor;
     }, // getActiveTermColor()
 
-        // PURPOSE: Need to research what pointToLayer does
-    pointToLayer: function (feature, latlng) {                    
-        return new L.CircleMarker(latlng, {
-            radius: 8,
-            fillColor: dhpMapsView.getActiveTermColor(feature.properties),
-            color: "#000",
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 1.0
-        });
+        // PURPOSE: Create the Leaflet feature associated with this entry
+    pointToLayer: function (feature, latlng) {
+        var fColor = dhpMapsView.getActiveTermColor(feature.properties.categories);
+        var fType = fColor.substring(0,1);
+        switch (fType) {
+        case '#':
+            return new L.CircleMarker(latlng, {
+                radius: dhpMapsView.markerSize,
+                fillColor: fColor,
+                color: "#000",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: dhpMapsView.checkOpacity
+            });
+        case '.':
+                // See if maki-icon has already been created and if not create it
+            var iName = fColor.substring(1);
+            var mIcon = makiIcons[iName];
+            if (mIcon == undefined || mIcon == null) {
+                mIcon = L.MakiMarkers.icon({
+                    icon: iName,
+                    color: "#12a",
+                    size: "m"
+                });
+                makiIcons[iName] = mIcon;
+            }
+            return new L.marker(latlng, { icon: mIcon });
+        default:
+            throw new Error("Unsupported feature type: "+fColor);
+        }
     }, // pointToLayer()
 
-        // Marker events
+        // PURPOSE: Bind controls for each Marker
     onEachFeature: function(feature, layer)
     {
         layer.bindPopup('<div><h1>'+feature.properties.title+'</h1><a class="button success" onclick="javascript:dhpMapsView.onFeatureSelect()">More</a></div>', {offset: new L.Point(0, -10)});
@@ -347,6 +378,7 @@ var dhpMapsView = {
         });
     }, // onEachFeature()
 
+        // TO DO:  Enable turning on and off
     hoverHighlightFeature: function(e){
         if(!dhpMapsView.isTouchSupported()) {
             dhpMapsView.highlightFeature(e);
@@ -362,12 +394,15 @@ var dhpMapsView = {
             dhpMapsView.highlightFeature(e);   
         }
     },
+
         // PURPOSE: Open popup
     highlightFeature: function(e){
         var layer = e.target;
         dhpMapsView.currentFeature = layer;
 
         layer.openPopup();
+
+            // TO DO: Change according to type of feature (Maki-icon, etc)
         layer.setStyle({ // highlight the feature
             weight: 3,
             color: '#666',
@@ -392,7 +427,7 @@ var dhpMapsView = {
     }, // resetMap()
 
         // PURPOSE: Determine which markers to display based on selected array.
-        // RETURNS: Feature if it's id is in selected array. 
+        // RETURNS: Feature if its id is in selected array
     filterMapMarkers: function(feature)
     {
         var filterTerms = dhpMapsView.catFilterSelect;
@@ -401,6 +436,7 @@ var dhpMapsView = {
         }
     }, // filterMapMarkers()
 
+        // PURPOSE: Handle visual impact of change of Legend selection
     refreshMarkerLayer: function() {
         dhpMapsView.findSelectedCats();
         dhpMapsView.control.removeLayer(dhpMapsView.markerLayer);
@@ -495,11 +531,21 @@ var dhpMapsView = {
                     }
                     var firstIconChar = theTerm.icon_url.substring(0,1);
                     var icon;
-                    if(firstIconChar=='#') { icon = 'background:'+theTerm.icon_url; }
-                    else { icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat right; background-size: 50%;'; }
+                    switch (firstIconChar) {
+                    case '#':
+                        icon = '<div class="small-4 large-2 columns" style="background:'+theTerm.icon_url+'">';
+                        break;
+                    case '.':
+                        icon = '<div class="small-4 large-2 columns maki-icon '+theTerm.icon_url.substring(1)+'">';
+                        break;
+                    default:
+                        // icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat right; background-size: 50%;';
+                        throw new Error('Unknown visual feature: '+theTerm.icon_url);
+                        break;
+                    }
 
-                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
-                          '<div class="small-4 large-2 columns" style="'+icon+'"><input type="checkbox" checked="checked"></div>'+
+                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+icon+
+                          '<input type="checkbox" checked="checked"></div>'+
                           // '<div class="small-1 large-1 columns"><div class="icon-legend" style="'+icon+'"></div></div>'+
                           '<div class="small-8 large-10 columns"><a class="value" data-id="'+theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div>'+
                         '</div>');
@@ -681,7 +727,6 @@ var dhpMapsView = {
     layerOpacity: function(layer, val) {
         if (layer.options.layerName=='Markers') {
             dhpMapsView.markerOpacity = val.values[ 0 ];
-            // dhpMapsView.refreshMarkerLayer();
         }
         else {
             layer.setOpacity(val.values[ 0 ]);       
@@ -755,7 +800,6 @@ var dhpMapsView = {
             },
             success: function(data, textStatus, XMLHttpRequest)
             {
-console.log("Returned data = "+data);
                 dhpMapsView.createDataObjects(JSON.parse(data));
                     // Remove Loading modal
                 dhpMapsView.callBacks.remLoadingModal();

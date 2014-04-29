@@ -1787,8 +1787,8 @@ function add_dhp_project_admin_scripts( $hook )
 			wp_enqueue_style('jquery-ui-style', plugins_url('/lib/jquery-ui-1.10.4/themes/base/jquery.ui.all.css', dirname(__FILE__)) );
 			wp_enqueue_style('jquery-colorpicker-style', plugins_url('/lib/colorpicker/jquery.colorpicker.css',  dirname(__FILE__)) );
 			// wp_enqueue_style('wp-jquery-ui-dialog' );
-			wp_enqueue_style('maki-sprite-style', plugins_url('/lib/maki-sprite.css',  dirname(__FILE__)) );
 			wp_enqueue_style('leaflet-style', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)) );
+			wp_enqueue_style('maki-sprite-style', plugins_url('/css/maki-sprite.css',  dirname(__FILE__)) );
 				// Lastly, our plug-in specific styles
 			wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)) );
 
@@ -1967,6 +1967,7 @@ function dhp_page_template( $page_template )
     	case 'map':
 			wp_enqueue_style('dhp-map-css', plugins_url('/css/dhp-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 			wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+			wp_enqueue_style('maki-sprite-style', plugins_url('/css/maki-sprite.css',  dirname(__FILE__)) );
 
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
 
@@ -1974,6 +1975,7 @@ function dhp_page_template( $page_template )
 	 		wp_enqueue_script('jquery-ui-slider');
 
 			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)));
+			wp_enqueue_script('leaflet-maki', plugins_url('/lib/Leaflet.MakiMarkers.js', dirname(__FILE__)), 'leaflet');
 
 			wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
 			wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);

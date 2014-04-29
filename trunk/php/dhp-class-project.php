@@ -203,7 +203,7 @@
 		                ],
 		                "marker-layer": String (name of mote),		// Mote used for geo coord
 		                "filter-data": [							// List of mote Legends/categories
-		                    Index : String (name of mote), ...
+		                    String (name of mote), ...
 		                ]
 		            }
 		            "settings" : {									// Topic Cards settings are as follows
@@ -237,10 +237,10 @@
 			        "title": String (name of mote),
 			        "width": "tiny" | "small" | "medium" | "large" | "x-large",
 			        "view-type": [							// Types of views to display in selected Marker modal
-			        	Integer (index) : 'transcript'
+			        	'transcript'
 			        ],
 			        "content": [							// Motes to show when Marker selected in visualization
-			            Integer (index): String (mote name), ...
+			            String (mote name), ...
 			        ],
 			        "link" : [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
 			        "link-label" : String,
@@ -256,7 +256,7 @@
 					"timecode" : Name of mote (that contains the timecode),
 					"source"	: Name of mote with common value across excerpts of transcripts (taxonomy category),
 					"content"	: [							// Motes to show when tax/archive page shown
-			            Integer (index): String (mote name), ...
+			            String (mote name), ...
 					]
 		        }
 		    }

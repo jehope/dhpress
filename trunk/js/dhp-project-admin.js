@@ -68,12 +68,15 @@ jQuery(document).ready(function($) {
     mapLayersParam = [];
   }
 
-    // Get initial project settings -- make blank settings if new project
+    // Get initial project settings -- make blank settings if new project, or if settings not version 3
   var savedSettings = $('#project_settings').val();
   if (savedSettings.length < 2) {
     savedSettings = _blankSettings;
   } else {
     savedSettings = JSON.parse(savedSettings);
+    if (savedSettings == undefined || savedSettings['project-details']['version'] != 3) {
+      savedSettings = _blankSettings;
+    }
   }
 
 
@@ -618,7 +621,7 @@ jQuery(document).ready(function($) {
       //            name      = label for this term
       //            parent    = ID of parent term, or 0
       //            count     = # times value/tag used
-      //            icon_url  = visual metadata (either #number for color or http://.. for icon)
+      //            icon_url  = visual metadata (either #number for color or .maki- for icon)
       //          Send back a subset to dhpCreateTaxTerms (adding term_order: see below)
       //          The HTML data-id attribute will contain id of category field
       //          If "As Icons" is selected, li with .maki-icon are inserted
