@@ -212,66 +212,57 @@ var dhpMapsView = {
         dhpMapsView.buildLayerControls();   
     }, // createDataObjects()
 
-        // PURPOSE: Uses crispTerm to remove nesting in term array
-    formatTerms: function(old_terms) 
+        // PURPOSE: Called by createDataObjects() to take nested array(s) of terms and convert to flat array
+        //              of items with fields: id, parent, name, icon_url
+        // NOTES:   In array returned by php, parent markers have <id> field but children have <term_id>
+        // TO DO:   This looks very inefficient -- redo
+        // RETURNS: Object with 2 properties: terms and all
+    formatTerms: function(oldTerms)
     {
-        var new_terms = old_terms;
+        var newTerms = oldTerms;
         var termArray = [];
         var allTerms = [];
 
-        for( var i=0, len=old_terms.terms.length; i < len; i++ ) {
-            termArray.push(dhpMapsView.crispTerm(old_terms.terms[i]))
-        }
+        _.each(oldTerms.terms, function(theTerm) {
+            termArray.push(dhpMapsView.crispTerm(theTerm));
+        });
 
-        new_terms.terms = _.flatten(termArray);
+            // ?? is this needed?
+        newTerms.terms = _.flatten(termArray);
 
-            //used for speedy intersection check
-        _.filter(new_terms.terms, function(term){ allTerms.push(term.id); });  
-        new_terms.all = allTerms;
+            // use array of just IDs for speedy intersection checks
+        _.each(newTerms.terms, function(theTerm) {
+            allTerms.push(theTerm.id);
+        });
+        newTerms.all = allTerms;
 
-        return new_terms;
+        return newTerms;
     }, // formatTerms()
 
         // PURPOSE: Creates a flattened array of terms (i.e. children terms are listed in array not nested)
+        // INPUT:   term = marker, which may have children array
+        // RETURNS: An array of markers which includes this marker and any children
+        // TO DO:   Replace with recusive function?
     crispTerm: function(term) {
         var termGroup = [];
-        if (typeof(term.icon_url) == 'undefined') {
-            term.icon_url = '';
-        }
         termGroup.push(term);
-        if(term.children) {
-            for( var i=0, len=term.children.length; i < len; i++ ) {
-                 var term_icon = '';
-                if(term.children[i].description) {
-                    term_icon = dhpMapsView.descToIcon(term.children[i].description);
-                }
-                
-                termGroup.push( {
-                    id : term.children[i].term_id,
-                    parent : term.children[i].parent,
-                    icon_url : term_icon,
-                    name : term.children[i].name
-                });
-            }
-        }
+
+        _.each(term.children, function(theChild) {
+            var cIcon = jQuery.parseJSON(theChild.description);
+            termGroup.push( {
+                id: theChild.term_id,
+                parent: term.id,
+                icon_url: cIcon,
+                name: theChild.name
+            });
+        });
         return termGroup;
     }, // crispTerm()
-
-        // PURPOSE: get description value that contains icon_url
-    descToIcon: function(val){
-        var term = jQuery.parseJSON( val );
-        var icon;
-        if (typeof(term.icon_url) !== 'undefined') {
-            icon = term.icon_url;
-        }
-        return icon;
-    },
 
         // PURPOSE: Creates and draws marker layer on map
         //          Called whenever the terms are filtered (inc initial display)
     createMarkerLayer: function() {
         dhpMapsView.markerLayer = L.geoJson(dhpMapsView.allMarkers, { 
-            // style: dhpMapsView.style,
             onEachFeature: dhpMapsView.onEachFeature,
             pointToLayer: dhpMapsView.pointToLayer,
             filter: dhpMapsView.filterMapMarkers 
@@ -282,19 +273,6 @@ var dhpMapsView = {
 
         // dhpMapsView.mapLayers.push(dhpMapsView.markerLayer);
     }, // createMarkerLayer()
-
-        // PURPOSE: Specify the style of a simple circle marker based on category
-        // NOTES:   This is the minimal implementation of a map marker -- we need icons, etc, too
-    // style: function(feature) {
-    //     return {
-    //        radius: 8,
-    //         fillColor: dhpMapsView.getActiveTermColor(feature.properties.categories),
-    //         color: "#000",
-    //         weight: 1,
-    //         opacity: dhpMapsView.checkOpacity,
-    //         fillOpacity: 1
-    //     };
-    // },
 
     checkOpacity: function() {
         return dhpMapsView.markerOpacity;
@@ -309,27 +287,23 @@ var dhpMapsView = {
         var matchID = _.intersection(dhpMapsView.catFilterSelect, cats);
             // Now, look through the current legend values for which matches first overlap
             // TO DO: Make this more efficient: the search is done (exhaustively) twice here!
-        var term = _.filter(dhpMapsView.catFilter.terms, function(item){
-            if(item.id == matchID[0]) {
-                return item;
-            }
+        var term = _.find(dhpMapsView.catFilter.terms, function(item) {
+            return (item.id == matchID);
         });
 
             // Does this term have a parent? Get color from parent
-        if( term[0].parent && dhpMapsView.useParent ) {
+        if(term.parent && dhpMapsView.useParent) {
                 // Search through filter for parent's term entry
                 // NOTE: Further inefficiency: 3rd exhaustive search!!
-            var parentTerm = _.filter(dhpMapsView.catFilter.terms, function(parent){
-            if(parent.id == term[0].parent) {
-                    return parent;
-                }
+            var parentTerm = _.find(dhpMapsView.catFilter.terms, function(parent) {
+                return (parent.id == term.parent);
             });
-            returnColor = parentTerm[0]['icon_url'];
+            returnColor = parentTerm['icon_url'];
 
             // No parent, get this icon's color
         } else {
-            dhpMapsView.parentIcon = term[0]['icon_url'];
-            returnColor = term[0]['icon_url'];
+            dhpMapsView.parentIcon = term['icon_url'];
+            returnColor = term['icon_url'];
         }
 
         return returnColor;
@@ -537,10 +511,10 @@ var dhpMapsView = {
                     var htmlStr;
                     switch (firstIconChar) {
                     case '#':
-                        htmlStr = '<div class="small-4 large-2 columns" style="background:'+theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
+                        htmlStr = '<div class="small-3 large-2 columns" style="background:'+theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
                         break;
                     case '.':
-                        htmlStr = '<div class="small-4 large-2 columns"><div class="maki-icon '+theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
+                        htmlStr = '<div class="small-3 large-2 columns"><div class="maki-icon '+theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
                         break;
                     default:
                             // TO DO: Support uploaded images!
@@ -550,8 +524,7 @@ var dhpMapsView = {
 
                         // Append new legend value to menu according to type
                     jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+htmlStr+
-                                                    '<div class="small-6 large-8 columns"><a class="value" data-id="'+theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
-                                                    // '<div class="small-8 large-10 columns"><a class="value" data-id="'+theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
+                                                    '<div class="small-7 large-9 columns"><a class="value" data-id="'+theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                 }
             });
             jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-map-legend-hideshow").html()));
@@ -796,6 +769,7 @@ var dhpMapsView = {
             },
             success: function(data, textStatus, XMLHttpRequest)
             {
+// console.log("Loaded data: "+data);
                 dhpMapsView.createDataObjects(JSON.parse(data));
                     // Remove Loading modal
                 dhpMapsView.callBacks.remLoadingModal();

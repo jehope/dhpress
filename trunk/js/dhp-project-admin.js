@@ -703,7 +703,7 @@ jQuery(document).ready(function($) {
           return colorStr;
         }
         if (colorStr.substring(0,3) != 'rgb') {
-          alert('Color in unknown format')
+          alert('Color in unknown format');
           throw new Error('Color in unknown format');
         }
         var digits;
@@ -1555,6 +1555,7 @@ jQuery(document).ready(function($) {
     // INPUT:   legendName = Head term id (legend name)
     //          taxTermsList = flat list containing data for updating terms in WP
   function saveLegendValuesInWP(legendName, taxTermsList) {
+console.log("Saving legend values: "+JSON.stringify(taxTermsList));
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1606,6 +1607,7 @@ jQuery(document).ready(function($) {
               term_name: termName
           },
           success: function(data, textStatus, XMLHttpRequest){
+            console.log("Delete results: "+data);
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
