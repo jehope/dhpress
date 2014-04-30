@@ -83,13 +83,13 @@
             <h3>Post view (Marker pages)</h3>
             <div>
               Page title: <select data-bind="value: edPostTitle, options: anyTxtDMoteNames"></select><br/>
-              Motes to show:  <button data-bind="jqButton, click: addPostMote">Add</button> this mote: <select id="selPostMote" data-bind="options: anyTxtMoteNames"></select><br/>
+              Motes to show:  <button data-bind="jqButton, click: addPostMote">Add</button> this mote: <select id="selPostMote" data-bind="options: allMoteNames"></select><br/>
               <div data-bind="template: { name: 'post-mote-template', foreach: postMoteList }"></div>
             </div>
 
             <h3>Taxonomy/Archive/Category view</h3>
             <div>
-              Motes to show:  <button data-bind="jqButton, click: addTaxMote">Add</button> this mote: <select id="selTaxMote" data-bind="options: anyTxtMoteNames"></select><br/>
+              Motes to show:  <button data-bind="jqButton, click: addTaxMote">Add</button> this mote: <select id="selTaxMote" data-bind="options: allMoteNames"></select><br/>
               <div data-bind="template: { name: 'tax-mote-template', foreach: taxMoteList }"></div>
             </div>
 
@@ -232,14 +232,14 @@
 
 <script type="text/html" id="post-mote-template">
     <li>
-        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.anyTxtMoteNames"></select>
+        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.allMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delPostMote($index()); }">Delete</button>
     </li>
 </script>
 
 <script type="text/html" id="tax-mote-template">
     <li>
-        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.anyTxtMoteNames"></select>
+        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.allMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delTaxMote($index()); }">Delete</button>
     </li>
 </script>

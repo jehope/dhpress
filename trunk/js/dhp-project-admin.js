@@ -700,7 +700,6 @@ jQuery(document).ready(function($) {
         // NOTES:   jQuery converts color values to rgb() even if given as hex
         //          DH Press display code assumes in hex format beginning with '#'
       function formatColor(colorStr) {
-console.log("Parsing color string: '"+colorStr+"'");
         if (colorStr.substring(0,1)=='#') {
           return colorStr;
         }

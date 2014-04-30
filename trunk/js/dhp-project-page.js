@@ -354,7 +354,7 @@ jQuery(document).ready(function($) {
         // SIDE-FX: Modifies DOM to create modal dialog window
     function showMarkerModal(feature)
     {
-        var selectParams = dhpSettings['views']['select'];
+        var selectParams = dhpSettings.views.select;
         var titleAtt='';
         var builtHTML;
         var link1, link2, link1Target, link2Target;
@@ -401,10 +401,10 @@ jQuery(document).ready(function($) {
          }
 
             // Create HTML for all of the data related to the Marker
-         if (selectParams['content']) {
+         if (selectParams.content) {
             builtHTML = '<div><h3>Details:</h3></div>';
                 // Go through each of the motes specified to be shown in select modal
-            _.each(dhpData.settings.views.select.content, function(cMote) {
+            _.each(selectParams.content, function(cMote) {
                 var mVal = feature.properties.content[cMote];
                 if (cMote==='Thumbnail Right') {
                     builtHTML += '<div class="thumb-right">'+mVal+'</div>';

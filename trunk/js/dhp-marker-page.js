@@ -46,20 +46,23 @@ jQuery(document).ready(function($) {
 		// }
 
 			// Go through each Legend and show corresponding values
-		_.each(dhpSettings['views']['post']['content'], function(legName) {
+		_.each(dhpSettings.views.post.content, function(legName) {
 				// Convert Legend name to custom field name
 			var cfName = getCustomField(legName);
-				// Use custom field to retrieve value
-			var tempVal = response[cfName];
-
-				// Special legend names to show thumbnails
-			if (legName=='Thumbnail Right') {
-				contentHTML += '<p class="thumb-right"><img src="'+tempVal+'" /></p>';
-			} else if (legName=='Thumbnail Left') {
-				contentHTML +='<p class="thumb-left"><img src="'+tempVal+'" /></p>';
-				// Otherwise, just add the legend name and value to the string we are building
-			} else if (tempVal) {
-				contentHTML += '<h3>'+legName+'</h3><p>'+tempVal+'</p>';
+			if (cfName) {
+					// Use custom field to retrieve value
+				var tempVal = response[cfName];
+				if (tempVal) {
+						// Special legend names to show thumbnails
+					if (legName=='Thumbnail Right') {
+						contentHTML += '<p class="thumb-right"><img src="'+tempVal+'" /></p>';
+					} else if (legName=='Thumbnail Left') {
+						contentHTML +='<p class="thumb-left"><img src="'+tempVal+'" /></p>';
+						// Otherwise, just add the legend name and value to the string we are building
+					} else if (tempVal) {
+						contentHTML += '<h3>'+legName+'</h3><p>'+tempVal+'</p>';
+					}
+				}
 			}
 		});
 		// console.log("contentHTML = "+contentHTML);
@@ -70,10 +73,14 @@ jQuery(document).ready(function($) {
 
 		// PURPOSE: Convert from moteName to custom-field name
 	function getCustomField(moteName) {
-		var theMote = _.find(dhpSettings['motes'], function(theMote) {
-			return moteName == theMote['name'];
+		var theMote = _.find(dhpSettings.motes, function(thisMote) {
+			return (moteName == thisMote.name);
 		});
-		return theMote['custom-fields'];
+        if (theMote) {
+            return theMote['custom-fields'];
+        } else {
+            return null;
+        }
 	}
 
 		// PURPOSE: Update Marker content page to show all of Marker's custom fields
