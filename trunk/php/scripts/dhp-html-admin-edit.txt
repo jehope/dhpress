@@ -124,6 +124,7 @@
         <button data-bind="jqButton, click: $parent.delMote">Delete</button>
         <span data-bind="if: type == 'Short Text'">
             <button data-bind="jqButton, click: $parent.configCat" class="configCat">Configure</button>
+            <button data-bind="jqButton, click: $parent.rebuildCat" class="rebuildCat">Rebuild</button>
         </span>
     </li>
 </script>

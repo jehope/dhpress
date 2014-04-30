@@ -985,7 +985,8 @@ function dhpInitializeTaxonomy($mArray, $parent_id, $projRootTaxName)
 		// Loop through array and create terms with parent(mote_name) for non-empty values
 	foreach ($mArray as $value) {
 		if (!is_null($value) && $value != '') {
-				// WP's term_exists() function doesn't escape slash characters!  Unlike wp_insert_term() and wp_update_term()!
+				// WP's term_exists() function doesn't escape slash characters!
+				// 	Unlike wp_insert_term() and wp_update_term()!
 	   		$termIs = term_exists(addslashes($value), $projRootTaxName, $parent_id);
 	   			//debug
 	   		// array_push($updateTaxObject['debug']['mArrayLoop'], addslashes($value));
@@ -999,8 +1000,6 @@ function dhpInitializeTaxonomy($mArray, $parent_id, $projRootTaxName)
 	   		}
 	   	}
 	}
-	// This is needed to create the terms which do not display until they are added to posts(markers in this case).
-	// Code that was removed was not neccessary as it is run in the configure legend step with dhpGetMoteValues()
 } // dhpInitializeTaxonomy()
 
 	// PURPOSE: To associate taxonomic terms with Markers in this Project with corresponding values
@@ -1010,8 +1009,6 @@ function dhpInitializeTaxonomy($mArray, $parent_id, $projRootTaxName)
 	//			$rootTaxName = name of root for all taxonomies belonging to this project
 function dhpBindTaxonomyToMarkers($projObj, $custom_field, $parent_id, $rootTaxName, $mote_delim)
 {
-		// Empty out any pre-existing subterms in this taxonomy
-	wp_update_term($parent_id, $rootTaxName);
 		// Now (re)create all subterms
 	$loop = $projObj->setAllMarkerLoop();
 	while ( $loop->have_posts() ) : $loop->the_post();
@@ -1047,8 +1044,6 @@ function dhpBindTaxonomyToMarkers($projObj, $custom_field, $parent_id, $rootTaxN
 add_action( 'wp_ajax_dhpGetLegendValues', 'dhpGetLegendValues' );
 
 // PURPOSE:	Handle Ajax call to retrieve Legend values; create if does not exist already
-// INPUT:	Through $_POST['mote'] array: ['type', 'delim', 'custom-fields', 'name']
-//			$_POST['project'] = ID of Project
 // RETURNS:	Array of unique values/tax-terms as JSON object
 //			This array includes the "head term" (legend/mote name)
 
@@ -1182,6 +1177,69 @@ function dhpSaveLegendValues()
 } // dhpSaveLegendValues()
 
 
+add_action( 'wp_ajax_dhpRebuildLegendValues', 'dhpRebuildLegendValues' );
+
+// PURPOSE:	Handle rebuilding taxonomy (gather custom field values and reassociate with Markers)
+// INPUT:	$_POST['project'] = ID of Project
+//			$_POST['newTerm'] = name of taxonomy term to add
+//			$_POST['legendName'] = name of parent term (mote/Legend) under which it should be added
+// RETURNS:	ID of new term
+
+function dhpRebuildLegendValues()
+{
+	$mote_name 		= $_POST['moteName'];
+	$custom_field 	= $_POST['customField'];
+	$mote_delim		= $_POST['delim'];
+	$projectID 		= $_POST['project'];
+
+	$results		= array();
+
+		// Nullify empty string or space
+	if ($mote_delim == '' || $mote_delim == ' ') { $mote_delim = null; }
+
+	$projObj      = new DHPressProject($projectID);
+	$rootTaxName  = $projObj->getRootTaxName();
+
+		// Has term already been created? -- Do all the work if not
+	if (!term_exists($mote_name, $rootTaxName)) {
+		$results['existed'] = false;
+		wp_insert_term($mote_name, $rootTaxName);
+		$parent_term = get_term_by('name', $mote_name, $rootTaxName);
+		$parent_id = $parent_term->term_id;
+	} else {
+		$results['existed'] = true;
+		$parent_term = get_term_by('name', $mote_name, $rootTaxName);
+		$parent_id = $parent_term->term_id;
+			// Empty out any pre-existing subterms in this taxonomy ??
+		wp_update_term($parent_id, $rootTaxName);
+
+			// Now delete any Category/Legend values that exist
+		$delete_children = get_term_children($parent_id, $rootTaxName);
+		if ($delete_children != WP_Error) {
+			$results['deletedCount'] = count($delete_children);
+			foreach ($delete_children as $delete_term) {
+				wp_delete_term($delete_term, $rootTaxName);
+			}
+		} else {
+			die('Get term fatal error: '.$delete_children);
+		}
+	}
+	$results['parentID']= $parent_id;
+
+		// Get unique values used by the related custom field
+	$mArray = $projObj->getCustomFieldUniqueDelimValues($custom_field, $mote_delim);
+	$results['values'] = $mArray;
+
+		// Initialize terms with mArray
+	dhpInitializeTaxonomy($mArray, $parent_id, $rootTaxName);
+
+		// Bind project's markers to the taxonomic terms
+	dhpBindTaxonomyToMarkers($projObj, $custom_field, $parent_id, $rootTaxName, $mote_delim);
+
+	die(json_encode($results));
+} // dhpRebuildLegendValues()
+
+
 add_action( 'wp_ajax_dhpCreateTermInTax', 'dhpCreateTermInTax' );
 
 // PURPOSE:	Handle adding new terms to taxonomy (that don't pre-exist in Marker data)
@@ -1200,13 +1258,25 @@ function dhpCreateTermInTax()
 	$parent_term = term_exists( $parent_term_name, $projRootTaxName );
 	$parent_term_id = $parent_term['term_id'];
 	$args = array( 'parent' => $parent_term_id );
+
+$results = array();
+$results['rootTaxName'] = $projRootTaxName;
+$results['parent'] = $parent_term;
+$results['parentID'] = $parent_term_id;
+
 	// create new term
-	$newTermId = wp_insert_term( $dhp_term_name, $projRootTaxName, $args );
-	// $newTerm = get_term_by('id', $newTermId['term_id'], $projRootTaxName);
+	$newTerm = wp_insert_term($dhp_term_name, $projRootTaxName, $args);
+	if ($newTerm == WP_Error) {
+		trigger_error("WP will not create new term ".$dhp_term_name." in taxonomy".$parent_term_name);
+	}
+
+$results['newTerm'] = $newTerm;
+$results['termID'] = $newTerm['term_id'];
+
 		// Clear term taxonomy
 	delete_option("{$projRootTaxName}_children");
 
-	die(json_encode($newTermId));
+	die(json_encode($results));
 } // dhpCreateTermInTax()
 
 

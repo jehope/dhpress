@@ -613,7 +613,8 @@ jQuery(document).ready(function($) {
 
 
       // PURPOSE: Handle user selection to configure associations of legend category: color, Maki icon, or image
-      // SIDE-FX: Hide Create and show Configure buttons
+      // INPUT:   theMote = Mote data structure
+      //          event = JS event for button
       // NOTES:   Need to have large fixed width to accommodate category legend data, loaded asynchronously
       //          Hierarchical sortable is from http://dbushell.com/2012/06/17/nestable-jquery-plugin/
       //          Category data is array in standard WP format (http://codex.wordpress.org/Function_Reference/get_terms#Return_Values_2)
@@ -660,7 +661,7 @@ jQuery(document).ready(function($) {
                   // Need to convert from nestable's format to flat format used by WP:
                   //    Disregard old parent field, as data- attributes not updated and user may have changed hierarchy
                 var savedTree = $('#category-tree').nestable('serialize');
-                var flatArray = [], termOrder=0;
+                var flatArray = [], termOrder=1;
                 ko.utils.arrayForEach(savedTree, function(treeItem) {
                   var newItem = {};
                   var domItem;
@@ -1009,6 +1010,16 @@ jQuery(document).ready(function($) {
         // Asynchronous AJAX load which needs to modify HTML
       getLegendValuesInWP(theMote.name, theMote['custom-fields'], theMote.delim, unpackLegendData);
     }; // configCat()
+
+      // PURPOSE: Handle selection to rebuild the Legend/Category for the mote
+      // INPUT:   theMote = Mote data structure
+      //          event = JS event for button
+    self.rebuildCat = function(theMote, event) {
+      var theButton = event.target;
+        // Disable button until AJAX call returns
+      $(theButton).prop('disabled', true);
+
+    };
 
 
 //-------------------------------------- Entry Points --------------------------------------
@@ -1538,13 +1549,13 @@ jQuery(document).ready(function($) {
               customField: moteCF,
               project: projectID
           },
-          success: function(data, textStatus, XMLHttpRequest){
+          success: function(data, textStatus, XMLHttpRequest) {
                 // data is a JSON object
             var results = JSON.parse(data);
             funcToCall(results);
           },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
-             alert(errorThrown);
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
+            alert(errorThrown);
           }
       });
   } // getLegendValuesInWP()
@@ -1573,6 +1584,28 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
       });
   } // saveLegendValuesInWP()
 
+    // PURPOSE: Handle calling WP to rebuild legend, re-enable button when done
+  function rebuildLegendValuesInWP(legendName, moteCF, theDelim, theButton) {
+    jQuery.ajax({
+          type: 'POST',
+          url: ajax_url,
+          data: {
+              action: 'dhpRebuildLegendValues',
+              moteName: legendName,
+              customField: moteCF,
+              delim: theDelim,
+              project: projectID
+          },
+          success: function(data, textStatus, XMLHttpRequest){
+             console.log("Rebuild Legend results: "+data);
+             $(theButton).prop('disabled', false);
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown){
+             alert(errorThrown);
+             $(theButton).prop('disabled', false);
+          }
+      });
+  } // rebuildLegendValuesInWP()
 
   function dhpCreateTermInTax(newTermName, moteName, callBack) {
     jQuery.ajax({
@@ -1585,8 +1618,12 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
               legendName: moteName
           },
           success: function(data, textStatus, XMLHttpRequest){
-              var termID = JSON.parse(data);
+console.log("New tax term id: "+data);
+              var termData = JSON.parse(data);
+              var termID = termData.termID;
               if (typeof(termID) == 'string') { termID = parseInt(termID); }
+console.log("After parsing: "+termID);
+
               callBack(termID);
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
