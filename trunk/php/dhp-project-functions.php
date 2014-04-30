@@ -501,6 +501,7 @@ function invertLatLon($latlon)
 			// 				"count" : String,
 			// 				"slug" : String,
 			// 				"description" : String,
+			//				"icon_url" : String,
 			// 				"term_taxonomy_id" : String,
 			// 				"taxonomy" : String,
 			// 				"term_group" : String
@@ -545,18 +546,18 @@ function getCategoryValues($parent_term, $taxonomy)
 				// convert IDs from String to Integer
 			$child2->term_id = intval($child2->term_id);
 			$child2->parent = intval($child2->parent);
+
 			if ($child2->description) {
-				$desc_object = json_decode(stripslashes($child2->description));
-				$child2->icon_url = $desc_object->icon_url; // ## save as Obj prop
+				$child2->icon_url = $child2->description;
 			} else {
 				$child2->icon_url = null;
 			}
+
 			array_push($children_names2, $child2->name);
 		}
 
 		if($child->description) {
-			$desc_object = json_decode(stripslashes($child->description));
-			$icon_url = $desc_object->icon_url;
+			$icon_url = $child->description;
 		} else {
 			$icon_url = null;
 		}
@@ -1113,23 +1114,10 @@ function dhpGetLegendValues()
  	//$dhp_top_term = get_term_by('name', $term_name, $rootTaxName);
 	//$terms = get_terms($rootTaxName, array( 'orderby' => 'term_id' ) );
 
- 		// Need to parse icon_url data from the description metadata
- 	if ( $t_count > 0 ){
-   		foreach ( $terms_loaded as $term ) {
-   				// First try to retrieve icon_url field value from description
-   			if(strlen($term->description) > 0){
-   				$desc_object = json_decode(stripslashes($term->description));
-   				$term_url = $desc_object->icon_url;
-
-				// If term has no description field, try to load data from term_meta
-   			} else {
-   				if(function_exists(get_term_meta)) {
-   					$term_url = get_term_meta($term->term_id, 'icon_url', true);
-   				} else {
-   					$term_url = null;
-   				}
-   			}
-			$term->icon_url = $term_url;
+ 		// Parse icon_url data from the description metadata
+ 	if ($t_count > 0) {
+   		foreach ($terms_loaded as $term) {
+			$term->icon_url = $term->description;
 		}
 	}
 
@@ -1153,11 +1141,7 @@ function dhpSaveLegendValues()
 	$mote_parent = $_POST['mote_name'];
 	$projectID = $_POST['project'];
 
-	// $raw_term_data = stripslashes($_POST['terms']);
-	// $raw_term_data = stripslashes_deep($_POST['terms'])
-	// $raw_term_data = $_POST['terms'];
-	// $project_terms = json_decode($raw_term_data);
-
+		// I don't know why terms array can be read directly without JSON decode
 	$project_terms = $_POST['terms'];
 
 		// Convert mote_parent to id
@@ -1169,19 +1153,14 @@ function dhpSaveLegendValues()
 		$parent_term_id = intval($term['parent']);
 		$term_id        = intval($term['term_id']);
 		$term_order     = intval($term['term_order']);
-		$meta_value     = $term['icon_url'];
 
-		if ($meta_value=='undefined') { $meta_value = ''; }
+		$updateArgs = array('parent' => $parent_term_id, 'term_group' =>  $term_order, 'description' => $term['icon_url']);
 
-			// Encode and append icon_url metadata
-		$icon_url = add_magic_quotes(json_encode(array('icon_url' => $meta_value)));
-		$updateArgs = array('parent' => $parent_term_id, 'term_group' =>  $term_order, 'description' => $icon_url);
 			// Update term settings
 		wp_update_term($term_id, $projRootTaxName, $updateArgs);
 	}
 	delete_option("{$projRootTaxName}_children");
 
-	// die(json_encode($results));
 	die('');
 } // dhpSaveLegendValues()
 
