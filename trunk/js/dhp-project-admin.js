@@ -700,6 +700,7 @@ jQuery(document).ready(function($) {
         // NOTES:   jQuery converts color values to rgb() even if given as hex
         //          DH Press display code assumes in hex format beginning with '#'
       function formatColor(colorStr) {
+console.log("Parsing color string: '"+colorStr+"'");
         if (colorStr.substring(0,1)=='#') {
           return colorStr;
         }
@@ -1015,9 +1016,26 @@ jQuery(document).ready(function($) {
       // INPUT:   theMote = Mote data structure
       //          event = JS event for button
     self.rebuildCat = function(theMote, event) {
-        // Disable button until AJAX call returns
-      $(event.target).button("disable");
-      rebuildLegendValuesInWP(theMote.name, theMote['custom-fields'], theMote.delim, event.target);
+      $( "#mdl-rebuild-cat" ).dialog({
+        resizable: false,
+        height:'auto',
+        width: 'auto',
+        modal: true,
+        dialogClass: 'wp-dialog',
+        draggable: false,
+        buttons: {
+          'Rebuild': function() {
+              // Disable button until AJAX call returns
+            $(event.target).button("disable");
+            rebuildLegendValuesInWP(theMote.name, theMote['custom-fields'], theMote.delim, event.target);
+
+            $( this ).dialog('close');
+          },
+          Cancel: function() {
+            $( this ).dialog('close');
+          }
+        }
+      });
     };
 
 

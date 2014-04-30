@@ -534,18 +534,26 @@ function getCategoryValues($parent_term, $taxonomy)
 		// Go through each of the values in the category
 	foreach ($children_terms as $child) {
 		array_push($children_names, $child->name);
-			// Get any children of this category
+			// Does this term have any children?
 		$childArgs = array( 'orderby' 		=> 'term_group',
 		 					'hide_empty'    => false,
 							'parent'        => $child->term_id );
 		$children_terms2 = get_terms( $taxonomy, $childArgs );
 		$children_names2 = array();
+			// Save each of the (sub)children
 		foreach ($children_terms2 as $child2) {
 				// convert IDs from String to Integer
 			$child2->term_id = intval($child2->term_id);
 			$child2->parent = intval($child2->parent);
+			if ($child2->description) {
+				$desc_object = json_decode(stripslashes($child2->description));
+				$child2->icon_url = $desc_object->icon_url; // ## save as Obj prop
+			} else {
+				$child2->icon_url = null;
+			}
 			array_push($children_names2, $child2->name);
 		}
+
 		if($child->description) {
 			$desc_object = json_decode(stripslashes($child->description));
 			$icon_url = $desc_object->icon_url;
@@ -553,6 +561,7 @@ function getCategoryValues($parent_term, $taxonomy)
 			$icon_url = null;
 		}
 
+			// Now save the top-level category term
 		$temp_child_filter				  = array();
 		$temp_child_filter['name']        = $child->name;
 		$temp_child_filter['id']          = intval($child->term_id);
@@ -1112,7 +1121,7 @@ function dhpGetLegendValues()
    				$desc_object = json_decode(stripslashes($term->description));
    				$term_url = $desc_object->icon_url;
 
-				// If term has no description field, load data from term_meta
+				// If term has no description field, try to load data from term_meta
    			} else {
    				if(function_exists(get_term_meta)) {
    					$term_url = get_term_meta($term->term_id, 'icon_url', true);

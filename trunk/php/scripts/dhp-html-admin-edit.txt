@@ -274,6 +274,10 @@
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete this entry point?</p>
     </div>
 
+    <div id="mdl-rebuild-cat" title="Rebuild Legend?">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to rebuild this Legend from scratch?</p>
+    </div>
+
     <div id="mdl-config-cat" title="Configure Legend">
         <h3 id="mdl-config-cat-title"></h3>
         <div>

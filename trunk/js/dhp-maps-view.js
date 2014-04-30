@@ -193,13 +193,13 @@ var dhpMapsView = {
         var legends = [];
 
             // Assign data to appropriate objects
-        _.each(dhpMapsView.rawAjaxData, function(val) {
-            switch(val.type) {
+        _.each(dhpMapsView.rawAjaxData, function(dataSet) {
+            switch(dataSet.type) {
             case 'filter':
-                legends.push(dhpMapsView.formatTerms(val));
+                legends.push(dhpMapsView.formatTerms(dataSet));
                 break;
             case 'FeatureCollection':
-                dhpMapsView.allMarkers = val;
+                dhpMapsView.allMarkers = dataSet;
                 break;
             }
         });
@@ -224,11 +224,18 @@ var dhpMapsView = {
         var allTerms = [];
 
         _.each(oldTerms.terms, function(theTerm) {
-            termArray.push(dhpMapsView.crispTerm(theTerm));
+            termArray.push(theTerm);
+            _.each(theTerm.children, function(theChild) {
+                termArray.push( {
+                    id: theChild.term_id,
+                    parent: theTerm.id,
+                    icon_url: theTerm.icon_url,    // child inherits parent's viz
+                    name: theChild.name
+                });
+            });
         });
 
-            // ?? is this needed?
-        newTerms.terms = _.flatten(termArray);
+        newTerms.terms = termArray;
 
             // use array of just IDs for speedy intersection checks
         _.each(newTerms.terms, function(theTerm) {
@@ -238,26 +245,6 @@ var dhpMapsView = {
 
         return newTerms;
     }, // formatTerms()
-
-        // PURPOSE: Creates a flattened array of terms (i.e. children terms are listed in array not nested)
-        // INPUT:   term = marker, which may have children array
-        // RETURNS: An array of markers which includes this marker and any children
-        // TO DO:   Replace with recusive function?
-    crispTerm: function(term) {
-        var termGroup = [];
-        termGroup.push(term);
-
-        _.each(term.children, function(theChild) {
-            var cIcon = jQuery.parseJSON(theChild.description);
-            termGroup.push( {
-                id: theChild.term_id,
-                parent: term.id,
-                icon_url: cIcon,
-                name: theChild.name
-            });
-        });
-        return termGroup;
-    }, // crispTerm()
 
         // PURPOSE: Creates and draws marker layer on map
         //          Called whenever the terms are filtered (inc initial display)
@@ -769,7 +756,7 @@ var dhpMapsView = {
             },
             success: function(data, textStatus, XMLHttpRequest)
             {
-// console.log("Loaded data: "+data);
+console.log("Loaded data: "+data);
                 dhpMapsView.createDataObjects(JSON.parse(data));
                     // Remove Loading modal
                 dhpMapsView.callBacks.remLoadingModal();
