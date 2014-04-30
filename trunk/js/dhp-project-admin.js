@@ -1015,10 +1015,9 @@ jQuery(document).ready(function($) {
       // INPUT:   theMote = Mote data structure
       //          event = JS event for button
     self.rebuildCat = function(theMote, event) {
-      var theButton = event.target;
         // Disable button until AJAX call returns
-      $(theButton).prop('disabled', true);
-
+      $(event.target).button("disable");
+      rebuildLegendValuesInWP(theMote.name, theMote['custom-fields'], theMote.delim, event.target);
     };
 
 
@@ -1598,11 +1597,11 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
           },
           success: function(data, textStatus, XMLHttpRequest){
              console.log("Rebuild Legend results: "+data);
-             $(theButton).prop('disabled', false);
+             $(theButton).button("enable");
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
              alert(errorThrown);
-             $(theButton).prop('disabled', false);
+             $(theButton).button("enable");
           }
       });
   } // rebuildLegendValuesInWP()
