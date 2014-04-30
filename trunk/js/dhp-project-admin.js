@@ -1260,12 +1260,13 @@ jQuery(document).ready(function($) {
     self.getModalLinkNames = ko.computed(function() {
       var linkList = ['disable', 'marker'];
 
-        // Only URL mote types can have values usable as links
-      ko.utils.arrayForEach(self.allMotes(), function(theMote) {
-        if (theMote.type === 'Link To') {
-          linkList.push(theMote.name+' (Mote)');
-        }
-      });
+        // If there is a Source setting for transcriptions, add it (if not already there)
+      var transSrcMote = self.edTrnsSrc();
+      if (transSrcMote && transSrcMote != '') {
+            if (linkList.indexOf(transSrcMote) == -1) {
+              linkList.push(transSrcMote);
+            }
+      }
 
         // Go through visualizations for defined Legend/Categories
         // Don't add category/legend mote unless not already there
@@ -1289,6 +1290,14 @@ jQuery(document).ready(function($) {
             }
           }
           break;
+        }
+      });
+
+        // Only URL mote types can have values usable as links
+        // This is done last because adding '(Mote)' to name means we can't easily check for duplicates
+      ko.utils.arrayForEach(self.allMotes(), function(theMote) {
+        if (theMote.type === 'Link To') {
+          linkList.push(theMote.name+' (Mote)');
         }
       });
 
