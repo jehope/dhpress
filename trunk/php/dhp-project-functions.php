@@ -13,6 +13,7 @@
 define( 'DHP_HTML_ADMIN_EDIT',  'dhp-html-admin-edit.txt' );
 define( 'DHP_SCRIPT_PROJ_VIEW',  'dhp-script-proj-view.txt' );
 define( 'DHP_SCRIPT_MAP_VIEW',   'dhp-script-map-view.txt' );
+define( 'DHP_SCRIPT_CARDS_VIEW',   'dhp-script-cards-view.txt' );
 // define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unused
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
 
@@ -1968,9 +1969,20 @@ function dhp_mod_page_content($content) {
 
 		$projscript = dhp_get_script_text(DHP_SCRIPT_PROJ_VIEW);
 
-	    if (!is_null($projObj->getEntryPointByName('map'))) {
+			// TO DO: Need to determine which view we are on before inserting file contents
+			//	since project can have multiple visualization pages
+		$ep0 = $projObj->getEntryPointByIndex(0);
+		switch ($ep0->type) {
+		case 'map':
 	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_MAP_VIEW);
-	    }
+	    	break;
+		case 'cards':
+	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_CARDS_VIEW);
+			break;
+		}
+	    // if (!is_null($projObj->getEntryPointByName('map'))) {
+	    // 	$projscript .= dhp_get_script_text(DHP_SCRIPT_MAP_VIEW);
+	    // }
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
 		break;
 	default:

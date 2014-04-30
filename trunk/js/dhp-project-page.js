@@ -151,6 +151,10 @@ jQuery(document).ready(function($) {
 
     case 'cards':
         dhpCardsView.initializeCards(ajaxURL, projectID, ep0['settings'], callBacks);
+
+            // Add user tips for cards
+        $('body').append(Handlebars.compile($("#dhp-script-cards-joyride").html()));
+
         updateVizSpace = dhpCardsView.updateVizSpace;
         closeModal     = null;
         break;
