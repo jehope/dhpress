@@ -17,7 +17,7 @@ jQuery(document).ready(function($) {
         // For reaching functions in this file used by various visualization modules
     var callBacks;
         // Visualization-specific callbacks
-    var updateVizSpace, closeModal;
+    var updateVizSpace;
 
     if(browserMobile) {
         $('body').addClass('isMobile');
@@ -41,12 +41,12 @@ jQuery(document).ready(function($) {
         // Insert Marker modal window HTML
     $('body').append(Handlebars.compile($("#dhp-script-markerModal").html()));
         // Set modal width
-    modalSize      = dhpSettings['views']['select']['width'];
+    modalSize      = dhpSettings.views.select.width;
     if(modalSize) {
         jQuery('#markerModal').addClass(modalSize);
     }
         // initialize fullscreen mode settings
-    if(dhpSettings['views']['viz-fullscreen']===true){
+    if(dhpSettings.views['viz-fullscreen']===true){
         $('body, html').addClass('fullscreen');
         $('.dhp-nav .fullscreen').addClass('active');
     }
@@ -66,15 +66,15 @@ jQuery(document).ready(function($) {
     });
 
         // handle turning joyride tips on/off
-    $('.dhp-nav .tips').on('click', function(){
-        if($('.dhp-nav .tips').hasClass('active')) {
-            $('.dhp-nav .tips').removeClass('active');
-            // $('#dhpress-tips').joyride('hide');
-        } else {
-            // $('#dhpress-tips').joyride('restart');
-            $('.dhp-nav .tips').addClass('active');
-        }
-    });
+    // $('.dhp-nav .tips').on('click', function(){
+    //     if($('.dhp-nav .tips').hasClass('active')) {
+    //         $('.dhp-nav .tips').removeClass('active');
+    //         // $('#dhpress-tips').joyride('hide');
+    //     } else {
+    //         // $('#dhpress-tips').joyride('restart');
+    //         $('.dhp-nav .tips').addClass('active');
+    //     }
+    // });
 
     $('<style type="text/css"> @media screen and (min-width: 600px) { #dhp-visual{ width:'+
         dhpSettings.views['viz-width']+'px; height:'+
@@ -94,7 +94,7 @@ jQuery(document).ready(function($) {
         animation_speed: 250,
         close_on_background_click: true,
         close_on_esc: true,
-        dismiss_modal_class: 'close-marker',
+        dismiss_modal_class: 'close-select-modal',
         bg_class: 'reveal-modal-bg',
         bg : jQuery('reveal-modal-bg'),
         css : {
@@ -110,6 +110,7 @@ jQuery(document).ready(function($) {
             }
         }
     });
+
         // Attach reveal bg listener for mobile devices(iPad bug)
     if(jQuery('body').hasClass('isMobile')) {
         jQuery('body').on('touchend', function(evt) {
@@ -118,6 +119,11 @@ jQuery(document).ready(function($) {
             }            
         });
     }
+
+        // Don't know why this is needed -- but Close button won't work without it
+    $('a.close-select-modal').click(function(){
+      $('#markerModal').foundation('reveal', 'close');
+    });
 
     createLoadingMessage();
 
@@ -148,7 +154,6 @@ jQuery(document).ready(function($) {
         // $('body').append(Handlebars.compile($("#dhp-script-map-helptips").html()));
 
         updateVizSpace = dhpMapsView.dhpUpdateSize;
-        closeModal     = null;
         break;
 
     case 'cards':
@@ -158,7 +163,6 @@ jQuery(document).ready(function($) {
         // $('body').append(Handlebars.compile($("#dhp-script-cards-helptips").html()));
 
         updateVizSpace = dhpCardsView.updateVizSpace;
-        closeModal     = null;
         break;
     }
 
@@ -166,13 +170,6 @@ jQuery(document).ready(function($) {
     if (modalViewHas("transcript")) {
         dhpTranscript.initialize();
     }
-
-        // On modal close, allow visualization to unselect features as appropriate
-    jQuery(document).on('closed', '#markerModal', function () {
-        if (closeModal) {
-            closeModal();
-        }
-    });
 
         // Monitor user activity, only if setting given
     maxMinutesInactive = dhpSettings["project-details"]["max-inactive"];
@@ -337,10 +334,10 @@ jQuery(document).ready(function($) {
     {
             // Enable joyride help tips
         // $("#dhpress-tips").joyride({'tipLocation': 'right'});
-        $('.dhp-nav .tips').removeClass('active');
-        $('.joyride-close-tip').on('click', function() {
-            $('.dhp-nav .tips').removeClass('active');
-        });
+        // $('.dhp-nav .tips').removeClass('active');
+        // $('.joyride-close-tip').on('click', function() {
+        //     $('.dhp-nav .tips').removeClass('active');
+        // });
     } // enableUserTips()
 
 

@@ -32,10 +32,10 @@
     <div class="modal-body clearfix">
     </div>
     <div class="reveal-modal-footer clearfix ">
-      <ul class="button-group right"><li><a class="button close-marker" >Close</a></li></ul>
+      <ul class="button-group right"><li><a class="button close-select-modal" >Close</a></li></ul>
     </div>
   </div>
-    <a class="close-reveal-modal close-marker">&#215;</a>
+    <a class="close-reveal-modal close-select-modal">&#215;</a>
 </div>
 </script>
 
