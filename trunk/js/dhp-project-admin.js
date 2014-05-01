@@ -327,9 +327,9 @@ jQuery(document).ready(function($) {
             savedEP.settings.sortMotes.push(sMote.name());
           });
 
-            // Save default values for now
-          savedEP.settings.width = 120;
-          savedEP.settings.height = 160;
+            // Set over-ride sizes to null for now
+          savedEP.settings.width = null;
+          savedEP.settings.height = null;
           break;
         } // switch ep type
         projSettings['entry-points'].push(savedEP);

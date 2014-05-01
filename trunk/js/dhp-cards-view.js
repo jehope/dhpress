@@ -148,7 +148,13 @@ var dhpCardsView = {
             if (theFeature.type !== 'Feature') {
                 throw new Error("Error in marker array");
             }
-            theTitle = theFeature.card.title;
+
+                // If there is no data specifically about card, data will not be sent
+            if (theFeature.card && theFeature.card.title) {
+                theTitle = theFeature.card.title;
+            } else {
+                theTitle = null;
+            }
 
             if (dhpCardsView.colorValues) {
                 colorStr = dhpCardsView.getHighestParentColor(theFeature.properties.categories);
@@ -156,7 +162,7 @@ var dhpCardsView = {
 
                 // Create element for the card
             theCard = jQuery('<div class="card" id="cardID'+index+'" '+colorStr+'></div');
-            if (theTitle && theTitle != '') {
+            if (theTitle && theTitle != 'disable') {
                 jQuery(theCard).append('<p style="font-weight: bold">'+theTitle+'</p></div>');
             }
 

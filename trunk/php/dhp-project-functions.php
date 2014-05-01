@@ -688,9 +688,10 @@ function createMarkerArray($project_id)
 		break;
 
 	case "cards":
-			// Convert title mote to custom field
+			// Convert title mote to custom field --
+			// If no title, no need (currently) to create cards property for markers
 		$cardTitle = $eps0->settings->title;
-		if ($cardTitle == null || $cardTitle == '') {
+		if ($cardTitle == null || $cardTitle == '' || $cardTitle == 'disable') {
 			$cardTitle = null;
 		} else if ($cardTitle != 'the_title') {
 			$cardTitle = $projObj->getCustomFieldForMote($cardTitle);
@@ -700,18 +701,14 @@ function createMarkerArray($project_id)
 		}
 			// Convert color mote to custom field
 		$cardColorMote = $eps0->settings->color;
-		if ($cardColorMote != null && $cardColorMote !== '') {
+		if ($cardColorMote != null && $cardColorMote !== '' && $cardColorMote != 'disable') {
 				// Create a legend for the color values
 			$term = get_term_by('name', $cardColorMote, $rootTaxName);
 			array_push($json_Object, getCategoryValues($term, $rootTaxName));
 		}
-			// prepare card contents (for now, just image and text motes)
-			// TO DO: Prevent redundancies
-		if ($eps0->settings->content[0] != null && $eps0->settings->content[0] != '') {
-			array_push($selectContent, $eps0->settings->content[0]);
-		}
-		if ($eps0->settings->content[1] != null && $eps0->settings->content[1] != '') {
-			array_push($selectContent, $eps0->settings->content[1]);
+			// gather card contents
+		foreach ($eps0->settings->content as $theContent) {
+			array_push($selectContent, $theContent);
 		}
 		break;
 	} // switch
@@ -795,8 +792,6 @@ function createMarkerArray($project_id)
 	// $feature_collection['debug'] = array();
 
 		// Run query to return all marker posts belonging to this Project
-	// $args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );
-	// $loop = new WP_Query( $args );
 	$loop = $projObj->setAllMarkerLoop();
 	while ( $loop->have_posts() ) : $loop->the_post();
 
@@ -864,10 +859,10 @@ function createMarkerArray($project_id)
 			$thisFeaturesProperties["title"] = $title;
 		}
 
-			// Special Topic Card values
-		if ($cardTitle != null || $cardTitle != '') {
+			// NOTE: $cardTitle is currently only card-specific field
+		if ($cardTitle != null) {
 			$cardValues = array();
-			if($cardTitle=='the_title') {
+			if ($cardTitle=='the_title') {
 				$title = get_the_title();
 			} else {
 				$title = get_post_meta($marker_id, $cardTitle, true);
@@ -1719,8 +1714,6 @@ function dhpFindReplaceCustomField()
 	$dhp_custom_replace_value = $_POST['replace_value'];
 	$projObj = new DHPressProject($projectID);
 
-	// $args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$dhp_project, 'posts_per_page' => -1 );
-	// $loop = new WP_Query( $args );
 	$loop = $projObj->setAllMarkerLoop();
 	$dhp_count=0;
 	while ( $loop->have_posts() ) : $loop->the_post();
