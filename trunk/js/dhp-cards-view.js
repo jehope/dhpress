@@ -33,7 +33,7 @@ var dhpCardsView = {
     }, // updateVizSpace()
 
         // PURPOSE: Called by createCards to determine color to use for marker
-        // RETURNS: First match on color to use for icon, or else default color
+        // RETURNS: String of first match on color to use for icon, or else default color
         // INPUT:   featureVals = array of category IDs (integers) associated with a feature/marker
         // ASSUMES: colorValues has been loaded
     getHighestParentColor: function(featureVals)
@@ -60,9 +60,9 @@ var dhpCardsView = {
                     // have we matched this element?
                 if (thisCatID===thisMarkerID) {
                     if(thisCat.icon_url.substring(0,1) == '#') {
-                        return 'style="background-color:'+thisCat.icon_url+'"';
+                        return thisCat.icon_url;
                     } else {
-                        return 'style="background-color:'+dhpCardsView.cardsEP.defColor+'"';
+                        return dhpCardsView.cardsEP.defColor;
                     }
                     // check for matches on its children
                 } else {
@@ -71,9 +71,9 @@ var dhpCardsView = {
                         for (k=0;k<catChildren.length;k++) {
                             if(catChildren[k].term_id==thisMarkerID) {
                                if(thisCat.icon_url.substring(0,1) == '#') {
-                                    return 'style="background-color:'+thisCat.icon_url+'"';
+                                    return thisCat.icon_url;
                                 } else {
-                                    return 'style="background-color:'+dhpCardsView.cardsEP.defColor+'"';
+                                    return dhpCardsView.cardsEP.defColor;
                                 }
                             }
                         }
@@ -118,7 +118,7 @@ var dhpCardsView = {
 
             // Find array of color values in AJAX data
         dhpCardsView.colorValues = null;
-        if (dhpCardsView.cardsEP.color && dhpCardsView.cardsEP.color != '') {
+        if (dhpCardsView.cardsEP.color && dhpCardsView.cardsEP.color != '' && dhpCardsView.cardsEP.color != 'disable') {
             _.find(dhpCardsView.rawData, function(theArray, index) {
                     // Last array is markers -- if we got here, it doesn't exist
                 if (index == (dhpCardsView.rawData.length-1)) {
@@ -136,10 +136,19 @@ var dhpCardsView = {
             });
         }
 
-        var theCard, contentElement, contentData, theTitle, colorStr;
+        var theCard, contentElement, contentData, theTitle, colorStr, classStr;
 
             // set default
-        colorStr = 'style="background-color:'+dhpCardsView.cardsEP.defColor+'"';
+        colorStr = dhpCardsView.cardsEP.defColor;
+
+            // get class for these cards
+        classStr='';
+        if (dhpCardsView.cardsEP.width != 'auto') {
+            classStr = dhpCardsView.cardsEP.width+' ';
+        }
+        if (dhpCardsView.cardsEP.height != 'auto') {
+            classStr += dhpCardsView.cardsEP.height;
+        }
 
             // Markers are last array in data
             // TO DO: Add data attributes for filter and sort motes, etc
@@ -150,7 +159,7 @@ var dhpCardsView = {
             }
 
                 // If there is no data specifically about card, data will not be sent
-            if (theFeature.card && theFeature.card.title) {
+            if (theFeature.card && theFeature.card.title && theFeature.card.title != 'disable') {
                 theTitle = theFeature.card.title;
             } else {
                 theTitle = null;
@@ -161,8 +170,8 @@ var dhpCardsView = {
             }
 
                 // Create element for the card
-            theCard = jQuery('<div class="card" id="cardID'+index+'" '+colorStr+'></div');
-            if (theTitle && theTitle != 'disable') {
+            theCard = jQuery('<div class="card '+classStr+'" id="cardID'+index+'" style="background-color:'+colorStr+'"></div');
+            if (theTitle) {
                 jQuery(theCard).append('<p style="font-weight: bold">'+theTitle+'</p></div>');
             }
 

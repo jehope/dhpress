@@ -180,7 +180,20 @@
         <li>Map short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Card Title <select data-bind="value: theEP.settings.title, options: $root.anyTxtDMoteNames"></select></li>
         <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select></li>
-        <li>Card Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="16"/></li>
+        <li>Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="9"/>&nbsp;
+        Width <select data-bind="value: theEP.settings.width">
+                              <option value="auto">Automatic</option>
+                              <option value="thin">Thin</option>
+                              <option value="med-width">Medium</option>
+                              <option value="wide">Wide</option>
+              </select>
+        Height <select data-bind="value: theEP.settings.height">
+                              <option value="auto">Automatic</option>
+                              <option value="short">Short</option>
+                              <option value="med-height">Medium</option>
+                              <option value="tall">Tall</option>
+              </select>
+        </li>
 
         <div data-bind="template: { name: 'cards-content-template', foreach: theEP.settings.content }"></div>
         <button data-bind="jqButton, click: $root.addCardContent.bind(theEP)">Add Content Mote</button>

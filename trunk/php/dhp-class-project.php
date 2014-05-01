@@ -113,8 +113,8 @@
 		            }
 		            "settings" : {									// Topic Cards settings are as follows
 						"title": String (name of mote),				// to display on top of card
-		            	"width" : Number,							// Pixel width of cards
-		            	"height" : Number,							// Pixel height of cards
+		            	"width" : String,							// "thin" | "med-width" | "fat"
+		            	"height" : String,							// "short" | "med-height" | "tall"
 						"color": String (name of mote),				// to determine color of card
 						"defColor" : String (CSS color to use),		// as default when no mote value
 						"content" : [

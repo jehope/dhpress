@@ -158,6 +158,8 @@ jQuery(document).ready(function($) {
     self.settings.title = ko.observable(epSettings.settings.title);
     self.settings.color = ko.observable(epSettings.settings.color);
     self.settings.defColor = ko.observable(epSettings.settings.defColor);
+    self.settings.width = ko.observable(epSettings.settings.width);
+    self.settings.height = ko.observable(epSettings.settings.height);
 
     self.settings.content = ko.observableArray();
     ko.utils.arrayForEach(normalizeArray(epSettings.settings.content), function(cMote) {
@@ -311,6 +313,8 @@ jQuery(document).ready(function($) {
           savedEP.settings.title = theEP.settings.title();
           savedEP.settings.color = theEP.settings.color();
           savedEP.settings.defColor = theEP.settings.defColor();
+          savedEP.settings.width = theEP.settings.width();
+          savedEP.settings.height = theEP.settings.height();
 
           savedEP.settings.content = [];
           ko.utils.arrayForEach(theEP.settings.content(), function(cMote) {
@@ -326,10 +330,6 @@ jQuery(document).ready(function($) {
           ko.utils.arrayForEach(theEP.settings.sortMotes(), function(sMote) {
             savedEP.settings.sortMotes.push(sMote.name());
           });
-
-            // Set over-ride sizes to null for now
-          savedEP.settings.width = null;
-          savedEP.settings.height = null;
           break;
         } // switch ep type
         projSettings['entry-points'].push(savedEP);
@@ -1070,6 +1070,8 @@ jQuery(document).ready(function($) {
           title: 'disable',
           color: 'disable',
           defColor: '#00BFFF',
+          width: 'med-width',
+          height: 'med-height',
           content: [],
           filterMotes: [],
           sortMotes: []

@@ -29,10 +29,8 @@ p {
 }
 
 .card {
-    width: 120px;
-    height: 160px;
- /*   width: 100%; */
-/*	transition-duration: 0.7s; */
+/*    width: 120px;
+    height: 160px; */
     background: #00BFFF;
     border-radius: 5px;
     font-size: 11px;
@@ -42,8 +40,36 @@ p {
     border: 2px solid gray;
     overflow: hidden;
     margin-bottom: 2px;
-/*    float: left; */
 }
+
+    /* Scale card acc to size */
+
+.card.short {
+    height: 100px;
+}
+
+.card.med-height {
+    height: 140px;
+}
+
+.card.tall {
+    height: 180px;
+}
+
+.card.thin {
+    width: 120px;
+}
+
+.card.med-width {
+    width: 180px;
+}
+
+.card.wide {
+    width: 220px;
+}
+
+
+    /* Material on the cards */
 
 .card p {
     font-size: 11px;
@@ -60,7 +86,6 @@ p {
     margin-top: 1px;
     border: 1px black solid;
     margin-bottom: 2px;
-/*   max-width: 98%; */
-  max-width: 102px;
+    max-width: 98%;
 }
 
