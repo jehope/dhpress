@@ -2015,14 +2015,12 @@ function dhp_page_template( $page_template )
 
 		wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
 		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-		wp_enqueue_style('joyride-css', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__)));
 
 		wp_enqueue_script('underscore');
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
-		wp_enqueue_script('joyride', plugins_url('/lib/jquery.joyride-2.1.js', dirname(__FILE__)), 'jquery');
 
     		// Visualization specific -- only 1st Entry Point currently supported
     	$projectSettings_viz = $projObj->getEntryPointByIndex(0);
@@ -2048,7 +2046,7 @@ function dhp_page_template( $page_template )
 			$vizParams["layerData"] = $layerData;
 
 	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps',
-	    							'jquery-ui-slider', 'joyride');
+	    							'jquery-ui-slider');
 	    	break;
 	    case 'cards':
 			wp_enqueue_style('dhp-cards-css', plugins_url('/css/dhp-cards.css',  dirname(__FILE__)) );
@@ -2153,14 +2151,12 @@ function dhp_tax_template( $page_template )
 		wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
 		wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
-	    // wp_enqueue_style( 'joyride', plugins_url('/css/joyride-2.1.css',  dirname(__FILE__) ));
 		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script( 'underscore' );
-		// wp_enqueue_script( 'joyride', plugins_url('/js/jquery.joyride-2.1.js', dirname(__FILE__),array('jquery') ));
 		// wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
 
 	    if ($isTranscript) {

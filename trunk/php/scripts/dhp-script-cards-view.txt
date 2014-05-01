@@ -1,5 +1,5 @@
     <!-- Handlebars Templates for Map View -->
-<script id="dhp-script-cards-joyride" type="text/x-handlebars-template">
+<script id="dhp-script-cards-helptips" type="text/x-handlebars-template">
   <ol id="dhpress-tips" class="joyRideTipContent">
 
           <li data-class="icon-fullscreen" data-options="tipLocation:bottom" class="custom-class">Click the “Fullscreen map” button to switch between a smaller view of the map and one that takes up the browser’s entire window. All of the map’s interactivity is functional in both views. When in the smaller map view, you will see the rest of the project site, including the navigation bar at the top and any additional content on the sidebar.\

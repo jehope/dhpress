@@ -22,7 +22,7 @@
 </script>
 
 
-<script id="dhp-script-map-joyride" type="text/x-handlebars-template">
+<script id="dhp-script-map-helptips" type="text/x-handlebars-template">
   <ol id="dhpress-tips" class="joyRideTipContent">
           <li data-id="legends" data-options="tipLocation:right">Legends allow you to change (or filter) what you see on the map. By clicking on different options in the legend, you can see related markers by themselves or in combination with each other. Click on the check box or name to narrow the display of markers on the map. You can click on multiple check boxes. Refreshing the browser page will restore all markers on the map.</li>\
 

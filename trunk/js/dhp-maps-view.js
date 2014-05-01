@@ -27,6 +27,7 @@ var dhpMapsView = {
         //                  mapLeaflet = Leaflet map object
         //                  control = Leaflet map layer selection controller
         //                  useParent = if true (always true?), actions on parent term affect child terms
+        //                  anyPopupsOpen = true when a popover modal is currently open
 
         // PURPOSE: Initialize new leaflet map, layers, and markers                         
         // INPUT:   ajaxURL      = URL to WP
@@ -633,8 +634,8 @@ var dhpMapsView = {
             jQuery(action).addClass('active-legend');
             jQuery(action).show();
         });
-        
-        // Show initially Legend selection
+
+          // Show initial Legend selection
         dhpMapsView.findSelectedCats();
     }, // createLegends()
 
@@ -756,7 +757,6 @@ var dhpMapsView = {
             },
             success: function(data, textStatus, XMLHttpRequest)
             {
-console.log("Loaded data: "+data);
                 dhpMapsView.createDataObjects(JSON.parse(data));
                     // Remove Loading modal
                 dhpMapsView.callBacks.remLoadingModal();

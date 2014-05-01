@@ -97,9 +97,9 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			}
 			return $options;
 		}
+
 		static function dhp_list_pages_for_screen_saver()
 		{
- 
 			$pages = get_pages();
 			$options = '<option value="0" '. selected(get_option('screen_saver'),0) . '>-- No Screen Saver --</option>';
 			foreach ( $pages as $page ) {
@@ -110,6 +110,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			}
 			return $options;
 		}
+
 		static function dhp_list_pages_for_kiosk_launch()
 		{
 			$pages = get_pages();
@@ -122,8 +123,9 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			}
 			return $options;
 		}
+
 			// Template for settings page
-			// TODO: Move to it's own file
+			// TODO: Move to its own file
 		static function settings_page_template() 
 		{
 			ob_start(); ?>
@@ -201,6 +203,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			<?php
 			return ob_get_clean();
 		}
+
 			// Add handlebars template to footer for tip modal
 		static function dhp_tip_page_content()
 		{	
@@ -209,7 +212,8 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			// 	echo self::dhp_tip_page_template();
 			// }
 			echo self::dhp_tip_page_template();			
-		}	
+		}
+
 			// PURPOSE: Load template in html to be called by javascript
 		static function dhp_tip_page_template() {
 			$tip_obj = get_post(get_option('tip_url'));
@@ -232,6 +236,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			<?php
 			return ob_get_clean();
 		}
+
 			// Add handlebars template to footer for tip modal
 		static function dhp_screen_saver_content()
 		{	
@@ -240,6 +245,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				// echo self::dhp_screen_saver_template();
 			}
 		}
+
 			// PURPOSE: Load template in html to be called by javascript
 		static function dhp_screen_saver_template() {
 			$tip_obj = get_post(get_option('screen_saver'));
@@ -251,6 +257,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			<?php
 			return ob_get_clean();
 		}
+
 			// Add handlebars template to footer for tip modal
 		static function dhp_launch_page_content()
 		{	
@@ -259,6 +266,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				echo self::dhp_launch_page_template();
 			}			
 		}
+
 			// PURPOSE: Load template in html to be called by javascript
 		static function dhp_launch_page_template() {
 			ob_start(); ?>
@@ -279,6 +287,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			<?php
 			echo ob_get_clean();
 		}
+
 			// Register scripts/styles used by global settings
 		static function register_scripts() 
 		{		
@@ -289,6 +298,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 		
 			wp_register_script( 'dhp-global-settings-script', plugins_url( '/js/dhp-global-settings.js', dirname( __FILE__ ) ), array( 'jquery' ), DHP_PLUGIN_VERSION, true );
 		}
+
 		static function print_scripts() 
 		{
 			$global_tip = false;
@@ -306,12 +316,12 @@ if( !class_exists( 'DHPressSettings' ) ) {
 	        wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 	        wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 			wp_enqueue_script( 'dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
-				
+
 			if($post->ID == get_option('kiosk_launch')) {
 				wp_enqueue_script( 'dhp-kiosk-launch-script' );
 			}			
 			wp_enqueue_style( 'dhp-global-settings', plugins_url('/css/dhp-global-settings.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION);
-	        
+
 				// Load styles
 			// wp_enqueue_style( 'dhp-global-settings-styles' );
 				// Load scripts
@@ -331,6 +341,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 		}
 	}
 }
+
 if( class_exists( 'DHPressSettings' ) ) {
 	DHPressSettings::init();
 }
