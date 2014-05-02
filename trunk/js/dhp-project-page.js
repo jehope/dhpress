@@ -243,7 +243,7 @@ jQuery(document).ready(function($) {
                 jQuery('#markerModal').addClass(modalSize);
             }
 
-                // TO DO -- Modify this according to view type??
+                // TO DO -- Modify screen dimentions according to view type??
 
                 // New WordPress has a mobile admin bar with larger height(displays below 783px width)
             if (wpAdminBarVisible && windowWidth >= wpAdminBarWidth ) {
@@ -294,21 +294,31 @@ jQuery(document).ready(function($) {
                 // Insert slot into nav-bar
             $('.top-bar-section .right').prepend(Handlebars.compile($('#dhp-script-epviz-menu').html()));
 
+                // Matches viz parameter in URL
+            var vizPattern = /viz=\d+/;
                 // Get URL of current location, ensure it is a string
-            var currentURL = String(window.location);
-                // to form destination, check if there is a viz parameter
-                // if there is, just replace param with new viz #
-                // if not, remove any trailing #, add &viz=#
+            var baseURL = String(window.location);
+                // remove any trailing # in case we need to append query var
+            if (baseURL.substr(-1,1) == '#') {
+                baseURL = baseURL.substring(0, baseURL.length-1);
+            }
+                // get query string
+            var queryStr = window.location.search;
+                // if no query string at all, need to add initial query character and viz param
+            if (queryStr.length < 2) {
+                baseURL += '?viz=0'
+
+                // Check to see if the query string lacks viz param
+            } else if (!queryStr.match(vizPattern)) {
+                baseURL += '&viz=0'
+            }
 
                 // Split off the query params -- need to include "project=X" in any URL
-            var urlParts = currentURL.split('?');
-console.log("Path = "+urlParts[0]);
             var menuHTML;
             _.each(dhpData.vizParams.menu, function(mItem, index) {
                     // Don't need to create menu for this item
                 if (vizIndex != index) {
-                    menuHTML = '<li><a href="#">'+mItem+'</a></li>';
-console.log("Adding viz menu item: "+menuHTML);
+                    menuHTML = '<li><a href="'+baseURL.replace(vizPattern, 'viz='+index)+'">'+mItem+'</a></li>';
                     $('.dropdown.epviz-dropdown').append(menuHTML);
                 }
             });
