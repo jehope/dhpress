@@ -141,7 +141,13 @@
             Initial Zoom <input data-bind="value: theEP.settings.zoom" type="text" size="2"/>
             <button class="update-map-btn hide">Update Lat/Lon on map</button>
         </li>
-        <li>Marker Mote (for Lat/Lon) <select data-bind="value: theEP.settings['marker-layer'], options: $root.coordMoteNames"></select></li>
+        <li>Marker Radius <select data-bind="value: theEP.settings.size">
+                <option value="s">Small</option>
+                <option value="m">Medium</option>
+                <option value="l">Large</option>
+            </select>&nbsp;
+          Marker Mote (for Lat/Lon) <select data-bind="value: theEP.settings['marker-layer'], options: $root.coordMoteNames"></select>
+        </li>
         <div data-bind="template: { name: 'map-layer-template', foreach: theEP.settings.layers, as: 'theLayer' }"></div>
         <button data-bind="jqButton, click: $root.addLayer.bind(theEP)">Add Layer</button>
         <div data-bind="template: { name: 'map-legend-template', foreach: theEP.settings['filter-data'] }"></div>

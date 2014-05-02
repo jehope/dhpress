@@ -20,7 +20,8 @@ var dhpMapsView = {
         //                  catFilterSelect = Current selection of legend/categories; Subset of catFilter.terms
 
         //                  markerOpacity = opacity of marker layer (for all markers)
-        //                  markerSize = radius of markers
+        //                  radius = radius of geometric markers
+        //                  makiSize = "s" | "m" | "l"
         //                  makiIcons = array of maki icons
 
         //                  mapLayers = array of layer data to display (compiled in this code)
@@ -47,7 +48,18 @@ var dhpMapsView = {
         dhpMapsView.callBacks      = callBacks;
 
         dhpMapsView.markerOpacity  = 1;     // default marker opacity
-        dhpMapsView.markerSize     = 8;     // default marker radius
+        dhpMapsView.makiSize       = mapEP.size;
+        switch (mapEP.size) {
+        case "s":
+            dhpMapsView.radius     = 4;
+            break;
+        case "m":
+            dhpMapsView.radius     = 8;
+            break;
+        case "l":
+            dhpMapsView.radius     = 12;
+            break;
+        }
         dhpMapsView.makiIcons      = [];    // array of Maki-icons to be used by markers
 
         dhpMapsView.mapLayers      = [];
@@ -304,7 +316,7 @@ var dhpMapsView = {
         switch (fType) {
         case '#':
             return new L.CircleMarker(latlng, {
-                radius: dhpMapsView.markerSize,
+                radius: dhpMapsView.radius,
                 fillColor: fColor,
                 color: "#000",
                 weight: 1,
@@ -319,7 +331,7 @@ var dhpMapsView = {
                 mIcon = L.MakiMarkers.icon({
                     icon: iName,
                     color: "#12a",
-                    size: "m"
+                    size: dhpMapsView.makiSize
                 });
                 dhpMapsView.makiIcons[iName] = mIcon;
             }

@@ -136,6 +136,7 @@ jQuery(document).ready(function($) {
     self.settings.lat = ko.observable(epSettings.settings.lat);
     self.settings.lon = ko.observable(epSettings.settings.lon);
     self.settings.zoom = ko.observable(epSettings.settings.zoom);
+    self.settings.size = ko.observable(epSettings.settings.size);
     self.settings.layers = ko.observableArray();
     ko.utils.arrayForEach(normalizeArray(epSettings.settings.layers), function(theLayer) {
       self.settings.layers.push(new MapLayer(theLayer));
@@ -283,6 +284,7 @@ jQuery(document).ready(function($) {
           savedEP.settings.lat    = theEP.settings.lat();
           savedEP.settings.lon    = theEP.settings.lon();
           savedEP.settings.zoom   = theEP.settings.zoom();
+          savedEP.settings.size   = theEP.settings.size();
           savedEP.settings.layers = [];
 
           ko.utils.arrayForEach(theEP.settings.layers(), function(theLayer) {
@@ -1051,7 +1053,7 @@ jQuery(document).ready(function($) {
         type: 'map',
         label: 'name me',
         settings: {
-            lat: 0, lon: 0, zoom: 10,
+            lat: 0, lon: 0, zoom: 10, size: 'm',
             layers: [ { id: 0, name: '', opacity: 1, mapType: '', mapTypeId: '' } ],
             'marker-layer': '',
             'filter-data': [ ]

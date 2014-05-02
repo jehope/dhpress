@@ -6,71 +6,6 @@
  ** NOTES:   Class attempts to do "lazy loading": only retrieve data when needed
  **			 Settings is an array/JSON object, whose structure depends on version;
  **				conversion between them is done by ensureSettings().
-
- **		VERSION 1 (first iteration of DH Press)
- **			"project-details": {
-		        "id": Integer,
-		        "name": String,
-		        "marker-custom-fields": [ String, ... ],
-		        "home-label": String,
-		        "home-url": String,
-		        "max-inactive": Number (in minutes)
-		    },
-		    "motes": [
-		        Index: {
-		            "name": String,
-		            "type": String (name of type),
-		            "custom-fields": String,
-		            "delim": String (containing a character or empty string)
-		        }, ...
-		    ],
-		    "entry-points": [										// contents of settings depends on type of entry point
-		    	Integer (index) : {
-		            "type": String ("map" or "transcript"),
-		            "settings": {									// map settings are as follows
-		                "lat": Number,
-		                "lon": Number,
-		                "zoom": Number,
-		                "opacity": Number,
-		                "layers": [
-		                    Index: {
-		                        "id": Number,
-		                        "name": String,
-		                        "mapType": String ("type-OSM" or "type-CDLA"),
-		                        "mapTypeId": String,
-		                    }, ...
-		                ],
-		                "marker-layer": String (name of mote),		// Mote used for geo coord
-		                "filter-data": [
-		                    Index : String (name of note), ...
-		                ]
-		            } -- or --
-		            "settings": {									// transcript settings are
-						"audio" : Name of mote (that contains last part of URL to audio file)
-						"transcript" : Name of mote (that contains URL to textual transcription of original),
-						"transcript2" : Name of mote (that contains URL to textual transcription of any translation),
-						"timecode" : Name of mote (that contains the timecode)
-		            }
-		        }
-		    },
-		    "views": {
-		        "map-fullscreen": false | true,
-		        "map-width": Integer,
-		        "map-height": Integer,
-		        "post-view-title": String,
-		        "title": String (name of mote),
-		        "post-view-content": [ String (name of mote), ...  ],
-		        "modal-ep": [			// Entry-point(s) to display in selected Marker modal
-		        	Integer (index) : 'transcript' | 'map'
-		        ],
-		        "content": [			// Motes to show when Marker selected in visualization
-		            Integer (index): String (mote name), ...
-		        ],
-		        "link": Name of mote,
-		        "link-label" : String,
-		        "link2": Name of mote,
-		        "link-label2" : String
-		    } 
  
  **		VERSION 2 (DH Press 1.3.0+)
  **			"project-details": {
@@ -192,9 +127,10 @@
 		                "lat": Number,
 		                "lon": Number,
 		                "zoom": Number,
-		                "opacity": Number,
+		                "size": Character,							// "s" | "m" | "l"
 		                "layers": [
 		                    Index: {
+		                		"opacity": Number,
 		                        "id": Number,
 		                        "name": String,
 		                        "mapType": String ("type-Blank", "type-OSM", "type-DHP"),
