@@ -1,6 +1,8 @@
 // PURPOSE: Handle viewing Project content visualizations
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //          vizParams.layerData = array with all data needed for dhp-custom-maps
+//          vizParams.current = index of current visualization in entry points
+//          vizParams.menu = array of labels of visualizations
 //          Section for marker modal is marked with HTML div as "markerModal"
 // USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
 // NOTES:   Format of project settings is documented in dhp-class-project.php
@@ -8,7 +10,9 @@
 jQuery(document).ready(function($) {
         // Project variables
     var dhpSettings,            // all project settings
-        projectID, ajaxURL;
+        projectID,
+        ajaxURL,
+        vizIndex;               // index of current visualization
         // Inactivity timeout
     var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive;
         // modal and GUI support
@@ -22,9 +26,12 @@ jQuery(document).ready(function($) {
     if(browserMobile) {
         $('body').addClass('isMobile');
     }
+
     ajaxURL        = dhpData.ajax_url;
     dhpSettings    = dhpData.settings;
     projectID      = dhpSettings["project-details"]["id"];
+
+    vizIndex       = dhpData.vizParams.current;
 
     jQuery(document).foundation();
 
@@ -112,7 +119,7 @@ jQuery(document).ready(function($) {
     });
 
         // Attach reveal bg listener for mobile devices(iPad bug)
-    if(jQuery('body').hasClass('isMobile')) {
+    if (jQuery('body').hasClass('isMobile')) {
         jQuery('body').on('touchend', function(evt) {
             if(jQuery(evt.target).hasClass('reveal-modal-bg')) {
                 jQuery('#markerModal').foundation('reveal', 'close');
@@ -120,16 +127,16 @@ jQuery(document).ready(function($) {
         });
     }
 
-        // Don't know why this is needed -- but Close button won't work without it
+        // Don't know why this is needed -- but Select Modal Close button won't work without it
     $('a.close-select-modal').click(function(){
       $('#markerModal').foundation('reveal', 'close');
     });
 
     createLoadingMessage();
 
-        // Currently only supporting 1 visualization, the 1st entry point
-    var ep0 = dhpSettings['entry-points'][0];
-    switch (ep0.type) {
+        // 
+    var thisEP = dhpSettings['entry-points'][vizIndex];
+    switch (thisEP.type) {
     case 'map':
             // vizParams.layerData must have array of DHP custom map layers to add to "library" -- not base maps (??)
         _.each(dhpData.vizParams.layerData, function(theLayer) {
@@ -148,7 +155,7 @@ jQuery(document).ready(function($) {
         $('#dhp-visual').append(Handlebars.compile($("#dhp-script-map-legend-head").html()));
 
             // all custom maps must have already been loaded into run-time "library"
-        dhpMapsView.initMapInterface(ajaxURL, projectID, ep0.settings, dhpData.vizParams, callBacks);
+        dhpMapsView.initMapInterface(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams, callBacks);
 
             // Add user tips for map
         // $('body').append(Handlebars.compile($("#dhp-script-map-helptips").html()));
@@ -157,7 +164,7 @@ jQuery(document).ready(function($) {
         break;
 
     case 'cards':
-        dhpCardsView.initializeCards(ajaxURL, projectID, ep0.settings, callBacks);
+        dhpCardsView.initializeCards(ajaxURL, projectID, vizIndex, thisEP.settings, callBacks);
 
             // Add user tips for cards
         // $('body').append(Handlebars.compile($("#dhp-script-cards-helptips").html()));
@@ -213,21 +220,21 @@ jQuery(document).ready(function($) {
         var windowWidth, windowHeight;
 
             //reset body height to viewport so user can't scroll visualization area
-        if(jQuery('body').hasClass('fullscreen')){
+        if (jQuery('body').hasClass('fullscreen')) {
                 // get new dimensions of browser
             windowWidth  = jQuery(window).width();
             windowHeight = jQuery(window).height();
 
                 // Override modal class size to/from medium if window size is under/over certain sizes
-            if(windowWidth<800) {
+            if (windowWidth<800) {
                 jQuery('#markerModal').removeClass('medium');
                 jQuery('#markerModal').addClass(modalSize);
             }
-            else if(modalSize==='tiny' && windowWidth >= 800 && windowWidth < 1200) {
+            else if (modalSize==='tiny' && windowWidth >= 800 && windowWidth < 1200) {
                 jQuery('#markerModal').removeClass('tiny');
                 jQuery('#markerModal').addClass('medium');
             }
-            else if(modalSize==='small' && windowWidth >= 800 && windowWidth < 1200) {
+            else if (modalSize==='small' && windowWidth >= 800 && windowWidth < 1200) {
                 jQuery('#markerModal').removeClass('small');
                 jQuery('#markerModal').addClass('medium');
             }
@@ -236,21 +243,23 @@ jQuery(document).ready(function($) {
                 jQuery('#markerModal').addClass(modalSize);
             }
 
-                //New WordPress has a mobile admin bar with larger height(displays below 783px width)
+                // TO DO -- Modify this according to view type??
+
+                // New WordPress has a mobile admin bar with larger height(displays below 783px width)
             if (wpAdminBarVisible && windowWidth >= wpAdminBarWidth ) {
                 jQuery('body').height(windowHeight - wpAdminBarHeight);
             }
                 // Non mobile admin bar height
-            else if(wpAdminBarVisible && windowWidth < wpAdminBarWidth ) {
+            else if (wpAdminBarVisible && windowWidth < wpAdminBarWidth ) {
                 jQuery('body').height(windowHeight - wpMobileAdminBarHeight);
                     // ?? Joe added this later -- remove?
-                jQuery('#dhp-visual').height(windowHeight - wpMobileAdminBarHeight);
+                // jQuery('#dhp-visual').height(windowHeight - wpMobileAdminBarHeight);
             }
                 //Non logged in users
             else {
                 jQuery('body').height(windowHeight);
             }
-            // jQuery('#dhp-visual').css({ 'height': jQuery('body').height() - 45, 'top' : 45 });
+            // jQuery('#dhp-visual').css({ 'height': jQuery('body').height() - wpMobileAdminBarHeight, 'top' : wpMobileAdminBarHeight });
         }
 
             // Do whatever needed for specific visualization
@@ -277,6 +286,32 @@ jQuery(document).ready(function($) {
         if ((homeBtnLabel !== null) && (homeBtnLabel !== '') && (homeBtnURL !== null) && (homeBtnURL !== '')) {
             var homeBtnHTML = '<li ><a href="'+ homeBtnURL +'"><i class="fi-home"></i> ' + homeBtnLabel + ' </a></li>';
             $('.top-bar-section .right').prepend(homeBtnHTML);
+        }
+
+            // Create drop-down menu for visualizations
+            // Place at start (left end) of right side (??)
+        if (dhpData.vizParams.menu.length > 1) {
+                // Insert slot into nav-bar
+            $('.top-bar-section .right').prepend(Handlebars.compile($('#dhp-script-epviz-menu').html()));
+
+                // Get URL of current location, ensure it is a string
+            var currentURL = String(window.location);
+                // to form destination, check if there is a viz parameter
+                // if there is, just replace param with new viz #
+                // if not, remove any trailing #, add &viz=#
+
+                // Split off the query params -- need to include "project=X" in any URL
+            var urlParts = currentURL.split('?');
+console.log("Path = "+urlParts[0]);
+            var menuHTML;
+            _.each(dhpData.vizParams.menu, function(mItem, index) {
+                    // Don't need to create menu for this item
+                if (vizIndex != index) {
+                    menuHTML = '<li><a href="#">'+mItem+'</a></li>';
+console.log("Adding viz menu item: "+menuHTML);
+                    $('.dropdown.epviz-dropdown').append(menuHTML);
+                }
+            });
         }
     } // createNavBar()
 

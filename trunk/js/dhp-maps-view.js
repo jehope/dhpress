@@ -11,7 +11,7 @@
 
 var dhpMapsView = {
 
-        // Contains fields: ajaxURL, projectID, mapEP, viewParams
+        // Contains fields: ajaxURL, projectID, mapEP, viewParams, vizIndex
         //                  callBacks = object containing callback functions to dhp-project-page
 
         //					rawAjaxData = raw data returned from AJAX
@@ -36,13 +36,14 @@ var dhpMapsView = {
         //          mapEP        = settings for map entry point (from project settings)
         //          viewParams   = array of data about map layers (see dhpGetMapLayerData() in dhp-project-functions)
         //          callBacks    = set of callback functions back to dhp-project-page functions
-    initMapInterface: function(ajaxURL, projectID, mapEP, viewParams, callBacks) {
+    initMapInterface: function(ajaxURL, projectID, vizIndex, mapEP, viewParams, callBacks) {
              // Constants
         dhpMapsView.checkboxHeight         = 12; // default checkbox height
 
             // Save reset data for later
         dhpMapsView.ajaxURL        = ajaxURL;
         dhpMapsView.projectID      = projectID;
+        dhpMapsView.vizIndex       = vizIndex;
         dhpMapsView.mapEP          = mapEP;
         dhpMapsView.viewParams     = viewParams;
         dhpMapsView.callBacks      = callBacks;
@@ -727,10 +728,10 @@ var dhpMapsView = {
         var newRowHeight, checkboxMargin;
 
             //resize legend term position for long titles
-        jQuery('.active-legend .terms').css({top:jQuery('.active-legend .legend-title').height()});
+        jQuery('.active-legend .terms').css({top: jQuery('.active-legend .legend-title').height() });
 
             //resize legend items that are two lines and center checkbox
-        jQuery('.active-legend .row').each(function(key,value){
+        jQuery('.active-legend .row').each(function(key,value) {
                 //height of row containing text(could be multiple lines)
             newRowHeight   = jQuery('.columns', this).eq(1).height();
                 // variable to center checkbox in row
@@ -739,6 +740,8 @@ var dhpMapsView = {
             jQuery('.columns', this).eq(0).height(newRowHeight);
             jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
         });
+
+            // TO DO: Resize layer opacity DIVs??
 
             // This is an Leaflet function to redraw the markers after map resize
         dhpMapsView.mapLeaflet.invalidateSize();
@@ -765,7 +768,8 @@ var dhpMapsView = {
             url: dhpMapsView.ajaxURL,
             data: {
                 action: 'dhpGetMarkers',
-                project: dhpMapsView.projectID
+                project: dhpMapsView.projectID,
+                index: dhpMapsView.vizIndex
             },
             success: function(data, textStatus, XMLHttpRequest)
             {

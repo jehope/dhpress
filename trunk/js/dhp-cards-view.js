@@ -5,20 +5,21 @@
 
 var dhpCardsView = {
 
-        // Contains fields: ajaxURL, projectID, cardsEP, callBacks
+        // Contains fields: ajaxURL, projectID, vizIndex, cardsEP, callBacks
         //                  rawData
         //                  colorValues
 
-        // PURPOSE: Initialize map viewing area with controls and layers
+        // PURPOSE: Initialize card viewing area with controls and layers
         // INPUT:   ajaxURL      = URL to WP
         //			projectID    = ID of project
         //			cardsEP      = settings for cards entry point (from project settings)
         //          callBacks    = object loaded with project-page callback functions
-    initializeCards: function(ajaxURL, projectID, cardsEP, callBacks)
+    initializeCards: function(ajaxURL, projectID, vizIndex, cardsEP, callBacks)
     {
             // Save reset data for later
         dhpCardsView.ajaxURL        = ajaxURL;
         dhpCardsView.projectID      = projectID;
+        dhpCardsView.vizIndex       = vizIndex;
         dhpCardsView.cardsEP        = cardsEP;
         dhpCardsView.callBacks      = callBacks;
 
@@ -207,7 +208,8 @@ var dhpCardsView = {
             url: dhpCardsView.ajaxURL,
             data: {
                 action: 'dhpGetMarkers',
-                project: dhpCardsView.projectID
+                project: dhpCardsView.projectID,
+                index: dhpCardsView.vizIndex
             },
             success: function(data, textStatus, XMLHttpRequest)
             {

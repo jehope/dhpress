@@ -606,6 +606,7 @@ function dhp_get_term_by_parent($link_terms, $terms, $rootTaxName)
 // PURPOSE:	Creates Legends and Feature Collections Object (as per OpenLayer) when looking at a project page;
 //			That is, return array describing all markers based on filter and visualization
 // INPUT:	$project_id = ID of Project to view
+//			$index = index of entry-point to display
 // RETURNS: JSON object describing all markers associated with Project
 //			[0..n-1] contains results from getCategoryValues() defined above;
 //			[n] is a FeatureCollection; exact contents will depend on visualization, but could include:
@@ -639,7 +640,7 @@ function dhp_get_term_by_parent($link_terms, $terms, $rootTaxName)
 			// 		]
 			// 	}
 
-function createMarkerArray($project_id)
+function createMarkerArray($project_id, $index)
 {
 		// initialize result array
 	$json_Object = array();
@@ -662,9 +663,7 @@ function createMarkerArray($project_id)
 		}
 	}
 
-    	// If we support multiple entry points, we must accumulate settings that are specified
-		// For now, just the first entry point is implemented
-	$eps0 = $projSettings->{'entry-points'}[0];
+	$eps0 = $projSettings->{'entry-points'}[$index];
 	switch ($eps0->type) {
 	case "map":
 			// Which field used to encode Lat-Long on map?
@@ -1312,7 +1311,8 @@ add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkers');
 function dhpGetMarkers()
 {
 	$dhp_project = $_POST['project'];
-	$mArray = createMarkerArray($dhp_project);
+	$index =		$_POST['index'];
+	$mArray = createMarkerArray($dhp_project, $index);
 
 	// $result = json_encode($mArray);
 	// $result = stripslashes($result);
@@ -1986,6 +1986,14 @@ function dhp_mod_page_content($content) {
 } // dhp_mod_page_content()
 
 
+add_filter( 'query_vars', 'dhp_viz_query_var' );
+
+// PURPOSE: Add the "viz" query variable to WordPress's approved list
+function dhp_viz_query_var($vars) {
+  $vars[] = "viz";
+  return $vars;
+}
+
 add_filter( 'single_template', 'dhp_page_template' );
 
 // PURPOSE:	Called by WP to modify output for rendering page, inc template to be used, acc to Project
@@ -2005,6 +2013,7 @@ function dhp_page_template( $page_template )
 		// Viewing a Project?
     if ( $post_type == 'project' ) {
     	$projObj = new DHPressProject($post->ID);
+    	$allSettings = $projObj->getAllSettings();
 
     		// Communicate to visualizations by sending parameters in this array
     	$vizParams = array();
@@ -2022,9 +2031,21 @@ function dhp_page_template( $page_template )
 		wp_enqueue_script('dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
 
+			// Check query variable "viz" to see which visualization to display -- default = 0
+		$vizIndex = (get_query_var('viz')) ? get_query_var('viz') : 0;
+		$vizIndex = min($vizIndex, count($allSettings->{'entry-points'})-1);
+		$vizParams['current'] = $vizIndex;
+
+			// Create list of visualization labels for drop-down menu
+		$vizMenu = array();
+		foreach ($allSettings->{'entry-points'} as $thisEP) {
+			array_push($vizMenu, $thisEP->label);
+		}
+		$vizParams['menu'] = $vizMenu;
+
     		// Visualization specific -- only 1st Entry Point currently supported
-    	$projectSettings_viz = $projObj->getEntryPointByIndex(0);
-    	switch ($projectSettings_viz->type) {
+    	$thisEP = $projObj->getEntryPointByIndex($vizIndex);
+    	switch ($thisEP->type) {
     	case 'map':
 			wp_enqueue_style('dhp-map-css', plugins_url('/css/dhp-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 			wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
@@ -2042,7 +2063,7 @@ function dhp_page_template( $page_template )
 			wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
 
 				// Get any DHP custom map parameters
-			$layerData = dhpGetMapLayerData($projectSettings_viz->settings->layers);
+			$layerData = dhpGetMapLayerData($thisEP->settings->layers);
 			$vizParams["layerData"] = $layerData;
 
 	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps',
@@ -2058,7 +2079,7 @@ function dhp_page_template( $page_template )
 	    	array_push($dependencies, 'isotope', 'dhp-cards-view');
 	    	break;
 	    default:
-	 		trigger_error("Unknown visualization type: ".$projectSettings_viz->type);
+	 		trigger_error("Unknown visualization type: ".$thisEP->type);
 	    	break;
 	    }
 
@@ -2077,7 +2098,7 @@ function dhp_page_template( $page_template )
 		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
 			'ajax_url'   => $dev_url,
 			'vizParams'  => $vizParams,
-			'settings'   => $projObj->getAllSettings()
+			'settings'   => $allSettings
 		) );
 
 		// Looking at a Marker/Data entry?
