@@ -134,12 +134,10 @@
     <h2><b>Map Entry Point</b> <button data-bind="jqButton, click: $root.delEP">Delete Map</button></h2>
     <ul>
         <li>Map short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
-        <li>Map Center (Lat/Lon) <button class="create-map-btn">Show map</button><br/>
-            <div class="geo-locate-widget hide" data-bind="geoLoc"></div>
+        <li>Map Center (Lat/Lon)
             <input class="ed-lat-id" data-bind="value: theEP.settings.lat" type="text" size="6"/>
             <input class="ed-lon-id" data-bind="value: theEP.settings.lon" type="text" size="6"/>
             Initial Zoom <input data-bind="value: theEP.settings.zoom" type="text" size="2"/>
-            <button class="update-map-btn hide">Update Lat/Lon on map</button>
         </li>
         <li>Marker Radius <select data-bind="value: theEP.settings.size">
                 <option value="s">Small</option>

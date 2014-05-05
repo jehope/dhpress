@@ -1839,7 +1839,6 @@ function add_dhp_project_admin_scripts( $hook )
 			wp_enqueue_style('jquery-ui-style', plugins_url('/lib/jquery-ui-1.10.4/themes/base/jquery.ui.all.css', dirname(__FILE__)) );
 			wp_enqueue_style('jquery-colorpicker-style', plugins_url('/lib/colorpicker/jquery.colorpicker.css',  dirname(__FILE__)) );
 			// wp_enqueue_style('wp-jquery-ui-dialog' );
-			wp_enqueue_style('leaflet-style', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)) );
 			wp_enqueue_style('maki-sprite-style', plugins_url('/css/maki-sprite.css',  dirname(__FILE__)) );
 				// Lastly, our plug-in specific styles
 			wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)) );
@@ -1868,14 +1867,11 @@ function add_dhp_project_admin_scripts( $hook )
 			wp_enqueue_script('dhp-touch-punch', plugins_url('/lib/jquery.ui.touch-punch.js', dirname(__FILE__)),
 				array('jquery', 'jquery-ui-widget', 'jquery-ui-mouse') );
 
-				// Mapping
-			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)) );
-
 			wp_enqueue_script('knockout', plugins_url('/lib/knockout-3.1.0.js', dirname(__FILE__)) );
 
 				// Custom JavaScript for Admin Edit Panel
 			$allDepends = array('jquery', 'underscore', 'jquery-ui-core', 'jquery-nestable', 'jquery-colorpicker',
-								'leaflet', 'knockout');
+								'knockout');
 			wp_enqueue_script('dhp-project-script', plugins_url('/js/dhp-project-admin.js', dirname(__FILE__)), $allDepends );
 			wp_localize_script('dhp-project-script', 'dhpDataLib', array(
 				'ajax_url' => $dev_url,

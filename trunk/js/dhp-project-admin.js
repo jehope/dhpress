@@ -1476,58 +1476,6 @@ jQuery(document).ready(function($) {
     }
   };
 
-    // Add new functionality for geoLocation editor
-    // NOTE:   There is a CSS bug that happens if map is created initially, because jQueryUI hasn't
-    //          finished adjusting all of the relative positions of div's -- so user must init map afterwards
-    // ASSUMES: Specific DOM structure with inter-related elements of classes identifying buttons
-  ko.bindingHandlers.geoLoc = {
-    init: function (element) {
-      var thisMap;
-      var thisLat, thisLon;
-      var latElem, lonElem;
-      var marker;
-
-        // Bind code to create map button
-      $(element).parent().find('.create-map-btn').click(function() {
-        if (!thisMap) {
-            // Show both the map itself and the update button
-          $(element).removeClass('hide');
-          $(element).parent().find('.update-map-btn').removeClass('hide');
-            // Get the lat lon entered by user
-          latElem = $(element).parent().find('.ed-lat-id');
-          lonElem = $(element).parent().find('.ed-lon-id');
-          thisLat = $(latElem).val();
-          thisLon = $(lonElem).val();
-          thisMap = L.map(element).setView([thisLat, thisLon], 3);
-
-          L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          }).addTo(thisMap);
-          marker = L.marker([thisLat, thisLon]).addTo(thisMap);
-          // marker = L.marker([thisLat, thisLon], { draggable: true }).addTo(thisMap);
-
-            // bind drag code for updating values
-            // TO DO: This does not connect to Knockout bindings!
-          // marker.on('dragend', function(ev) {
-          //   var newPos = ev.target.getLatLng();
-          //   $(latElem).val(newPos.lat);
-          //   $(lonElem).val(newPos.lng);
-          // });
-        }
-      });
-
-        // Bind code to update map button
-      $(element).parent().find('.update-map-btn').click(function() {
-        if (thisMap) {
-          thisLat = $(latElem).val();
-          thisLon = $(lonElem).val();
-          thisMap.panTo([thisLat, thisLon]);
-          marker.setLatLng([thisLat, thisLon]);
-        }
-      });
-    }
-  }; // bindingHandlers.geoLoc
-
 
     // Initialize use of Knockout within the inserted HTML (after bindingHandlers added)
   ko.applyBindings(projObj, document.getElementById('ko-dhp'));
@@ -1647,11 +1595,9 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
               legendName: moteName
           },
           success: function(data, textStatus, XMLHttpRequest){
-console.log("New tax term id: "+data);
               var termData = JSON.parse(data);
               var termID = termData.termID;
               if (typeof(termID) == 'string') { termID = parseInt(termID); }
-console.log("After parsing: "+termID);
 
               callBack(termID);
           },
