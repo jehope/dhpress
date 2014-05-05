@@ -10,9 +10,11 @@
   <li class="layers"><a href="#layers-panel"> Layers </a></li>
 </script>
 
+
 <script id="dhp-script-map-legend-head" type="text/x-handlebars-template">
   <div id="legends" ><div class="legend-row"></div></div>
 </script>
+
 
 <script id="dhp-script-map-legend-hideshow" type="text/x-handlebars-template">
   <div class="row check-all"> 

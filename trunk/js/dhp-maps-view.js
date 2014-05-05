@@ -24,10 +24,13 @@ var dhpMapsView = {
         //                  makiSize = "s" | "m" | "l"
         //                  makiIcons = array of maki icons
 
-        //                  mapLayers = array of layer data to display (compiled in this code)
+        //                  mapLayers = array of map overlay data to display (compiled in this code)
         //                  mapLeaflet = Leaflet map object
         //                  control = Leaflet map layer selection controller
-        //                  useParent = if true (always true?), actions on parent term affect child terms
+        //                  useParent = if true (always true!), actions on parent term affect child terms
+        //                  isTouch = this is a touch-screen interface, not mouse
+
+        //                  currentFeature = map feature currently highlighted or selected (with modal)
         //                  anyPopupsOpen = true when a popover modal is currently open
 
         // PURPOSE: Initialize new leaflet map, layers, and markers                         
@@ -38,7 +41,7 @@ var dhpMapsView = {
         //          callBacks    = set of callback functions back to dhp-project-page functions
     initMapInterface: function(ajaxURL, projectID, vizIndex, mapEP, viewParams, callBacks) {
              // Constants
-        dhpMapsView.checkboxHeight         = 12; // default checkbox height
+        dhpMapsView.checkboxHeight = 12; // default checkbox height
 
             // Save reset data for later
         dhpMapsView.ajaxURL        = ajaxURL;
@@ -47,6 +50,8 @@ var dhpMapsView = {
         dhpMapsView.mapEP          = mapEP;
         dhpMapsView.viewParams     = viewParams;
         dhpMapsView.callBacks      = callBacks;
+
+        dhpMapsView.isTouch        = dhpMapsView.isTouchDevice();
 
         dhpMapsView.markerOpacity  = 1;     // default marker opacity
         dhpMapsView.makiSize       = mapEP.size;
@@ -81,17 +86,20 @@ var dhpMapsView = {
         jQuery('#dhp-visual').append('<div id="dhpMap"/>');
            //create map with view
         dhpMapsView.mapLeaflet = L.map('dhpMap',{ zoomControl:false }).setView([dhpMapsView.mapEP.lat, dhpMapsView.mapEP.lon], dhpMapsView.mapEP.zoom);
-        dhpMapsView.mapLeaflet.on('popupopen', function(e){
-            dhpMapsView.anyPopupsOpen = true;
-        });
 
-        dhpMapsView.mapLeaflet.on('popupclose', function(e){
-            // popupclose event fires on open and close(bug?)
-            if(dhpMapsView.anyPopupsOpen) {
-                dhpMapsView.markerLayer.resetStyle(e.popup._source);
-                dhpMapsView.anyPopupsOpen = false;
-            }
-        });
+            // Handle hover modal popup
+        if (dhpMapsView.isTouch) {
+            dhpMapsView.mapLeaflet.on('popupopen', function(e) {
+                dhpMapsView.anyPopupsOpen = true;
+            });
+            dhpMapsView.mapLeaflet.on('popupclose', function(e) {
+                    // popupclose event fires on open and close (bug?)
+                if (dhpMapsView.anyPopupsOpen) {
+                    dhpMapsView.markerLayer.resetStyle(e.popup._source);
+                    dhpMapsView.anyPopupsOpen = false;
+                }
+            });
+        }
 
         // jQuery('#dhp-visual').height(jQuery('#dhp-visual')-45);
     }, // initializeMap2()
@@ -100,7 +108,7 @@ var dhpMapsView = {
         // NOTES:   While mapEP.layers specifies which predefined layers to use (and opacity),
         //              vizParams.layerData contains data defining those layers needed by dhp-custom-maps.js
         // TO DO:   Make dhp-project-functions combine dhpMapsView.mapEP.layers and dhpData.vizParams.layerData objects
-    createLayers: function() 
+    createLayers: function()
     {
         var opacity, layerDef;
 
@@ -175,6 +183,7 @@ var dhpMapsView = {
         });
     }, // createLayers()
 
+        // PURPOSE: Create Leaflet map controls
     createControls: function() {
         //control position
         var layerControl = L.control.zoom({position: 'topright'});
@@ -192,7 +201,7 @@ var dhpMapsView = {
             this._div.innerHTML = '<a class="reset-map" ><i class="fi-refresh"></i></a>';
         };
         resetControl.addTo(dhpMapsView.mapLeaflet);
-        jQuery('.reset-control').on('click',function(){
+        jQuery('.reset-control').click(function(){
             dhpMapsView.resetMap();
         });
     }, // createControls()
@@ -270,7 +279,7 @@ var dhpMapsView = {
         }).addTo(dhpMapsView.mapLeaflet);
         dhpMapsView.markerLayer.options.layerName = 'Markers';
 
-        dhpMapsView.control.addOverlay(dhpMapsView.markerLayer, "Markers" );
+        dhpMapsView.control.addOverlay(dhpMapsView.markerLayer, 'Markers' );
 
         // dhpMapsView.mapLayers.push(dhpMapsView.markerLayer);
     }, // createMarkerLayer()
@@ -311,7 +320,7 @@ var dhpMapsView = {
     }, // getActiveTermColor()
 
         // PURPOSE: Create the Leaflet feature associated with this entry
-    pointToLayer: function (feature, latlng) {
+    pointToLayer: function(feature, latlng) {
         var fColor = dhpMapsView.getActiveTermColor(feature.properties.categories);
         var fType = fColor.substring(0,1);
         switch (fType) {
@@ -345,53 +354,49 @@ var dhpMapsView = {
         // PURPOSE: Bind controls for each Marker
     onEachFeature: function(feature, layer)
     {
-        layer.bindPopup('<div><h1>'+feature.properties.title+'</h1><a class="button success" onclick="javascript:dhpMapsView.onFeatureSelect()">More</a></div>', {offset: new L.Point(0, -10)});
-        layer.on({
-            mouseover: dhpMapsView.hoverHighlightFeature,
-            mouseout: dhpMapsView.resetHighlight,
-            click: dhpMapsView.clickHighlightFeature
-        });
+            // Hover popup only for touchscreen
+        if (dhpMapsView.isTouch) {
+            layer.bindPopup('<div><h1>'+feature.properties.title+
+                '</h1><a class="button success" onclick="javascript:dhpMapsView.onFeatureSelect()">More</a></div>',
+                {offset: new L.Point(0, -10)});
+
+                // Click is automatically handled by Leaflet popup
+            layer.on({
+                mouseover: dhpMapsView.hoverFeature,
+                mouseout: dhpMapsView.resetHighlight
+            });
+        } else {
+            layer.on({
+                click: dhpMapsView.clickFeature
+            });
+        }
     }, // onEachFeature()
 
-        // TO DO:  Enable turning on and off
-    hoverHighlightFeature: function(e){
-        if(!dhpMapsView.isTouchSupported()) {
-            dhpMapsView.highlightFeature(e);
-        }
-    },
+        // PURPOSE: Handle touch over this feature
+    hoverFeature: function(e) {
+        dhpMapsView.currentFeature = e.target.feature;
 
-        // PURPOSE: Open popup on click, if popup is open(from hover) launch feature popup
-    clickHighlightFeature: function(e){
-        if(!dhpMapsView.isTouchSupported()) {
-            dhpMapsView.onFeatureSelect();
-        }
-        else {
-            dhpMapsView.highlightFeature(e);   
-        }
-    },
+        e.target.openPopup();
 
-        // PURPOSE: Open popup
-    highlightFeature: function(e){
-        var theFeature = e.target;
-        dhpMapsView.currentFeature = theFeature;
-
-        theFeature.openPopup();
-
-        // ?? theFeature.properties ??
-
-            // Now that there are several types of map features, can't generically assume
-            //    that it's a circle
-        // theFeature.setStyle({ // highlight the feature
+            // This only works for geometric markers, not maki-icons, so much remove for now
+        // e.target.setStyle({ // highlight the feature
         //     weight: 3,
         //     color: '#666',
         //     dashArray: '',
         //     fillOpacity: 0.6
         // });
 
-            // Can't support popup for Internet Explorer or Opera
+            // Can't feature foregrounding on Internet Explorer or Opera
+            // This only works for geometric markers, not maki-icons
         // if (!L.Browser.ie && !L.Browser.opera) {
-        //     theFeature.bringToFront();
+        //     e.target.bringToFront();
         // }
+    },
+
+        // PURPOSE: Handle mouse(only!) selection of feature
+    clickFeature: function(e) {
+        dhpMapsView.currentFeature = e.target.feature;
+        dhpMapsView.onFeatureSelect();
     },
 
         // PURPOSE: Remove the hover style
@@ -704,22 +709,12 @@ var dhpMapsView = {
     }, // layerOpacity()
 
         // PURPOSE: Handle user selection of a marker on a map to bring up modal
-        // INPUT:   feature = the feature selected on map
-        // ASSUMES: Can use only first feature if a cluster of features is passed
-        // SIDE-FX: Modifies DOM to create modal dialog window -- must be closed elsewhere
+        // INPUT:   e = event whose target is the feature selected on map
+        //             HOWEVER! This also called from hover modal WITHOUT a parameter!
+        // ASSUMES: currentFeature is set for reason noted above
     onFeatureSelect: function(e)
     {
-        feature = dhpMapsView.currentFeature.feature;
-
-        var selectedFeature;
-
-        if (feature.cluster) {
-            selectedFeature = feature.cluster[0];
-        } else {
-            selectedFeature = feature;
-        }
-
-        dhpMapsView.callBacks.showMarkerModal(selectedFeature);
+        dhpMapsView.callBacks.showMarkerModal(dhpMapsView.currentFeature);
     }, // onFeatureSelect()
 
         // PURPOSE: Resizes map-specific elements when browser size changes
@@ -747,15 +742,16 @@ var dhpMapsView = {
         dhpMapsView.mapLeaflet.invalidateSize();
     }, // dhpUpdateSize()
 
-        // RETURNS: true if touch is supported
-    isTouchSupported: function () {
-        var msTouchEnabled = window.navigator.msMaxTouchPoints;
-        var generalTouchEnabled = "ontouchstart" in document.createElement("div");
-     
-            if (msTouchEnabled || generalTouchEnabled) {
-                return true;
-            }
-        return false;
+        // RETURNS: true if touch is supported (and hence no mouse)
+    isTouchDevice: function() {
+        // var msTouchEnabled = window.navigator.msMaxTouchPoints;
+        // var generalTouchEnabled = "ontouchstart" in document.createElement("div");
+
+        // if (msTouchEnabled || generalTouchEnabled) {
+        //     return true;
+        // }
+        // return false;
+        return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
     },
 
         // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
