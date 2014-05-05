@@ -1,4 +1,10 @@
     <!-- Handlebars Templates for Map View -->
+<script id="dhp-script-cards-sort" type="text/x-handlebars-template">
+  <dl class="sub-nav" id="dhp-cards-sort">
+    <dt>Sort By:</dt>
+  </dl>
+</script>
+
 <script id="dhp-script-cards-helptips" type="text/x-handlebars-template">
   <ol id="dhpress-tips" class="joyRideTipContent">
 

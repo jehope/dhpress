@@ -165,7 +165,7 @@
             <button data-bind="jqButton, click: function() { $root.delLayer($data, theEP, $index()); }">Delete</button>
         </span>
         Opacity <span data-bind="text: theLayer.opacity"></span>
-        <div class="opacity-slider"><div data-bind="opacitySlider: theLayer.opacity"></div></div> 
+        <div class="opacity-slider"><div data-bind="opacitySlider: theLayer.opacity"></div></div>
     </li>
 </script>
 

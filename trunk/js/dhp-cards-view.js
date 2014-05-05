@@ -7,7 +7,8 @@ var dhpCardsView = {
 
         // Contains fields: ajaxURL, projectID, vizIndex, cardsEP, callBacks
         //                  rawData
-        //                  colorValues
+        //                  colorValues = array of { id, icon_url }
+        //                  allFields   = array of names of all sort and filter motes, for data- attributes
 
         // PURPOSE: Initialize card viewing area with controls and layers
         // INPUT:   ajaxURL      = URL to WP
@@ -22,6 +23,36 @@ var dhpCardsView = {
         dhpCardsView.vizIndex       = vizIndex;
         dhpCardsView.cardsEP        = cardsEP;
         dhpCardsView.callBacks      = callBacks;
+
+        dhpCardsView.allFields      = [];
+
+            // Add Sort By bar
+        jQuery('#dhp-visual').prepend(Handlebars.compile(jQuery("#dhp-script-cards-sort").html()));
+        _.each(cardsEP.sortMotes, function(theMote) {
+            dhpCardsView.allFields.push(theMote);
+            jQuery('#dhp-cards-sort').append('<dd class="sortmote"><a href="#">'+theMote+'</a></dd>');
+        });
+            // Handle selection of a sort mote
+        jQuery('#dhp-cards-sort').click(function(e) {
+                // Find out which one selected
+            var newSort = jQuery(e.target);
+            jQuery('#dhp-cards-sort > .active').removeClass('active');
+            jQuery(newSort).addClass('active');
+            // TO DO -- call Isotope sorter!
+        });
+            // Activate 1st sort mote by default
+        jQuery('#dhp-cards-sort dd:first').addClass('active');
+            // Add Filter controls
+        _.each(cardsEP.filterMotes, function(theMote) {
+            dhpCardsView.allFields.push(theMote);
+
+            // TO DO
+        });
+
+        jQuery(document).foundation();
+
+            // Ensure all fields unique -- this is needed for creating cards
+        dhpCardsView.allFields = _.uniq(dhpCardsView.allFields);
 
         dhpCardsView.loadCards();
     }, // initializeCards()
@@ -117,7 +148,7 @@ var dhpCardsView = {
         jQuery('#dhp-visual').append('<div id="card-container"></div>');
         var cardHolder = jQuery('#card-container');
 
-            // Find array of color values in AJAX data
+            // Set dhpCardsView.colorValues to array of color values in AJAX data
         dhpCardsView.colorValues = null;
         if (dhpCardsView.cardsEP.color && dhpCardsView.cardsEP.color != '' && dhpCardsView.cardsEP.color != 'disable') {
             _.find(dhpCardsView.rawData, function(theArray, index) {
