@@ -24,7 +24,7 @@
         <input type="text" id="dhp-filter-input" placeholder="Filter text">
       </div>
       <div class="large-4 small-3 columns">
-        <a href="#" class="alert button expand">Run Filter</a>
+        <a href="#" id="dhp-filter-button" class="alert button expand">Run Filter</a>
       </div>
     </div>
   </li>

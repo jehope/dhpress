@@ -50,13 +50,17 @@ var dhpCardsView = {
                 // Handle selection of a sort mote
             jQuery('#dhp-cards-sort').click(function(e) {
                     // Find out which one selected
-                var newSort = jQuery(e.target);
-                    // Remove whatever was active previously
-                jQuery('#dhp-cards-sort > .active').removeClass('active');
-                jQuery(newSort).addClass('active');
-                // TO DO -- call Isotope sorter!
+                var newSortMenu = jQuery(e.target);
+                var newSortMote = jQuery(newSortMenu).text();
+                if (newSortMote != dhpCardsView.currentSort) {
+                        // Remove whatever was active previously
+                    jQuery('#dhp-cards-sort > .active').removeClass('active');
+                    jQuery(newSortMenu).parent().addClass('active');
+                    dhpCardsView.currentSort = newSortMote;
+                        // TO DO: Call Isotope
+                }
             });
-        }
+        } // if sortMotes
 
             // Add Filter By controls
         if (cardsEP.filterMotes.length > 0) {
@@ -73,8 +77,30 @@ var dhpCardsView = {
                 jQuery('#dhp-cards-filter-menu').append(menuHTML);
             });
 
+                // Handle selection of a filter mote
+            jQuery('#dhp-cards-filter-menu').click(function(e) {
+                    // Find out which one selected
+                var newFilterMenu = jQuery(e.target);
+                var newFilterMote = jQuery(newFilterMenu).text();
+                if (newFilterMote != dhpCardsView.currentFilter) {
+                        // Remove whatever was active previously
+                    jQuery('#dhp-cards-filter-menu > .active').removeClass('active');
+                    jQuery(newFilterMenu).parent().addClass('active');
+                    dhpCardsView.currentFilter = newFilterMote;
+                }
+            });
+
             jQuery('.top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-cards-filter-input").html()));
-        }
+
+            jQuery('#dhp-filter-button').click(function() {
+                var filterText;
+                filterText = jQuery('#dhp-filter-input').val();
+                if (filterText.length) {
+                    // TO DO: Invoke Isotope
+                }
+            });
+        } // if filterMotes
+
 
         jQuery(document).foundation();
 
