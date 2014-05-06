@@ -20,11 +20,14 @@
 <script id="dhp-script-cards-filter-input" type="text/x-handlebars-template">
   <li class="has-form">
     <div class="row collapse">
-      <div class="large-8 small-9 columns">
-        <input type="text" id="dhp-filter-input" placeholder="Filter text">
+      <div class="large-6 small-7 columns">
+        <input type="text" id="dhp-filter-input" placeholder="Filter text">&nbsp;
       </div>
-      <div class="large-4 small-3 columns">
-        <a href="#" id="dhp-filter-button" class="alert button expand">Run Filter</a>
+      <div class="large-3 small-2 columns">
+        <a href="#" id="dhp-filter-run" class="alert button expand">Run Filter</a>&nbsp;
+      </div>
+      <div class="large-3 small-2 columns">
+        <a href="#" id="dhp-filter-reset" class="alert button expand">Reset</a>
       </div>
     </div>
   </li>

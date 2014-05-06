@@ -96,12 +96,40 @@ var dhpCardsView = {
 
             jQuery('.top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-cards-filter-input").html()));
 
-            jQuery('#dhp-filter-button').click(function() {
+            jQuery('#dhp-filter-run').click(function() {
                 var filterText;
                 filterText = jQuery('#dhp-filter-input').val();
                 if (filterText.length) {
-                    // TO DO: Invoke Isotope
+                        // Create regular expression from filter string
+                    var regExp = new RegExp(filterText, "i");
+                    var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
+                    var text;
+
+                        // Get the text for each item and check against regular expression
+                    jQuery('#card-container').isotope({
+                      filter: function() {
+                        text = jQuery(this).find(className).text();
+                        return (text.search(regExp) != -1);
+                      }
+                    });
+                } else {
+                        // Allow all cards to pass!
+                    jQuery('#card-container').isotope({
+                      filter: function() {
+                        return true;
+                      }
+                    });
                 }
+            });
+
+            jQuery('#dhp-filter-reset').click(function() {
+                jQuery('#dhp-filter-input').val('');
+                    // Allow all cards to pass!
+                jQuery('#card-container').isotope({
+                  filter: function() {
+                    return true;
+                  }
+                });
             });
         } // if filterMotes
 
