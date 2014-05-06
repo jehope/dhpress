@@ -663,12 +663,12 @@ function createMarkerArray($project_id, $index)
 		}
 	}
 
-	$eps0 = $projSettings->{'entry-points'}[$index];
-	switch ($eps0->type) {
+	$eps = $projSettings->{'entry-points'}[$index];
+	switch ($eps->type) {
 	case "map":
 			// Which field used to encode Lat-Long on map?
 		// $map_pointsMote = $projObj->getMoteByName( $eps['settings']['marker-layer'] );
-		$map_pointsMote = $projObj->getMoteByName( $eps0->settings->{'marker-layer'} );
+		$map_pointsMote = $projObj->getMoteByName( $eps->settings->{'marker-layer'} );
 		if($map_pointsMote->type=='Lat/Lon Coordinates'){
 			if(!$map_pointsMote->delim) { $map_pointsMote->delim=','; }
 			$coordMote = split($map_pointsMote->delim, $map_pointsMote->{'custom-fields'});
@@ -676,7 +676,7 @@ function createMarkerArray($project_id, $index)
 		}
 			// Find all possible legends/filters for this map -- each marker needs these fields
 		// $filters = $eps['settings']['filter-data'];
-		$filters = $eps0->settings->{'filter-data'};
+		$filters = $eps->settings->{'filter-data'};
 			// Collect all possible category values/tax names for each mote in all filters
 		foreach( $filters as $legend ) {
 			$term = get_term_by('name', $legend, $rootTaxName);
@@ -689,7 +689,7 @@ function createMarkerArray($project_id, $index)
 	case "cards":
 			// Convert title mote to custom field --
 			// If no title, no need (currently) to create cards property for markers
-		$cardTitle = $eps0->settings->title;
+		$cardTitle = $eps->settings->title;
 		if ($cardTitle == null || $cardTitle == '' || $cardTitle == 'disable') {
 			$cardTitle = null;
 		} else if ($cardTitle != 'the_title') {
@@ -699,14 +699,21 @@ function createMarkerArray($project_id, $index)
 			}
 		}
 			// Convert color mote to custom field
-		$cardColorMote = $eps0->settings->color;
+		$cardColorMote = $eps->settings->color;
 		if ($cardColorMote != null && $cardColorMote !== '' && $cardColorMote != 'disable') {
 				// Create a legend for the color values
 			$term = get_term_by('name', $cardColorMote, $rootTaxName);
 			array_push($json_Object, getCategoryValues($term, $rootTaxName));
 		}
 			// gather card contents
-		foreach ($eps0->settings->content as $theContent) {
+		foreach ($eps->settings->content as $theContent) {
+			array_push($selectContent, $theContent);
+		}
+			// must add all sort and filter motes to content
+		foreach ($eps->settings->filterMotes as $theContent) {
+			array_push($selectContent, $theContent);
+		}
+		foreach ($eps->settings->sortMotes as $theContent) {
 			array_push($selectContent, $theContent);
 		}
 		break;

@@ -1,14 +1,17 @@
 // DH Press Maps View -- contains all data and functions for rendering cards
 // ASSUMES: A view area for the cards has been marked with HTML div as "dhp-visual"
 // NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
-// USES:    JavaScript libraries jQuery, Isotope
+// USES:    JavaScript libraries jQuery, Isotope, Underscore
+// TO DO:   When numeric motes supported, sort will need to convert strings to integers
 
 var dhpCardsView = {
 
         // Contains fields: ajaxURL, projectID, vizIndex, cardsEP, callBacks
         //                  rawData
         //                  colorValues   = array of { id, icon_url }
-        //                  allFields     = array of names of all sort and filter motes, for data- attributes
+        //                  allMotes      = array (unique sorted) of all data and content mote names
+        //                  allDataMotes  = array of all sort and filter mote names
+        //                  dataAttrs     = array of just motes whose data is stored in attributes
         //                  currentSort   = name of mote currently used for sorting
         //                  currentFilter = name of mote currently used for filtering
 
@@ -28,16 +31,17 @@ var dhpCardsView = {
         dhpCardsView.cardsEP        = cardsEP;
         dhpCardsView.callBacks      = callBacks;
 
-        dhpCardsView.currentSort    = '';
-        dhpCardsView.currentFilter  = '';
+        dhpCardsView.currentSort    = null;
+        dhpCardsView.currentFilter  = null;
 
-        dhpCardsView.allFields      = [];
+        dhpCardsView.allDataMotes   = [];
+        dhpCardsView.dataAttrs      = [];
 
             // Add Sort By controls
         if (cardsEP.sortMotes.length > 0) {
             jQuery('.top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-cards-sort").html()));
             _.each(cardsEP.sortMotes, function(theMote, index) {
-                dhpCardsView.allFields.push(theMote);
+                dhpCardsView.allDataMotes.push(theMote);
                 if (index == 0) {
                     dhpCardsView.currentSort = theMote;
                     active = ' class="active"';
@@ -57,7 +61,7 @@ var dhpCardsView = {
                     jQuery('#dhp-cards-sort > .active').removeClass('active');
                     jQuery(newSortMenu).parent().addClass('active');
                     dhpCardsView.currentSort = newSortMote;
-                        // TO DO: Call Isotope
+                    jQuery('#card-container').isotope( { sortBy: newSortMote } );
                 }
             });
         } // if sortMotes
@@ -66,7 +70,7 @@ var dhpCardsView = {
         if (cardsEP.filterMotes.length > 0) {
             jQuery('.top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-cards-filter-menu").html()));
             _.each(cardsEP.filterMotes, function(theMote, index) {
-                dhpCardsView.allFields.push(theMote);
+                dhpCardsView.allDataMotes.push(theMote);
                 if (index == 0) {
                     dhpCardsView.currentFilter = theMote;
                     active = ' class="active"';
@@ -105,7 +109,16 @@ var dhpCardsView = {
         jQuery(document).foundation();
 
             // Ensure all fields unique -- this is needed for creating cards
-        dhpCardsView.allFields = _.uniq(dhpCardsView.allFields);
+        dhpCardsView.allDataMotes = _.uniq(dhpCardsView.allDataMotes);
+        dhpCardsView.allDataMotes = _.sortBy(dhpCardsView.allDataMotes, function(moteName) { return moteName; });
+            // Create complete list of content and data fields, unique and sorted
+        dhpCardsView.allMotes     = _.union(dhpCardsView.allDataMotes, cardsEP.content);
+        dhpCardsView.allMotes     = _.sortBy(dhpCardsView.allMotes, function(moteName) { return moteName; });
+
+            // What motes are in allDataMotes[] but not in cardsEP.content?
+            // Will need to add data attributes for these
+        dhpCardsView.dataAttrs     = _.difference(dhpCardsView.allDataMotes, dhpCardsView.cardsEP.content);
+        dhpCardsView.dataAttrs     = _.sortBy(dhpCardsView.dataAttrs, function(moteName) { return moteName; });
 
         dhpCardsView.loadCards();
     }, // initializeCards()
@@ -223,7 +236,7 @@ var dhpCardsView = {
             });
         }
 
-        var theCard, contentElement, contentData, theTitle, colorStr, classStr;
+        var theCard, contentElement, contentData, theTitle, colorStr, classStr, moteIndex;
 
             // set default
         colorStr = dhpCardsView.cardsEP.defColor;
@@ -238,7 +251,6 @@ var dhpCardsView = {
         }
 
             // Markers are last array in data
-            // TO DO: Add data attributes for filter and sort motes, etc
         _.each(dhpCardsView.rawData[dhpCardsView.rawData.length-1]['features'], function(theFeature, index) {
                 // little error-check
             if (theFeature.type !== 'Feature') {
@@ -256,29 +268,58 @@ var dhpCardsView = {
                 colorStr = dhpCardsView.getHighestParentColor(theFeature.properties.categories);
             }
 
-                // Create element for the card
+                // Create container element for the card
             theCard = jQuery('<div class="card '+classStr+'" id="cardID'+index+'" style="background-color:'+colorStr+'"></div');
             if (theTitle) {
                 jQuery(theCard).append('<p style="font-weight: bold">'+theTitle+'</p></div>');
             }
 
+                // Add class IDs to all data; mote names can be irregular, so class IDs must be index
+
                 // Go through all content motes specified for each card view
             _.each(dhpCardsView.cardsEP.content, function(moteName) {
-                if (moteName && moteName != '') {
-                    contentData = theFeature.properties.content[moteName];
-                    if (contentData) {
-                        contentElement = jQuery('<p>'+contentData+'</p>');
-                        jQuery(theCard).append(contentElement);
-                    }
+                    // get the index into allDataMotes for this content mote
+                moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
+                contentData = theFeature.properties.content[moteName];
+                if (contentData) {
+                    contentElement = jQuery('<p class="datamote'+moteIndex+'">'+contentData+'</p>');
+                    jQuery(theCard).append(contentElement);
                 }
             });
+                // Now add invisible data
+            _.each(dhpCardsView.dataAttrs, function(moteName) {
+                    // get the index into allDataMotes for this content mote
+                moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
+                contentData = theFeature.properties.content[moteName];
+                if (contentData) {
+                    contentElement = jQuery('<div class="datamote'+moteIndex+'" style="display: none">'+contentData+'</div>');
+                    jQuery(theCard).append(contentElement);
+                }
+            });
+
             jQuery(cardHolder).append(theCard);
         }); // _.each()
 
+        var sortObj, moteIDs = [];
+
+        if (dhpCardsView.cardsEP.sortMotes.length > 0) {
+                // Create Object that describes sort options for Isotope
+            _.each(dhpCardsView.cardsEP.sortMotes, function(moteName) {
+                moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
+                moteIDs.push('.datamote'+moteIndex);
+            });
+            sortObj = _.object(dhpCardsView.cardsEP.sortMotes, moteIDs);
+        }
+
             // Initialize Isotope
         cardHolder.isotope(
-            { itemSelector: '.card'
+            { itemSelector: '.card',
+              getSortData: sortObj
             } );
+
+        if (dhpCardsView.currentSort) {
+            cardHolder.isotope( { sortBy: dhpCardsView.currentSort } );
+        }
 
             // Bind click code to the whole container... we'll search for specific card
         jQuery(cardHolder).click(dhpCardsView.selectCard);

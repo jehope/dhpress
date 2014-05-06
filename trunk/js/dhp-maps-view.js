@@ -83,7 +83,7 @@ var dhpMapsView = {
     initializeMap2: function()
     {
         dhpMapsView.anyPopupsOpen = false;
-    
+
             // Add map elements to nav bar
         jQuery('.dhp-nav .top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-map-menus").html()));
 
