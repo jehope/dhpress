@@ -155,7 +155,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				            <tr valign="top">
 				                <th scope="row"><label for="redirect_url">Redirect URL</label></th>
 				                <td><input type="text" name="redirect_url" id="redirect_url" value="<?php echo get_option( 'redirect_url' ); ?>" />
-				                	Enter url to redirct site to when timeout occurs.</td>
+				                	Enter url to redirect site to when timeout occurs.</td>
 				            </tr>
 				            <tr valign="top">
 				                <th scope="row"><label for="kiosk_launch">Kiosk Launch Page</label></th>
@@ -169,7 +169,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				            <tr valign="top">
 				                <th scope="row"><label for="kiosk_mode">Kiosk Mode</label></th>
 				                <td><input type="checkbox" name="kiosk_mode" id="kiosk_mode" value="1" <?php checked(get_option('kiosk_mode'),1); ?>/>
-				                	Add menu to bottom of site.</td>
+				                	Add menu to bottom of site?</td>
 				            </tr>
 				            <tr valign="top">
 				             	<th scope="row"><label for="redirect_url">Kiosk User Agent</label></th>
@@ -178,13 +178,13 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				            </tr>
 				            <tr valign="top">
 				             	<th scope="row"><label for="redirect_url">Block External URLs </label></th>
-				                <td>Enter comma separated list of domains that you wish to block on kiosk(only applies if User Agent is set above).<br/>
+				                <td>Enter comma separated list of domains that you wish to block on kiosk (only applies if User Agent is set above).<br/>
 				                	<textarea name="kiosk_blockurls" id="kiosk_blockurls"><?php echo get_option( 'kiosk_blockurls' ); ?></textarea> 
 				                </td>
 				            </tr>
 				            <tr valign="top">
 				                <th scope="row"><label for="dhp_love">Display DH Press credits in footer? </label></th>
-				                <td><input type="checkbox" name="dhp_love" id="dhp_love" value="1" <?php checked(get_option('dhp_love'),1); ?>/> You'd be even cooler if you did!</td>
+				                <td><input type="checkbox" name="dhp_love" id="dhp_love" value="1" <?php checked(get_option('dhp_love'),1); ?>/> Credits of DH Press developers</td>
 				            </tr>
 				            <tr valign="top">
 				                <th scope="row"><label for="screen_saver">Screen Saver Page</label></th>
@@ -192,7 +192,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 				                	<select name="screen_saver" id="screen_saver">
 				                		<?php echo self::dhp_list_pages_for_screen_saver(); ?>
 								    </select>
-								    Create a page and embed a wordpress gallery to create a screen saver(starts after 15 mins of inactivity).
+								    Create a page and embed a WordPress gallery to create a screen saver (starts after 15 mins of inactivity).
 				                </td>
 				            </tr>
 				        </table>
