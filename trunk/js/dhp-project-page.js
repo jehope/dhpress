@@ -148,12 +148,6 @@ jQuery(document).ready(function($) {
                                     theLayer.dhp_map_url,      null );
         });
 
-            // Add map elements to nav bar
-        $('.dhp-nav .top-bar-section .left').append(Handlebars.compile($("#dhp-script-map-menus").html()));
-
-            // Insert Legend area -- Joe had "after" but menu hidden if not "append"
-        $('#dhp-visual').append(Handlebars.compile($("#dhp-script-map-legend-head").html()));
-
             // all custom maps must have already been loaded into run-time "library"
         dhpMapsView.initMapInterface(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams, callBacks);
 

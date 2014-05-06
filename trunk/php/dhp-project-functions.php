@@ -1951,6 +1951,7 @@ add_filter( 'the_content', 'dhp_mod_page_content' );
 function dhp_mod_page_content($content) {
 	$postID = get_the_ID();
 	$postType = get_query_var('post_type');
+
 		// Only produce dhp-visual div hook for Project posts
 	switch ($postType) {
 	case 'project':
@@ -1958,10 +1959,13 @@ function dhp_mod_page_content($content) {
 
 		$projscript = dhp_get_script_text(DHP_SCRIPT_PROJ_VIEW);
 
-			// TO DO: Need to determine which view we are on before inserting file contents
-			//	since project can have multiple visualization pages
-		$ep0 = $projObj->getEntryPointByIndex(0);
-		switch ($ep0->type) {
+			// Which visualization is being shown
+		$vizIndex = (get_query_var('viz')) ? get_query_var('viz') : 0;
+		// $allSettings = $projObj->getAllSettings();
+		// $vizIndex = min($vizIndex, count($allSettings->{'entry-points'})-1);
+
+		$ep = $projObj->getEntryPointByIndex($vizIndex);
+		switch ($ep->type) {
 		case 'map':
 	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_MAP_VIEW);
 	    	break;
@@ -1969,9 +1973,6 @@ function dhp_mod_page_content($content) {
 	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_CARDS_VIEW);
 			break;
 		}
-	    // if (!is_null($projObj->getEntryPointByName('map'))) {
-	    // 	$projscript .= dhp_get_script_text(DHP_SCRIPT_MAP_VIEW);
-	    // }
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
 		break;
 	default:

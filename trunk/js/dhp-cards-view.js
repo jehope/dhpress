@@ -7,8 +7,10 @@ var dhpCardsView = {
 
         // Contains fields: ajaxURL, projectID, vizIndex, cardsEP, callBacks
         //                  rawData
-        //                  colorValues = array of { id, icon_url }
-        //                  allFields   = array of names of all sort and filter motes, for data- attributes
+        //                  colorValues   = array of { id, icon_url }
+        //                  allFields     = array of names of all sort and filter motes, for data- attributes
+        //                  currentSort   = name of mote currently used for sorting
+        //                  currentFilter = name of mote currently used for filtering
 
         // PURPOSE: Initialize card viewing area with controls and layers
         // INPUT:   ajaxURL      = URL to WP
@@ -17,6 +19,8 @@ var dhpCardsView = {
         //          callBacks    = object loaded with project-page callback functions
     initializeCards: function(ajaxURL, projectID, vizIndex, cardsEP, callBacks)
     {
+        var menuHTML, active;
+
             // Save reset data for later
         dhpCardsView.ajaxURL        = ajaxURL;
         dhpCardsView.projectID      = projectID;
@@ -24,30 +28,53 @@ var dhpCardsView = {
         dhpCardsView.cardsEP        = cardsEP;
         dhpCardsView.callBacks      = callBacks;
 
+        dhpCardsView.currentSort    = '';
+        dhpCardsView.currentFilter  = '';
+
         dhpCardsView.allFields      = [];
 
-            // Add Sort By bar
-        jQuery('#dhp-visual').prepend(Handlebars.compile(jQuery("#dhp-script-cards-sort").html()));
-        _.each(cardsEP.sortMotes, function(theMote) {
-            dhpCardsView.allFields.push(theMote);
-            jQuery('#dhp-cards-sort').append('<dd class="sortmote"><a href="#">'+theMote+'</a></dd>');
-        });
-            // Handle selection of a sort mote
-        jQuery('#dhp-cards-sort').click(function(e) {
-                // Find out which one selected
-            var newSort = jQuery(e.target);
-            jQuery('#dhp-cards-sort > .active').removeClass('active');
-            jQuery(newSort).addClass('active');
-            // TO DO -- call Isotope sorter!
-        });
-            // Activate 1st sort mote by default
-        jQuery('#dhp-cards-sort dd:first').addClass('active');
-            // Add Filter controls
-        _.each(cardsEP.filterMotes, function(theMote) {
-            dhpCardsView.allFields.push(theMote);
+            // Add Sort By controls
+        if (cardsEP.sortMotes.length > 0) {
+            jQuery('.top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-cards-sort").html()));
+            _.each(cardsEP.sortMotes, function(theMote, index) {
+                dhpCardsView.allFields.push(theMote);
+                if (index == 0) {
+                    dhpCardsView.currentSort = theMote;
+                    active = ' class="active"';
+                } else {
+                    active = '';
+                }
+                menuHTML = '<li'+active+'><a href="#">'+theMote+'</a></li>';
+                jQuery('#dhp-cards-sort').append(menuHTML);
+            });
+                // Handle selection of a sort mote
+            jQuery('#dhp-cards-sort').click(function(e) {
+                    // Find out which one selected
+                var newSort = jQuery(e.target);
+                    // Remove whatever was active previously
+                jQuery('#dhp-cards-sort > .active').removeClass('active');
+                jQuery(newSort).addClass('active');
+                // TO DO -- call Isotope sorter!
+            });
+        }
 
-            // TO DO
-        });
+            // Add Filter By controls
+        if (cardsEP.filterMotes.length > 0) {
+            jQuery('.top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-cards-filter-menu").html()));
+            _.each(cardsEP.filterMotes, function(theMote, index) {
+                dhpCardsView.allFields.push(theMote);
+                if (index == 0) {
+                    dhpCardsView.currentFilter = theMote;
+                    active = ' class="active"';
+                } else {
+                    active = '';
+                }
+                menuHTML = '<li'+active+'><a href="#">'+theMote+'</a></li>';
+                jQuery('#dhp-cards-filter-menu').append(menuHTML);
+            });
+
+            jQuery('.top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-cards-filter-input").html()));
+        }
 
         jQuery(document).foundation();
 
@@ -56,6 +83,8 @@ var dhpCardsView = {
 
         dhpCardsView.loadCards();
     }, // initializeCards()
+
+
 
         // PURPOSE: Resizes dhp elements when browser size changes
         // 

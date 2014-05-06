@@ -1,9 +1,35 @@
     <!-- Handlebars Templates for Map View -->
 <script id="dhp-script-cards-sort" type="text/x-handlebars-template">
-  <dl class="sub-nav" id="dhp-cards-sort">
-    <dt>Sort By:</dt>
-  </dl>
+  <li class="has-dropdown">
+      <a href="#">Sort By</a>
+      <ul class="dropdown" id="dhp-cards-sort"">
+          <!-- links -->
+      </ul>
+  </li>
 </script>
+
+<script id="dhp-script-cards-filter-menu" type="text/x-handlebars-template">
+  <li class="has-dropdown">
+      <a href="#">Filter By</a>
+      <ul class="dropdown" id="dhp-cards-filter-menu"">
+          <!-- links -->
+      </ul>
+  </li>
+</script>
+
+<script id="dhp-script-cards-filter-input" type="text/x-handlebars-template">
+  <li class="has-form">
+    <div class="row collapse">
+      <div class="large-8 small-9 columns">
+        <input type="text" id="dhp-filter-input" placeholder="Filter text">
+      </div>
+      <div class="large-4 small-3 columns">
+        <a href="#" class="alert button expand">Run Filter</a>
+      </div>
+    </div>
+  </li>
+</script>
+
 
 <script id="dhp-script-cards-helptips" type="text/x-handlebars-template">
   <ol id="dhpress-tips" class="joyRideTipContent">
