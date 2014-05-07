@@ -64,6 +64,24 @@ ul.wp-submenu {
   font-family: "Trebuchet MS", "Arial", "Helvetica", "Verdana", "sans-serif";  
 }
 
+.ui-accordion .ui-accordion-header {
+  display: block;
+  position: relative;
+}
+
+.ui-accordion .ui-accordion-header .ui-accordion-header-icon {
+  left: 0.5em !important;
+}
+
+.ui-accordion .ui-accordion-icons {
+  padding-left: 2.2em !important;
+}
+
+.ui-icon {
+  display: block;
+  overflow: hidden;
+}
+
 /* ---- Opacity slider ---- */
 
 .opacity-slider {

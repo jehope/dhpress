@@ -1844,11 +1844,13 @@ function add_dhp_project_admin_scripts( $hook )
 
         		// Library styles
 			wp_enqueue_style('jquery-ui-style', plugins_url('/lib/jquery-ui-1.10.4/themes/base/jquery.ui.all.css', dirname(__FILE__)) );
-			wp_enqueue_style('jquery-colorpicker-style', plugins_url('/lib/colorpicker/jquery.colorpicker.css',  dirname(__FILE__)) );
+			wp_enqueue_style('jquery-colorpicker-style', plugins_url('/lib/colorpicker/jquery.colorpicker.css',  dirname(__FILE__)),
+					array('jquery-ui-style') );
 			// wp_enqueue_style('wp-jquery-ui-dialog' );
 			wp_enqueue_style('maki-sprite-style', plugins_url('/css/maki-sprite.css',  dirname(__FILE__)) );
 				// Lastly, our plug-in specific styles
-			wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)) );
+			wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)),
+					array('jquery-ui-style', 'maki-sprite-style') );
 
 				// JavaScript libraries registered by WP
 			wp_enqueue_script('jquery');

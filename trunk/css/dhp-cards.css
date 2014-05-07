@@ -89,3 +89,7 @@ p {
     max-width: 98%;
 }
 
+    /* Controls */
+.top-bar .button {
+    margin: 3px;
+}
