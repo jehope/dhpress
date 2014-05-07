@@ -49,6 +49,7 @@ ul.wp-submenu {
 }
 
 /* ========== jQueryUI components =========== */
+/* == Overrides to make styling work in WP == */
 
 .ui-draggable, .ui-droppable {
   background-position: top;
@@ -80,6 +81,10 @@ ul.wp-submenu {
 .ui-icon {
   display: block;
   overflow: hidden;
+}
+
+.ui-button {
+  margin: 3px;
 }
 
 /* ---- Opacity slider ---- */
