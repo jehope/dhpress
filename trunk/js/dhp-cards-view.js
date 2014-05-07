@@ -152,7 +152,6 @@ var dhpCardsView = {
     }, // initializeCards()
 
 
-
         // PURPOSE: Resizes dhp elements when browser size changes
         // 
     updateVizSpace: function()
@@ -331,19 +330,32 @@ var dhpCardsView = {
         var sortObj, moteIDs = [];
 
         if (dhpCardsView.cardsEP.sortMotes.length > 0) {
-                // Create Object that describes sort options for Isotope
+                // Create Object that describes sort options for Isotope by
+                //   associating names of sort motes with the class names that mark the data
             _.each(dhpCardsView.cardsEP.sortMotes, function(moteName) {
                 moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
-                moteIDs.push('.datamote'+moteIndex);
+                    // Just name by itself results in case-sensitive search
+                // moteIDs.push('.datamote'+moteIndex);
+                    // Create a curried function which has the mote index
+                moteIDs.push((function(index) { 
+                    return function(itemElem) {
+                        return jQuery(itemElem).find('.datamote'+index).text().toLowerCase();
+                    } } )(moteIndex) );
             });
             sortObj = _.object(dhpCardsView.cardsEP.sortMotes, moteIDs);
-        }
 
-            // Initialize Isotope
-        cardHolder.isotope(
-            { itemSelector: '.card',
-              getSortData: sortObj
-            } );
+                // Initialize Isotope
+            cardHolder.isotope(
+                { itemSelector: '.card',
+                  getSortData: sortObj
+                } );
+        } else {
+                // Initialize Isotope
+            cardHolder.isotope(
+                { itemSelector: '.card' }
+            );
+
+        }
 
         if (dhpCardsView.currentSort) {
             cardHolder.isotope( { sortBy: dhpCardsView.currentSort } );

@@ -134,7 +134,7 @@ jQuery(document).ready(function($) {
 
     createLoadingMessage();
 
-        // 
+        // Get the settings for current visualization
     var thisEP = dhpSettings['entry-points'][vizIndex];
     switch (thisEP.type) {
     case 'map':

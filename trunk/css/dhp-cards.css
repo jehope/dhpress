@@ -28,9 +28,11 @@ p {
     top: 45px;
 }
 
+#card-container {
+    overflow: auto;
+}
+
 .card {
-/*    width: 120px;
-    height: 160px; */
     background: #00BFFF;
     border-radius: 5px;
     font-size: 11px;
@@ -49,11 +51,11 @@ p {
 }
 
 .card.med-height {
-    height: 140px;
+    height: 160px;
 }
 
 .card.tall {
-    height: 180px;
+    height: 220px;
 }
 
 .card.thin {
