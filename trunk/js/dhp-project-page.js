@@ -13,8 +13,7 @@ jQuery(document).ready(function($) {
         projectID,
         ajaxURL,
         vizIndex;               // index of current visualization
-        // Inactivity timeout
-    var userActivity = false, minutesInactive = 0, activeMonitorID, maxMinutesInactive;
+
         // modal and GUI support
     var modalSize;
     var browserMobile = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
@@ -182,41 +181,7 @@ jQuery(document).ready(function($) {
         dhpTranscript.initialize();
     }
 
-        // Monitor user activity, only if setting given
-    maxMinutesInactive = dhpSettings["project-details"]["max-inactive"];
-    if ((maxMinutesInactive !== null) && (maxMinutesInactive !== '') && (maxMinutesInactive !== '0') && (maxMinutesInactive !== 0)) {
-        if (typeof(maxMinutesInactive) === "string") {
-            maxMinutesInactive = parseFloat(maxMinutesInactive);
-        }
-        document.onclick = function() {
-            userActivity = true;
-        };
-        document.onmousemove = function() {
-            userActivity = true;
-        };
-        document.onkeypress = function() {
-            userActivity = true;
-        };
-        activeMonitorID = window.setInterval(monitorActivity, 60000);    // 1000 milliseconds = 1 sec * 60 sec = 1 minute
-    }
-
     // ========================= FUNCTIONS
-
-
-        // PURPOSE: Called once a minute to see if user has done anything in that interval
-    function monitorActivity()
-    {
-            // Either increase or rest minutesInactive, based on user activity in last minute
-        if (userActivity) {
-            minutesInactive = 0;
-        } else {
-            minutesInactive++;
-        }
-        userActivity = false;
-        if (minutesInactive >= maxMinutesInactive) {
-            document.location.href = dhpSettings["project-details"]["home-url"];
-        }
-    } // monitorActivity()
 
 
     function windowResized()

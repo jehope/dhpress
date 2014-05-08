@@ -16,8 +16,7 @@ jQuery(document).ready(function($) {
         'project-details': {
           version: 3,
           'home-label': '',
-          'home-url': '',
-          'max-inactive': 0
+          'home-url': ''
         },
         motes: [],
         'entry-points': [],
@@ -261,7 +260,6 @@ jQuery(document).ready(function($) {
 
       projSettings['project-details']['home-label'] = self.edHomeBtnLbl();
       projSettings['project-details']['home-url'] = self.edHomeURL();
-      projSettings['project-details']['max-inactive'] = self.edInactiveTimeout();
 
       projSettings['motes'] = [];
       ko.utils.arrayForEach(self.allMotes(), function(theMote) {
@@ -389,13 +387,11 @@ jQuery(document).ready(function($) {
       // User-editable values
     self.edHomeBtnLbl = ko.observable('');
     self.edHomeURL = ko.observable('');
-    self.edInactiveTimeout = ko.observable(20);
 
       // Methods
     self.setDetails = function(theDetails) {
       self.edHomeBtnLbl(theDetails['home-label']);
       self.edHomeURL(theDetails['home-url']);
-      self.edInactiveTimeout(theDetails['max-inactive']);
     };
 
 //-------------------------------------- Motes --------------------------------------
