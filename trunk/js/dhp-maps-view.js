@@ -512,7 +512,8 @@ var dhpMapsView = {
             var legendName = theLegend.name;
 
                 // "Root" DIV for this particular Legend
-            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+'"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
+            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+
+                            '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
                 // Create entries for all of the 1st-level terms (do not represent children of terms)
             _.each(filterTerms, function(theTerm) {
                 if(legendName!=theTerm.name) {
@@ -524,10 +525,12 @@ var dhpMapsView = {
                     var htmlStr;
                     switch (firstIconChar) {
                     case '#':
-                        htmlStr = '<div class="small-3 large-2 columns" style="background:'+theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
+                        htmlStr = '<div class="small-3 large-2 columns" style="background:'+
+                            theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
                         break;
                     case '.':
-                        htmlStr = '<div class="small-3 large-2 columns"><div class="maki-icon '+theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
+                        htmlStr = '<div class="small-3 large-2 columns"><div class="maki-icon '+
+                            theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
                         break;
                     default:
                             // TO DO: Support uploaded images!
@@ -537,7 +540,8 @@ var dhpMapsView = {
 
                         // Append new legend value to menu according to type
                     jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+htmlStr+
-                                                    '<div class="small-7 large-9 columns"><a class="value" data-id="'+theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
+                                                    '<div class="small-7 large-9 columns"><a class="value" data-id="'+
+                                                    theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                 }
             });
             jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-map-legend-hideshow").html()));
