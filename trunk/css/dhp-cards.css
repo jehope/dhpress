@@ -18,18 +18,22 @@ p {
     margin-bottom: 0 !important;
 }
 
+    /* Enable scroll bar for Cards */
 #dhp-visual {
     overflow: auto;
 }
 
+    /* Take over full screen but leave room for Nav bar */
 .fullscreen #dhp-visual {
     width: 100%;
     height: 100%;
     top: 45px;
+/*    bottom: -45px; */  /* would like to compensate for nav bar but this doesn't work */
 }
 
 #card-container {
     overflow: auto;
+    bottom: 0px;
 }
 
 .card {

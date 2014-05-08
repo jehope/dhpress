@@ -6,20 +6,28 @@
 body.fullscreen {
 	overflow: hidden;
 }
+
 #dhp-visual {
 	z-index: 1000;
 }
 
-	/* added for fix */
+	/* Map always takes full space alloted to it */
 #dhpMap {
 	width: 100%;
 	height: 100%;
 }
 
+/*.fullscreen #dhpMap {
+	width: 100%;
+	height: 100%;
+}
+*/
+
 	/* Controls on Map */
 #dhp-visual div.olControlZoom {
 	top:10px;
 }
+
 .fullscreen #dhp-visual div.olControlZoom,
 .fullscreen #dhp-visual .leaflet-control-zoom {
 	/*top: 110px;*/
@@ -298,8 +306,9 @@ input.leaflet-control-layers-selector {
 
 
 /* enables mobile view TODO: take out when update to foundation is complete */
-@media (max-width: 767px) {
+/*@media (max-width: 767px) {
 	[class*="span"], .uneditable-input[class*="span"], .row-fluid [class*="span"] {
 		width: 228px;
 	}
 }
+*/

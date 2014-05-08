@@ -52,21 +52,16 @@ jQuery(document).ready(function($) {
     if(modalSize) {
         jQuery('#markerModal').addClass(modalSize);
     }
-        // initialize fullscreen mode settings
-    if(dhpSettings.views['viz-fullscreen']===true){
-        $('body, html').addClass('fullscreen');
-        $('.dhp-nav .fullscreen').addClass('active');
-    }
+        // Get name of Project and put on Nav Bar
     $('.dhp-nav .title-area .name h1 a').text($('.entry-title').text());
-
 
         // handle toggling fullscreen mode
     $('.dhp-nav .fullscreen').on('click', function(){
         if($('body').hasClass('fullscreen')) {
-            $('body').removeClass('fullscreen');
+            $('body, html').removeClass('fullscreen');
             $('.dhp-nav .fullscreen').removeClass('active');
         } else {
-            $('body').addClass('fullscreen');
+            $('body, html').addClass('fullscreen');
             $('.dhp-nav .fullscreen').addClass('active');
         }
         windowResized();
@@ -83,9 +78,24 @@ jQuery(document).ready(function($) {
     //     }
     // });
 
-    $('<style type="text/css"> @media screen and (min-width: 600px) { #dhp-visual{ width:'+
-        dhpSettings.views['viz-width']+'px; height:'+
-        dhpSettings.views['viz-height']+'px;}} </style>').appendTo('head');
+        // Did user provide visualization size params?
+    var sizeStr = '';
+    if (dhpSettings.views['viz-width'] && dhpSettings.views['viz-width'] != '') {
+        sizeStr = 'width:'+ String(dhpSettings.views['viz-width'])+'px; ';
+    }
+    if (dhpSettings.views['viz-height'] && dhpSettings.views['viz-height'] != '') {
+        sizeStr += 'height:'+ String(dhpSettings.views['viz-height'])+'px;';
+    }
+    if (sizeStr !== '') {
+        $('<style type="text/css"> @media screen and (min-width: 600px) { #dhp-visual { '+
+            sizeStr+' }} </style>').appendTo('head');
+    }
+
+        // initialize fullscreen mode settings
+    if(dhpSettings.views['viz-fullscreen']===true) {
+        $('body, html').addClass('fullscreen');
+        $('.dhp-nav .fullscreen').addClass('active');
+    }
 
         // Constants regarding GUI items
     var wpAdminBarWidth        = 783; // Width at which the admin bar changes to mobile version
@@ -237,8 +247,6 @@ jQuery(document).ready(function($) {
                 jQuery('#markerModal').addClass(modalSize);
             }
 
-                // TO DO -- Modify screen dimentions according to view type??
-
                 // New WordPress has a mobile admin bar with larger height(displays below 783px width)
             if (wpAdminBarVisible && windowWidth >= wpAdminBarWidth ) {
                 jQuery('body').height(windowHeight - wpAdminBarHeight);
@@ -253,6 +261,7 @@ jQuery(document).ready(function($) {
             else {
                 jQuery('body').height(windowHeight);
             }
+                // Force visual space to take full room
             // jQuery('#dhp-visual').css({ 'height': jQuery('body').height() - wpMobileAdminBarHeight, 'top' : wpMobileAdminBarHeight });
         }
 
