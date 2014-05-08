@@ -120,7 +120,7 @@
     <li>
         Mote <span data-bind="text: $index"></span>
         <b><span data-bind="text: name"></span></b> of type <i><span data-bind="text: type"></span></i> from
-        <span data-bind="text: $data['custom-fields']"></span>, delimiter [ <span data-bind="text: delim"></span> ]
+        <span data-bind="text: cf"></span>, delimiter [ <span data-bind="text: delim"></span> ]
         <button data-bind="jqButton, click: $parent.editMote">Edit</button>
         <button data-bind="jqButton, click: $parent.delMote">Delete</button>
         <span data-bind="if: type == 'Short Text'">
@@ -153,11 +153,11 @@
                 <option value="m">Medium</option>
                 <option value="l">Large</option>
             </select>&nbsp;
-          Marker Mote (for Lat/Lon) <select data-bind="value: theEP.settings['marker-layer'], options: $root.coordMoteNames"></select>
+          Marker Mote (for Lat/Lon) <select data-bind="value: theEP.settings.coordMote, options: $root.coordMoteNames"></select>
         </li>
         <div data-bind="template: { name: 'map-layer-template', foreach: theEP.settings.layers, as: 'theLayer' }"></div>
         <button data-bind="jqButton, click: $root.addLayer.bind(theEP)">Add Layer</button>
-        <div data-bind="template: { name: 'map-legend-template', foreach: theEP.settings['filter-data'] }"></div>
+        <div data-bind="template: { name: 'map-legend-template', foreach: theEP.settings.legends }"></div>
         <button data-bind="jqButton, click: $root.addMapLegend.bind(theEP)">Add Legend</button>
     </ul>
 </script>

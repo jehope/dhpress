@@ -130,10 +130,9 @@ jQuery(document).ready(function($) {
 			//console.log('data is loaded');
 			//console.log(markerObject);
 
-			// console.log("Marker custom fields = "+markerObject['project-details']['marker-custom-fields']);
 			var custom_fields ='';
-			if(markerObject['project-details']['marker-custom-fields']) {
-				custom_fields = markerObject['project-details']['marker-custom-fields'];
+			if(markerObject.general.cfs) {
+				custom_fields = markerObject.general.cfs;
 			}
 			var optionHtml;
 
@@ -144,9 +143,9 @@ jQuery(document).ready(function($) {
 				// Now that we have list of values, insert it into HTML
 			$('.custom-field-editor select').append(optionHtml);
 				//update the project_id field or create it if it is a new marker
-			dhpAddUpdateMetaField('project_id',markerObject['project-details']['id']);
+			dhpAddUpdateMetaField('project_id',markerObject.general.id);
 				// set value of edit field to Project ID
-			$('.edit-custom-field').val(markerObject['project-details']['id']);
+			$('.edit-custom-field').val(markerObject.general.id);
 
 				// Bind code to display value for whatever value is selected in dropdown options
 			$('.custom-field-editor select').on('change',function(){

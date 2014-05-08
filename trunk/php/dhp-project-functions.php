@@ -663,20 +663,19 @@ function createMarkerArray($project_id, $index)
 		}
 	}
 
-	$eps = $projSettings->{'entry-points'}[$index];
+	$eps = $projSettings->eps[$index];
 	switch ($eps->type) {
 	case "map":
 			// Which field used to encode Lat-Long on map?
-		// $map_pointsMote = $projObj->getMoteByName( $eps['settings']['marker-layer'] );
-		$map_pointsMote = $projObj->getMoteByName( $eps->settings->{'marker-layer'} );
+		// $map_pointsMote = $projObj->getMoteByName( $eps->settings->coordMote );
+		$map_pointsMote = $projObj->getMoteByName( $eps->settings->coordMote );
 		if($map_pointsMote->type=='Lat/Lon Coordinates'){
 			if(!$map_pointsMote->delim) { $map_pointsMote->delim=','; }
-			$coordMote = split($map_pointsMote->delim, $map_pointsMote->{'custom-fields'});
+			$coordMote = split($map_pointsMote->delim, $map_pointsMote->cf);
 			//array of custom fields
 		}
 			// Find all possible legends/filters for this map -- each marker needs these fields
-		// $filters = $eps['settings']['filter-data'];
-		$filters = $eps->settings->{'filter-data'};
+		$filters = $eps->settings->legends;
 			// Collect all possible category values/tax names for each mote in all filters
 		foreach( $filters as $legend ) {
 			$term = get_term_by('name', $legend, $rootTaxName);
@@ -791,7 +790,7 @@ function createMarkerArray($project_id, $index)
 		if (is_null($temp_mote)) {
 			trigger_error("Modal view title assigned to unknown mote");
 		}
-		$title_mote = $temp_mote->{'custom-fields'};
+		$title_mote = $temp_mote->cf;
 	}
 
 	// $feature_collection['debugmsg'] = "coordMote count = ".count($coordMote)." moteName = ".$map_pointsMote["name"];
@@ -899,7 +898,7 @@ function createMarkerArray($project_id, $index)
 					$content_val = apply_filters('the_title', get_the_title());
 				} else {
 					$content_mote = $projObj->getMoteByName( $contentMoteName );
-					$contentCF = $content_mote->{'custom-fields'};
+					$contentCF = $content_mote->cf;
 					if($contentCF =='the_content') {
 						$content_val = apply_filters('the_content', get_post_field($contentCF, $marker_id));
 					} elseif ($contentCF=='the_title') {
@@ -926,7 +925,7 @@ function createMarkerArray($project_id, $index)
 				$term_links = get_permalink();
 			}
 			elseif(strpos($link_parent, '(Mote)') !== FALSE) {
-				$term_links = get_post_meta($marker_id, $child_terms->{'custom-fields'}, true);
+				$term_links = get_post_meta($marker_id, $child_terms->cf, true);
 			}
 			else {
 				$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $rootTaxName);
@@ -940,7 +939,7 @@ function createMarkerArray($project_id, $index)
 				$term_links2 = get_permalink();
 			}
 			elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
-				$term_links2 = get_post_meta($marker_id, $child_terms2->{'custom-fields'}, true);
+				$term_links2 = get_post_meta($marker_id, $child_terms2->cf, true);
 			}
 			else {
 				$term_links2 = dhp_get_term_by_parent($child_terms2, $post_terms, $rootTaxName);
@@ -1463,7 +1462,7 @@ function dhpGetTaxTranscript()
 	$dhp_audio_mote = $projObj->getMoteByName($proj_settings->views->transcript->audio);
 	$dhp_transcript_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript);
 
-	$dhp_transcript_cfield = $dhp_transcript_mote->{'custom-fields'};
+	$dhp_transcript_cfield = $dhp_transcript_mote->cf;
 	$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
 	if($dhp_transcript!='none') {
 		$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
@@ -1472,7 +1471,7 @@ function dhpGetTaxTranscript()
 		//if project has two transcripts
 	if($proj_settings->views->transcript->transcript2) {
 		$dhp_transcript2_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript2);
-		$dhp_transcript2_cfield = $dhp_transcript2_mote->{'custom-fields'};
+		$dhp_transcript2_cfield = $dhp_transcript2_mote->cf;
 		$dhp_transcript2 = $marker_meta[$dhp_transcript2_cfield][0];
 		if ($dhp_transcript2 != 'none') {
 			$dhp_object['transcript2'] = loadTranscriptFromFile($dhp_transcript2);
@@ -1480,7 +1479,7 @@ function dhpGetTaxTranscript()
 	}
 
 	$dhp_object['settings'] = $dhp_transcript_ep;
-	$dhp_object['audio'] = $marker_meta[$dhp_audio_mote->{'custom-fields'}][0];
+	$dhp_object['audio'] = $marker_meta[$dhp_audio_mote->cf][0];
 	$dhp_object['transcript'] = $dhp_transcript;
 
 	die(json_encode($dhp_object));
@@ -1971,7 +1970,7 @@ function dhp_mod_page_content($content) {
 			// Which visualization is being shown
 		$vizIndex = (get_query_var('viz')) ? get_query_var('viz') : 0;
 		// $allSettings = $projObj->getAllSettings();
-		// $vizIndex = min($vizIndex, count($allSettings->{'entry-points'})-1);
+		// $vizIndex = min($vizIndex, count($allSettings->eps)-1);
 
 		$ep = $projObj->getEntryPointByIndex($vizIndex);
 		switch ($ep->type) {
@@ -2039,12 +2038,12 @@ function dhp_page_template( $page_template )
 
 			// Check query variable "viz" to see which visualization to display -- default = 0
 		$vizIndex = (get_query_var('viz')) ? get_query_var('viz') : 0;
-		$vizIndex = min($vizIndex, count($allSettings->{'entry-points'})-1);
+		$vizIndex = min($vizIndex, count($allSettings->eps)-1);
 		$vizParams['current'] = $vizIndex;
 
 			// Create list of visualization labels for drop-down menu
 		$vizMenu = array();
-		foreach ($allSettings->{'entry-points'} as $thisEP) {
+		foreach ($allSettings->eps as $thisEP) {
 			array_push($vizMenu, $thisEP->label);
 		}
 		$vizParams['menu'] = $vizMenu;

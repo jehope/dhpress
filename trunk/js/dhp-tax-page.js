@@ -93,7 +93,7 @@ jQuery(document).ready(function($) {
             return moteName == thisMote.name;
         });
         if (theMote) {
-            return theMote['custom-fields'];
+            return theMote.cf;
         } else {
             return null;
         }

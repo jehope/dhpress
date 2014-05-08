@@ -28,7 +28,7 @@ jQuery(document).ready(function($) {
 
     ajaxURL        = dhpData.ajax_url;
     dhpSettings    = dhpData.settings;
-    projectID      = dhpSettings["project-details"]["id"];
+    projectID      = dhpSettings.general.id;
 
     vizIndex       = dhpData.vizParams.current;
 
@@ -79,11 +79,11 @@ jQuery(document).ready(function($) {
 
         // Did user provide visualization size params?
     var sizeStr = '';
-    if (dhpSettings.views['viz-width'] && dhpSettings.views['viz-width'] != '') {
-        sizeStr = 'width:'+ String(dhpSettings.views['viz-width'])+'px; ';
+    if (dhpSettings.views.miniWidth && dhpSettings.views.miniWidth != '') {
+        sizeStr = 'width:'+ String(dhpSettings.views.miniWidth)+'px; ';
     }
-    if (dhpSettings.views['viz-height'] && dhpSettings.views['viz-height'] != '') {
-        sizeStr += 'height:'+ String(dhpSettings.views['viz-height'])+'px;';
+    if (dhpSettings.views.miniHeight && dhpSettings.views.miniHeight != '') {
+        sizeStr += 'height:'+ String(dhpSettings.views.miniHeight)+'px;';
     }
     if (sizeStr !== '') {
         $('<style type="text/css"> @media screen and (min-width: 600px) { #dhp-visual { '+
@@ -91,7 +91,7 @@ jQuery(document).ready(function($) {
     }
 
         // initialize fullscreen mode settings
-    if(dhpSettings.views['viz-fullscreen']===true) {
+    if(dhpSettings.views.fullscreen===true) {
         $('body, html').addClass('fullscreen');
         $('.dhp-nav .fullscreen').addClass('active');
     }
@@ -144,7 +144,7 @@ jQuery(document).ready(function($) {
     createLoadingMessage();
 
         // Get the settings for current visualization
-    var thisEP = dhpSettings['entry-points'][vizIndex];
+    var thisEP = dhpSettings.eps[vizIndex];
     switch (thisEP.type) {
     case 'map':
             // vizParams.layerData must have array of DHP custom map layers to add to "library" -- not base maps (??)
@@ -239,8 +239,8 @@ jQuery(document).ready(function($) {
 
     function createNavBar()
     {
-        var homeBtnLabel = dhpSettings["project-details"]["home-label"];
-        var homeBtnURL   = dhpSettings["project-details"]["home-url"];
+        var homeBtnLabel = dhpSettings.general.homeLabel;
+        var homeBtnURL   = dhpSettings.general.homeURL;
 
             // Detect appropriate theme location to attach nav bar(header or body)
             // insert top navigational bar and controls
@@ -301,7 +301,7 @@ jQuery(document).ready(function($) {
 
         // RETURNS: true if the Select Modal has a widget whose name is modalName
     function modalViewHas(modalName) {
-        return (_.find(dhpSettings.views.select['view-type'],
+        return (_.find(dhpSettings.views.select.widgets,
                         function(theName) { return (theName == modalName); }) != undefined);
     }
 
@@ -376,10 +376,10 @@ jQuery(document).ready(function($) {
         link1  = feature.properties.link;
         link2  = feature.properties.link2;
             // Open in new tab?
-        if(selectParams['link-new-tab']) {
+        if(selectParams.linkNewTab) {
             link1Target = 'target="_blank"';
         }
-        if(selectParams['link2-new-tab']) {
+        if(selectParams.link2NewTab) {
             link2Target = 'target="_blank"';
         }
 
@@ -434,10 +434,12 @@ jQuery(document).ready(function($) {
 
             // setup links
         if (link1 && link1!='disable') {
-            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link1Target+' class="button success marker-link" href="'+link1+'">'+selectParams['link-label']+'</a></li>');
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link1Target+
+                ' class="button success marker-link" href="'+link1+'">'+selectParams.linkLabel+'</a></li>');
         }
         if (link2 && link2 !='disable') {
-            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link2Target+' class="button success marker-link" href="'+link2+'">'+selectParams['link2-label']+'</a></li>');
+            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link2Target+
+                ' class="button success marker-link" href="'+link2+'">'+selectParams.link2Label+'</a></li>');
         }
             //Open modal
         jQuery('#markerModal').foundation('reveal', 'open');

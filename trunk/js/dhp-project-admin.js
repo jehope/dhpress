@@ -13,21 +13,21 @@ jQuery(document).ready(function($) {
 
       // Constants
   var _blankSettings = {
-        'project-details': {
+        general: {
           version: 3,
-          'home-label': '',
-          'home-url': ''
+          homeLabel: '',
+          homeURL: ''
         },
         motes: [],
-        'entry-points': [],
+        eps: [],
         views: {
-          'viz-fullscreen': true, 'viz-width': 500, 'viz-height': 500,
+          fullscreen: true, miniWidth: 500, miniHeight: 500,
           select: {
             title: '',
             width: 'medium',
-            link: 'disable',  'link-label': '',  'link-new-tab': true,
-            link2: 'disable', 'link2-label': '', 'link2-new-tab': true,
-            'view-type': [],
+            link: 'disable',  linkLabel: '',  linkNewTab: true,
+            link2: 'disable', link2Label: '', link2NewTab: true,
+            widgets: [],
             content: []
           },
           post: {
@@ -73,7 +73,7 @@ jQuery(document).ready(function($) {
     savedSettings = _blankSettings;
   } else {
     savedSettings = JSON.parse(savedSettings);
-    if (savedSettings == undefined || savedSettings['project-details']['version'] != 3) {
+    if (savedSettings == undefined || savedSettings.general.version != 3) {
       savedSettings = _blankSettings;
     }
   }
@@ -100,7 +100,7 @@ jQuery(document).ready(function($) {
 
 //===================================== OBJECT CLASSES ===================================
 
-    // Class constructor for a String element in an array (such as settings.filter-data)
+    // Class constructor for a String element in an array (such as settings.legends)
     // NOTES: This is necessary because KO needs to bind to an object in an observable array, rather than just
     //          a string. See the following for explanation:
     //          http://stackoverflow.com/questions/15749572/how-can-i-bind-an-editable-ko-observablearray-of-observable-strings?lq=1
@@ -119,7 +119,7 @@ jQuery(document).ready(function($) {
 
     self.name = name;
     self.type = type;
-    self['custom-fields'] = customField;
+    self.cf   = customField;
     self.delim= delim;
   } // Mote()
 
@@ -140,10 +140,10 @@ jQuery(document).ready(function($) {
     ko.utils.arrayForEach(normalizeArray(epSettings.settings.layers), function(theLayer) {
       self.settings.layers.push(new MapLayer(theLayer));
     });
-    self.settings['marker-layer'] = ko.observable(epSettings.settings['marker-layer']);
-    self.settings['filter-data'] = ko.observableArray();
-    ko.utils.arrayForEach(normalizeArray(epSettings.settings['filter-data']), function(theLegend) {
-      self.settings['filter-data'].push(new ArrayString(theLegend));
+    self.settings.coordMote = ko.observable(epSettings.settings.coordMote);
+    self.settings.legends = ko.observableArray();
+    ko.utils.arrayForEach(normalizeArray(epSettings.settings.legends), function(theLegend) {
+      self.settings.legends.push(new ArrayString(theLegend));
     });
   } // MapEntryPoint()
 
@@ -252,26 +252,26 @@ jQuery(document).ready(function($) {
     self.bundleSettings = function() {
       var projSettings = {};
 
-      projSettings['project-details'] = {};
-      projSettings['project-details'].id = projectID;
-      projSettings['project-details'].name = savedSettings['project-details'].name;
-      projSettings['project-details'].version = 3;
-      projSettings['project-details']['marker-custom-fields'] = allCustomFields;
+      projSettings.general = {};
+      projSettings.general.id = projectID;
+      projSettings.general.name = savedSettings.general.name;
+      projSettings.general.version = 3;
+      projSettings.general.cfs = allCustomFields;
 
-      projSettings['project-details']['home-label'] = self.edHomeBtnLbl();
-      projSettings['project-details']['home-url'] = self.edHomeURL();
+      projSettings.general.homeLabel = self.edHomeBtnLbl();
+      projSettings.general.homeURL = self.edHomeURL();
 
       projSettings['motes'] = [];
       ko.utils.arrayForEach(self.allMotes(), function(theMote) {
         var savedMote = {};
-        savedMote.name             = theMote.name;
-        savedMote.type             = theMote.type;
-        savedMote.delim            = theMote.delim;
-        savedMote['custom-fields'] = theMote['custom-fields'];
-        projSettings['motes'].push(savedMote);
+        savedMote.name    = theMote.name;
+        savedMote.type    = theMote.type;
+        savedMote.delim   = theMote.delim;
+        savedMote.cf      = theMote.cf;
+        projSettings.motes.push(savedMote);
       } );
 
-      projSettings['entry-points'] = [];
+      projSettings.eps = [];
       ko.utils.arrayForEach(self.entryPoints(), function(theEP) {
         var savedEP = {};
         savedEP.type      = theEP.type;
@@ -303,10 +303,10 @@ jQuery(document).ready(function($) {
             });
             savedEP.settings.layers.push(savedLayer);
           } );
-          savedEP.settings['marker-layer'] = theEP.settings['marker-layer']();
-          savedEP.settings['filter-data'] = [];
-          ko.utils.arrayForEach(theEP.settings['filter-data'](), function(theLegend) {
-            savedEP.settings['filter-data'].push(theLegend.name());
+          savedEP.settings.coordMote = theEP.settings.coordMote();
+          savedEP.settings.legends = [];
+          ko.utils.arrayForEach(theEP.settings.legends(), function(theLegend) {
+            savedEP.settings.legends.push(theLegend.name());
           });
           break;
         case 'cards':
@@ -332,13 +332,13 @@ jQuery(document).ready(function($) {
           });
           break;
         } // switch ep type
-        projSettings['entry-points'].push(savedEP);
+        projSettings.eps.push(savedEP);
       }); // for each EP
 
       projSettings.views = {};
-      projSettings.views['viz-fullscreen'] = self.edVizFullScreen();
-      projSettings.views['viz-width'] = self.edVizWidth();
-      projSettings.views['viz-height'] = self.edVizHeight();
+      projSettings.views.fullscreen = self.edVizFullScreen();
+      projSettings.views.miniWidth = self.edVizWidth();
+      projSettings.views.miniHeight = self.edVizHeight();
 
       projSettings.views.post = {};
       projSettings.views.post.title = self.edPostTitle();
@@ -350,9 +350,9 @@ jQuery(document).ready(function($) {
       projSettings.views.select = {};
       projSettings.views.select.title = self.edSelTitle();
       projSettings.views.select.width = self.edSelWidth();
-      projSettings.views.select['view-type'] = [];
+      projSettings.views.select.widgets = [];
       ko.utils.arrayForEach(self.widgetList(), function (theWidget) {
-        projSettings.views.select['view-type'].push(theWidget.name());
+        projSettings.views.select.widgets.push(theWidget.name());
       });
       projSettings.views.select.content = [];
       ko.utils.arrayForEach(self.selMoteList(), function (theMote) {
@@ -360,11 +360,11 @@ jQuery(document).ready(function($) {
       });
 
       projSettings.views.select.link = self.edSelLinkMt();
-      projSettings.views.select['link-label'] = self.edSelLinkLbl();
-      projSettings.views.select['link-new-tab'] = self.edSelLinkNewTab();
+      projSettings.views.select.linkLabel = self.edSelLinkLbl();
+      projSettings.views.select.linkNewTab = self.edSelLinkNewTab();
       projSettings.views.select.link2 = self.edSelLink2Mt();
-      projSettings.views.select['link2-label'] = self.edSelLink2Lbl();
-      projSettings.views.select['link2-new-tab'] = self.edSelLink2NewTab();
+      projSettings.views.select.link2Label = self.edSelLink2Lbl();
+      projSettings.views.select.link2NewTab = self.edSelLink2NewTab();
 
       projSettings.views.transcript = {};
       projSettings.views.transcript.audio = self.edTrnsAudio();
@@ -390,8 +390,8 @@ jQuery(document).ready(function($) {
 
       // Methods
     self.setDetails = function(theDetails) {
-      self.edHomeBtnLbl(theDetails['home-label']);
-      self.edHomeURL(theDetails['home-url']);
+      self.edHomeBtnLbl(theDetails.homeLabel);
+      self.edHomeURL(theDetails.homeURL);
     };
 
 //-------------------------------------- Motes --------------------------------------
@@ -510,10 +510,10 @@ jQuery(document).ready(function($) {
             ko.utils.arrayForEach(self.entryPoints(), function(theEP) {
               switch (theEP.type) {
               case 'map':
-                if (theEP.settings['marker-layer']() == moteName) {
-                  theEP.settings['marker-layer']('');
+                if (theEP.settings.coordMote() == moteName) {
+                  theEP.settings.coordMote('');
                 }
-                theEP.settings['filter-data'].remove(function(mote) { return mote.name() === moteName; });
+                theEP.settings.legends.remove(function(mote) { return mote.name() === moteName; });
                 break;
               case 'cards':
                 if (theEP.settings.title() == moteName) { theEP.settings.title(''); }
@@ -568,7 +568,7 @@ jQuery(document).ready(function($) {
     self.editMote = function(theMote, event) {
       $('#mdl-edit-mote-title').text('Edit definition for '+theMote.name);
       $('#mdl-edit-mote #edMoteModalType').val(theMote.type);
-      $('#mdl-edit-mote #edMoteModalCF').val(theMote['custom-fields']);
+      $('#mdl-edit-mote #edMoteModalCF').val(theMote.cf);
       $('#mdl-edit-mote #edMoteModalDelim').val(theMote.delim);
 
       if (theMote.type == 'Short Text') {
@@ -1006,7 +1006,7 @@ jQuery(document).ready(function($) {
       newModal.dialog('open');
 
         // Asynchronous AJAX load which needs to modify HTML
-      getLegendValuesInWP(theMote.name, theMote['custom-fields'], theMote.delim, unpackLegendData);
+      getLegendValuesInWP(theMote.name, theMote.cf, theMote.delim, unpackLegendData);
     }; // configCat()
 
       // PURPOSE: Handle selection to rebuild the Legend/Category for the mote
@@ -1024,7 +1024,7 @@ jQuery(document).ready(function($) {
           'Rebuild': function() {
               // Disable button until AJAX call returns
             $(event.target).button("disable");
-            rebuildLegendValuesInWP(theMote.name, theMote['custom-fields'], theMote.delim, event.target);
+            rebuildLegendValuesInWP(theMote.name, theMote.cf, theMote.delim, event.target);
 
             $( this ).dialog('close');
           },
@@ -1051,8 +1051,8 @@ jQuery(document).ready(function($) {
         settings: {
             lat: 0, lon: 0, zoom: 10, size: 'm',
             layers: [ { id: 0, name: '', opacity: 1, mapType: '', mapTypeId: '' } ],
-            'marker-layer': '',
-            'filter-data': [ ]
+            coordMote: '',
+            legends: [ ]
         }
       };
       self.setEP(_blankMapEP);
@@ -1165,13 +1165,13 @@ jQuery(document).ready(function($) {
 
       // PURPOSE: Handle user selection to create new map legend
     self.addMapLegend = function(theEP) {
-      theEP.settings['filter-data'].push(new ArrayString(''));
+      theEP.settings.legends.push(new ArrayString(''));
       self.settingsDirty(true);
     };
 
       // PURPOSE: Handle user selection to create new map legend
     self.delMapLegend = function(theLegend, theEP, index) {
-      theEP.settings['filter-data'].splice(index, 1);
+      theEP.settings.legends.splice(index, 1);
       self.settingsDirty(true);
     };
 
@@ -1243,19 +1243,19 @@ jQuery(document).ready(function($) {
 
       // PURPOSE: Set all variables related to views programmatically (not from user interface)
     self.setViews = function(viewSettings) {
-      self.edVizFullScreen(viewSettings['viz-fullscreen']);
-      self.edVizWidth(viewSettings['viz-width']);
-      self.edVizHeight(viewSettings['viz-height']);
+      self.edVizFullScreen(viewSettings.fullscreen);
+      self.edVizWidth(viewSettings.miniWidth);
+      self.edVizHeight(viewSettings.miniHeight);
 
       self.edSelTitle(viewSettings.select.title);
       self.edSelWidth(viewSettings.select.width);
       self.edSelLinkMt(disableByDefault(viewSettings.select.link));
-      self.edSelLinkLbl(viewSettings.select['link-label']);
-      self.edSelLinkNewTab(viewSettings.select['link-new-tab']);
+      self.edSelLinkLbl(viewSettings.select.linkLabel);
+      self.edSelLinkNewTab(viewSettings.select.linkNewTab);
       self.edSelLink2Mt(disableByDefault(viewSettings.select.link2));
-      self.edSelLink2Lbl(viewSettings.select['link2-label']);
-      self.edSelLink2NewTab(viewSettings.select['link2-new-tab']);
-      ko.utils.arrayForEach(viewSettings.select['view-type'], function(theWidget) {
+      self.edSelLink2Lbl(viewSettings.select.link2Label);
+      self.edSelLink2NewTab(viewSettings.select.link2NewTab);
+      ko.utils.arrayForEach(viewSettings.select.widgets, function(theWidget) {
         self.widgetList.push(new ArrayString(theWidget));
       });
       ko.utils.arrayForEach(viewSettings.select.content, function(theContent) {
@@ -1298,7 +1298,7 @@ jQuery(document).ready(function($) {
       ko.utils.arrayForEach(self.entryPoints(), function(theEP) {
         switch(theEP.type) {
         case 'map':
-          ko.utils.arrayForEach(theEP.settings['filter-data'](), function (filterMote) {
+          ko.utils.arrayForEach(theEP.settings.legends(), function (filterMote) {
             var moteName = filterMote.name();
               // Don't add if it already exists
             if (linkList.indexOf(moteName) == -1) {
@@ -1459,11 +1459,11 @@ jQuery(document).ready(function($) {
   var projObj = new ProjectSettings(customFieldsParam, mapLayersParam);
 
     // Manually load the Project Settings object from JSON string
-  projObj.setDetails(savedSettings['project-details']);
+  projObj.setDetails(savedSettings.general);
   ko.utils.arrayForEach(normalizeArray(savedSettings.motes), function(theMote, index) {
-    projObj.setMote(theMote.name, theMote.type, theMote['custom-fields'], theMote.delim);
+    projObj.setMote(theMote.name, theMote.type, theMote.cf, theMote.delim);
   });
-  ko.utils.arrayForEach(normalizeArray(savedSettings['entry-points']), function(theEP) {
+  ko.utils.arrayForEach(normalizeArray(savedSettings.eps), function(theEP) {
     projObj.setEP(theEP);
   });
   projObj.setViews(savedSettings.views);
