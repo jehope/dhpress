@@ -4,7 +4,7 @@
 //          vizParams.current = index of current visualization in entry points
 //          vizParams.menu = array of labels of visualizations
 //          Section for marker modal is marked with HTML div as "markerModal"
-// USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
+// USES:    JavaScript libraries jQuery, Underscore, (Zurb) Foundation ...
 // NOTES:   Format of project settings is documented in dhp-class-project.php
 
 jQuery(document).ready(function($) {

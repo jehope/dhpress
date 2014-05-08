@@ -1122,6 +1122,30 @@ jQuery(document).ready(function($) {
       case 'cards':
         return 'ep-cards-template';
       }
+    }; // calcEPTemplate()
+
+      // PURPOSE: Move this entry point to the top of the list
+    self.topEP = function(theEP, index) {
+        // Only if not at top already
+      if (index > 0 && index < self.entryPoints().length) {
+        var savedEP = self.entryPoints.splice(index, 1);
+        self.entryPoints.unshift(savedEP[0]);
+        self.settingsDirty(true);
+      }
+    }; // topEP()
+
+      // PURPOSE: Move this entry point to the bottom of the list
+    self.bottomEP = function(theEP, index) {
+        // Only if not at bottom already
+      if (index < (self.entryPoints().length-1)) {
+        var savedEP = self.entryPoints.splice(index, 1);
+        self.entryPoints.push(savedEP[0]);
+        self.settingsDirty(true);
+      }
+    }; // bottomEP()
+
+    self.maxEPindex = function() {
+      return self.entryPoints().length - 1;
     };
 
       // PURPOSE: Handle user selection to add map overlay

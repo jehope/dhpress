@@ -3,7 +3,7 @@
   <nav class="top-bar dhp-nav" data-topbar data-options="is_hover: false">
     <ul class="title-area">
       <li class="name">
-        <h1><a href="#">My Site</a></h1>
+        <h1 style="font-style:italic"><a href="#">My Site</a></h1>
       </li>
       <li class="toggle-topbar menu-icon"><a href="#">Menu</a></li>
     </ul>

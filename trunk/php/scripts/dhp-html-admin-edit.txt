@@ -132,7 +132,15 @@
 
 <!-- Map Entry Point Templates -->
 <script type="text/html" id="ep-map-template">
-    <h2><b>Map Entry Point</b> <button data-bind="jqButton, click: $root.delEP">Delete Map</button></h2>
+    <h2><b>Map Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Map</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
     <ul>
         <li>Map short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Map Center (Lat/Lon)
@@ -180,11 +188,19 @@
 
 <!-- Card Entry Point Template -->
 <script type="text/html" id="ep-cards-template">
-    <h2><b>Cards Entry Point</b> <button data-bind="jqButton, click: $root.delEP">Delete Cards</button></h2>
+    <h2><b>Cards Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Cards</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
     <ul>
         <li>Map short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Card Title <select data-bind="value: theEP.settings.title, options: $root.anyTxtDMoteNames"></select></li>
-        <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select></li>
+        <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Values must be configured for colors)</li>
         <li>Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="9"/>&nbsp;
         Width <select data-bind="value: theEP.settings.width">
                               <option value="auto">Automatic</option>
