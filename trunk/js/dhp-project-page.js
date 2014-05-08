@@ -101,7 +101,7 @@ jQuery(document).ready(function($) {
     var wpAdminBarWidth        = 783; // Width at which the admin bar changes to mobile version
     var wpAdminBarHeight       = 32;  // Default admin bar height
     var wpMobileAdminBarHeight = 46;  // Mobile admin bar height
-    var wpAdminBarVisible      = jQuery('body').hasClass('admin-bar'); // check if admin bar is present
+    var wpAdminBarVisible      = jQuery('body').hasClass('admin-bar'); // check if WP admin bar is present
 
     jQuery(window).resize( windowResized );
 
@@ -316,14 +316,19 @@ jQuery(document).ready(function($) {
                 baseURL += '&viz=0'
             }
 
-                // Split off the query params -- need to include "project=X" in any URL
-            var menuHTML;
+                // Split off the query params -- may need to include "project=X" in any URL
+            var menuHTML, active, linkStr;
             _.each(dhpData.vizParams.menu, function(mItem, index) {
-                    // Don't need to create menu for this item
-                if (vizIndex != index) {
-                    menuHTML = '<li><a href="'+baseURL.replace(vizPattern, 'viz='+index)+'">'+mItem+'</a></li>';
-                    $('.dropdown.epviz-dropdown').append(menuHTML);
+                    // Don't need to create menu for this current visualization, and select shouldn't do anything
+                if (vizIndex == index) {
+                    active = ' class="active"';
+                    linkStr = '<a href="#">'+mItem+'</a>';
+                } else {
+                    active = '';
+                    linkStr = '<a href="'+baseURL.replace(vizPattern, 'viz='+index)+'">'+mItem+'</a>';
                 }
+                menuHTML = '<li'+active+'>'+linkStr+'</li>';
+                $('.dropdown.epviz-dropdown').append(menuHTML);
             });
         }
     } // createNavBar()
