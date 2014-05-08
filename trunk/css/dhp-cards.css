@@ -28,12 +28,11 @@ p {
     width: 100%;
     height: 100%;
     top: 45px;
-/*    bottom: -45px; */  /* would like to compensate for nav bar but this doesn't work */
 }
 
-#card-container {
-    overflow: auto;
-    bottom: 0px;
+    /* bottom padding necessary to compensate for top nav bar */
+.fullscreen #card-container {
+    padding-bottom: 45px;
 }
 
 .card {
