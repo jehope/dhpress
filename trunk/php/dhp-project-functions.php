@@ -1629,7 +1629,7 @@ add_action( 'wp_ajax_dhpReplaceCustomFieldFilter', 'dhpReplaceCustomFieldFilter'
 //			it satisfies query condition and currently matches a certain value
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['field_name'] = name of custom field we wish to change
-//			$_POST['new_value'] = value to 
+//			$_POST['new_value'] = new value which will entirely replace previous value
 //			$_POST['filter_key'] = custom field upon which search/filter is based
 //			$_POST['filter_value'] = value that must be in custom field
 // RETURNS:	Number of markers whose values were changed
@@ -1705,7 +1705,7 @@ function dhpGetFieldValues()
 add_action( 'wp_ajax_dhpFindReplaceCustomField', 'dhpFindReplaceCustomField' );
 
 // dhpFindReplaceCustomField()
-// PURPOSE: Handle Ajax function to do string replace on matching values in all custom fields in Project
+// PURPOSE: Handle Ajax function to do string replace on matching values in a custom field in Project
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['field_name'] = name of custom field
 //			$_POST['find_value'] = field must match this value to be replaced

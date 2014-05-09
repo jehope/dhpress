@@ -1416,6 +1416,36 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+//------------------------------------------ Utilities -----------------------------------------
+
+      // PURPOSE: Handle user button to create new custom field
+    self.createNewCF = function() {
+
+    }; // createNewCF()
+
+
+      // PURPOSE: Handle user button to retrieve list of custom fields for deletion
+    self.getDelCurrentCFs = function() {
+      
+    }; // getDelCurrentCFs()
+
+
+      // PURPOSE: Handle user button to delete currently selected custom field
+    self.delOldCF = function() {
+      
+    }; // delOldCF()
+
+
+      // PURPOSE: Handle user button to retrieve list of custom fields for find/replace
+    self.getFRCurrentCFs = function() {
+      
+    }; // getFRCurrentCFs()
+
+      // PURPOSE: Handle user button to execute find/replace
+    self.doFRCF = function() {
+      
+    }; // doFRCF()
+
   }; // ProjectSettings
 
 
@@ -1648,8 +1678,55 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
   } // deleteHeadTermInWP()
 
 
-    // PURPOSE: Update a custom field using a subset of markers filtered by a custom field and value
-  function updateCustomFieldFilter(fieldName,currentValue,newValue,filterKey,filterValue){
+  /* ============= CUSTOM FIELD UTILITIES ============= */
+
+    // PURPOSE: Call php function to create new custom field in this project, set value to defValue
+  function createCustomField(fieldName, defValue) {
+    jQuery.ajax({
+          type: 'POST',
+          url: ajax_url,
+          data: {
+              action: 'dhpAddCustomField',
+              project: projectID,
+              field_name: fieldName,
+              field_value: defValue
+          },
+          success: function(data, textStatus, XMLHttpRequest) {
+              //console.log(textStatus); 
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
+             alert(errorThrown);
+          }
+      });
+  } // createCustomField()
+
+    // PURPOSE: Call php function to delete a custom field
+  function deleteCustomField(theField) { 
+    jQuery.ajax({
+          type: 'POST',
+          url: ajax_url,
+          data: {
+              action: 'dhpDeleteCustomField',
+              project: projectID,
+              field_name: theField
+          },
+          success: function(data, textStatus, XMLHttpRequest) {
+              //console.log(textStatus); 
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
+             alert(errorThrown);
+          }
+      });
+  } // deleteCustomField()
+
+
+    // PURPOSE: Search/replace value in a custom field when match on by another custom field and value
+    // INPUT:   fieldName = name of custom field
+    //          currentValue = wherever this value appears in the custom field (or the_content)
+    //          newValue = it will be replaced by this
+    //          filterKey = the other custom field to use as a filter
+    //          filterValue = filterKey must have this value before being replaced
+  function updateCustomFieldFilter(fieldName, currentValue, newValue, filterKey, filterValue) {
     jQuery.ajax({
       type: 'POST',
       url: ajax_url,
@@ -1662,17 +1739,22 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
           filter_key: filterKey,
           filter_value: filterValue
       },
-      success: function(data, textStatus, XMLHttpRequest){
+      success: function(data, textStatus, XMLHttpRequest) {
           //console.log(textStatus); 
       },
-      error: function(XMLHttpRequest, textStatus, errorThrown){
+      error: function(XMLHttpRequest, textStatus, errorThrown) {
          alert(errorThrown);
       }
     });
   } // updateCustomFieldFilter()
 
 
-  function replaceCustomFieldFilter(fieldName,newValue,filterKey,filterValue){
+    // PURPOSE: Replace value in all custom field in this project
+    // INPUT:   fieldName = name of custom field
+    //          newValue = it will be replaced by this
+    //          filterKey = the other custom field to use as a filter
+    //          filterValue = filterKey must have this value before being replaced
+  function replaceCustomFieldFilter(fieldName, newValue, filterKey, filterValue) {
     jQuery.ajax({
       type: 'POST',
       url: ajax_url,
@@ -1684,76 +1766,43 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
           filter_key: filterKey,
           filter_value: filterValue
       },
-      success: function(data, textStatus, XMLHttpRequest){
+      success: function(data, textStatus, XMLHttpRequest) {
           //console.log(textStatus); 
       },
-      error: function(XMLHttpRequest, textStatus, errorThrown){
+      error: function(XMLHttpRequest, textStatus, errorThrown) {
          alert(errorThrown);
       }
     });
   } // replaceCustomFieldFilter()
 
-  function createCustomField(fieldName,fieldValue) { 
-    jQuery.ajax({
-          type: 'POST',
-          url: ajax_url,
-          data: {
-              action: 'dhpAddCustomField',
-              project: projectID,
-              field_name: fieldName,
-              field_value: fieldValue
-          },
-          success: function(data, textStatus, XMLHttpRequest){
-              //console.log(textStatus); 
-          },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
-             alert(errorThrown);
-          }
-      });
-  } // createCustomField()
 
-
-  function findReplaceCustomField(tempFindCF,tempFindCFvalue,tempReplaceCFvalue){
+    // PURPOSE: Find/replace on all custom fields in this project (no filter)
+    // INPUT:   findCF = name of custom field
+    //          findCFvalue = it will be replaced by this
+    //          replaceCFvalue = matches will be replaced by this value
+  function findReplaceCustomField(findCF, findCFvalue, replaceCFvalue) {
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
           data: {
               action: 'dhpFindReplaceCustomField',
               project: projectID,
-              field_name: tempFindCF,
-              find_value: tempFindCFvalue,
-              replace_value: tempReplaceCFvalue
+              field_name: findCF,
+              find_value: findCFvalue,
+              replace_value: replaceCFvalue
           },
-          success: function(data, textStatus, XMLHttpRequest){
+          success: function(data, textStatus, XMLHttpRequest) {
               //console.log(textStatus); 
           },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
              alert(errorThrown);
           }
       });
   } // findReplaceCustomField()
 
 
-  function deleteCustomField(deleteField) { 
-    jQuery.ajax({
-          type: 'POST',
-          url: ajax_url,
-          data: {
-              action: 'dhpDeleteCustomField',
-              project: projectID,
-              field_name: deleteField
-          },
-          success: function(data, textStatus, XMLHttpRequest){
-              //console.log(textStatus); 
-          },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
-             alert(errorThrown);
-          }
-      });
-  } // deleteCustomField()
-
-
-  function dhpGetCustomFields() {
+    // PURPOSE: Return list of all custom fields for this project
+  function dhpGetCustomFields(callBack) {
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1761,18 +1810,18 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
               action: 'dhpGetCustomFields',
               project: projectID
           },
-          success: function(data, textStatus, XMLHttpRequest){
-              //console.log(data);
-              updateCustomFieldList(data);
+          success: function(data, textStatus, XMLHttpRequest) {
+              // console.log(data);
+              callBack(data);
           },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
              alert(errorThrown);
           }
       });
   } // dhpGetCustomFields()
 
-
-  function dhpGetFieldValues(fieldName){
+    // PURPOSE: Return list of all values for this custom field
+  function dhpGetFieldValues(fieldName, callBack) {
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1781,10 +1830,11 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
               project: projectID,
               field_name: fieldName
           },
-          success: function(data, textStatus, XMLHttpRequest){
+          success: function(data, textStatus, XMLHttpRequest) {
               console.log(data);
+              callBack(data);
           },
-          error: function(XMLHttpRequest, textStatus, errorThrown){
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
              alert(errorThrown);
           }
       });

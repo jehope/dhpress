@@ -106,6 +106,40 @@
         </div> <!-- Views -->
 
 
+      <h3>Custom Field Utilities</h3>
+      <div>
+          <div id="subaccordion">
+            <h3>New Custom Field</h3>
+            <div>
+              Create new custom field named <input type="text" size="15" id="newCFName"/><br/>
+              Default value <input type="text" size="15" id="newCFDefault"/><br/>
+              <button id="btnNewCF" data-bind="jqButton, click: createNewCF">Create Custom Field</button>
+            </div>
+
+            <h3>Delete Custom Field</h3>
+            <div>
+              <button data-bind="jqButton, click: getDelCurrentCFs">Get Custom Fields</button><br/>
+              Delete this custom field: <select id="getDelCFSelect"> </select>
+                <button id="btnDelOldCF" data-bind="jqButton, click: delOldCF">Delete</button>
+            </div>
+
+            <h3>Find/Replace Custom Field Values</h3>
+            <div>
+              <button data-bind="jqButton, click: getFRCurrentCFs">Get Custom Fields</button> <br/>
+                Replace values in the field <select id="selFRCFSelect"></select> <br/>
+              With this value <input type="text" size="15" id="edFRCFvalue"/> <br/>
+              <input type="checkbox" id="getFRMustMatch"> Only for matches of the value 
+                 <select id="selFRMatchValue"></select> <br/>
+              <input type="checkbox" id="getFRFilterCF"> Only for markers with value
+                 <select id="selFRFilterValue"></select>
+                 in the field <select id="selFRFilterCF"></select> <br/>
+              <button id="btnDoFR" data-bind="jqButton, click: doFRCF">Do Find/Replace</button>
+            </div>
+
+          </div> <!-- subaccordion -->
+      </div> <!-- Custom Field Utilities -->
+
+
       <h3>Testing and Error-checking</h3>
       <div>
         <p>Coming soon</p>
