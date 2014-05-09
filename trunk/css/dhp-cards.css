@@ -94,6 +94,26 @@ p {
     max-width: 98%;
 }
 
+    /* Color Legends */
+
+#card-legend {
+    margin: 6px;
+}
+
+#card-legend .color-legend {
+    margin-right: 12px;
+}
+
+#card-legend .color-legend .splash {
+    border: 1px solid black;
+    position: relative;
+    top: 3px;
+    width: 20px;
+    height: 14px;
+    display: inline-block;
+}
+
+
     /* Controls */
 .top-bar .button {
     margin: 3px;

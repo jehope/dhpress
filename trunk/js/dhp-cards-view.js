@@ -240,9 +240,6 @@ var dhpCardsView = {
         // ASSUMES: rawdata assigned to JSON object (as outlined in createMarkerArray() in dhp-project-functions.php)
     createCards: function()
     {
-        jQuery('#dhp-visual').append('<div id="card-container"></div>');
-        var cardHolder = jQuery('#card-container');
-
             // Set dhpCardsView.colorValues to array of color values in AJAX data
         dhpCardsView.colorValues = null;
         if (dhpCardsView.cardsEP.color && dhpCardsView.cardsEP.color != '' && dhpCardsView.cardsEP.color != 'disable') {
@@ -262,6 +259,24 @@ var dhpCardsView = {
                 return false;
             });
         }
+
+            // Create Legend for colors (if colors exist)
+        if (dhpCardsView.colorValues.length > 1) {
+            jQuery('#dhp-visual').prepend('<div id="card-legend"></div>');
+            var legendStr = '<p>';
+            _.each(dhpCardsView.colorValues, function(theColor) {
+                    // "Parent" term can't be displayed and won't have an icon_url value
+                if (theColor.icon_url) {
+                    legendStr += '<span class="color-legend"><span class="splash" style="background-color:'+
+                                theColor.icon_url+'"></span> '+theColor.name+'</span>';
+                }
+            });
+            jQuery('#card-legend').prepend(legendStr+'</p>');
+        }
+
+            // Create cards
+        jQuery('#dhp-visual').append('<div id="card-container"></div>');
+        var cardHolder = jQuery('#card-container');
 
         var theCard, contentElement, contentData, theTitle, colorStr, classStr, moteIndex;
 
