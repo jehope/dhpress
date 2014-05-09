@@ -119,7 +119,7 @@
             <h3>Delete Custom Field</h3>
             <div>
               <button data-bind="jqButton, click: getDelCurrentCFs">Get Custom Fields</button><br/>
-              Delete this custom field: <select id="getDelCFSelect"> </select>
+              Delete this custom field: <select id="selDelCFList"> </select>
                 <button id="btnDelOldCF" data-bind="jqButton, click: delOldCF">Delete</button>
             </div>
 
@@ -481,6 +481,14 @@
             <li class="maki-icon scooter"></li>
         </ol>
     </div> <!-- Select Icon Modal -->
+
+    <div id="mdl-del-cf" title="Delete custom field?">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete this custom field entirely?</p>
+    </div>
+
+    <div id="mdl-fr-cf" title="Find/Replace custom field?">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to execute this find/replace operation on the custom field? This cannot be undone.</p>
+    </div>
 
 </div>
 

@@ -1420,30 +1420,108 @@ jQuery(document).ready(function($) {
 
       // PURPOSE: Handle user button to create new custom field
     self.createNewCF = function() {
-
+      var cfName = $('#newCFName').val();
+      var cfDefValue = $('#newCFDefault').val();
+      if (cfName && cfName !== '' && cfDefValue && cfDefValue != '') {
+          // Disable button until code returns
+        $('#btnNewCF').button({ disabled: true });
+        createCustomField(cfName, cfDefValue);
+      }
     }; // createNewCF()
 
 
+      // Delete button is disabled by default (enabled by getDelCurrentCFs)
+    $('#btnDelOldCF').button({ disabled: true });
+
       // PURPOSE: Handle user button to retrieve list of custom fields for deletion
     self.getDelCurrentCFs = function() {
-      
+      function loadCurrentCFs(cfArray) {
+          // Empty out options selection
+        $('#selDelCFList').empty();
+          // Load select options with custom fields
+        var theOption;
+          // Need to call underscore because cfArray will be hash/assoc array, not indexed array!
+        _.each(cfArray, function(theCF) {
+          theOption = '<option value="'+theCF+'">'+theCF+'</option>';
+          $('#selDelCFList').append(theOption);
+        });
+        $("#btnDelOldCF").button({ disabled: false });
+      }
+      dhpGetCustomFields(loadCurrentCFs);
     }; // getDelCurrentCFs()
-
 
       // PURPOSE: Handle user button to delete currently selected custom field
     self.delOldCF = function() {
-      
+      var cfToDelete = $('#selDelCFList').val();
+      if (cfToDelete && cfToDelete != '') {
+        $('#mdl-del-cf').dialog({
+          resizable: false,
+          width: 300,
+          height: 180,
+          modal: true,
+          dialogClass: 'wp-dialog',
+          draggable: false,
+          buttons: {
+            'Delete': function() {
+              $('#btnDelOldCF').button({ disabled: true });
+              deleteCustomField(this, cfToDelete);
+            },
+            Cancel: function() {
+              $(this).dialog('close');
+            }
+          }
+        });
+      }
     }; // delOldCF()
 
 
+      // Execute Find/Replace button is disabled by default (enabled by getFRCurrentCFs)
+    $( "#btnDoFR" ).button({ disabled: true });
+
       // PURPOSE: Handle user button to retrieve list of custom fields for find/replace
     self.getFRCurrentCFs = function() {
-      
+      function loadCurrentCFs(cfArray) {
+          // Empty out options selection
+        $('#selFRCFSelect').empty();
+        $('#selFRFilterCF').empty();
+          // Load select options with custom fields
+        var theOption;
+          // Need to call underscore because cfArray will be hash/assoc array, not indexed array!
+        _.each(cfArray, function(theCF) {
+          theOption = '<option value="'+theCF+'">'+theCF+'</option>';
+          $('#selFRCFSelect').append(theOption);
+          $('#selFRFilterCF').append(theOption);
+        });
+        $("#btnDoFR").button({ disabled: false });
+      }
+      dhpGetCustomFields(loadCurrentCFs);
     }; // getFRCurrentCFs()
 
       // PURPOSE: Handle user button to execute find/replace
     self.doFRCF = function() {
-      
+      var frCF = $('#selFRCFSelect').val();
+      var filterCF = $('#selFRFilterCF').val();
+
+      if (frCF && frCF != '') {
+        $('#mdl-fr-cf').dialog({
+          resizable: false,
+          width: 300,
+          height: 180,
+          modal: true,
+          dialogClass: 'wp-dialog',
+          draggable: false,
+          buttons: {
+            'Execute': function() {
+              $('#btnDoFR').button({ disabled: true });
+              $(this).dialog('close');
+              
+            },
+            Cancel: function() {
+              $(this).dialog('close');
+            }
+          }
+        });
+      }
     }; // doFRCF()
 
   }; // ProjectSettings
@@ -1593,7 +1671,6 @@ jQuery(document).ready(function($) {
     // INPUT:   legendName = Head term id (legend name)
     //          taxTermsList = flat list containing data for updating terms in WP
   function saveLegendValuesInWP(legendName, taxTermsList) {
-console.log("Saving legend values: "+JSON.stringify(taxTermsList));
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1692,16 +1769,18 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
               field_value: defValue
           },
           success: function(data, textStatus, XMLHttpRequest) {
-              //console.log(textStatus); 
+              // Re-enable Create button
+              $('#btnNewCF').button({ disabled: false });
           },
           error: function(XMLHttpRequest, textStatus, errorThrown) {
              alert(errorThrown);
+              $('#btnNewCF').button({ disabled: false });
           }
       });
   } // createCustomField()
 
     // PURPOSE: Call php function to delete a custom field
-  function deleteCustomField(theField) { 
+  function deleteCustomField(dialog, theField) { 
     jQuery.ajax({
           type: 'POST',
           url: ajax_url,
@@ -1711,10 +1790,14 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
               field_name: theField
           },
           success: function(data, textStatus, XMLHttpRequest) {
-              //console.log(textStatus); 
+            $(dialog).dialog('close');
+              // Re-enable Delete button
+            $('#btnDelOldCF').button({ disabled: false });
           },
           error: function(XMLHttpRequest, textStatus, errorThrown) {
-             alert(errorThrown);
+            alert(errorThrown);
+            $(dialog).dialog('close');
+            $('#btnDelOldCF').button({ disabled: false });
           }
       });
   } // deleteCustomField()
@@ -1740,10 +1823,12 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
           filter_value: filterValue
       },
       success: function(data, textStatus, XMLHttpRequest) {
-          //console.log(textStatus); 
+          // Re-enable Execute Find/Replace button
+        $('#btnDoFR').button({ disabled: false });
       },
       error: function(XMLHttpRequest, textStatus, errorThrown) {
-         alert(errorThrown);
+        alert(errorThrown);
+        $('#btnDoFR').button({ disabled: false });
       }
     });
   } // updateCustomFieldFilter()
@@ -1767,10 +1852,12 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
           filter_value: filterValue
       },
       success: function(data, textStatus, XMLHttpRequest) {
-          //console.log(textStatus); 
+        //console.log(textStatus); 
+        $('#btnDoFR').button({ disabled: false });
       },
       error: function(XMLHttpRequest, textStatus, errorThrown) {
-         alert(errorThrown);
+        alert(errorThrown);
+        $('#btnDoFR').button({ disabled: false });
       }
     });
   } // replaceCustomFieldFilter()
@@ -1792,9 +1879,11 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
               replace_value: replaceCFvalue
           },
           success: function(data, textStatus, XMLHttpRequest) {
+              $('#btnDoFR').button({ disabled: false });
               //console.log(textStatus); 
           },
           error: function(XMLHttpRequest, textStatus, errorThrown) {
+              $('#btnDoFR').button({ disabled: false });
              alert(errorThrown);
           }
       });
@@ -1811,8 +1900,8 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
               project: projectID
           },
           success: function(data, textStatus, XMLHttpRequest) {
-              // console.log(data);
-              callBack(data);
+              console.log("Get Custom Fields="+data);
+              callBack(JSON.parse(data));
           },
           error: function(XMLHttpRequest, textStatus, errorThrown) {
              alert(errorThrown);
@@ -1831,8 +1920,8 @@ console.log("Saving legend values: "+JSON.stringify(taxTermsList));
               field_name: fieldName
           },
           success: function(data, textStatus, XMLHttpRequest) {
-              console.log(data);
-              callBack(data);
+              // console.log(data);
+              callBack(JSON.parse(data));
           },
           error: function(XMLHttpRequest, textStatus, errorThrown) {
              alert(errorThrown);
