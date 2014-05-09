@@ -16,6 +16,7 @@
           <p>Create relational containers for data in WP custom fields</p>
           <ul>
             <li>Mote Name: <input data-bind="value: edMoteName" type="text" size="20"/></li>
+            <li>Custom Field: <select data-bind="value: edMoteCF, options: optionsCF"></select></li>
             <li>
             	Mote Type:
             	<select data-bind="value: edMoteType">
@@ -29,7 +30,6 @@
                     <option value="Timestamp">Timestamp</option>
             	</select>
             </li>
-            <li>Custom Field: <select data-bind="value: edMoteCF, options: optionsCF"></select></li>
             <li>Value delimiter:  <input data-bind="value: edMoteDelim" type="text" size="2"/></li>
           </ul>
           <button data-bind="jqButton, click: createMote">Create New</button>

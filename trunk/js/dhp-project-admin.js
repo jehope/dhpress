@@ -73,7 +73,7 @@ jQuery(document).ready(function($) {
     savedSettings = _blankSettings;
   } else {
     savedSettings = JSON.parse(savedSettings);
-    if (savedSettings == undefined || savedSettings.general.version != 3) {
+    if (savedSettings == undefined || savedSettings.general == undefined || savedSettings.general.version != 3) {
       savedSettings = _blankSettings;
     }
   }
@@ -701,9 +701,9 @@ jQuery(document).ready(function($) {
         if (colorStr.substring(0,1)=='#') {
           return colorStr;
         }
+          // Error in format -- return black
         if (colorStr.substring(0,3) != 'rgb') {
-          alert('Color in unknown format');
-          throw new Error('Color in unknown format');
+          return '#000000';
         }
         var digits;
 
