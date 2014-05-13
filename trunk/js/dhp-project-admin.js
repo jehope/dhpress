@@ -1541,6 +1541,7 @@ jQuery(document).ready(function($) {
           }
         });
 
+          // If Must Filter is false, then Must Match Value is always true
         function setMatchBox() {
           var filterOn = $('#getFRFilterCF:checked').val();
           if (filterOn) {
@@ -1551,7 +1552,6 @@ jQuery(document).ready(function($) {
           }
         }
 
-          // If Must Filter is false, then Must Match Value is always true
         setMatchBox();
         $('#getFRFilterCF').change(setMatchBox);
 
@@ -1585,7 +1585,6 @@ jQuery(document).ready(function($) {
               var filterVal = $('#selFRFilterValue').val();
               var mustMatchVal = $('#getFRMustMatch').prop('checked');
               var mustFilter = $('#getFRFilterCF').prop('checked');
-console.log("Do FR: mustMatchVal= "+mustMatchVal+"; mustFilter= "+mustFilter);
               if (mustFilter) {
                 if (mustMatchVal) {
                   updateCustomFieldFilter(frCF, matchValue, newValue, filterCF, filterVal);
@@ -1871,8 +1870,8 @@ console.log("Do FR: mustMatchVal= "+mustMatchVal+"; mustFilter= "+mustFilter);
           },
           success: function(data, textStatus, XMLHttpRequest) {
             $(dialog).dialog('close');
-              // Re-enable Delete button
-            $('#btnDelOldCF').button({ disabled: false });
+              // Force refresh of custom fields (and keep Delete button disabled)
+            $('#selDelCFList').empty();
           },
           error: function(XMLHttpRequest, textStatus, errorThrown) {
             alert(errorThrown);
