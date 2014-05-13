@@ -1475,15 +1475,25 @@ jQuery(document).ready(function($) {
     }; // delOldCF()
 
 
+    // self.frCustomFields = ko.observableArray();   // List of custom fields in this project
+    // self.frCFValues     = ko.observableArray();   // List of values for custom field selected for find-replace
+    // self.frFilterValues = ko.observableArray();   // List of values for custom field filter selected
+
+    self.frCFValuesLoading = false;               // prevent race conditions
+    self.frFilterValuesLoading = false;
+
       // Execute Find/Replace button is disabled by default (enabled by getFRCurrentCFs)
     $( "#btnDoFR" ).button({ disabled: true });
 
       // PURPOSE: Handle user button to retrieve list of custom fields for find/replace
+      // NOTES:   Must populate frCustomFields
     self.getFRCurrentCFs = function() {
       function loadCurrentCFs(cfArray) {
           // Empty out options selection
         $('#selFRCFSelect').empty();
         $('#selFRFilterCF').empty();
+
+        // $('#selFRCFSelect').append('<option value="the_content">Marker content text</option>');
           // Load select options with custom fields
         var theOption;
           // Need to call underscore because cfArray will be hash/assoc array, not indexed array!
@@ -1492,21 +1502,77 @@ jQuery(document).ready(function($) {
           $('#selFRCFSelect').append(theOption);
           $('#selFRFilterCF').append(theOption);
         });
-        $("#btnDoFR").button({ disabled: false });
-      }
+        function loadReplaceValues(valArray) {
+            // Empty out options selection
+          $('#selFRMatchValue').empty();
+          var vOption;
+            // Need to call underscore because cfArray will be hash/assoc array, not indexed array!
+          _.each(valArray, function(theVal) {
+            vOption = '<option value="'+theVal+'">'+theVal+'</option>';
+            $('#selFRMatchValue').append(vOption);
+          });
+          self.frCFValuesLoading = false;
+        } // loadReplaceValues()
+        function loadFilterValues(valArray) {
+            // Empty out options selection
+          $('#selFRFilterValue').empty();
+          var vOption;
+            // Need to call underscore because cfArray will be hash/assoc array, not indexed array!
+          _.each(valArray, function(theVal) {
+            vOption = '<option value="'+theVal+'">'+theVal+'</option>';
+            $('#selFRFilterValue').append(vOption);
+          });
+          self.frFilterValuesLoading = false;
+        } // loadFilterValues()
+
+          // Activate menu value selections
+        $('#selFRCFSelect').change(function() {
+          if (!self.frCFValuesLoading) {
+            var cfSelection = $('#selFRCFSelect').val();
+            self.frCFValuesLoading = true;
+            dhpGetFieldValues(cfSelection, loadReplaceValues);
+          }
+        });
+        $('#selFRFilterCF').change(function() {
+          if (!self.frFilterValuesLoading) {
+            self.frFilterValuesLoading = true;
+            var cfSelection = $('#selFRFilterCF').val();
+            dhpGetFieldValues(cfSelection, loadFilterValues);
+          }
+        });
+
+        function setMatchBox() {
+          var filterOn = $('#getFRFilterCF:checked').val();
+          if (filterOn) {
+            $('#getFRMustMatch').prop('disabled', false);
+          } else {
+            $('#getFRMustMatch').prop('disabled', true);
+            $('#getFRMustMatch').prop('checked', true);
+          }
+        }
+
+          // If Must Filter is false, then Must Match Value is always true
+        setMatchBox();
+        $('#getFRFilterCF').change(setMatchBox);
+
+          // Enable button now that selections are meaningfully populated
+        $('#btnDoFR').button({ disabled: false });
+      } // loadCurrentCFs()
+
       dhpGetCustomFields(loadCurrentCFs);
     }; // getFRCurrentCFs()
 
       // PURPOSE: Handle user button to execute find/replace
     self.doFRCF = function() {
-      var frCF = $('#selFRCFSelect').val();
-      var filterCF = $('#selFRFilterCF').val();
+      var frCF = $('#selFRCFSelect').val();       // the custom field we are changing
+      var newValue = $('#edFRCFvalue').val();     // new value to put into field
+      var matchValue = $('#selFRMatchValue').val();  // old value must be this
 
       if (frCF && frCF != '') {
         $('#mdl-fr-cf').dialog({
           resizable: false,
-          width: 300,
-          height: 180,
+          width: 320,
+          height: 200,
           modal: true,
           dialogClass: 'wp-dialog',
           draggable: false,
@@ -1514,7 +1580,21 @@ jQuery(document).ready(function($) {
             'Execute': function() {
               $('#btnDoFR').button({ disabled: true });
               $(this).dialog('close');
-              
+                // Which ajax function to call depends on checkboxes checked
+              var filterCF = $('#selFRFilterCF').val();
+              var filterVal = $('#selFRFilterValue').val();
+              var mustMatchVal = $('#getFRMustMatch').prop('checked');
+              var mustFilter = $('#getFRFilterCF').prop('checked');
+console.log("Do FR: mustMatchVal= "+mustMatchVal+"; mustFilter= "+mustFilter);
+              if (mustFilter) {
+                if (mustMatchVal) {
+                  updateCustomFieldFilter(frCF, matchValue, newValue, filterCF, filterVal);
+                } else {
+                  replaceCustomFieldFilter(frCF, newValue, filterCF, filterVal);
+                }
+              } else {
+                findReplaceCustomField(frCF, matchValue, newValue);
+              }
             },
             Cancel: function() {
               $(this).dialog('close');
@@ -1597,7 +1677,7 @@ jQuery(document).ready(function($) {
     }
   }; // bindingHandlers.opacitySlider
 
-    // Add new functionality for jQueryUI button
+    // Add minimal functionality for jQueryUI button
   ko.bindingHandlers.jqButton = {
     init: function (element) {
       $(element).button();
@@ -1834,7 +1914,7 @@ jQuery(document).ready(function($) {
   } // updateCustomFieldFilter()
 
 
-    // PURPOSE: Replace value in all custom field in this project
+    // PURPOSE: Replace value in custom fields in this project when qualified by filter
     // INPUT:   fieldName = name of custom field
     //          newValue = it will be replaced by this
     //          filterKey = the other custom field to use as a filter
@@ -1900,7 +1980,7 @@ jQuery(document).ready(function($) {
               project: projectID
           },
           success: function(data, textStatus, XMLHttpRequest) {
-              console.log("Get Custom Fields="+data);
+              // console.log("Get Custom Fields="+data);
               callBack(JSON.parse(data));
           },
           error: function(XMLHttpRequest, textStatus, errorThrown) {
@@ -1920,7 +2000,7 @@ jQuery(document).ready(function($) {
               field_name: fieldName
           },
           success: function(data, textStatus, XMLHttpRequest) {
-              // console.log(data);
+              // console.log("GetFieldValues = "+data);
               callBack(JSON.parse(data));
           },
           error: function(XMLHttpRequest, textStatus, errorThrown) {

@@ -127,12 +127,12 @@
             <div>
               <button data-bind="jqButton, click: getFRCurrentCFs">Get Custom Fields</button> <br/>
                 Replace values in the field <select id="selFRCFSelect"></select> <br/>
-              With this value <input type="text" size="15" id="edFRCFvalue"/> <br/>
-              <input type="checkbox" id="getFRMustMatch"> Only for matches of the value 
-                 <select id="selFRMatchValue"></select> <br/>
+              With this value <input type="text" size="20" id="edFRCFvalue"/> <br/>
+              <input type="checkbox" id="getFRMustMatch"> For matches of the value 
+                 <select id="selFRMatchValue"></select> (always applied if no filter) <br/>
               <input type="checkbox" id="getFRFilterCF"> Only for markers with value
-                 <select id="selFRFilterValue"></select>
-                 in the field <select id="selFRFilterCF"></select> <br/>
+                <select id="selFRFilterValue"></select>
+                in the field <select id="selFRFilterCF"></select> <br/>
               <button id="btnDoFR" data-bind="jqButton, click: doFRCF">Do Find/Replace</button>
             </div>
 
@@ -483,7 +483,7 @@
     </div> <!-- Select Icon Modal -->
 
     <div id="mdl-del-cf" title="Delete custom field?">
-        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete this custom field entirely?</p>
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete this custom field entirely? This cannot be undone.</p>
     </div>
 
     <div id="mdl-fr-cf" title="Find/Replace custom field?">

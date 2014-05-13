@@ -1520,7 +1520,7 @@ add_action( 'wp_ajax_dhpCreateCustomFieldFilter', 'dhpCreateCustomFieldFilter' )
 //			$_POST['field_value'] = value to set of custom field
 //			$_POST['filter_key'] = name of field on which to match
 //			$_POST['filter_value'] = value of field to match
-// TO DO:	Rename function! dhpSetFieldByCustomFieldFilter?
+// TO DO:	Rename function? dhpSetFieldByCustomFieldFilter?
 
 function dhpCreateCustomFieldFilter()
 {
