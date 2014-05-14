@@ -385,7 +385,7 @@ var dhpMapsView = {
 
         e.target.openPopup();
 
-            // This only works for geometric markers, not maki-icons, so much remove for now
+            // This only works for geometric markers, not maki-icons, so must remove for now
         // e.target.setStyle({ // highlight the feature
         //     weight: 3,
         //     color: '#666',
@@ -784,9 +784,6 @@ var dhpMapsView = {
                     // Remove Loading modal
                 dhpMapsView.callBacks.remLoadingModal();
                 jQuery('.reveal-modal-bg').remove();
-
-                    // Enable joyride help tips
-                dhpMapsView.callBacks.userTipsOn();
             },
             error: function(XMLHttpRequest, textStatus, errorThrown)
             {

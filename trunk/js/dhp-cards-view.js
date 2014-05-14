@@ -398,7 +398,6 @@ var dhpCardsView = {
                 dhpCardsView.rawData = JSON.parse(data);
                 dhpCardsView.createCards();
                 dhpCardsView.callBacks.remLoadingModal();
-                // dhpCardsView.callBacks.userTipsOn();
             },
             error: function(XMLHttpRequest, textStatus, errorThrown)
             {

@@ -81,7 +81,7 @@
 			        	'transcript'
 			        ],
 			        "content": [							// Motes to show when Marker selected in visualization
-			            String (mote name), ...
+			            String (mote name || "the_content"), ...
 			        ],
 			        "link" : [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
 			        "linkLabel" : String,

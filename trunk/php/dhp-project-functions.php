@@ -667,7 +667,6 @@ function createMarkerArray($project_id, $index)
 	switch ($eps->type) {
 	case "map":
 			// Which field used to encode Lat-Long on map?
-		// $map_pointsMote = $projObj->getMoteByName( $eps->settings->coordMote );
 		$map_pointsMote = $projObj->getMoteByName( $eps->settings->coordMote );
 		if($map_pointsMote->type=='Lat/Lon Coordinates'){
 			if(!$map_pointsMote->delim) { $map_pointsMote->delim=','; }
@@ -890,19 +889,20 @@ function createMarkerArray($project_id, $index)
 		$content_att = array();
 
 			// Gather all values to be displayed in modal if marker selected
+			// Should not apply filters to post content because DH Press markup gets added!
 		if (count($selectContent)) {
 			foreach( $selectContent as $contentMoteName ) {
 				if ($contentMoteName == 'the_content') {
-					$content_val = apply_filters('the_content', get_post_field('the_content', $marker_id));
+					$content_val = get_post_field('post_content', $marker_id);
 				} elseif ($contentMoteName == 'the_title') {
-					$content_val = apply_filters('the_title', get_the_title());
+					$content_val = get_the_title();
 				} else {
 					$content_mote = $projObj->getMoteByName( $contentMoteName );
 					$contentCF = $content_mote->cf;
 					if($contentCF =='the_content') {
-						$content_val = apply_filters('the_content', get_post_field($contentCF, $marker_id));
+						$content_val = get_post_field('post_content', $marker_id);
 					} elseif ($contentCF=='the_title') {
-						$content_val = apply_filters('the_title', get_the_title());
+						$content_val = get_the_title();
 					} else {
 						$content_val = get_post_meta($marker_id, $contentCF, true);
 					}
@@ -1600,9 +1600,9 @@ function dhpUpdateCustomFieldFilter()
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$dhp_count++;
 		$marker_id = get_the_ID();
-		$tempPostContent = get_the_content();
 		if($dhp_custom_field_name=='the_content') {
 
+			$tempPostContent = get_the_content();
 			$new_value = str_replace($dhp_custom_current_value, $dhp_custom_new_value, $tempPostContent);
 			
 			$new_post = array();
@@ -1662,10 +1662,10 @@ function dhpReplaceCustomFieldFilter()
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$dhp_count++;
 		$marker_id = get_the_ID();
-		$tempPostContent = get_the_content();
 		if($dhp_custom_field_name=='the_content') {
+			$tempPostContent = get_the_content();
 			$new_value = $dhp_custom_new_value;
-			
+
 			$new_post = array();
 			$new_post['ID'] = $marker_id;
 			$new_post['post_content'] = $new_value;
@@ -1725,9 +1725,9 @@ function dhpFindReplaceCustomField()
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$dhp_count++;
 		$marker_id = get_the_ID();
-		$tempPostContent = get_the_content();
 		if($dhp_custom_field_name=='the_content') {
-			$new_value = str_replace($dhp_custom_find_value,$dhp_custom_replace_value,$tempPostContent);
+			$tempPostContent = get_the_content();
+			$new_value = str_replace($dhp_custom_find_value, $dhp_custom_replace_value, $tempPostContent);
 
 			$new_post = array();
 			$new_post['ID'] = $marker_id;
@@ -1737,7 +1737,7 @@ function dhpFindReplaceCustomField()
 		else {
 			$temp_value = get_post_meta( $marker_id, $dhp_custom_field_name, true );
 			//replaces string within the value not the whole value
-			$new_value = str_replace($dhp_custom_find_value,$dhp_custom_replace_value,$temp_value);
+			$new_value = str_replace($dhp_custom_find_value, $dhp_custom_replace_value, $temp_value);
 			update_post_meta($marker_id, $dhp_custom_field_name, $new_value);
 		}
 
