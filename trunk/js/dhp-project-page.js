@@ -51,31 +51,6 @@ jQuery(document).ready(function($) {
     if(modalSize) {
         jQuery('#markerModal').addClass(modalSize);
     }
-        // Get name of Project and put on Nav Bar
-    $('.dhp-nav .title-area .name h1 a').text($('.entry-title').text());
-
-        // handle toggling fullscreen mode
-    $('.dhp-nav .fullscreen').on('click', function(){
-        if($('body').hasClass('fullscreen')) {
-            $('body, html').removeClass('fullscreen');
-            $('.dhp-nav .fullscreen').removeClass('active');
-        } else {
-            $('body, html').addClass('fullscreen');
-            $('.dhp-nav .fullscreen').addClass('active');
-        }
-        windowResized();
-    });
-
-        // handle turning joyride tips on/off
-    // $('.dhp-nav .tips').on('click', function(){
-    //     if($('.dhp-nav .tips').hasClass('active')) {
-    //         $('.dhp-nav .tips').removeClass('active');
-    //         // $('#dhpress-tips').joyride('hide');
-    //     } else {
-    //         // $('#dhpress-tips').joyride('restart');
-    //         $('.dhp-nav .tips').addClass('active');
-    //     }
-    // });
 
         // Did user provide visualization size params?
     var sizeStr = '';
@@ -91,7 +66,7 @@ jQuery(document).ready(function($) {
     }
 
         // initialize fullscreen mode settings
-    if(dhpSettings.views.fullscreen===true) {
+    if(dhpSettings.views.fullscreen) {
         $('body, html').addClass('fullscreen');
         $('.dhp-nav .fullscreen').addClass('active');
     }
@@ -160,17 +135,11 @@ jQuery(document).ready(function($) {
             // all custom maps must have already been loaded into run-time "library"
         dhpMapsView.initMapInterface(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams, callBacks);
 
-            // Add user tips for map
-        // $('body').append(Handlebars.compile($("#dhp-script-map-helptips").html()));
-
         updateVizSpace = dhpMapsView.dhpUpdateSize;
         break;
 
     case 'cards':
         dhpCardsView.initializeCards(ajaxURL, projectID, vizIndex, thisEP.settings, callBacks);
-
-            // Add user tips for cards
-        // $('body').append(Handlebars.compile($("#dhp-script-cards-helptips").html()));
 
         updateVizSpace = dhpCardsView.updateVizSpace;
         break;
@@ -294,6 +263,34 @@ jQuery(document).ready(function($) {
                 }
                 menuHTML = '<li'+active+'>'+linkStr+'</li>';
                 $('.dropdown.epviz-dropdown').append(menuHTML);
+            });
+        }
+
+            // Get name of Project and put on Nav Bar
+        var projName = $('.entry-title').text();
+        if (projName && projName.length) {
+            $('.dhp-nav .title-area .name h1 a').text(projName);
+        }
+
+            // handle toggling fullscreen mode
+        $('.dhp-nav .fullscreen').click(function(){
+            if($('body').hasClass('fullscreen')) {
+                $('body, html').removeClass('fullscreen');
+                $('.dhp-nav .fullscreen').removeClass('active');
+            } else {
+                $('body, html').addClass('fullscreen');
+                $('.dhp-nav .fullscreen').addClass('active');
+            }
+            windowResized();
+        });
+
+            // If tipsModal exists, create link to open it
+        var helpText = $('#tipModal .modal-body').text();
+        if (helpText !== undefined && helpText.length > 1) {
+            $('.dhp-nav .top-bar-section .right').append('<li><a href="#" class="tips" data-reveal-id="tipModal" data-reveal><i class="fi-info"></i>Tips</a></li>');
+                // Don't know why this is needed -- but Select Modal Close button won't work without it
+            $('#tipModal .close-tip').click(function() {
+              $('#tipModal').foundation('reveal', 'close');
             });
         }
     } // createNavBar()

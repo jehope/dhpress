@@ -83,7 +83,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 
 			return $launch_url;
 		}
-		
+
 			// PURPOSE: Generate html for page tip select box and select current option
 		static function dhp_list_pages_for_tips()
 		{ 
@@ -214,28 +214,33 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			echo self::dhp_tip_page_template();			
 		}
 
-			// PURPOSE: Load template in html to be called by javascript
+			// PURPOSE: Load template in html to be called by javascript and embed in
+			//				Foundation HTML markup
 		static function dhp_tip_page_template() {
-			$tip_obj = get_post(get_option('tip_url'));
-			ob_start(); ?>
-			<div id="tipModal" class="reveal-modal medium" data-reveal>
-			  <div class="modal-content">
-			    <div class="modal-header">
-			      <h1><?php echo $tip_obj->post_title;?></h1>
-			    </div>
-			    <div class="modal-body clearfix">
-			    	<?php remove_filter( 'the_content', 'dhp_mod_page_content' ); ?>
-			    	<?php echo apply_filters( 'the_content', $tip_obj->post_content ); ?>
-			    </div>
-			    <div class="reveal-modal-footer clearfix ">
-			      <ul class="button-group right"><li><a class="button close-tip" >Close</a></li></ul>
-			    </div>
-			  </div>
-			    <a class="close-reveal-modal close-tip">&#215;</a>
-			</div>
-			<?php
-			return ob_get_clean();
-		}
+			$tip_page = get_option('tip_url');
+			if ($tip_page) {
+				$tip_obj = get_post($tip_page);
+				ob_start(); ?>
+				<div id="tipModal" class="reveal-modal medium" data-reveal>
+				  <div class="modal-content">
+				    <div class="modal-header">
+				      <h1><?php echo $tip_obj->post_title;?></h1>
+				    </div>
+				    <div class="modal-body clearfix">
+				    	<?php remove_filter( 'the_content', 'dhp_mod_page_content' ); ?>
+				    	<?php echo apply_filters( 'the_content', $tip_obj->post_content ); ?>
+				    </div>
+				    <div class="reveal-modal-footer clearfix ">
+				      <ul class="button-group right"><li><a class="button close-tip" >Close</a></li></ul>
+				    </div>
+				  </div>
+				    <a class="close-reveal-modal close-tip">&#215;</a>
+				</div>
+				<?php
+				return ob_get_clean();
+			}
+		} // dhp_tip_page_template()
+
 
 			// Add handlebars template to footer for tip modal
 		static function dhp_screen_saver_content()
@@ -305,10 +310,10 @@ if( !class_exists( 'DHPressSettings' ) ) {
 			$screen_saver = false;
 
 			global $post;
-			if(get_option('tip_url')) {
+			if (get_option('tip_url')) {
 				$global_tip = true;
 			}
-			if(get_option('screen_saver')) {
+			if (get_option('screen_saver')) {
 				$screen_saver = true;
 			}
 			wp_enqueue_script( 'jquery' );
@@ -319,7 +324,7 @@ if( !class_exists( 'DHPressSettings' ) ) {
 
 			if($post->ID == get_option('kiosk_launch')) {
 				wp_enqueue_script( 'dhp-kiosk-launch-script' );
-			}			
+			}
 			wp_enqueue_style( 'dhp-global-settings', plugins_url('/css/dhp-global-settings.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION);
 
 				// Load styles
