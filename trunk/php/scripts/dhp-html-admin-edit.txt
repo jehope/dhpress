@@ -127,9 +127,9 @@
             <div>
               <button data-bind="jqButton, click: getFRCurrentCFs">Get Custom Fields</button> <br/>
                 Replace values in the field <select id="selFRCFSelect"></select> <br/>
-              With this value <input type="text" size="20" id="edFRCFvalue"/> <br/>
               <input type="checkbox" id="getFRMustMatch"> For matches of the value 
-                 <select id="selFRMatchValue"></select> (always applied if no filter) <br/>
+                 <input type="text" size="20" id="edFRMatchValue"/> (always applied if no filter) <br/>
+              With this value <input type="text" size="20" id="edFRCFvalue"/> <br/>
               <input type="checkbox" id="getFRFilterCF"> Only for markers with value
                 <select id="selFRFilterValue"></select>
                 in the field <select id="selFRFilterCF"></select> <br/>

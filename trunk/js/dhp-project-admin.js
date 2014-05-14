@@ -1475,12 +1475,7 @@ jQuery(document).ready(function($) {
     }; // delOldCF()
 
 
-    // self.frCustomFields = ko.observableArray();   // List of custom fields in this project
-    // self.frCFValues     = ko.observableArray();   // List of values for custom field selected for find-replace
-    // self.frFilterValues = ko.observableArray();   // List of values for custom field filter selected
-
-    self.frCFValuesLoading = false;               // prevent race conditions
-    self.frFilterValuesLoading = false;
+    self.frFilterValuesLoading = false;           // prevent race conditions
 
       // Execute Find/Replace button is disabled by default (enabled by getFRCurrentCFs)
     $( "#btnDoFR" ).button({ disabled: true });
@@ -1494,6 +1489,7 @@ jQuery(document).ready(function($) {
         $('#selFRFilterCF').empty();
 
         // $('#selFRCFSelect').append('<option value="the_content">Marker content text</option>');
+
           // Load select options with custom fields
         var theOption;
           // Need to call underscore because cfArray will be hash/assoc array, not indexed array!
@@ -1502,17 +1498,7 @@ jQuery(document).ready(function($) {
           $('#selFRCFSelect').append(theOption);
           $('#selFRFilterCF').append(theOption);
         });
-        function loadReplaceValues(valArray) {
-            // Empty out options selection
-          $('#selFRMatchValue').empty();
-          var vOption;
-            // Need to call underscore because cfArray will be hash/assoc array, not indexed array!
-          _.each(valArray, function(theVal) {
-            vOption = '<option value="'+theVal+'">'+theVal+'</option>';
-            $('#selFRMatchValue').append(vOption);
-          });
-          self.frCFValuesLoading = false;
-        } // loadReplaceValues()
+
         function loadFilterValues(valArray) {
             // Empty out options selection
           $('#selFRFilterValue').empty();
@@ -1526,13 +1512,6 @@ jQuery(document).ready(function($) {
         } // loadFilterValues()
 
           // Activate menu value selections
-        $('#selFRCFSelect').change(function() {
-          if (!self.frCFValuesLoading) {
-            var cfSelection = $('#selFRCFSelect').val();
-            self.frCFValuesLoading = true;
-            dhpGetFieldValues(cfSelection, loadReplaceValues);
-          }
-        });
         $('#selFRFilterCF').change(function() {
           if (!self.frFilterValuesLoading) {
             self.frFilterValuesLoading = true;
@@ -1566,7 +1545,7 @@ jQuery(document).ready(function($) {
     self.doFRCF = function() {
       var frCF = $('#selFRCFSelect').val();       // the custom field we are changing
       var newValue = $('#edFRCFvalue').val();     // new value to put into field
-      var matchValue = $('#selFRMatchValue').val();  // old value must be this
+      var matchValue = $('#edFRMatchValue').val();  // old value must be this
 
       if (frCF && frCF != '') {
         $('#mdl-fr-cf').dialog({
