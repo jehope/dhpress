@@ -300,9 +300,9 @@ function dhp_map_page_template( $page_template )
         $page_template = dirname( __FILE__ ) . '/dhp-map-template.php';
 
         wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-        wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+        wp_enqueue_style('dhp-map', plugins_url('/css/dhp-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
         wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-            
+
         wp_enqueue_script('jquery');
         wp_enqueue_script('underscore');
 
