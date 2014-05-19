@@ -877,9 +877,9 @@ function createMarkerArray($project_id, $index)
 
 			// Get all of the legend/category values associated with this marker post
 		$args = array('fields' => 'ids');
-		$post_terms = wp_get_post_terms( $marker_id, $rootTaxName, $args );
+		$post_terms = wp_get_post_terms($marker_id, $rootTaxName, $args);
 		$term_array = array();
-		foreach( $post_terms as $term) {
+		foreach ($post_terms as $term) {
 				// Convert tax category names into IDs
 			array_push($term_array,intval($term));
 		}
@@ -889,7 +889,7 @@ function createMarkerArray($project_id, $index)
 		$content_att = array();
 
 			// Gather all values to be displayed in modal if marker selected
-			// Should not apply filters to post content because DH Press markup gets added!
+			// Should not apply filters to post content because DH Press markup gets inserted!
 		if (count($selectContent)) {
 			foreach( $selectContent as $contentMoteName ) {
 				if ($contentMoteName == 'the_content') {

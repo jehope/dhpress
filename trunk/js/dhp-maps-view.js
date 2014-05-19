@@ -302,6 +302,11 @@ var dhpMapsView = {
         var returnColor;
             // Find which of this item's legend values match current legend selection
         var matchID = _.intersection(dhpMapsView.catFilterSelect, cats);
+            // For motes with multiple values, we will need to arbitrarily select first match
+        if (_.isArray(matchID)) {
+            matchID = matchID[0];
+        }
+
             // Now, look through the current legend values for which matches first overlap
             // TO DO: Make this more efficient: the search is done (exhaustively) twice here!
         var term = _.find(dhpMapsView.catFilter.terms, function(item) {
