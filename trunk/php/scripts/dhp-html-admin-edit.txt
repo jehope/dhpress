@@ -77,7 +77,7 @@
               	</select><br/>
               <div data-bind="template: { name: 'widget-template', foreach: widgetList }"></div>
 
-              Motes to show:  <button data-bind="jqButton, click: addSelMote">Add</button> this mote: <select id="selModalMote" data-bind="options: anyTxtMoteNames"></select><br/>
+              Motes to show:  <button data-bind="jqButton, click: addSelMote">Add</button> this mote: <select id="selModalMote" data-bind="options: contentMoteNames"></select><br/>
               <div data-bind="template: { name: 'sel-mote-template', foreach: selMoteList }"></div>
             </div>
 
@@ -177,9 +177,9 @@
     </h2>
     <ul>
         <li>Map short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
-        <li>Map Center (Lat/Lon)
+        <li>Map Center (Lat)
             <input class="ed-lat-id" data-bind="value: theEP.settings.lat" type="text" size="6"/>
-            <input class="ed-lon-id" data-bind="value: theEP.settings.lon" type="text" size="6"/>
+            (Long) <input class="ed-lon-id" data-bind="value: theEP.settings.lon" type="text" size="6"/>
             Initial Zoom <input data-bind="value: theEP.settings.zoom" type="text" size="2"/>
         </li>
         <li>Marker Radius <select data-bind="value: theEP.settings.size">
@@ -263,7 +263,7 @@
 
 <script type="text/html" id="cards-content-template">
     <li>
-        Cards content mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.cardContentMoteNames"></select>
+        Cards content mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.contentMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delCardContent($data, theEP, $index()); }">Delete</button>
     </li>
 </script>
@@ -293,7 +293,7 @@
 
 <script type="text/html" id="sel-mote-template">
     <li>
-        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.anyTxtMoteNames"></select>
+        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.contentMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delSelMote($index()); }">Delete</button>
     </li>
 </script>

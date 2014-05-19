@@ -466,7 +466,7 @@ jQuery(document).ready(function($) {
     self.anyTxtDMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text', 'Long Text'], true, true, true);
     }, self);
-    self.cardContentMoteNames = ko.computed(function() {
+    self.contentMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text', 'Long Text', 'Image'], false, true, true);
     }, self);
 
