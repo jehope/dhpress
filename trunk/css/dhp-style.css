@@ -151,13 +151,15 @@ html.fullscreen {
 .modal-body .thumb-right img {
 	float: right;
 	padding-left: 5px;
-	padding-bottom: 5px; 
+	padding-bottom: 5px;
+	width: 120px;
 }
 
 .modal-body .thumb-left img {
 	float: left;
 	padding-right: 5px;
 	padding-bottom: 5px;
+	width: 120px;
 }
 
 .modal-backdrop, .modal-backdrop.fade.in {
