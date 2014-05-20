@@ -1581,6 +1581,91 @@ jQuery(document).ready(function($) {
       }
     }; // doFRCF()
 
+
+//------------------------------------------ Test Panel -----------------------------------------
+
+      // PURPOSE: Handle user selection of test button
+      // NOTES:   Append all results to testResults DIV
+    self.runTests = function() {
+      $('#runTests').button({ disabled: true });
+      $('#testResults').empty();
+
+        // Home URL but no label, or vice-versa?
+      if ((self.edHomeBtnLbl() && self.edHomeBtnLbl() != '') || (self.edHomeURL() && self.edHomeURL() != '')) {
+        if (self.edHomeBtnLbl() == '' || self.edHomeURL() == '') {
+          $('#testResults').append('<p>If you wish to create a "Home" button, you must supply both a URL and label.</p>');
+        }
+          // ensure a well-formed URL
+        var testURL = /^(http[s]?:\/\/){0,1}(www\.){0,1}[a-zA-Z0-9\.\-]+\.[a-zA-Z]{2,5}[\.]{0,1}/;
+        if (!testURL.test(self.edHomeURL())) {
+          $('#testResults').append('<p>The Home address does not appear to be a full, well-formed URL.</p>');
+        }
+      }
+
+      if (self.entryPoints().length == 0) {
+          $('#testResults').append('<p>Your project will not work until you create at least one entry point.</p>');
+      }
+
+        // Have necessary settings been set for all entry points?
+      ko.utils.arrayForEach(self.entryPoints(), function(theEP) {
+          // Ensure that all EPs have labels if multiple EPs
+        if (theEP.label() == '' && self.entryPoints().length > 1) {
+          $('#testResults').append('<p>You have an labeled entry point. If you have multiple entry points, they must all be named.</p>');
+        }
+        switch(theEP.type) {
+        case 'map':
+            // Do maps have at least one legend?
+          if (theEP.settings.legends().length == 0) {
+            $('#testResults').append('<p>You have not yet added a legend to your Map entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          break;
+        case 'cards':
+          var colorName = theEP.settings.color();
+          if (!colorName || colorName === 'disable') {
+            $('#testResults').append('<p>We recommend specifying a color legend for your Cards visualization, but none is provided (for the Cards given the label "'+
+              theEP.label()+'").</p>');
+          }
+            // Do cards have at least one content mote?
+          if (theEP.settings.content().length == 0) {
+            $('#testResults').append('<p>You haven\'t yet specified content for your Cards visualization (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          break;
+        }
+      });
+
+        // Is there at least one mote for select modal content?
+      if (self.selMoteList().length < 1) {
+          $('#testResults').append('<p>Your list of motes for the select modal is empty. We suggest you add at least one content mote.</p>');
+      }
+
+        // If Audio Source is not disable, ensure Transcript and Timecode are set at minimum
+      if (self.edTrnsAudio() !== 'disable') {
+        if (self.edTrnsTransc() === 'disable') {
+          $('#testResults').append('<p>Although you have enabled audio transcripts via the "Audio Source" selection, you have not yet made a selection from the Transcript list.</p>');
+        }
+        if (self.edTrnsTime() === 'disable') {
+          $('#testResults').append('<p>Although you have enabled audio transcripts via the "Audio Source" selection, you have not yet made a selection from the Timecode list.</p>');
+        }
+      }
+
+        // If Transcript Source mote selected, ensure other settings are as well
+      if (self.edTrnsSrc() !== 'disable') {
+        if (self.edTrnsAudio() === 'disable' || self.edTrnsTransc() === 'disable' || self.edTrnsTime() === 'disable') {
+          $('#testResults').append('<p>Although you have enabled full audio transcripts on archive pages via the "Source" selection, you have not yet specified the other necessary transcript settings.</p>');
+        }
+      }
+
+        // Call PHP functions to test any transcript texts
+
+        // Short-text Mote meta-data: ensure all of one type (not mixed color and icon)
+
+        // Only after all tests are over should button be 
+      $('#testResults').append('<p>Tests have now concluded.</p>');
+      $('#runTests').button({ disabled: false });
+    }; // runTests
+
   }; // ProjectSettings
 
 

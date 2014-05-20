@@ -142,7 +142,8 @@
 
       <h3>Testing and Error-checking</h3>
       <div>
-        <p>Coming soon</p>
+        <button id="runTests" data-bind="jqButton, click: runTests">Run tests</button></br>
+        <div id="testResults"></div>
       </div>
 
     </div> <!-- accordion -->
