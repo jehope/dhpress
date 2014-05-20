@@ -12,7 +12,6 @@
 		        "id": Integer,										// ID of Project
 		        "name": String,
 		        "version": Integer,									// Should = 2
-		        "cfs": [ String, ... ],								// list of custom fields <=> motes
 		        "homeLabel": String,
 		        "homeURL": String,
 		    },

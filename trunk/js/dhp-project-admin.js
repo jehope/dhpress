@@ -256,7 +256,6 @@ jQuery(document).ready(function($) {
       projSettings.general.id = projectID;
       projSettings.general.name = savedSettings.general.name;
       projSettings.general.version = 3;
-      projSettings.general.cfs = allCustomFields;
 
       projSettings.general.homeLabel = self.edHomeBtnLbl();
       projSettings.general.homeURL = self.edHomeURL();
