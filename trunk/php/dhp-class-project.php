@@ -11,7 +11,7 @@
  **			"general": {
 		        "id": Integer,										// ID of Project
 		        "name": String,
-		        "version": Integer,									// Should = 2
+		        "version": Integer,									// Must be 3
 		        "homeLabel": String,
 		        "homeURL": String,
 		    },
