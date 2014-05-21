@@ -234,12 +234,9 @@ class DHPressProject
 			// Loop through all markers in project
 		$moteArray = array();
 
-		// $args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$project_id, 'posts_per_page' => -1 );		
-		// $loop = new WP_Query( $args );
 		$loop = $this->setAllMarkerLoop();
 		while ( $loop->have_posts() ) : $loop->the_post();
 			$marker_id = get_the_ID();
-			//$temp_post = get_post($marker_id);
 
 				// Get the value in this marker for the custom field
 			$moteValue = get_post_meta($marker_id, $custom_name, true);

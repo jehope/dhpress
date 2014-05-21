@@ -1666,12 +1666,9 @@ jQuery(document).ready(function($) {
       }
 
         // Call PHP functions to test any transcript texts
-
-        // Short-text Mote meta-data: ensure all of one type (not mixed color and icon)
-
-        // Only after all tests are over should button be 
-      $('#testResults').append('<p>Tests have now concluded.</p>');
-      $('#runTests').button({ disabled: false });
+      $('#testResults').append('<p>Tests are now being conducted on the WordPress server for and will return shortly.</p>'+
+          '<p><b>IMPORTANT</b>: Project settings must have been saved for these tests to work properly.</p>');
+      dhpPerformTests();
     }; // runTests
 
   }; // ProjectSettings
@@ -2075,6 +2072,27 @@ jQuery(document).ready(function($) {
           },
           error: function(XMLHttpRequest, textStatus, errorThrown) {
              alert(errorThrown);
+          }
+      });
+  } // dhpGetFieldValues()
+
+
+    // PURPOSE: Call PHP code to perform other tests on ProjectSettings
+  function dhpPerformTests() {
+    jQuery.ajax({
+          type: 'POST',
+          url: ajax_url,
+          data: {
+              action: 'dhpPerformTests',
+              project: projectID
+          },
+          success: function(data, textStatus, XMLHttpRequest) {
+            $('#testResults').append(data);
+            $('#runTests').button({ disabled: false });
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
+            alert(errorThrown);
+            $('#runTests').button({ disabled: false });
           }
       });
   } // dhpGetFieldValues()

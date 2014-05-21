@@ -967,10 +967,6 @@ function dhpInitializeTaxonomy($mArray, $parent_id, $projRootTaxName)
 {
 	$args = array('parent' => $parent_id);
 
-	// $updateTaxObject['debug']['tax'] = $projRootTaxName;
-	// $updateTaxObject['debug']['parent'] = $args;
-	// $updateTaxObject['debug']['mArrayLoop'] = array();
-
 		// Loop through array and create terms with parent(mote_name) for non-empty values
 	foreach ($mArray as $value) {
 		if (!is_null($value) && $value != '') {
@@ -978,8 +974,6 @@ function dhpInitializeTaxonomy($mArray, $parent_id, $projRootTaxName)
 				// 	Unlike wp_insert_term() and wp_update_term()!
 	   		$termIs = term_exists(addslashes($value), $projRootTaxName, $parent_id);
 	   			//debug
-	   		// array_push($updateTaxObject['debug']['mArrayLoop'], addslashes($value));
-	   		// array_push($updateTaxObject['debug']['mArrayLoop'], $termIs);
 	   		if(!$termIs) {
 	   			//if term doesn't exist, create
 	   			wp_insert_term($value, $projRootTaxName, $args);
@@ -991,11 +985,12 @@ function dhpInitializeTaxonomy($mArray, $parent_id, $projRootTaxName)
 	}
 } // dhpInitializeTaxonomy()
 
-	// PURPOSE: To associate taxonomic terms with Markers in this Project with corresponding values
-	// INPUT: 	$projObj = Object of DHPressProject class
-	//			$custom_field = custom field defined for Project's markers
-	//			$parent_id = ID of head term of taxonomy
-	//			$rootTaxName = name of root for all taxonomies belonging to this project
+// PURPOSE: To associate taxonomic terms with Markers in this Project with corresponding values
+// INPUT: 	$projObj = Object of DHPressProject class
+//			$custom_field = custom field defined for Project's markers
+//			$parent_id = ID of head term of taxonomy
+//			$rootTaxName = name of root for all taxonomies belonging to this project
+
 function dhpBindTaxonomyToMarkers($projObj, $custom_field, $parent_id, $rootTaxName, $mote_delim)
 {
 		// Now (re)create all subterms
@@ -1068,8 +1063,6 @@ function dhpGetLegendValues()
 		$parent_id = $parent_term->term_id;
 	}
 
-	$results = array();
-	$results = $mArray;
 		// Find all of the terms derived from mote (parent/head term) in the Project's taxonomy
 	$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
 
@@ -1089,9 +1082,6 @@ function dhpGetLegendValues()
 		// Get all taxonomic terms for project, excluding all other motes
 	$terms_loaded = get_terms($rootTaxName, 'exclude_tree='.$exclude_string.'&orderby=term_group&hide_empty=0');
  	$t_count = count($terms_loaded);
-
- 	//$dhp_top_term = get_term_by('name', $term_name, $rootTaxName);
-	//$terms = get_terms($rootTaxName, array( 'orderby' => 'term_id' ) );
 
  		// Parse icon_url data from the description metadata
  	if ($t_count > 0) {
@@ -1538,7 +1528,6 @@ function dhpCreateCustomFieldFilter()
 
 add_action('wp_ajax_dhpUpdateCustomFieldFilter', 'dhpUpdateCustomFieldFilter');
 
-// dhpUpdateCustomFieldFilter()
 // PURPOSE: To modify the value of a field (based on string replace) in all of a Project's Markers if
 //			it satisfies query condition and currently matches a certain value (like Find & Replace)
 // INPUT:	$_POST['project'] = ID of Project
@@ -1602,7 +1591,6 @@ function dhpUpdateCustomFieldFilter()
 
 add_action( 'wp_ajax_dhpReplaceCustomFieldFilter', 'dhpReplaceCustomFieldFilter' );
 
-// dhpReplaceCustomFieldFilter()
 // PURPOSE: To replace the value of a field in all of a Project's Markers if
 //			it satisfies query condition and currently matches a certain value
 // INPUT:	$_POST['project'] = ID of Project
@@ -1663,7 +1651,6 @@ function dhpReplaceCustomFieldFilter()
 
 add_action( 'wp_ajax_dhpGetFieldValues', 'dhpGetFieldValues' );
 
-// dhpGetFieldValues()
 // PURPOSE: Handle Ajax call to get values for custom field
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['field_name'] = name of custom field
@@ -1682,7 +1669,6 @@ function dhpGetFieldValues()
 
 add_action( 'wp_ajax_dhpFindReplaceCustomField', 'dhpFindReplaceCustomField' );
 
-// dhpFindReplaceCustomField()
 // PURPOSE: Handle Ajax function to do string replace on matching values in a custom field in Project
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['field_name'] = name of custom field
@@ -1727,7 +1713,6 @@ function dhpFindReplaceCustomField()
 
 add_action( 'wp_ajax_dhpDeleteCustomField', 'dhpDeleteCustomField' );
 
-// dhpDeleteCustomField()
 // PURPOSE:	Handle Ajax query to remove specific custom field from all markers of a Project
 // INPUT:	$_POST['project'] = ID of Project
 //			$_POST['field_name'] = name of custom field
@@ -1755,7 +1740,6 @@ function dhpDeleteCustomField()
 
 add_action( 'wp_ajax_dhpGetCustomFields', 'dhpGetCustomFields' );
 
-// dhpGetCustomFields()
 // PURPOSE:	Handle Ajax call to retrieve all custom fields defined for a Project
 // INPUT:	$_POST['project'] = ID of Project
 // RETURNS: JSON Object of array of all custom fields
@@ -1770,9 +1754,133 @@ function dhpGetCustomFields()
 } // dhpGetCustomFields()
 
 
+// PURPOSE: Ensure metadata attached to category/legend is correct
+// INPUT:   $projObj = project object
+//			$theLegend = name of mote to check
+//			$colorOnly = true if metadata must represent colors only
+
+function verifyLegend($projObj, $theLegend, $colorOnly)
+{
+	if ($theLegend === null || $theLegend === '' || $theLegend === 'disable') {
+		return '<p>Cannot verify unspecified legend.</p>';
+	}
+
+	$moteDef = $projObj->getMoteByName($theLegend);
+
+	$rootTaxName  = $projObj->getRootTaxName();
+
+		// Has Legend not been created yet?
+	if (!term_exists($moteDef->name, $rootTaxName)) {
+		return '<p>Legend '.$theLegend.' has not yet been created.</p>';
+	}
+
+		// Find all of the terms derived from mote (parent/head term) in the Project's taxonomy
+	$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
+
+		// Create comma-separated string listing terms derived from other motes
+	$exclude_string='';
+	$initial = true;
+	foreach ($parent_terms_to_exclude as $term) {
+		if($term->term_id != $parent_id) {
+			if(!$initial) {
+				$exclude_string .=',';
+			}
+			$exclude_string .= $term->term_id;
+			$initial = false;
+		}
+	}
+
+		// Get all taxonomic terms for project, excluding all other motes
+	$terms_loaded = get_terms($rootTaxName, 'exclude_tree='.$exclude_string.'&orderby=term_group&hide_empty=0');
+ 	$t_count = count($terms_loaded);
+
+	$results    = '';
+	$usedColor  = false;
+	$usedIcon   = true;
+	$mixFlagged = false;
+
+ 		// Check visualization data (encoded in the description metadata)
+ 		// 	Value must specified for all category/legend terms
+		//	Ensure value is a parseable value
+ 		//	Ensure only color values are used if required
+		//	Ensure there is not a mixture of icon and color
+ 	if ($t_count > 0) {
+   		foreach ($terms_loaded as $term) {
+   			if ($term->description == null || $term->description == '') {
+   				$results .= '<p>The value '.$term->name.' for legend '.$theLegend.' has no visual setting.</p>';
+   			} else {
+				$isColor = preg_match("/^#[:xdigit:]{6}$/", $term->description);
+				$isIcon = preg_match("/^.maki\-/", $term->description);
+				if ($isColor) {
+					$usedColor = true;
+					if ($usedIcon && !$mixFlagged) {
+						$results .= '<p>Illegal mixture of color and icon settings in legend '.$theLegend.'.</p>';
+						$mixFlagged = true;
+					}
+				} elseif ($isIcon) {
+					$usedIcon = true;
+					if ($colorOnly) {
+						$results .= '<p>The non-color setting'.$term->description.' has been used for legend '.$theLegend.' value '.$term->name.'.</p>';
+					} elseif ($usedColor && !$mixFlagged) {
+						$results .= '<p>Illegal mixture of color and icon settings in legend '.$theLegend.'.</p>';
+						$mixFlagged = true;
+					}
+				} else {
+					$results .= '<p>Unknown setting '.$term->description.' for legend '.$theLegend.' value '.$term->name.'.</p>';
+				}
+			}
+		}
+	}
+
+	return $results;
+} // verifyLegend()
+
+
+add_action( 'wp_ajax_dhpPerformTests', 'dhpPerformTests' );
+
+// PURPOSE:	Handle Ajax call to retrieve all custom fields defined for a Project
+// INPUT:	$_POST['project'] = ID of Project
+// RETURNS: JSON Object of array of all custom fields
+
+function dhpPerformTests()
+{
+	$projectID = $_POST['project'];
+	$projObj   = new DHPressProject($projectID);
+	$results   = '';
+	
+	$projSettings = $projObj->getAllSettings();
+
+		// Ensure any legends used by visualizations have been configured
+		// Ensure that configured legends do not mix color and icon types
+	foreach ($projSettings->eps as $ep) {
+		switch ($ep->type) {
+		case 'map':
+			foreach ($ep->settings->legends as $theLegend) {
+				$results .= verifyLegend($projObj, $theLegend, false);
+			}
+			break;
+		case 'cards':
+			$results .= verifyLegend($projObj, $ep->settings->color, true);
+			break;
+		}
+	}
+
+		// TO DO:
+		// Go through markers and ensure all values are valid
+		// If Image or Link To motes, check for valid URLs
+
+		// TO DO: Check transcript data
+
+	if ($results === '') {
+		$results = '<p>All data on server has been examined and approved.</p>';
+	}
+
+	die($results);
+} // dhpPerformTests()
+
+
 add_action( 'wp_restore_post_revision', 'dhp_project_restore_revision', 10, 2 );
 
-// dhp_project_restore_revision( $post_id, $revision_id )
 // PURPOSE: Handles returning to an earlier revision of this post
 // INPUT:	$post_id = ID of original post
 //			$revision_id = ID of new revised post
@@ -1797,7 +1905,6 @@ function dhp_project_restore_revision($post_id, $revision_id)
 
 add_action( 'admin_enqueue_scripts', 'add_dhp_project_admin_scripts', 10, 1 );
 
-// add_dhp_project_admin_scripts( $hook )
 // Custom scripts to be run on Project new/edit pages only
 // PURPOSE: Prepare CSS and JS files for all page types in WP
 // INPUT:	$hook = name of template file being loaded
@@ -2148,19 +2255,16 @@ function dhp_tax_template( $page_template )
 	    $isTranscript = ($project_settings->views->transcript->source == $term_parent->name);
 	    	// If above doesn't work, try comparing $term->taxonomy
 
-	    	// mediaelement for timelines -- not currently used
-		// wp_enqueue_style('mediaelement', plugins_url('/js/mediaelement/mediaelementplayer.css',  dirname(__FILE__) ));
-
-		//foundation styles
-		wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
-		wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
+			// Foundation styles
+		wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
+		wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
 		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
-		wp_enqueue_script( 'jquery' );
-		wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
-		wp_enqueue_script( 'dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
-		wp_enqueue_script( 'underscore' );
+		wp_enqueue_script('jquery' );
+		wp_enqueue_script('dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
+		wp_enqueue_script('dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
+		wp_enqueue_script('underscore');
 		// wp_enqueue_script('handlebars', plugins_url('/lib/handlebars-v1.1.2.js', dirname(__FILE__)));
 
 	    if ($isTranscript) {
