@@ -1602,6 +1602,10 @@ jQuery(document).ready(function($) {
         }
       }
 
+      if (self.allMotes().length == 0) {
+          $('#testResults').append('<p>Your project will not work until you define some motes.</p>');
+      }
+
       if (self.entryPoints().length == 0) {
           $('#testResults').append('<p>Your project will not work until you create at least one entry point.</p>');
       }
@@ -1616,19 +1620,23 @@ jQuery(document).ready(function($) {
         case 'map':
             // Do maps have at least one legend?
           if (theEP.settings.legends().length == 0) {
-            $('#testResults').append('<p>You have not yet added a legend to your Map entry point (given the label "'+
+            $('#testResults').append('<p>You have not yet added a legend to the Map entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          if (theEP.settings.coordMote() == '') {
+            $('#testResults').append('<p>You must specify the mote that will provide the coordinate for the Map entry point (given the label "'+
               theEP.label()+'").</p>');
           }
           break;
         case 'cards':
           var colorName = theEP.settings.color();
           if (!colorName || colorName === 'disable') {
-            $('#testResults').append('<p>We recommend specifying a color legend for your Cards visualization, but none is provided (for the Cards given the label "'+
+            $('#testResults').append('<p>We recommend specifying a color legend for the Cards visualization, but none is provided (for the Cards given the label "'+
               theEP.label()+'").</p>');
           }
             // Do cards have at least one content mote?
           if (theEP.settings.content().length == 0) {
-            $('#testResults').append('<p>You haven\'t yet specified content for your Cards visualization (given the label "'+
+            $('#testResults').append('<p>You haven\'t yet specified content for the Cards visualization (given the label "'+
               theEP.label()+'").</p>');
           }
           break;
