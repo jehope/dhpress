@@ -233,7 +233,7 @@
       </span>
     </h2>
     <ul>
-        <li>Map short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
+        <li>Card short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Card Title <select data-bind="value: theEP.settings.title, options: $root.anyTxtDMoteNames"></select></li>
         <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Values must be configured for colors)</li>
         <li>Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="9"/>&nbsp;

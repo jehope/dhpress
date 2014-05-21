@@ -47,6 +47,10 @@ p {
     margin-bottom: 2px;
 }
 
+.card:hover {
+    border: 2px dashed red;
+}
+
     /* Scale card acc to size */
 
 .card.short {

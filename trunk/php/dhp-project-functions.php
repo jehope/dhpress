@@ -875,7 +875,7 @@ function createMarkerArray($project_id, $index)
 				} elseif ($contentMoteName == 'the_title') {
 					$content_val = get_the_title();
 				} else {
-					$content_mote = $projObj->getMoteByName( $contentMoteName );
+					$content_mote = $projObj->getMoteByName($contentMoteName);
 					$contentCF = $content_mote->cf;
 					if($contentCF =='the_content') {
 						$content_val = get_post_field('post_content', $marker_id);
@@ -884,14 +884,13 @@ function createMarkerArray($project_id, $index)
 					} else {
 						$content_val = get_post_meta($marker_id, $contentCF, true);
 					}
-						// Do we need to wrap data?
-					if($content_mote->type=='Image'){
-						$content_val = '<img src="'.addslashes($content_val).'" />';
-					}
 				}
 				if (!is_null($content_val) && ($content_val !== '')) {
+						// Do we need to wrap data?
+					if($content_mote->type=='Image') {
+						$content_val = '<img src="'.addslashes($content_val).'" />';
+					}
 					$content_att[$contentMoteName] = $content_val;
-					// array_push($content_att, array($contentMoteName => $content_val));
 				}
 			} // foreach
 			$thisFeaturesProperties["content"]     = $content_att;
