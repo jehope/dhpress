@@ -9,6 +9,7 @@ var dhpCardsView = {
         // Contains fields: ajaxURL, projectID, vizIndex, cardsEP, callBacks
         //                  rawData
         //                  colorValues   = array of { id, icon_url }
+        //                  defTextColor  = default text color
         //                  allMotes      = array (unique sorted) of all data and content mote names
         //                  allDataMotes  = array of all sort and filter mote names
         //                  dataAttrs     = array of just motes whose data is stored in attributes
@@ -159,57 +160,6 @@ var dhpCardsView = {
         jQuery("#card-container").isotope();
     }, // updateVizSpace()
 
-        // PURPOSE: Called by createCards to determine color to use for marker
-        // RETURNS: String of first match on color to use for icon, or else default color
-        // INPUT:   featureVals = array of category IDs (integers) associated with a feature/marker
-        // ASSUMES: colorValues has been loaded
-    getHighestParentColor: function(featureVals)
-    {
-        var countTerms = dhpCardsView.colorValues.length; 
-        var countCats = featureVals.length;
-        var thisCat, thisCatID;
-        var thisMarkerID;
-        var catChildren;
-        var i,j,k;
-
-            // If no color motes or if marker has no category values, return default
-        if (countTerms==0 || countCats==0) {
-            return dhpCardsView.cardsEP.defColor;
-        }
-
-        for(i=0;i<countTerms;i++) {         // for all category values
-            thisCat = dhpCardsView.colorValues[i];
-            thisCatID = thisCat.id;
-
-            for(j=0;j<countCats;j++) {      // for all marker values
-                // legend categories
-                thisMarkerID = featureVals[j];
-                    // have we matched this element?
-                if (thisCatID===thisMarkerID) {
-                    if(thisCat.icon_url.substring(0,1) == '#') {
-                        return thisCat.icon_url;
-                    } else {
-                        return dhpCardsView.cardsEP.defColor;
-                    }
-                    // check for matches on its children
-                } else {
-                    if (thisCat.children) {
-                        catChildren = thisCat.children;
-                        for (k=0;k<catChildren.length;k++) {
-                            if(catChildren[k].term_id==thisMarkerID) {
-                               if(thisCat.icon_url.substring(0,1) == '#') {
-                                    return thisCat.icon_url;
-                                } else {
-                                    return dhpCardsView.cardsEP.defColor;
-                                }
-                            }
-                        }
-                    }
-                }
-           }
-        }
-    }, // getHighestParentColor()
-
         // PURPOSE: Return the text color for card depending on background color
         // ASSUMES: bColor is in format #xxxxxx where each x is a hexadecimal numeral
         // NOTES:   Algorithm for choosing white or black at:
@@ -228,7 +178,66 @@ var dhpCardsView = {
         } else {
             return "white";
         }
-    },
+    }, // textColor
+
+        // PURPOSE: Called by createCards to determine color to use for marker
+        // INPUT:   featureVals = array of category IDs (integers) associated with a feature/marker
+        // RETURNS: Partial string to set color and background color (w/o closing ")
+        // NOTES:   Will use first match on color to use for icon, or else default color
+        // ASSUMES: colorValues has been loaded
+        // SIDEFX:  Caches textColor in text field, which builds first time encountered
+    getCardColors: function(featureVals)
+    {
+        var countTerms = dhpCardsView.colorValues.length; 
+        var countCats = featureVals.length;
+        var thisCat, thisCatID;
+        var thisMarkerID;
+        var catChildren;
+        var i,j,k;
+
+            // If no color motes or if marker has no category values, return default
+        if (countTerms==0 || countCats==0) {
+            return dhpCardsView.cardsEP.defColor+'; color:'+dhpCardsView.defTextColor;
+        }
+
+        for(i=0;i<countTerms;i++) {         // for all category values
+            thisCat = dhpCardsView.colorValues[i];
+            thisCatID = thisCat.id;
+
+            for(j=0;j<countCats;j++) {      // for all marker values
+                // legend categories
+                thisMarkerID = featureVals[j];
+                    // have we matched this element?
+                if (thisCatID===thisMarkerID) {
+                    if(thisCat.icon_url.substring(0,1) == '#') {
+                        if (thisCat.txtColor == undefined) {
+                            thisCat.txtColor = dhpCardsView.textColor(thisCat.icon_url);
+                        }
+                        return thisCat.icon_url+'; color:'+thisCat.txtColor;
+                    } else {
+                        return dhpCardsView.cardsEP.defColor+'; color:'+dhpCardsView.defTextColor;
+                    }
+                    // check for matches on its children
+                } else {
+                    if (thisCat.children) {
+                        catChildren = thisCat.children;
+                        for (k=0;k<catChildren.length;k++) {
+                            if(catChildren[k].term_id==thisMarkerID) {
+                               if(thisCat.icon_url.substring(0,1) == '#') {
+                                    if (thisCat.txtColor == undefined) {
+                                        thisCat.txtColor = dhpCardsView.textColor(thisCat.icon_url);
+                                    }
+                                    return thisCat.icon_url+'; color:'+thisCat.txtColor;
+                                } else {
+                                    return dhpCardsView.cardsEP.defColor+'; color:'+dhpCardsView.defTextColor;
+                                }
+                            }
+                        }
+                    }
+                }
+           }
+        }
+    }, // getHighestParentColor()
 
         // PURPOSE: Handle selection in "card space"
     selectCard: function(evt)
@@ -297,15 +306,16 @@ var dhpCardsView = {
         jQuery('#dhp-visual').append('<div id="card-container"></div>');
         var cardHolder = jQuery('#card-container');
 
-        var theCard, contentElement, contentData, theTitle, bckColorStr, txtColorStr, classStr, moteIndex;
+        var theCard, contentElement, contentData, theTitle, colorStr, classStr, moteIndex;
 
             // set default background and text colors
-        bckColorStr = dhpCardsView.cardsEP.defColor;
-        var match = bckColorStr.match(/^#([0-9a-f]{6})$/i);
+        var match = dhpCardsView.cardsEP.defColor.match(/^#([0-9a-f]{6})$/i);
         if (match) {
-            txtColorStr = dhpCardsView.textColor(bckColorStr);
+            defTextColor = dhpCardsView.textColor(dhpCardsView.cardsEP.defColor);
+            colorStr = dhpCardsView.cardsEP.defColor+'; color:'+defTextColor;
         } else {
-            txtColorStr = '#000000';
+            colorStr = dhpCardsView.cardsEP.defColor+'; color:#000000';
+            defTextColor = '#000000';
         }
 
             // get class for these cards
@@ -332,12 +342,11 @@ var dhpCardsView = {
             }
 
             if (dhpCardsView.colorValues) {
-                bckColorStr = dhpCardsView.getHighestParentColor(theFeature.properties.categories);
-                txtColorStr = dhpCardsView.textColor(bckColorStr);
+                colorStr = dhpCardsView.getCardColors(theFeature.properties.categories);
             }
 
                 // Create container element for the card
-            theCard = jQuery('<div class="card '+classStr+'" id="cardID'+index+'" style="background-color:'+bckColorStr+'; color:'+txtColorStr+'"></div');
+            theCard = jQuery('<div class="card '+classStr+'" id="cardID'+index+'" style="background-color:' + colorStr +'"></div');
             if (theTitle) {
                 jQuery(theCard).append('<p style="font-weight: bold">'+theTitle+'</p></div>');
             }
