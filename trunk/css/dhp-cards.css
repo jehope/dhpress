@@ -42,13 +42,19 @@ p {
     line-height: 13px;
     margin: 5px;
     padding: 5px;
-    border: 2px solid gray;
+    border: 4px solid black;
     overflow: hidden;
     margin-bottom: 2px;
 }
 
 .card:hover {
-    border: 2px dashed red;
+    border: 4px dashed red;
+
+  -webkit-transform: rotate(-5deg);
+     -moz-transform: rotate(-5deg);
+       -o-transform: rotate(-5deg);
+      -ms-transform: rotate(-5deg);
+          transform: rotate(-5deg);
 }
 
     /* Scale card acc to size */

@@ -324,7 +324,7 @@ var dhpCardsView = {
                 moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
                 contentData = theFeature.properties.content[moteName];
                 if (contentData) {
-                    contentElement = jQuery('<p class="datamote'+moteIndex+'">'+contentData+'</p>');
+                    contentElement = jQuery('<p class="datamote'+moteIndex+'"><i>'+moteName+'</i>: '+contentData+'</p>');
                     jQuery(theCard).append(contentElement);
                 }
             });
