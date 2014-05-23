@@ -47,8 +47,11 @@ p {
     margin-bottom: 2px;
 }
 
+    /* When user hovers over card, tilt it and greyscale it somewhat */
 .card:hover {
     border: 4px dashed red;
+
+  -webkit-filter: grayscale(50%);
 
   -webkit-transform: rotate(-5deg);
      -moz-transform: rotate(-5deg);

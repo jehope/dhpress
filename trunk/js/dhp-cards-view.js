@@ -210,6 +210,25 @@ var dhpCardsView = {
         }
     }, // getHighestParentColor()
 
+        // PURPOSE: Return the text color for card depending on background color
+        // ASSUMES: bColor is in format #xxxxxx where each x is a hexadecimal numeral
+        // NOTES:   Algorithm for choosing white or black at:
+        //            http://www.particletree.com/notebook/calculating-color-contrast-for-legible-text/
+        //          and http://stackoverflow.com/questions/5650924/javascript-color-contraster
+    textColor: function(bColor)
+    {
+        var brightness = 1.1;
+
+        brightness = (parseInt(bColor.substr(1,2), 16) * 299.0) +
+                    (parseInt(bColor.substr(3,2), 16) * 587.0) +
+                    (parseInt(bColor.substr(5,2), 16) * 114.0)) / 255000.0;
+
+        if (brightness >= 0.5) {
+            return "black";
+        } else {
+            return "white";
+        }
+    },
 
         // PURPOSE: Handle selection in "card space"
     selectCard: function(evt)
@@ -278,10 +297,16 @@ var dhpCardsView = {
         jQuery('#dhp-visual').append('<div id="card-container"></div>');
         var cardHolder = jQuery('#card-container');
 
-        var theCard, contentElement, contentData, theTitle, colorStr, classStr, moteIndex;
+        var theCard, contentElement, contentData, theTitle, bckColorStr, txtColorStr, classStr, moteIndex;
 
-            // set default
-        colorStr = dhpCardsView.cardsEP.defColor;
+            // set default background and text colors
+        bckColorStr = dhpCardsView.cardsEP.defColor;
+        var match = bckColorStr.match(/^#([0-9a-f]{6})$/i);
+        if (match) {
+            txtColorStr = textColor(bckColorStr);
+        } else {
+            txtColorStr = '#000000';
+        }
 
             // get class for these cards
         classStr='';
@@ -307,11 +332,12 @@ var dhpCardsView = {
             }
 
             if (dhpCardsView.colorValues) {
-                colorStr = dhpCardsView.getHighestParentColor(theFeature.properties.categories);
+                bckColorStr = dhpCardsView.getHighestParentColor(theFeature.properties.categories);
+                txtColorStr = dhpCardsView.textColor(bckColorStr);
             }
 
                 // Create container element for the card
-            theCard = jQuery('<div class="card '+classStr+'" id="cardID'+index+'" style="background-color:'+colorStr+'"></div');
+            theCard = jQuery('<div class="card '+classStr+'" id="cardID'+index+'" style="background-color:'+bckColorStr+'; color:'+txtColorStr+'"></div');
             if (theTitle) {
                 jQuery(theCard).append('<p style="font-weight: bold">'+theTitle+'</p></div>');
             }
@@ -349,9 +375,9 @@ var dhpCardsView = {
                 //   associating names of sort motes with the class names that mark the data
             _.each(dhpCardsView.cardsEP.sortMotes, function(moteName) {
                 moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
-                    // Just name by itself results in case-sensitive search
+                    // Just name by itself results in case-sensitive comparison
                 // moteIDs.push('.datamote'+moteIndex);
-                    // Create a curried function which has the mote index
+                    // Create a curried function which has the mote index and does case-insensitive comparison
                 moteIDs.push((function(index) { 
                     return function(itemElem) {
                         return jQuery(itemElem).find('.datamote'+index).text().toLowerCase();
