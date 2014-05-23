@@ -174,7 +174,7 @@ var dhpCardsView = {
 
             // If no color motes or if marker has no category values, return default
         if (countTerms==0 || countCats==0) {
-            return 'style="background-color:'+dhpCardsView.cardsEP.defColor+'"';
+            return dhpCardsView.cardsEP.defColor;
         }
 
         for(i=0;i<countTerms;i++) {         // for all category values
@@ -219,7 +219,7 @@ var dhpCardsView = {
     {
         var brightness = 1.1;
 
-        brightness = (parseInt(bColor.substr(1,2), 16) * 299.0) +
+        brightness = ((parseInt(bColor.substr(1,2), 16) * 299.0) +
                     (parseInt(bColor.substr(3,2), 16) * 587.0) +
                     (parseInt(bColor.substr(5,2), 16) * 114.0)) / 255000.0;
 
@@ -303,7 +303,7 @@ var dhpCardsView = {
         bckColorStr = dhpCardsView.cardsEP.defColor;
         var match = bckColorStr.match(/^#([0-9a-f]{6})$/i);
         if (match) {
-            txtColorStr = textColor(bckColorStr);
+            txtColorStr = dhpCardsView.textColor(bckColorStr);
         } else {
             txtColorStr = '#000000';
         }
