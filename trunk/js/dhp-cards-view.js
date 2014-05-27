@@ -38,6 +38,13 @@ var dhpCardsView = {
         dhpCardsView.allDataMotes   = [];
         dhpCardsView.dataAttrs      = [];
 
+
+            // Insert Legend area as first thing in viz space -- Joe had "after" but menu off map above if not "append"
+        jQuery('#dhp-visual').prepend(Handlebars.compile(jQuery("#dhp-script-cards-legend-head").html()));
+
+
+            // Create nav bar menus --------------------
+
             // Add Sort By controls
         if (cardsEP.sortMotes.length > 0) {
             jQuery('.top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-cards-sort").html()));
@@ -289,18 +296,80 @@ var dhpCardsView = {
         }
 
             // Create Legend for colors (if colors exist)
+            //   This code modified from dhp-maps-view
         if (dhpCardsView.colorValues.length > 1) {
-            jQuery('#dhp-visual').prepend('<div id="card-legend"></div>');
-            var legendStr = '<p>';
-            _.each(dhpCardsView.colorValues, function(theColor) {
-                    // "Parent" term can't be displayed and won't have an icon_url value
-                if (theColor.icon_url) {
-                    legendStr += '<span class="color-legend"><span class="splash" style="background-color:'+
-                                theColor.icon_url+'"></span> '+theColor.name+'</span>';
+                // Old logic
+            // jQuery('#dhp-visual').prepend('<div id="card-legend"></div>');
+            // var legendStr = '<p>';
+            // _.each(dhpCardsView.colorValues, function(theColor) {
+            //         // "Parent" term can't be displayed and won't have an icon_url value
+            //     if (theColor.icon_url) {
+            //         legendStr += '<span class="color-legend"><span class="splash" style="background-color:'+
+            //                     theColor.icon_url+'"></span> '+theColor.name+'</span>';
+            //     jQuery('#card-legend').prepend(legendStr+'</p>');
+            // }
+
+            var legendName = dhpCardsView.cardsEP.color;
+            var legendHtml;
+
+                // "Root" DIV for the Legend
+            legendHtml = jQuery('<div class="legend-div"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
+                // Create entries for all of the 1st-level terms (do not represent children of terms)
+            _.each(dhpCardsView.colorValues, function(theTerm) {
+                if (legendName !== theTerm.name) {
+                    var hasParentClass = '';
+                    if (theTerm.parent) {
+                        hasParentClass = 'hasParent';
+                    }
+                    var firstIconChar = theTerm.icon_url.substring(0,1);
+                    switch (firstIconChar) {
+                    case '#':
+                            // Append new legend value to menu according to type
+                        jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
+                            '<div class="small-2 large-1 columns splash" style="background:'+theTerm.icon_url+'"></div>'+
+                            '<div class="small-9 large-10 columns"><a class="value" data-id="'+
+                            theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
+                        break;
+                    default:
+                        throw new Error('Visual feature not supported for Topic Cards: '+theTerm.icon_url);
+                    }
                 }
             });
 
-            // Create cards
+            jQuery('#legends').append(legendHtml);
+
+                // Handle resizing Legend (min/max)
+            jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
+            if(!jQuery('body').hasClass('isMobile')) {
+                jQuery('.legend-resize').hide();
+                jQuery('#legends').hover(function(){
+                    jQuery('.legend-resize').fadeIn(100);
+                },
+                function() {
+                    jQuery('.legend-resize').fadeOut(100);
+                });
+            }
+
+                // Add legend hide/show action
+            jQuery('.legend-resize').on('click', function(){
+                if(jQuery('#legends').hasClass('mini')) {
+                    jQuery('#legends').animate({ height: legendHeight },
+                        500,
+                        function() {
+                            jQuery('#legends').removeClass('mini');
+                        });
+                } 
+                else {
+                    legendHeight = jQuery('#legends').height();
+                    jQuery('#legends').addClass('mini');                
+                    jQuery('#legends').animate({ height: 37 }, 500 );
+                }
+            });
+
+        } // if colorValues
+
+
+            // Create cards --------------------
         jQuery('#dhp-visual').append('<div id="card-container"></div>');
         var cardHolder = jQuery('#card-container');
 
