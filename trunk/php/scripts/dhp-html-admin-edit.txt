@@ -1,6 +1,6 @@
 
 <div id="ko-dhp">
-    <button data-bind="jqButton, click: saveSettings, style: { color: settingsDirty() ? 'red' : 'green' }">Save Settings</button>
+    <button id="btnSaveSettings" data-bind="jqButton, click: saveSettings, style: { color: settingsDirty() ? 'red' : 'green' }">Save Settings</button>
     <button data-bind ="jqButton, click: showSettings">Show Settings in Console</button>
 
       <div id="accordion">

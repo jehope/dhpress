@@ -236,9 +236,13 @@ jQuery(document).ready(function($) {
 
       // PURPOSE: Handle user selection to save Project Settings to WP
     self.saveSettings = function() {
+      $('#btnSaveSettings').button({ disabled: true });
       var currentSettings = self.bundleSettings();
       var settingsData = JSON.stringify(currentSettings);
-      // console.log("Saving current settings: "+settingsData);
+
+        // Must save them in custom metabox in case user hits "Update" button in WP!
+      $('#project_settings').val(settingsData);
+
       saveSettingsInWP(settingsData);
     };
 
@@ -1771,11 +1775,12 @@ jQuery(document).ready(function($) {
               settings: settingsData
           },
           success: function(data, textStatus, XMLHttpRequest) {
-            console.log("Save settings returned "+data);
+            $('#btnSaveSettings').button({ disabled: false });
             projObj.cleanSettings();
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){
-             alert(errorThrown);
+            alert(errorThrown);
+            $('#btnSaveSettings').button({ disabled: false });
           }
       });
   } // saveSettingsInWP()

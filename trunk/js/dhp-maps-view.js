@@ -87,10 +87,11 @@ var dhpMapsView = {
             // Add map elements to nav bar
         jQuery('.dhp-nav .top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-map-menus").html()));
 
-            // Insert Legend area -- Joe had "after" but menu hidden if not "append"
+            // Insert Legend area -- Joe had "after" but menu off map above if not "append"
         jQuery('#dhp-visual').append(Handlebars.compile(jQuery("#dhp-script-map-legend-head").html()));
 
         jQuery('#dhp-visual').append('<div id="dhpMap"/>');
+
            //create map with view
         dhpMapsView.mapLeaflet = L.map('dhpMap',{ zoomControl:false }).setView([dhpMapsView.mapEP.lat, dhpMapsView.mapEP.lon], dhpMapsView.mapEP.zoom);
 

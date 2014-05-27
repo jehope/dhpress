@@ -1,4 +1,9 @@
-    <!-- Handlebars Templates for Map View -->
+    <!-- Handlebars Templates for Cards View -->
+
+<script id="dhp-script-cards-legend-head" type="text/x-handlebars-template">
+  <div id="legends"> </div>
+</script>
+
 <script id="dhp-script-cards-sort" type="text/x-handlebars-template">
   <li class="has-dropdown">
       <a href="#">Sort By</a>

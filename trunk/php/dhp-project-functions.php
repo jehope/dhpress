@@ -420,6 +420,7 @@ function save_dhp_project_settings($post_id)
 		$srcToCheck = $post_id;
 	}
 
+		// Check to see if Project settings from custom metabox are different from saved version
 	$projObj = new DHPressProject($srcToCheck);
     $old = $projObj->getAllSettings();
     $new = $_POST['project_settings'];
@@ -1886,7 +1887,7 @@ add_action( 'wp_restore_post_revision', 'dhp_project_restore_revision', 10, 2 );
 
 function dhp_project_restore_revision($post_id, $revision_id)
 {
-	$dhp_project_settings_fields = array( 'project_settings', 'project_icons' );
+	$dhp_project_settings_fields = array( 'project_settings' /* , 'project_icons' */ );
 
 	$post     = get_post($post_id);
 	$revision = get_post($revision_id);

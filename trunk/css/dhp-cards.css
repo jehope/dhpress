@@ -30,9 +30,15 @@ p {
     top: 45px;
 }
 
+    /* move top down to make room for head of nav bar */
     /* bottom padding necessary to compensate for top nav bar */
 .fullscreen #card-container {
-    padding-bottom: 45px;
+    top: 50px;
+    padding-bottom: 48px;
+}
+
+#card-container {
+    z-index: 0 !important;
 }
 
 .card {
@@ -45,13 +51,14 @@ p {
     border: 4px solid black;
     overflow: hidden;
     margin-bottom: 2px;
+    z-index: 0 !important;
 }
 
     /* When user hovers over card, tilt it and greyscale it somewhat */
 .card:hover {
     border: 4px dashed red;
 
-  -webkit-filter: grayscale(50%);
+  -webkit-filter: grayscale(70%);
 
   -webkit-transform: rotate(-5deg);
      -moz-transform: rotate(-5deg);
@@ -109,6 +116,134 @@ p {
 
     /* Color Legends */
 
+    /* Legend style (by default non-fullscreen) */
+#legends {
+    position:relative;  
+    margin-left:0;
+    overflow: auto;
+
+    max-width: 320px;
+    min-height: 180px;
+    max-height: 300px;
+
+    background: #fff;
+    background-color: rgba(255, 255, 255, .95);
+
+    /*foundation font style*/
+    color: #222;
+    font-family: "Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
+}
+
+#legends.mini {
+    min-height: 30px;
+}
+
+    /* Override for fullscreen */
+    /* The "head" of legend should remain in place on page */
+.fullscreen #legends {
+    position:absolute;
+/*  overflow: hidden; */
+    overflow: auto;
+
+    min-width: 220px;
+    min-height: 300px;
+    max-height: 700px !important;
+
+    top: 10px;
+    left: 10px;
+    bottom: 20px;
+
+    -moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+    -webkit-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+    box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+}
+
+.fullscreen #legends.mini {
+    min-height: 30px;
+}
+
+@media all and (min-width: 1025px) {
+  .fullscreen #legends {
+    min-width: 320px;
+  }
+}
+
+    /* the legend "body" should float above cards */
+#legends .legend-div {
+    z-index: 100 !important;
+
+    margin-left: 0px;
+}
+
+.legend-div .legend-title {
+    padding-left: 10px;
+    padding-right: 20px;
+    border-bottom: 1px solid #111;
+    font-size: 22px;
+    font-weight: bold;
+
+    z-index: 100 !important;
+/*    z-index: 20; */
+}
+
+.legend-div .terms {
+    position: absolute;
+    top: 38px;
+    bottom: 0;
+    width: 100%;
+
+    z-index: 100 !important;
+/*    z-index: 19; */
+
+    overflow: auto;
+    margin-top: 1px;
+}
+
+.legend-div .terms .row {
+    width:100%;
+    cursor: pointer;
+    line-height: 15px;
+}
+
+    /* children are not shown: their parents stand in for them */
+.legend-div .terms .row.hasParent {
+    display: none;
+}
+
+.legend-div .terms .row:hover,
+.legend-div .terms .row.selected {
+    background: #e8f2e6;
+}
+
+.legend-div .terms a {
+    line-height: 15px;
+    width: 100%;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    overflow: hidden;
+    display: inherit;
+}
+
+    /* Little resize button on legends */
+.legend-resize {
+    padding: 7px;
+    position: absolute;
+    right: 0px;
+}
+
+    /* this just creates color area */
+.splash {
+    padding: 4px;
+    padding-left: 12px;
+    border: 1px solid black;
+    position: relative;
+    top: 6px;
+    left: 6px;
+    min-width: 20px;
+    min-height: 20px;
+}
+
+/* == this is for 1st implementation of legends which simply wrote them across top of display
 #card-legend {
     margin: 6px;
 }
@@ -125,7 +260,7 @@ p {
     height: 14px;
     display: inline-block;
 }
-
+*/
 
     /* Controls */
 .top-bar .button {

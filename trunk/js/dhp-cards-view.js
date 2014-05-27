@@ -299,8 +299,6 @@ var dhpCardsView = {
                                 theColor.icon_url+'"></span> '+theColor.name+'</span>';
                 }
             });
-            jQuery('#card-legend').prepend(legendStr+'</p>');
-        }
 
             // Create cards
         jQuery('#dhp-visual').append('<div id="card-container"></div>');
