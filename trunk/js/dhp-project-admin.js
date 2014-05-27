@@ -566,6 +566,7 @@ jQuery(document).ready(function($) {
       // PURPOSE: Handle user selection to edit a Mote definition
     self.editMote = function(theMote, event) {
       $('#mdl-edit-mote-title').text('Edit definition for '+theMote.name);
+      $('#mdl-edit-mote #edMoteModalName').val(theMote.name);
       $('#mdl-edit-mote #edMoteModalType').val(theMote.type);
       $('#mdl-edit-mote #edMoteModalCF').val(theMote.cf);
       $('#mdl-edit-mote #edMoteModalDelim').val(theMote.delim);
@@ -579,7 +580,7 @@ jQuery(document).ready(function($) {
       var newModal = $('#mdl-edit-mote');
       newModal.dialog({
           width: 370,
-          height: 320,
+          height: 350,
           modal : true,
           autoOpen: false,
           dialogClass: 'wp-dialog',
@@ -594,9 +595,10 @@ jQuery(document).ready(function($) {
             {
               text: 'Save',
               click: function() {
-                var newMote = new Mote(theMote.name, $('#mdl-edit-mote #edMoteModalType').val(),
-                                      $('#mdl-edit-mote #edMoteModalCF').val(),
-                                      $('#mdl-edit-mote #edMoteModalDelim').val());
+                var newMote = new Mote($('#mdl-edit-mote #edMoteModalName').val(),
+                                  $('#mdl-edit-mote #edMoteModalType').val(),
+                                  $('#mdl-edit-mote #edMoteModalCF').val(),
+                                  $('#mdl-edit-mote #edMoteModalDelim').val());
                 self.allMotes.remove(theMote);
                 self.allMotes.push(newMote);
                 self.settingsDirty(true);

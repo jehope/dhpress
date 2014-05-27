@@ -323,6 +323,7 @@
 
     <div id="mdl-edit-mote" title="Edit Mote">
         <h3 id="mdl-edit-mote-title"></h3>
+        Name: <input id="edMoteModalName" type="text" size="20"/><br/>
         Mote Type:
         <select id="edMoteModalType">
             <option value="Short Text">Short Text</option>
@@ -335,7 +336,7 @@
             <option value="Timestamp">Timestamp</option>
         </select><br/>
         Custom Field: <select id="edMoteModalCF" data-bind="options: optionsCF"></select><br/>
-        Value delimiter:  <input id="edMoteModalDelim" type="text" size="2"/><br/>
+        Value delimiter: <input id="edMoteModalDelim" type="text" size="2"/><br/>
         <p>WARNING: Editing the mote definition will reset it in the rest of the settings. <span id="edMoteModalSTWarn">Delete this mote and recreate it if you have already created the corresponding legend and need to specify a different delimiter or custom field.</span></p>
     </div> <!-- Edit Mote Modal -->
 
