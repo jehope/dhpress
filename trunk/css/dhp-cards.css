@@ -126,6 +126,8 @@ p {
     min-height: 180px;
     max-height: 300px;
 
+    z-index: 100 !important;
+
     background: #fff;
     background-color: rgba(255, 255, 255, .95);
 
@@ -203,6 +205,8 @@ p {
     width:100%;
     cursor: pointer;
     line-height: 15px;
+
+    z-index: 100 !important;
 }
 
     /* children are not shown: their parents stand in for them */
