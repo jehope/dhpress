@@ -138,6 +138,7 @@ p {
 
 #legends.mini {
     min-height: 30px;
+    overflow: hidden;
 }
 
     /* Override for fullscreen */
@@ -162,6 +163,7 @@ p {
 
 .fullscreen #legends.mini {
     min-height: 30px;
+    overflow: hidden;
 }
 
 @media all and (min-width: 1025px) {

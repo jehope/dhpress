@@ -172,6 +172,7 @@ input.leaflet-control-layers-selector {
 
 #legends.mini {
 	min-height: 30px;
+    overflow: hidden;
 }
 
 	/* Override for fullscreen */
@@ -196,6 +197,7 @@ input.leaflet-control-layers-selector {
 
 .fullscreen #legends.mini {
 	min-height: 30px;
+    overflow: hidden;
 }
 
 
