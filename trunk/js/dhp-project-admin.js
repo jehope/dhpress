@@ -158,6 +158,7 @@ jQuery(document).ready(function($) {
     self.settings.title = ko.observable(epSettings.settings.title);
     self.settings.color = ko.observable(epSettings.settings.color);
     self.settings.defColor = ko.observable(epSettings.settings.defColor);
+    self.settings.bckGrd = ko.observable(epSettings.settings.bckGrd);
     self.settings.width = ko.observable(epSettings.settings.width);
     self.settings.height = ko.observable(epSettings.settings.height);
 
@@ -312,10 +313,12 @@ jQuery(document).ready(function($) {
             savedEP.settings.legends.push(theLegend.name());
           });
           break;
+
         case 'cards':
           savedEP.settings.title = theEP.settings.title();
           savedEP.settings.color = theEP.settings.color();
           savedEP.settings.defColor = theEP.settings.defColor();
+          savedEP.settings.bckGrd = theEP.settings.bckGrd();
           savedEP.settings.width = theEP.settings.width();
           savedEP.settings.height = theEP.settings.height();
 
@@ -1073,6 +1076,7 @@ jQuery(document).ready(function($) {
           title: 'disable',
           color: 'disable',
           defColor: '#00BFFF',
+          bckGrd: 'white',
           width: 'med-width',
           height: 'med-height',
           content: [],

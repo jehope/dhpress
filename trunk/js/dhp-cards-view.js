@@ -370,10 +370,14 @@ var dhpCardsView = {
 
 
             // Create cards --------------------
-        jQuery('#dhp-visual').append('<div id="card-container"></div>');
-        var cardHolder = jQuery('#card-container');
-
         var theCard, contentElement, contentData, theTitle, colorStr, classStr, moteIndex;
+
+            // Change background color if user has provided one
+        colorStr = dhpCardsView.cardsEP.bckGrd;
+        colorStr = (colorStr == undefined || colorStr === '') ? '' : ' style="background-color:'+colorStr+'"';
+
+        jQuery('#dhp-visual').append('<div id="card-container"'+colorStr+'></div>');
+        var cardHolder = jQuery('#card-container');
 
             // set default background and text colors
         var match = dhpCardsView.cardsEP.defColor.match(/^#([0-9a-f]{6})$/i);

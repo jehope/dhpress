@@ -250,7 +250,7 @@
                               <option value="tall">Tall</option>
               </select>
         </li>
-
+        <li>Background Color <input data-bind="value: theEP.settings.bckGrd" type="text" size="12"/> (CSS color name, #hexvalue, or blank for default)</li>
         <div data-bind="template: { name: 'cards-content-template', foreach: theEP.settings.content }"></div>
         <button data-bind="jqButton, click: $root.addCardContent.bind(theEP)">Add Content Mote</button>
 

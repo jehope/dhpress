@@ -52,6 +52,7 @@
 		            	"height" : Number,							// Pixel height of cards
 						"color": String (name of mote),				// to determine color of card
 						"defColor" : String (CSS color to use),		// as default when no mote value
+						"bckGrd" : String (CSS color or # hex),
 						"content" : [
 							// Array of mote names (or the_content) to show in card content
 							// In 1.9.5, 0 = image and 1 = text
