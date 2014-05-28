@@ -43,12 +43,10 @@ p {
 
 .card {
     background: #00BFFF;
-    border-radius: 5px;
     font-size: 11px;
     line-height: 13px;
-    margin: 5px;
+    margin: 1px;
     padding: 5px;
-    border: 4px solid black;
     overflow: hidden;
     margin-bottom: 2px;
     z-index: 0 !important;
@@ -56,15 +54,13 @@ p {
 
     /* When user hovers over card, tilt it and greyscale it somewhat */
 .card:hover {
-    border: 4px dashed red;
+    border: 1px solid black;
 
-  -webkit-filter: grayscale(70%);
-
-  -webkit-transform: rotate(-5deg);
-     -moz-transform: rotate(-5deg);
-       -o-transform: rotate(-5deg);
-      -ms-transform: rotate(-5deg);
-          transform: rotate(-5deg);
+  -webkit-transform: rotate(-3deg);
+     -moz-transform: rotate(-3deg);
+       -o-transform: rotate(-3deg);
+      -ms-transform: rotate(-3deg);
+          transform: rotate(-3deg);
 }
 
     /* Scale card acc to size */

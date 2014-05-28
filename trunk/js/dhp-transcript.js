@@ -37,7 +37,7 @@ var dhpTranscript = {
             throw new Error("Cannot find HTML DIV at which to append transcript.");
         }
         appendPos.append('<div class="transcript-ep"><p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p></div>');
-        appendPos.append('<input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript<br>');
+        appendPos.append('<div style="padding-top:5px"><input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript</div><br>');
 
             // Must set these variables after HTML appended above
         var scWidget = SC.Widget(document.getElementById('scPlayer'));
