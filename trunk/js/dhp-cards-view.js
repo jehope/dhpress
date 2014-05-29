@@ -12,16 +12,18 @@ var dhpCardsView = {
         //                  defTextColor  = default text color
         //                  allMotes      = array (unique sorted) of all data and content mote names
         //                  allDataMotes  = array of all sort and filter mote names
-        //                  dataAttrs     = array of just motes whose data is stored in attributes
+        //                  dataAttrs     = array of motes names whose data is only stored in attributes
         //                  currentSort   = name of mote currently used for sorting
         //                  currentFilter = name of mote currently used for filtering
 
         // PURPOSE: Initialize card viewing area with controls and layers
         // INPUT:   ajaxURL      = URL to WP
         //			projectID    = ID of project
+        //          vizIndex     = index of this visualization
         //			cardsEP      = settings for cards entry point (from project settings)
+        //          moteDefs     = mote definitions
         //          callBacks    = object loaded with project-page callback functions
-    initializeCards: function(ajaxURL, projectID, vizIndex, cardsEP, callBacks)
+    initializeCards: function(ajaxURL, projectID, vizIndex, cardsEP, moteDefs, callBacks)
     {
         var menuHTML, active;
 
@@ -29,6 +31,7 @@ var dhpCardsView = {
         dhpCardsView.ajaxURL        = ajaxURL;
         dhpCardsView.projectID      = projectID;
         dhpCardsView.vizIndex       = vizIndex;
+        dhpCardsView.moteDefs       = moteDefs;
         dhpCardsView.cardsEP        = cardsEP;
         dhpCardsView.callBacks      = callBacks;
 
@@ -39,9 +42,13 @@ var dhpCardsView = {
         dhpCardsView.dataAttrs      = [];
 
 
+            // Change background color if user has provided one
+        if (dhpCardsView.cardsEP.bckGrd && dhpCardsView.cardsEP.bckGrd !== '') {
+            jQuery('#dhp-visual').attr('style','background-color:'+dhpCardsView.cardsEP.bckGrd);
+        }
+
             // Insert Legend area as first thing in viz space -- Joe had "after" but menu off map above if not "append"
         jQuery('#dhp-visual').prepend(Handlebars.compile(jQuery("#dhp-script-cards-legend-head").html()));
-
 
             // Create nav bar menus --------------------
 
@@ -99,48 +106,19 @@ var dhpCardsView = {
                     jQuery('#dhp-cards-filter-menu > .active').removeClass('active');
                     jQuery(newFilterMenu).parent().addClass('active');
                     dhpCardsView.currentFilter = newFilterMote;
+                        // reset filter
+                    dhpCardsView.resetFilter();
                 }
             });
 
-            jQuery('.top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-cards-filter-input").html()));
+                // Bind code to handle filter actions
+            jQuery('#dhp-filter-set').click(dhpCardsView.setFilter);
+            jQuery('#dhp-filter-reset').click(dhpCardsView.resetFilter);
 
-            jQuery('#dhp-filter-run').click(function() {
-                var filterText;
-                filterText = jQuery('#dhp-filter-input').val();
-                if (filterText.length) {
-                        // Create regular expression from filter string
-                    var regExp = new RegExp(filterText, "i");
-                    var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
-                    var text;
+                // Insert Marker modal window HTML
+            jQuery('body').append(Handlebars.compile(jQuery('#dhp-script-filterModal').html()));
 
-                        // Get the text for each item and check against regular expression
-                    jQuery('#card-container').isotope({
-                      filter: function() {
-                        text = jQuery(this).find(className).text();
-                        return (text.search(regExp) != -1);
-                      }
-                    });
-                } else {
-                        // Allow all cards to pass!
-                    jQuery('#card-container').isotope({
-                      filter: function() {
-                        return true;
-                      }
-                    });
-                }
-            });
-
-            jQuery('#dhp-filter-reset').click(function() {
-                jQuery('#dhp-filter-input').val('');
-                    // Allow all cards to pass!
-                jQuery('#card-container').isotope({
-                  filter: function() {
-                    return true;
-                  }
-                });
-            });
         } // if filterMotes
-
 
         jQuery(document).foundation();
 
@@ -159,9 +137,108 @@ var dhpCardsView = {
         dhpCardsView.loadCards();
     }, // initializeCards()
 
+        // RETURNS: Mote definition for mote whose name is moteName
+    findMoteByName: function(moteName)
+    {
+        return _.find(dhpCardsView.moteDefs, function(theMote) {
+            return (theMote.name === moteName);
+        });
+    }, // findMoteByName()
+
+        // PURPOSE: Reset filter criteria to allow all cards to pass
+    resetFilter: function()
+    {
+        jQuery('#card-container').isotope({
+          filter: function() {
+            return true;
+          }
+        });
+    }, // resetFilter()
+
+        // PURPOSE: Handle user selection of Set Filter button
+        // TO DO:   Handle different mote types
+        //              If Long Text type, user must enter text pattern
+        //              If Short Text type, user can enter text pattern or choose value
+        //              If Date, user can enter start and stop dates
+        //              If Number, user can enter min and max values
+    setFilter: function()
+    {
+            // Reset modal title
+        jQuery('#filterModal #filterModalLabel').text('Filter options for '+dhpCardsView.currentFilter);
+
+            // Clear out modal body contents
+        jQuery('#filterModal .modal-body').empty();
+
+            // Insert material into modal body depending on type of mote
+        var moteDef = dhpCardsView.findMoteByName(dhpCardsView.currentFilter);
+        switch (moteDef.type) {
+        case 'Long Text':
+            jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-ltext').html()));
+            break;
+        case 'Short Text':
+            jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-stext').html()));
+                // default is selecting a value (first entry)
+            // jQuery('input:radio[name=filter-type]').checked = false;
+            jQuery('input:radio[name=filter-type]')[0].checked = true;
+            break;
+        default:
+            alert('There is currently no way to use a filter of type '+moteDef.type);
+            break;
+        }
+
+        jQuery('#filterModal').foundation('reveal', 'open');
+
+            // Don't know why this is needed -- but Select Modal Close button won't work without it
+        jQuery('#filterModal a.close-select-modal').click(function() {
+          jQuery('#filterModal').foundation('reveal', 'close');
+          if (jQuery(this).text() === 'Apply') {
+            dhpCardsView.doFilter(moteDef);
+          }
+        });
+    }, // setFilter()
+
+        // PURPOSE: Handle doing filter by reading user values in form
+    doTextFilter: function()
+    {
+        var filterText;
+        filterText = jQuery('#filter-text-input').val();
+        if (filterText.length) {
+                // Create regular expression from filter string
+            var regExp = new RegExp(filterText, "i");
+            var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
+            var text;
+
+                // Get the text for each item and check against regular expression
+            jQuery('#card-container').isotope({
+              filter: function() {
+                text = jQuery(this).find(className).text();
+                return (text.search(regExp) != -1);
+              }
+            });
+        }
+    }, // doTextFilter()
+
+        // PURPOSE: Actually perform filter action by reading values in form
+        // INPUT:   moteDef is the mote used for filtering
+    doFilter: function(moteDef)
+    {
+        switch(moteDef.type) {
+        case 'Short Text':
+                // get user selection
+            var filterType = jQuery('input:radio[name=filter-type]:checked').val();
+            if (filterType === 'text') {
+                dhpCardsView.doTextFilter();
+            } else {
+                // TO DO
+            }
+            break;
+        case 'Long Text':
+            dhpCardsView.doTextFilter();
+            break;
+        }
+    }, // doFilter()
 
         // PURPOSE: Resizes dhp elements when browser size changes
-        // 
     updateVizSpace: function()
     {
         jQuery("#card-container").isotope();
@@ -298,17 +375,6 @@ var dhpCardsView = {
             // Create Legend for colors (if colors exist)
             //   This code modified from dhp-maps-view
         if (dhpCardsView.colorValues.length > 1) {
-                // Old logic
-            // jQuery('#dhp-visual').prepend('<div id="card-legend"></div>');
-            // var legendStr = '<p>';
-            // _.each(dhpCardsView.colorValues, function(theColor) {
-            //         // "Parent" term can't be displayed and won't have an icon_url value
-            //     if (theColor.icon_url) {
-            //         legendStr += '<span class="color-legend"><span class="splash" style="background-color:'+
-            //                     theColor.icon_url+'"></span> '+theColor.name+'</span>';
-            //     jQuery('#card-legend').prepend(legendStr+'</p>');
-            // }
-
             var legendName = dhpCardsView.cardsEP.color;
             var legendHtml;
 
@@ -327,7 +393,7 @@ var dhpCardsView = {
                             // Append new legend value to menu according to type
                         jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
                             '<div class="small-2 large-1 columns splash" style="background:'+theTerm.icon_url+'"></div>'+
-                            '<div class="small-9 large-10 columns"><a class="value" data-id="'+
+                            '<div class="small-10 large-11 columns"><a class="value" data-id="'+
                             theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                         break;
                     default:
@@ -372,11 +438,7 @@ var dhpCardsView = {
             // Create cards --------------------
         var theCard, contentElement, contentData, theTitle, colorStr, classStr, moteIndex;
 
-            // Change background color if user has provided one
-        colorStr = dhpCardsView.cardsEP.bckGrd;
-        colorStr = (colorStr == undefined || colorStr === '') ? '' : ' style="background-color:'+colorStr+'"';
-
-        jQuery('#dhp-visual').append('<div id="card-container"'+colorStr+'></div>');
+        jQuery('#dhp-visual').append('<div id="card-container"></div>');
         var cardHolder = jQuery('#card-container');
 
             // set default background and text colors

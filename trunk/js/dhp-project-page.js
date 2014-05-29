@@ -111,7 +111,7 @@ jQuery(document).ready(function($) {
     }
 
         // Don't know why this is needed -- but Select Modal Close button won't work without it
-    $('a.close-select-modal').click(function(){
+    $('#markerModal a.close-select-modal').click(function() {
       $('#markerModal').foundation('reveal', 'close');
     });
 
@@ -138,7 +138,7 @@ jQuery(document).ready(function($) {
         break;
 
     case 'cards':
-        dhpCardsView.initializeCards(ajaxURL, projectID, vizIndex, thisEP.settings, callBacks);
+        dhpCardsView.initializeCards(ajaxURL, projectID, vizIndex, thisEP.settings, dhpSettings.motes, callBacks);
 
         updateVizSpace = dhpCardsView.updateVizSpace;
         break;

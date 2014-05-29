@@ -148,8 +148,8 @@ p {
     min-height: 300px;
     max-height: 700px !important;
 
-    top: 10px;
-    left: 10px;
+    top: 6px;
+    left: 6px;
     bottom: 20px;
 
     -moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
@@ -183,7 +183,6 @@ p {
     font-weight: bold;
 
     z-index: 100 !important;
-/*    z-index: 20; */
 }
 
 .legend-div .terms {
@@ -193,7 +192,6 @@ p {
     width: 100%;
 
     z-index: 100 !important;
-/*    z-index: 19; */
 
     overflow: auto;
     margin-top: 1px;
@@ -267,4 +265,18 @@ p {
     /* Controls */
 .top-bar .button {
     margin: 3px;
+}
+
+    /* tweaks to Filter Modal modal */
+#filterModal {
+    max-height: 400px;
+    overflow: scroll;
+}
+
+#filterModal input {
+    margin: 4px;
+}
+
+#filterModal input[type="text"] {
+    width: 160px;
 }
