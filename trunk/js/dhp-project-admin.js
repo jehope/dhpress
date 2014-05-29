@@ -1076,7 +1076,7 @@ jQuery(document).ready(function($) {
           title: 'disable',
           color: 'disable',
           defColor: '#00BFFF',
-          bckGrd: 'white',
+          bckGrd: '',
           width: 'med-width',
           height: 'med-height',
           content: [],

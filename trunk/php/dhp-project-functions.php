@@ -2253,7 +2253,6 @@ function dhp_tax_template( $page_template )
 
 	    	// Are we on a taxonomy/archive page that corresponds to transcript "source"?
 	    $isTranscript = ($project_settings->views->transcript->source == $term_parent->name);
-	    	// If above doesn't work, try comparing $term->taxonomy
 
 			// Foundation styles
 		wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
