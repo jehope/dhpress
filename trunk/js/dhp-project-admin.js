@@ -480,6 +480,12 @@ jQuery(document).ready(function($) {
 
       // PURPOSE: Create new mote definition via user interface
     self.createMote = function() {
+        // Abort everything if there are no custom motes
+      if (self.optionsCF.length == 0) {
+        alert('You have not imported any Markers associated with this Project and therefore cannot define motes.');
+        return;
+      }
+        // Only allow if a name has been provided
       if (self.edMoteName() !== '') {
           // Only add if name is unique
         var found = ko.utils.arrayFirst(self.allMotes(), function(mote) {
@@ -1610,6 +1616,10 @@ jQuery(document).ready(function($) {
         if (!testURL.test(self.edHomeURL())) {
           $('#testResults').append('<p>The Home address does not appear to be a full, well-formed URL.</p>');
         }
+      }
+
+      if (self.optionsCF.length == 0) {
+          $('#testResults').append('<p>Your project will not work until you import Markers which are associated with this Project (by using this Project ID).</p>');
       }
 
       if (self.allMotes().length == 0) {

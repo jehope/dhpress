@@ -1,7 +1,13 @@
 
 <div id="ko-dhp">
-    <button id="btnSaveSettings" data-bind="jqButton, click: saveSettings, style: { color: settingsDirty() ? 'red' : 'green' }">Save Settings</button>
-    <button data-bind ="jqButton, click: showSettings">Show Settings in Console</button>
+    <p data-bind="visible: optionsCF.length == 0" style="color: red">
+      Reminder: You cannot configure your Project until you import Markers associated with this Project by using the Project ID above. Be sure to Publish this project if you have just selected <b>Add New</b>.
+    </p>
+
+    <div data-bind="visible: optionsCF.length > 0">
+      <button id="btnSaveSettings" data-bind="jqButton, click: saveSettings, style: { color: settingsDirty() ? 'red' : 'green' }">Save Settings</button>
+      <button data-bind ="jqButton, click: showSettings">Show Settings in Console</button>
+    </div>
 
       <div id="accordion">
         <h3>General Settings</h3>

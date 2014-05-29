@@ -1850,29 +1850,36 @@ function dhpPerformTests()
 	
 	$projSettings = $projObj->getAllSettings();
 
-		// Ensure any legends used by visualizations have been configured
-		// Ensure that configured legends do not mix color and icon types
-	foreach ($projSettings->eps as $ep) {
-		switch ($ep->type) {
-		case 'map':
-			foreach ($ep->settings->legends as $theLegend) {
-				$results .= verifyLegend($projObj, $theLegend, false);
+		// There will be no project settings for New project
+	if (empty($projSettings)) {
+		$results = 'This is a new project and cannot be verified until it is saved and Markers imported';
+
+	} else {
+
+			// Ensure any legends used by visualizations have been configured
+			// Ensure that configured legends do not mix color and icon types
+		foreach ($projSettings->eps as $ep) {
+			switch ($ep->type) {
+			case 'map':
+				foreach ($ep->settings->legends as $theLegend) {
+					$results .= verifyLegend($projObj, $theLegend, false);
+				}
+				break;
+			case 'cards':
+				$results .= verifyLegend($projObj, $ep->settings->color, true);
+				break;
 			}
-			break;
-		case 'cards':
-			$results .= verifyLegend($projObj, $ep->settings->color, true);
-			break;
 		}
-	}
 
-		// TO DO:
-		// Go through markers and ensure all values are valid
-		// If Image or Link To motes, check for valid URLs
+			// TO DO:
+			// Go through markers and ensure all values are valid
+			// If Image or Link To motes, check for valid URLs
 
-		// TO DO: Check transcript data
+			// TO DO: Check transcript data
 
-	if ($results === '') {
-		$results = '<p>All data on server has been examined and approved.</p>';
+		if ($results === '') {
+			$results = '<p>All data on server has been examined and approved.</p>';
+		}
 	}
 
 	die($results);
