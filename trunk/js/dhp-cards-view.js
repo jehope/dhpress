@@ -15,6 +15,7 @@ var dhpCardsView = {
         //                  dataAttrs     = array of motes names whose data is only stored in attributes
         //                  currentSort   = name of mote currently used for sorting
         //                  currentFilter = name of mote currently used for filtering
+        //                  curFilterVal  = current filter value (mote specific)
 
         // PURPOSE: Initialize card viewing area with controls and layers
         // INPUT:   ajaxURL      = URL to WP
@@ -148,6 +149,7 @@ var dhpCardsView = {
         // PURPOSE: Reset filter criteria to allow all cards to pass
     resetFilter: function()
     {
+        dhpCardsView.curFilterVal = null;
         jQuery('#card-container').isotope({
           filter: function() {
             return true;
@@ -170,16 +172,25 @@ var dhpCardsView = {
         jQuery('#filterModal .modal-body').empty();
 
             // Insert material into modal body depending on type of mote
+            // Use last selection as default
         var moteDef = dhpCardsView.findMoteByName(dhpCardsView.currentFilter);
         switch (moteDef.type) {
         case 'Long Text':
             jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-ltext').html()));
+                // Give current filter value (if any) as default
+            jQuery('#filter-text-input').val(dhpCardsView.curFilterVal || '');
             break;
         case 'Short Text':
             jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-stext').html()));
-                // default is selecting a value (first entry)
-            // jQuery('input:radio[name=filter-type]').checked = false;
-            jQuery('input:radio[name=filter-type]')[0].checked = true;
+                // set default from last selection, if any
+            if (dhpCardsView.curFilterVal) {
+                jQuery('input:radio[name=filter-type]')[dhpCardsView.curFilterVal.index].checked = true;
+                if (dhpCardsView.curFilterVal.index == 0) {
+                    jQuery('#filter-text-input').val(dhpCardsView.curFilterVal.text || '');
+                }
+            } else {
+                jQuery('input:radio[name=filter-type]')[0].checked = true;
+            }
             break;
         default:
             alert('There is currently no way to use a filter of type '+moteDef.type);
@@ -224,15 +235,21 @@ var dhpCardsView = {
     {
         switch(moteDef.type) {
         case 'Short Text':
+            dhpCardsView.curFilterVal = { };
                 // get user selection
             var filterType = jQuery('input:radio[name=filter-type]:checked').val();
             if (filterType === 'text') {
+                dhpCardsView.curFilterVal.index = 0;
+                dhpCardsView.curFilterVal.text = jQuery('#filter-text-input').val();
                 dhpCardsView.doTextFilter();
             } else {
+                dhpCardsView.curFilterVal.index = 1;
+                dhpCardsView.curFilterVal.text = '';
                 // TO DO
             }
             break;
         case 'Long Text':
+            dhpCardsView.curFilterVal = jQuery('#filter-text-input').val();
             dhpCardsView.doTextFilter();
             break;
         }
