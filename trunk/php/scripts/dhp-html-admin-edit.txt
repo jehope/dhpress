@@ -370,6 +370,18 @@
         </div>
     </div> <!-- Configure Legend Modal -->
 
+    <div id="mdl-del-cf" title="Delete custom field?">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete this custom field entirely? This cannot be undone.</p>
+    </div>
+
+    <div id="mdl-fr-cf" title="Find/Replace custom field?">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to execute this find/replace operation on the custom field? This cannot be undone.</p>
+    </div>
+
+    <div id="mdl-mote-name-too-long" title="Error">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>The name of your mote is too long: a mote name cannot be longer than 32 characters.</p>
+    </div>
+
     <div id="mdl-select-icon" title="Select Icon">
         <p id="mdl-select-icon-title"></p>
         <ol class="icon-list" id="select-icon-list">
@@ -489,14 +501,6 @@
             <li class="maki-icon scooter"></li>
         </ol>
     </div> <!-- Select Icon Modal -->
-
-    <div id="mdl-del-cf" title="Delete custom field?">
-        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete this custom field entirely? This cannot be undone.</p>
-    </div>
-
-    <div id="mdl-fr-cf" title="Find/Replace custom field?">
-        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to execute this find/replace operation on the custom field? This cannot be undone.</p>
-    </div>
 
 </div>
 

@@ -154,11 +154,12 @@ input.leaflet-control-layers-selector {
 }
 	/* Legend style (by default non-fullscreen) */
 #legends {
-	position:relative;	
-	margin-left:0;
+	position: relative;	
+	margin-left: 0;
 	overflow: auto;
 
-	max-width: 320px;
+/*	max-width: 320px; */
+	min-width: 260px;
 	min-height: 180px;
 	max-height: 300px;
 

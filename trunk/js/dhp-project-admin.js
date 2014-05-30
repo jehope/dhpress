@@ -485,21 +485,35 @@ jQuery(document).ready(function($) {
         alert('You have not imported any Markers associated with this Project and therefore cannot define motes.');
         return;
       }
+      var newName = self.edMoteName();
         // Only allow if a name has been provided
-      if (self.edMoteName() !== '') {
-          // Only add if name is unique
-        var found = ko.utils.arrayFirst(self.allMotes(), function(mote) {
-          return mote.name == self.edMoteName();
-        });
-        if (found == null) {
-          self.allMotes.push(new Mote(self.edMoteName(), self.edMoteType(), self.edMoteCF(), self.edMoteDelim()));
-            // reset GUI default values
-          self.edMoteName('');
-          self.edMoteType('Short Text');
-          self.edMoteCF('');
-          self.edMoteDelim('');
+      if (newName !== '') {
+          // Don't allow mote names over 32 characters
+        if (newName.length > 32) {
+            $("#mdl-mote-name-too-long").dialog({
+              modal: true,
+              buttons: {
+                OK: function() {
+                  $(this).dialog( "close" );
+                }
+              }
+            });
 
-          self.settingsDirty(true);
+        } else {
+            // Only add if name is unique
+          var found = ko.utils.arrayFirst(self.allMotes(), function(mote) {
+            return mote.name == newName;
+          });
+          if (found == null) {
+            self.allMotes.push(new Mote(newName, self.edMoteType(), self.edMoteCF(), self.edMoteDelim()));
+              // reset GUI default values
+            self.edMoteName('');
+            self.edMoteType('Short Text');
+            self.edMoteCF('');
+            self.edMoteDelim('');
+
+            self.settingsDirty(true);
+          }
         }
       }
     };
