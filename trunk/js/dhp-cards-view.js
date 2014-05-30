@@ -214,7 +214,9 @@ var dhpCardsView = {
                 if (dhpCardsView.curFilterVal.index == 0) {
                     jQuery('#filter-text-input').val(dhpCardsView.curFilterVal.text || '');
                 } else {
-                    // TO DO -- select boxes
+                    _.each(dhpCardsView.curFilterVal.values, function(valueName) {
+                        jQuery(".st-filter-value input[name='"+valueName+"']").prop('checked', true);
+                    });
                 }
 
                 // or else start afresh with text pattern as default
@@ -281,7 +283,6 @@ var dhpCardsView = {
                     // Gather the values chosen
                 jQuery('#st-filter-vals input:checked').each(function(index, item) {
                     dhpCardsView.curFilterVal.values.push(jQuery(item).attr('name'));
-// console.log("Selected name "+jQuery(item).attr('name')+" of ID "+jQuery(item).val());
                 });
 
                 if (dhpCardsView.curFilterVal.values.length) {
