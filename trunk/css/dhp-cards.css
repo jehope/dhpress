@@ -38,6 +38,7 @@ p {
 }
 
 #card-container {
+    padding-left: 4px;
     z-index: 0 !important;
 }
 
@@ -279,4 +280,13 @@ p {
 
 #filterModal input[type="text"] {
     width: 160px;
+}
+
+    /* Each selectable filter value for short text is encased in this div */
+.st-filter-value {
+    margin: 2px 5px 2px 0px;
+    padding: 0;
+    display: inline-block;
+    width: auto;
+    height: 1.1em;
 }

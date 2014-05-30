@@ -646,20 +646,22 @@ function createMarkerArray($project_id, $index)
 	switch ($eps->type) {
 	case "map":
 			// Which field used to encode Lat-Long on map?
-		$map_pointsMote = $projObj->getMoteByName( $eps->settings->coordMote );
-		if($map_pointsMote->type=='Lat/Lon Coordinates'){
-			if(!$map_pointsMote->delim) { $map_pointsMote->delim=','; }
+		$map_pointsMote = $projObj->getMoteByName($eps->settings->coordMote);
+		if ($map_pointsMote->type=='Lat/Lon Coordinates') {
+			if (!$map_pointsMote->delim) { $map_pointsMote->delim=','; }
 			$coordMote = split($map_pointsMote->delim, $map_pointsMote->cf);
 			//array of custom fields
 		}
 			// Find all possible legends/filters for this map -- each marker needs these fields
 		$filters = $eps->settings->legends;
 			// Collect all possible category values/tax names for each mote in all filters
-		foreach( $filters as $legend ) {
+		foreach ($filters as $legend) {
 			$term = get_term_by('name', $legend, $rootTaxName);
 			// $parent_term_id = $term->term_id;
 			// $parent_terms = get_terms( $rootTaxName, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty' => false ) );
-			array_push($json_Object, getCategoryValues($term, $rootTaxName));
+			if ($term) {
+				array_push($json_Object, getCategoryValues($term, $rootTaxName));
+			}
 		}
 		break;
 
@@ -680,15 +682,26 @@ function createMarkerArray($project_id, $index)
 		if ($cardColorMote != null && $cardColorMote !== '' && $cardColorMote != 'disable') {
 				// Create a legend for the color values
 			$term = get_term_by('name', $cardColorMote, $rootTaxName);
-			array_push($json_Object, getCategoryValues($term, $rootTaxName));
+			if ($term) {
+				array_push($json_Object, getCategoryValues($term, $rootTaxName));
+			}
 		}
 			// gather card contents
 		foreach ($eps->settings->content as $theContent) {
 			array_push($selectContent, $theContent);
 		}
 			// must add all sort and filter motes to content
+			// we must also collect all category values/tax names for filters that are Short Text motes,
+			//	but don't duplicate color legend
 		foreach ($eps->settings->filterMotes as $theContent) {
 			array_push($selectContent, $theContent);
+			$filterMote = $projObj->getMoteByName($theContent);
+			if ($filterMote->type=='Short Text' && $filterMote->name != $cardColorMote) {
+				$term = get_term_by('name', $theContent, $rootTaxName);
+				if ($term) {
+					array_push($json_Object, getCategoryValues($term, $rootTaxName));
+				}
+			}
 		}
 		foreach ($eps->settings->sortMotes as $theContent) {
 			array_push($selectContent, $theContent);

@@ -3,6 +3,8 @@
 // NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
 // USES:    JavaScript libraries jQuery, Isotope, Underscore
 // TO DO:   When numeric motes supported, sort will need to convert strings to integers
+//          Could possibly speed up filter of Short Text mote types, given that category values
+//              come with each Marker
 
 var dhpCardsView = {
 
@@ -15,7 +17,7 @@ var dhpCardsView = {
         //                  dataAttrs     = array of motes names whose data is only stored in attributes
         //                  currentSort   = name of mote currently used for sorting
         //                  currentFilter = name of mote currently used for filtering
-        //                  curFilterVal  = current filter value (mote specific)
+        //                  curFilterVal  = current filter value (specific to mote type)
 
         // PURPOSE: Initialize card viewing area with controls and layers
         // INPUT:   ajaxURL      = URL to WP
@@ -146,6 +148,19 @@ var dhpCardsView = {
         });
     }, // findMoteByName()
 
+        // PURPOSE: Find the category array corresponding to moteName
+        // RETURNS: The category array, or null
+    findFilterByMoteName: function(moteName) {
+        var result = _.find(dhpCardsView.rawData, function(theArray) {
+                // Last array is markers -- if we got here, it doesn't exist
+            return (theArray.type === 'filter' && theArray.name === moteName);
+        });
+        if (result == undefined) {
+            throw new Error("Short Text filter named "+moteName+" has not been created and the filter will not work until it has been created.");
+        }
+        return result;
+    }, // findFilterByMoteName()
+
         // PURPOSE: Reset filter criteria to allow all cards to pass
     resetFilter: function()
     {
@@ -182,12 +197,27 @@ var dhpCardsView = {
             break;
         case 'Short Text':
             jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-stext').html()));
-                // set default from last selection, if any
+                // create the set of choices from category filter
+            var filterMote = dhpCardsView.findFilterByMoteName(dhpCardsView.currentFilter);
+            if (filterMote) {
+                _.each(filterMote.terms, function(theTerm) {
+                        // Skip the entry for the Legend itself
+                    if (theTerm.name != dhpCardsView.currentFilter) {
+                        jQuery('#filterModal .modal-body #st-filter-vals').append('<div class="st-filter-value"><input type="checkbox" value="'
+                            +theTerm.id+'" name="'+theTerm.name+'">'+theTerm.name+'</div>');
+                    }
+                });
+            }
+                // if previously set, use last selection as default
             if (dhpCardsView.curFilterVal) {
                 jQuery('input:radio[name=filter-type]')[dhpCardsView.curFilterVal.index].checked = true;
                 if (dhpCardsView.curFilterVal.index == 0) {
                     jQuery('#filter-text-input').val(dhpCardsView.curFilterVal.text || '');
+                } else {
+                    // TO DO -- select boxes
                 }
+
+                // or else start afresh with text pattern as default
             } else {
                 jQuery('input:radio[name=filter-type]')[0].checked = true;
             }
@@ -208,11 +238,12 @@ var dhpCardsView = {
         });
     }, // setFilter()
 
-        // PURPOSE: Handle doing filter by reading user values in form
+        // PURPOSE: Handle doing filter by reading user text entry in form
     doTextFilter: function()
     {
         var filterText;
         filterText = jQuery('#filter-text-input').val();
+            // Only apply if they've entered something, otherwise reset filter (allow all)
         if (filterText.length) {
                 // Create regular expression from filter string
             var regExp = new RegExp(filterText, "i");
@@ -223,9 +254,11 @@ var dhpCardsView = {
             jQuery('#card-container').isotope({
               filter: function() {
                 text = jQuery(this).find(className).text();
-                return (text.search(regExp) != -1);
+                return regExp.test(text);
               }
             });
+        } else {
+            dhpCardsView.resetFilter();
         }
     }, // doTextFilter()
 
@@ -244,8 +277,28 @@ var dhpCardsView = {
                 dhpCardsView.doTextFilter();
             } else {
                 dhpCardsView.curFilterVal.index = 1;
-                dhpCardsView.curFilterVal.text = '';
-                // TO DO
+                dhpCardsView.curFilterVal.values = [];
+                    // Gather the values chosen
+                jQuery('#st-filter-vals input:checked').each(function(index, item) {
+                    dhpCardsView.curFilterVal.values.push(jQuery(item).attr('name'));
+// console.log("Selected name "+jQuery(item).attr('name')+" of ID "+jQuery(item).val());
+                });
+
+                if (dhpCardsView.curFilterVal.values.length) {
+                        // A match on any of the values will qualify a card
+                    var filterText = dhpCardsView.curFilterVal.values.join('|');
+                    var regExp = new RegExp(filterText, "i");
+                    var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
+                    var text;
+
+                        // Get the text for each item and check against regular expression
+                    jQuery('#card-container').isotope({
+                      filter: function() {
+                        text = jQuery(this).find(className).text();
+                        return regExp.test(text);
+                      }
+                    });
+                }
             }
             break;
         case 'Long Text':

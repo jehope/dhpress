@@ -47,7 +47,7 @@
 </script>
 
 <script id="dhp-script-filter-stext" type="text/x-handlebars-template">
-  <input type="radio" name="filter-type" value="text"> Filter by text (pattern) <input id="filter-text-input" type="text" size="8"/> <br/>
-  <input type="radio" name="filter-type" value="valSel"/>Or select value<br/>
+  <input type="radio" name="filter-type" value="text"> Filter by text (pattern) <input id="filter-text-input" type="text" size="12"/> <br/>
+  <input type="radio" name="filter-type" value="valSel"/>Or select value(s)<br/>
   <div id="st-filter-vals"></div>
 </script>
