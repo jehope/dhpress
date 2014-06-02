@@ -482,10 +482,32 @@ jQuery(document).ready(function($) {
     self.createMote = function() {
         // Abort everything if there are no custom motes
       if (self.optionsCF.length == 0) {
-        alert('You have not imported any Markers associated with this Project and therefore cannot define motes.');
+        $("#mdl-no-cfs").dialog({
+          modal: true,
+          buttons: {
+            OK: function() {
+              $(this).dialog('close');
+            }
+          }
+        });
         return;
       }
+
       var newName = self.edMoteName();
+
+        // Make sure no illegal characters used
+      if (/[^\d\w\- ]/.test(newName)) {
+        $("#mdl-mote-name-badchars").dialog({
+          modal: true,
+          buttons: {
+            OK: function() {
+              $(this).dialog('close');
+            }
+          }
+        });
+        return;
+      }
+
         // Only allow if a name has been provided
       if (newName !== '') {
           // Don't allow mote names over 32 characters

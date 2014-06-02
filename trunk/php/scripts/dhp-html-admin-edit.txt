@@ -327,6 +327,14 @@
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete the mote definition and all references to it?</p>
     </div>
 
+    <div id="mdl-no-cfs" title="No Custom Fields">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>You have not imported any Markers associated with this Project and therefore cannot define motes.</p>
+    </div>
+
+    <div id="mdl-mote-name-badchars" title="Illegal Characters">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>This mote cannot be created with the name you have given. You can only use alphanumeric characters, spaces, underscores and hyphens in mote names.</p>
+    </div>
+
     <div id="mdl-edit-mote" title="Edit Mote">
         <h3 id="mdl-edit-mote-title"></h3>
         Name: <input id="edMoteModalName" type="text" size="20"/><br/>
