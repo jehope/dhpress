@@ -16,6 +16,9 @@ var dhpMapsView = {
 
         //					rawAjaxData = raw data returned from AJAX
         //					allMarkers = All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
+
+        //                  currentLegend = name of current legend/filter mote
+        //                  slidersShowing = true if Legend currently shows Layer sliders
         //                  catFilter = All values for currently selected Legend; see data desc in getIconsForTerms() of dhp-project-functions.php
         //                  catFilterSelect = Current selection of legend/categories; Subset of catFilter.terms
 
@@ -235,10 +238,8 @@ var dhpMapsView = {
             }
         });
 
-            // Set current filter to the first legend by default
-        dhpMapsView.catFilter  = legends[0];
+            // First legend will be selected by default
         dhpMapsView.createLegends(legends);
-
         dhpMapsView.createMarkerLayer();
         dhpMapsView.buildLayerControls();   
     }, // createDataObjects()
@@ -445,16 +446,33 @@ var dhpMapsView = {
         // INPUT:   target = element selected by user
     switchLegend: function(target)
     {
-        var action = jQuery(target).attr('href');
-        var filter = jQuery(target).text();
+        var newLegend = jQuery(target).text();
 
-        jQuery('.legend-div').hide();
-        jQuery('.legend-div').removeClass('active-legend');
-        jQuery(action).addClass('active-legend');
+            // If sliders are showing, then might just need to adjust Legend display, not recalculate
+        if (dhpMapsView.slidersShowing || newLegend !== dhpMapsView.currentLegend) {
+            dhpMapsView.slidersShowing = false;
 
-        jQuery(action).show();
-        dhpMapsView.switchFilter(filter);
-        dhpMapsView.dhpUpdateSize();
+                // Don't display current (or any) Legend
+            jQuery('.legend-div').hide();
+            jQuery('.legend-div').removeClass('active-legend');
+
+                // Display selected legend (whose ID was stored in href)
+            var action = jQuery(target).attr('href');
+            jQuery(action).addClass('active-legend');
+            jQuery(action).show();
+
+            if (newLegend !== dhpMapsView.currentLegend) {
+                    // Update the markers to show on map
+                dhpMapsView.switchFilter(newLegend);
+                dhpMapsView.dhpUpdateSize();
+
+                    // Change active menu item
+                jQuery('.legend-dropdown > .active').removeClass('active');
+                jQuery(target).parent().addClass('active');
+
+                dhpMapsView.currentLegend = newLegend;
+            }
+        }
     },  // switchLegend()
 
         // PURPOSE: Handle user selecting new legend category
@@ -522,7 +540,7 @@ var dhpMapsView = {
                             '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
                 // Create entries for all of the 1st-level terms (do not represent children of terms)
             _.each(filterTerms, function(theTerm) {
-                if(legendName!=theTerm.name) {
+                if (legendName !== theTerm.name) {
                     var hasParentClass = '';
                     if(theTerm.parent) {
                         hasParentClass = 'hasParent';
@@ -535,7 +553,7 @@ var dhpMapsView = {
                             theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
                         break;
                     case '.':
-                        htmlStr = '<div class="small-3 large-2 columns"><div class="maki-icon '+
+                        htmlStr = '<div class="small-2 large-1 columns"><div class="maki-icon '+
                             theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
                         break;
                     default:
@@ -546,15 +564,16 @@ var dhpMapsView = {
 
                         // Append new legend value to menu according to type
                     jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+htmlStr+
-                                                    '<div class="small-7 large-9 columns"><a class="value" data-id="'+
+                                                    '<div class="small-9 large-10 columns"><a class="value" data-id="'+
                                                     theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                 }
             });
             jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-map-legend-hideshow").html()));
 
             jQuery('#legends .legend-row').append(legendHtml);
-                // Add Legend title to dropdown menu above
-            jQuery('.dhp-nav .legend-dropdown').append('<li><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
+                // Add Legend title to dropdown menu in navbar -- make 1st Legend active by default
+            var active = (legIndex == 0) ? ' class="active"' : '';
+            jQuery('.dhp-nav .legend-dropdown').append('<li'+active+'><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
         });
             // Update checkbox height(varies by theme/browser) 
         dhpMapsView.checkboxHeight = jQuery('#legends').find('input:checkbox').height();
@@ -591,7 +610,7 @@ var dhpMapsView = {
         });
 
             // Handle user selection of value name from current Legend
-        jQuery('#legends div.terms .row a').on('click', function(event){
+        jQuery('#legends div.terms .row a').on('click', function(event) {
             var spanName = jQuery(this).data('id');
 
                 // "Hide/Show all" button
@@ -621,7 +640,7 @@ var dhpMapsView = {
         });
 
             // Handle user selection of checkbox from current Legend
-        jQuery('#legends div.terms input').on('click', function(event){
+        jQuery('#legends div.terms input').on('click', function(event) {
             var checkAll = jQuery(this).closest('.row').hasClass('check-all');
             var boxState = jQuery(this).prop('checked');
             var spanName = jQuery(this).closest('.row').find('a').data('id');
@@ -650,27 +669,51 @@ var dhpMapsView = {
         jQuery('#term-legend-0').show();
         jQuery('#term-legend-0').addClass('active-legend');
 
-            //Set initial size of legend
-        // dhpMapsView.dhpUpdateSize();
-
-            // Handle selection of different Legends
-        jQuery('.dhp-nav .legend-dropdown a').click(function(evt){
+            // Handle selection of different Legends from navbar
+        jQuery('.dhp-nav .legend-dropdown a').click(function(evt) {
             evt.preventDefault();
             dhpMapsView.switchLegend(evt.target);
         });
 
-            // Handle selection of Layers button on top
-        jQuery('.dhp-nav .layers a').click(function(evt){
+            // Handle selecting "Layer Sliders" button on navbar
+        jQuery('#layers-button').click(function(evt) {
             evt.preventDefault();
-            var action = jQuery(evt.target).attr('href');
 
+                // Hide current Legend info
             jQuery('.legend-div').hide();
             jQuery('.legend-div').removeClass('active-legend');
-            jQuery(action).addClass('active-legend');
-            jQuery(action).show();
+
+                // Were sliders already showing? Make filter mote legend visible again
+            if (dhpMapsView.slidersShowing) {
+                    // Find the legend div that should be active now!
+                var activeLegend = jQuery('.legend-title').filter(function() {
+                    return (jQuery(this).text() === dhpMapsView.currentLegend);
+                }).parent();
+
+                jQuery(activeLegend).addClass('active-legend');
+                jQuery(activeLegend).show();
+
+                jQuery('#layers-button').parent().removeClass('active');
+
+                dhpMapsView.slidersShowing = false;
+
+                // Show sliders now
+            } else {
+                    // Show section of Legend with sliders
+                jQuery('#layers-panel').addClass('active-legend');
+                jQuery('#layers-panel').show();
+
+                jQuery('#layers-button').parent().addClass('active');
+
+                dhpMapsView.slidersShowing = true;
+            }
         });
 
-          // Show initial Legend selection
+          // Show initial Legend selection and show it as active on the menu
+        dhpMapsView.slidersShowing = false;
+        dhpMapsView.catFilter = legendList[0];
+        dhpMapsView.currentLegend = legendList[0].name;
+        dhpMapsView.slidersShowing = false;
         dhpMapsView.findSelectedCats();
     }, // createLegends()
 

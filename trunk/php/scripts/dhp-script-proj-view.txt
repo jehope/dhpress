@@ -23,6 +23,7 @@
 
 
 <script id="dhp-script-epviz-menu" type="text/x-handlebars-template">
+  <li class="divider"></li>
   <li class="has-dropdown">
       <a href="#">Visualizations</a>
       <ul class="dropdown epviz-dropdown"">

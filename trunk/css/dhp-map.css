@@ -300,7 +300,12 @@ input.leaflet-control-layers-selector {
 
 	/* Controls for opacity for each layer */
 #layers-panel {
-	margin-left:0px;
+	margin-left: 0px;
+}
+
+	/* Keep slider small */
+.layer-opacity {
+	max-width: 160px;
 }
 
 	/* Legends for child terms TODO: add html to display child terms */

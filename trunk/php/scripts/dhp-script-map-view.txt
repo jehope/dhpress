@@ -7,7 +7,8 @@
       </ul>
   </li>
 
-  <li class="layers"><a href="#layers-panel"> Layers </a></li>
+  <li class="divider"></li>
+  <li><a id="layers-button" href="#">Layer Sliders</a></li>
 </script>
 
 

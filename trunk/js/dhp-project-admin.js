@@ -538,7 +538,7 @@ jQuery(document).ready(function($) {
           }
         }
       }
-    };
+    }; // createMote()
 
       // PURPOSE: Handle deleting a mote definition (and all references to it)
     self.delMote = function(theMote) {
@@ -610,7 +610,7 @@ jQuery(document).ready(function($) {
       // PURPOSE: Create new mote definition programmatically (not via user interface)
     self.setMote = function(name, type, customField, delim) {
       self.allMotes.push(new Mote(name, type, customField, delim));
-    };
+    }; // setMote()
 
       // PURPOSE: Handle user selection to edit a Mote definition
     self.editMote = function(theMote, event) {
@@ -742,7 +742,7 @@ jQuery(document).ready(function($) {
               }
             }
           ]
-      });
+      }); // configCat()
 
         // RETURNS: Color in hex format
         // NOTES:   jQuery converts color values to rgb() even if given as hex
