@@ -79,7 +79,7 @@ var dhpMapsView = {
 
         dhpMapsView.createLayers();
         dhpMapsView.loadMapMarkers();
-        dhpMapsView.createControls();
+        dhpMapsView.createMapControls();
     }, // initMapInterface()
 
         // PURPOSE: Initialize map viewing area with controls
@@ -195,7 +195,7 @@ var dhpMapsView = {
     }, // createLayers()
 
         // PURPOSE: Create Leaflet map controls
-    createControls: function() {
+    createMapControls: function() {
         //control position
         var layerControl = L.control.zoom({position: 'topright'});
         layerControl.addTo(dhpMapsView.mapLeaflet);
@@ -215,7 +215,7 @@ var dhpMapsView = {
         jQuery('.reset-control').click(function(){
             dhpMapsView.resetMap();
         });
-    }, // createControls()
+    }, // createMapControls()
 
         // PURPOSE: Create marker objects for map visualization; called by loadMapMarkers()
         // INPUT:   geoData = all AJAX data as JSON object: Array of ["type", ...]
@@ -442,10 +442,13 @@ var dhpMapsView = {
         dhpMapsView.createMarkerLayer();
     }, // refreshMarkerLayer()
 
-        // PURPOSE: Change legend and redraw elements
+        // PURPOSE: Handle user selection of legend in navbar menu
         // INPUT:   target = element selected by user
     switchLegend: function(target)
     {
+            // Unhighlight the layers button in nav bar
+        jQuery('#layers-button').parent().removeClass('active');
+
         var newLegend = jQuery(target).text();
 
             // If sliders are showing, then might just need to adjust Legend display, not recalculate
