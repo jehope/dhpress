@@ -1,6 +1,6 @@
 // DHPressTranscript -- contains all data and functions dealing with transcriptions using SoundCloud
 // ASSUMES: Transcript modal is closed with button of class close-reveal-modal
-// USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
+// USES:    JavaScript libraries jQuery, Underscore, SoundCloud
 
 var dhpTranscript = {
         // Fields created by this object:
@@ -10,7 +10,7 @@ var dhpTranscript = {
         // PURPOSE: Initialize transcript mechanisms
     initialize: function()
     {
-        this.parseTimeCode = /(\d+)\:(\d+)\:([\d\.]+)/;         // a very generous definition of timecode!
+        this.parseTimeCode = /(\d\d*)\:(\d\d)\:(\d\d)(\.[\d]+)*/;         // a more exact parsing of time
     }, // initialize()
 
 
@@ -228,6 +228,15 @@ var dhpTranscript = {
         if (matchResults !== null) {
             // console.log("Parsed " + matchResults[1] + ":" + matchResults[2] + ":" + matchResults[3]);
             milliSecondsCode = (parseInt(matchResults[1])*3600 + parseInt(matchResults[2])*60 + parseFloat(matchResults[3])) * 1000;
+                // If there is a decimal portion, remove the period
+                // The multiplier to use depends on if it is 1 or 2 digits long (not inc. period)
+            if (matchResults[4]) {
+                if (matchResults[4].length == 2) {
+                    milliSecondsCode += parseInt(matchResults[4].slice(1))*100;
+                } else {
+                    milliSecondsCode += parseInt(matchResults[4].slice(1))*10;
+                }
+            }
         } else {
             throw new Error("Error in transcript file: Cannot parse " + timecode + " as timecode.");
             milliSecondsCode = 0;
@@ -261,10 +270,10 @@ var dhpTranscript = {
                 val = val.trim();
                 oddEven = index % 2;
                     // Skip values with line breaks...basically empty items
-                if(val.length>1) {
+                if (val.length>1) {
                         // Does it begin with a timecode?
-                    if(val[0]==='[' && val[1]==='0'){
-                        if(index>0) {
+                    if (val[0]==='[' && val[1]==='0') {
+                        if (index>0) {
                             jQuery('.row', transcript_html).eq(index-1).append('<div class="type-text">'+textBlock+'</div>');
                         }
                         index++;
@@ -302,18 +311,17 @@ var dhpTranscript = {
         var index = 0;
         var lineClass;
 
-        if(split_transcript) {
+        if (split_transcript) {
             _.each(split_transcript, function(val){
                     // Skip values with line breaks...basically empty items
                 val = val.trim();
-                if(val.length>1) {
-                    if(val[0]==='['&&val[1]==='0'){
+                if (val.length>1) {
+                    if (val[0]==='['&&val[1]==='0') {
                         if(index>0) {
                             textArray.push(textBlock);
                         }
                         textBlock='';
-                    }
-                    else {
+                    } else {
                         textBlock += val;
                     }
                     index++;
