@@ -36,8 +36,8 @@ var dhpTranscript = {
         if (appendPos == null) {
             throw new Error("Cannot find HTML DIV at which to append transcript.");
         }
-        appendPos.append('<div class="transcript-ep"><p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p></div>');
-        appendPos.append('<div style="padding-top:5px"><input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript</div><br>');
+        jQuery(appendPos).append('<div class="transcript-ep"><p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p></div>');
+        jQuery(appendPos).append('<div style="padding-top:5px"><input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript</div><br>');
 
             // Must set these variables after HTML appended above
         var scWidget = SC.Widget(document.getElementById('scPlayer'));
@@ -102,7 +102,7 @@ var dhpTranscript = {
         });
 
             // Is there any primary transcript data?
-        if(transParams.transcript && transParams.transcript!=='none') {
+        if(transParams.transcript && transParams.transcript!=='') {
             if (fullTranscript) {
                 dhpTranscript.attachTranscript(transParams.transcript, 0);
             } else {
@@ -110,7 +110,7 @@ var dhpTranscript = {
             }
         }
             // Is there 2ndary transcript data? If only 2nd, treat as 1st
-        if(transParams.transcript==='none' && transParams.transcript2 && transParams.transcript2!=='none') {
+        if(transParams.transcript==='' && transParams.transcript2 && transParams.transcript2!=='') {
             if (fullTranscript) {
                 dhpTranscript.attachTranscript(transParams.transcript2, 0);
             } else {
@@ -118,7 +118,7 @@ var dhpTranscript = {
             }
         }
             // Otherwise, add 2nd to 1st
-        else if(transParams.transcript!=='none' && transParams.transcript2 && transParams.transcript2!=='none') {
+        else if(transParams.transcript!=='' && transParams.transcript2 && transParams.transcript2!=='') {
             if (fullTranscript) {
                 dhpTranscript.attachTranscript(transParams.transcript2, 1);
             } else {
