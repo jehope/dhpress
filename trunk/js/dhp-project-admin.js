@@ -1722,8 +1722,8 @@ jQuery(document).ready(function($) {
       }
 
         // Call PHP functions to test any transcript texts
-      $('#testResults').append('<p>Tests are now being conducted on the WordPress server and will return shortly.</p>'+
-          '<p><b>IMPORTANT</b>: Project settings must have been saved for these tests to work properly.</p>');
+      $('#testResults').append('<p>Tests are now being conducted on the WordPress server. This checks all values for all markers and could take a while.</p>'+
+          '<p><b>IMPORTANT</b>: This will only work properly if your project settings have been saved.</p>');
       dhpPerformTests();
     }; // runTests
 

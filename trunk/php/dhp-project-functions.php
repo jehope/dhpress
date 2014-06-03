@@ -1770,9 +1770,11 @@ function dhpGetCustomFields()
 // PURPOSE: Ensure metadata attached to category/legend is correct
 // INPUT:   $projObj = project object
 //			$theLegend = name of mote to check
-//			$colorOnly = true if metadata must represent colors only
+//			$degree = 	0 if values don't matter at all,
+//						1 if metadata must represent colors only,
+//						2 if only consistency important (icon or color)
 
-function verifyLegend($projObj, $theLegend, $colorOnly)
+function verifyLegend($projObj, $theLegend, $degree)
 {
 	if ($theLegend === null || $theLegend === '' || $theLegend === 'disable') {
 		return '<p>Cannot verify unspecified legend.</p>';
@@ -1784,66 +1786,69 @@ function verifyLegend($projObj, $theLegend, $colorOnly)
 
 		// Has Legend not been created yet?
 	if (!term_exists($moteDef->name, $rootTaxName)) {
-		return '<p>Legend '.$theLegend.' has not yet been created.</p>';
+		return '<p>Legend '.$theLegend.' has not yet been created but must be for project to work.</p>';
 	}
-
-		// Find all of the terms derived from mote (parent/head term) in the Project's taxonomy
-	$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
-
-		// Create comma-separated string listing terms derived from other motes
-	$exclude_string='';
-	$initial = true;
-	foreach ($parent_terms_to_exclude as $term) {
-		if($term->term_id != $parent_id) {
-			if(!$initial) {
-				$exclude_string .=',';
-			}
-			$exclude_string .= $term->term_id;
-			$initial = false;
-		}
-	}
-
-		// Get all taxonomic terms for project, excluding all other motes
-	$terms_loaded = get_terms($rootTaxName, 'exclude_tree='.$exclude_string.'&orderby=term_group&hide_empty=0');
- 	$t_count = count($terms_loaded);
 
 	$results    = '';
-	$usedColor  = false;
-	$usedIcon   = true;
-	$mixFlagged = false;
 
- 		// Check visualization data (encoded in the description metadata)
- 		// 	Value must specified for all category/legend terms
-		//	Ensure value is a parseable value
- 		//	Ensure only color values are used if required
-		//	Ensure there is not a mixture of icon and color
- 	if ($t_count > 0) {
-   		foreach ($terms_loaded as $term) {
-   			if ($term->description == null || $term->description == '') {
-   				$results .= '<p>The value '.$term->name.' for legend '.$theLegend.' has no visual setting.</p>';
-   			} else {
-				$isColor = preg_match("/^#[:xdigit:]{6}$/", $term->description);
-				$isIcon = preg_match("/^.maki\-/", $term->description);
-				if ($isColor) {
-					$usedColor = true;
-					if ($usedIcon && !$mixFlagged) {
-						$results .= '<p>Illegal mixture of color and icon settings in legend '.$theLegend.'.</p>';
-						$mixFlagged = true;
+	if ($degree > 0) {
+			// Find all of the terms derived from mote (parent/head term) in the Project's taxonomy
+		$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
+
+			// Create comma-separated string listing terms derived from other motes
+		$exclude_string='';
+		$initial = true;
+		foreach ($parent_terms_to_exclude as $term) {
+			if($term->term_id != $parent_id) {
+				if(!$initial) {
+					$exclude_string .=',';
+				}
+				$exclude_string .= $term->term_id;
+				$initial = false;
+			}
+		}
+
+			// Get all taxonomic terms for project, excluding all other motes
+		$terms_loaded = get_terms($rootTaxName, 'exclude_tree='.$exclude_string.'&orderby=term_group&hide_empty=0');
+	 	$t_count = count($terms_loaded);
+
+		$usedColor  = false;
+		$usedIcon   = true;
+		$mixFlagged = false;
+
+	 		// Check visualization data (encoded in the description metadata)
+	 		// 	Value must specified for all category/legend terms
+			//	Ensure value is a parseable value
+	 		//	Ensure only color values are used if required
+			//	Ensure there is not a mixture of icon and color
+	 	if ($t_count > 0) {
+	   		foreach ($terms_loaded as $term) {
+	   			if ($term->description == null || $term->description == '') {
+	   				$results .= '<p>The value '.$term->name.' for legend '.$theLegend.' has no visual setting.</p>';
+	   			} else {
+					$isColor = preg_match("/^#[:xdigit:]{6}$/", $term->description);
+					$isIcon = preg_match("/^.maki\-/", $term->description);
+					if ($isColor) {
+						$usedColor = true;
+						if ($usedIcon && !$mixFlagged && $degree == 2) {
+							$results .= '<p>Illegal mixture of color and icon settings in legend '.$theLegend.'.</p>';
+							$mixFlagged = true;
+						}
+					} elseif ($isIcon) {
+						$usedIcon = true;
+						if ($degree == 1) {
+							$results .= '<p>The non-color setting'.$term->description.' has been used for legend '.$theLegend.' value '.$term->name.'.</p>';
+						} elseif ($usedColor && !$mixFlagged && $degree == 2) {
+							$results .= '<p>Illegal mixture of color and icon settings in legend '.$theLegend.'.</p>';
+							$mixFlagged = true;
+						}
+					} else {
+						$results .= '<p>Unknown setting '.$term->description.' for legend '.$theLegend.' value '.$term->name.'.</p>';
 					}
-				} elseif ($isIcon) {
-					$usedIcon = true;
-					if ($colorOnly) {
-						$results .= '<p>The non-color setting'.$term->description.' has been used for legend '.$theLegend.' value '.$term->name.'.</p>';
-					} elseif ($usedColor && !$mixFlagged) {
-						$results .= '<p>Illegal mixture of color and icon settings in legend '.$theLegend.'.</p>';
-						$mixFlagged = true;
-					}
-				} else {
-					$results .= '<p>Unknown setting '.$term->description.' for legend '.$theLegend.' value '.$term->name.'.</p>';
 				}
 			}
 		}
-	}
+	} // if (degree > 0)
 
 	return $results;
 } // verifyLegend()
@@ -1860,7 +1865,7 @@ function dhpPerformTests()
 	$projectID = $_POST['project'];
 	$projObj   = new DHPressProject($projectID);
 	$results   = '';
-	
+
 	$projSettings = $projObj->getAllSettings();
 
 		// There will be no project settings for New project
@@ -1868,27 +1873,95 @@ function dhpPerformTests()
 		$results = 'This is a new project and cannot be verified until it is saved and Markers imported';
 
 	} else {
-
 			// Ensure any legends used by visualizations have been configured
 			// Ensure that configured legends do not mix color and icon types
 		foreach ($projSettings->eps as $ep) {
 			switch ($ep->type) {
 			case 'map':
 				foreach ($ep->settings->legends as $theLegend) {
-					$results .= verifyLegend($projObj, $theLegend, false);
+					$results .= verifyLegend($projObj, $theLegend, 1);
 				}
 				break;
 			case 'cards':
-				$results .= verifyLegend($projObj, $ep->settings->color, true);
+				$results .= verifyLegend($projObj, $ep->settings->color, 2);
+					// all Short Text Filter Motes must have been created as Legend but values don't matter
+				foreach ($ep->settings->filterMotes as $filterMote) {
+					$results .= verifyLegend($projObj, $theLegend, 0);
+				}
 				break;
 			}
 		}
 
-			// TO DO:
-			// Go through markers and ensure all values are valid
-			// If Image or Link To motes, check for valid URLs
+			// Go through markers and ensure all values are valid:
+			//  Go through mote definitions and check values
+		$loop = $projObj->setAllMarkerLoop();
+		while ( $loop->have_posts() ) : $loop->the_post();
+			$marker_id = get_the_ID();
 
-			// TO DO: Check transcript data
+			foreach ($projSettings->motes as $mote) {
+				$moteValue = get_post_meta($marker_id, $mote->cf, true);
+					// ignore empty or null values
+				if (!is_null($moteValue) && $moteValue != '') {
+					$error = false;
+					switch ($mote->type) {
+					case 'Lat/Lon Coordinates':
+						if (preg_match("/(-?\d+(\.?\d?)?),(\s?-?\d+(\.?\d?)?)/", $moteValue) === 0) {
+							$results .= '<p>Invalid Lat/Long Coordinate '.$moteValue;
+							$error = true;
+						}
+						break;
+					case 'SoundCloud':
+							// Just look at the beginning of the URL
+						if (preg_match("!https://soundcloud\.com/\w!i", $moteValue) === 0) {
+							$results .= '<p>Invalid SoundCloud URL';
+							$error = true;
+						}
+						break;
+					case 'Link To':
+					case 'Image':
+							// Just look at beginning and end of URL
+						if (preg_match("!^(https?|ftp)://[^\s]*!i",
+								$moteValue) === 0) {
+							$results .= '<p>Invalid URL';
+							$error = true;
+						}
+						break;
+					case 'Transcript':
+							// Just look at beginning and end of URL
+						if (preg_match("!(https?|ftp)://!i", $moteValue) === 0 || preg_match("!\.txt$!i", $moteValue) === 0) {
+							$results .= '<p>Invalid textfile URL';
+							$error = true;
+						}
+						break;
+					case 'Timestamp':
+						if (preg_match("/\d\d:\d\d:\d\d(\.\d(\d)?)?-\d\d:\d\d:\d\d(\.\d(\d)?)?/", $moteValue) === 0) {
+							$results .= '<p>Invalid Timestamp '.$moteValue;
+							$error = true;
+						}
+						break;
+					} // switch
+					if ($error) {
+						$results .=  ' given for mote '.$mote->name.' (custom field '.$mote->cf.') in marker '.get_the_title().'</p>';
+					}
+				}
+			} // foreach
+		endwhile;
+
+			// If transcript source is set, ensure the category has been created
+		if ($projSettings->views->source != null && $projSettings->views->source != '' && $projSettings->views->source != 'disable') {
+			$transSrcCheck = verifyLegend($projObj, $theLegend, 0);
+			if ($transSrcCheck != '') {
+				$results .= '<p>You have specified the Source mote'.$projSettings->views->source.
+							'for Transcription fragmentation but you have not created yet as a category.</p>';
+			}
+		}
+
+			// Check transcript data itself
+		if ($projSettings->views->transcript->transcript && $projSettings->views->transcript->transcript != ''
+				&& $projSettings->views->transcript->transcript != 'disable')
+		{
+			// TO DO
+		}
 
 		if ($results === '') {
 			$results = '<p>All data on server has been examined and approved.</p>';

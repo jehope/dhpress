@@ -2,7 +2,8 @@
 // ASSUMES: A view area for the cards has been marked with HTML div as "dhp-visual"
 // NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
 // USES:    JavaScript libraries jQuery, Isotope, Underscore
-// TO DO:   When numeric motes supported, sort will need to convert strings to integers
+// TO DO:   Handle sorting new mote data types
+//              When numeric motes supported, sort will need to convert strings to integers
 //          Could possibly speed up filter of Short Text mote types, given that category values
 //              come with each Marker
 
@@ -155,9 +156,6 @@ var dhpCardsView = {
                 // Last array is markers -- if we got here, it doesn't exist
             return (theArray.type === 'filter' && theArray.name === moteName);
         });
-        if (result == undefined) {
-            throw new Error("Short Text filter named "+moteName+" has not been created and the filter will not work until it has been created.");
-        }
         return result;
     }, // findFilterByMoteName()
 

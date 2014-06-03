@@ -55,7 +55,6 @@
 						"bckGrd" : String (CSS color or # hex),
 						"content" : [
 							// Array of mote names (or the_content) to show in card content
-							// In 1.9.5, 0 = image and 1 = text
 						],
 						"filterMotes": [
 							// Array of mote names to use to filter cards (Short Text, Number types)
@@ -83,10 +82,10 @@
 			        "content": [							// Motes to show when Marker selected in visualization
 			            String (mote name || "the_content"), ...
 			        ],
-			        "link" : [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
+			        "link" : [ "disable" | "marker" | name of mote whose tax/category page to link to ],
 			        "linkLabel" : String,
 			        "linkNewTab": true or false,
-			        "link2": [ "no-link" | "marker" | name of mote whose tax/category page to link to ],
+			        "link2": [ "disable" | "marker" | name of mote whose tax/category page to link to ],
 			        "link2Label" : String
 			        "link2NewTab": true or false,
 		    	}
