@@ -163,6 +163,7 @@ class DHPressProject
 
 		// PURPOSE:	To determine all the names of custom fields associated with the Project
 		// RETURNS: Array of all unique custom fields of all marker posts associated with the Project
+    	// WARNING: This will reset and lose the current post
 		// TO DO:	A faster way to do this? Create a sorted array/list?
     public function getAllCustomFieldNames()
     {
@@ -188,8 +189,9 @@ class DHPressProject
 			}
 
 		endwhile;
-		$unique_custom_fields = array_unique($custom_field_array);
+		wp_reset_query();
 
+		$unique_custom_fields = array_unique($custom_field_array);
 		return $unique_custom_fields;
 	} // getAllCustomFieldNames()
 
@@ -217,6 +219,7 @@ class DHPressProject
 
 			array_push($tempMetaArray, $tempMetaValue);
 		endwhile;
+		wp_reset_query();
 
 		$result = array_unique($tempMetaArray);
 		return $result;
@@ -250,6 +253,7 @@ class DHPressProject
 	   		 	array_push($moteArray, $moteValue);
 			}
 		endwhile;
+		wp_reset_query();
 
 		$result = array_unique($moteArray);
 		return $result;

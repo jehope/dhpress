@@ -63,7 +63,6 @@ function dhp_marker_init()
 
 add_action( 'admin_enqueue_scripts', 'add_dhp_marker_admin_scripts', 10, 1 );
 
-// add_dhp_marker_admin_scripts( $hook )
 // PURPOSE: Prepare CSS and JS files for this page
 // INPUT:	$hook is file path to template page for this page
 // ASSUMES:	WP global variables set to current post & context
@@ -75,13 +74,23 @@ function add_dhp_marker_admin_scripts( $hook )
 	$blog_id = get_current_blog_id();
 	$dev_url = get_admin_url( $blog_id ,'admin-ajax.php');
 
+        // Save global post info to restore later
+    $savePost = $post;
+
  		// Editing a specific Marker in admin panel
     if ( $hook == 'post-new.php' || $hook == 'post.php' )
     {
         if ( $post->post_type === 'dhp-markers' ) {
+                // Grab marker info before it gets reset
+            $markerID = $post->ID;
+
             $project_id = get_post_meta( $post->ID, 'project_id', true );
             $projObj = new DHPressProject($project_id);
+
+                // We need list of custom fields, but this query resets global variables
             $custom_fields = $projObj->getAllCustomFieldNames();
+                // Try resetting global post vars
+            $post = $savePost;
 
 			wp_enqueue_style('dhp-map', plugins_url('/css/dhp-map.css',  dirname(__FILE__) ));
 			wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
@@ -91,7 +100,7 @@ function add_dhp_marker_admin_scripts( $hook )
 			wp_localize_script( 'dhp-marker-script', 'dhpDataLib', array(
 				'ajax_url' => $dev_url,
                 'projectID' => $project_id,
-                'markerID' => $post->ID,
+                'markerID' => $markerID,
                 'customFields' => $custom_fields
 			) );
         }
@@ -108,7 +117,6 @@ function add_dhp_marker_admin_scripts( $hook )
 
 add_filter( 'post_updated_messages', 'dhp_marker_updated_messages' );
 
-// dhp_marker_updated_messages( $messages )
 // PURPOSE: Ensure the text Marker is displayed when user updates a marker
 
 function dhp_marker_updated_messages( $messages )
@@ -135,7 +143,6 @@ function dhp_marker_updated_messages( $messages )
   return $messages;
 } // dhp_marker_updated_messages()
 
-// dhp_array_sort($array, $on, $order=SORT_ASC)
 // PURPOSE: Sorts an array based on value of a specific key
 //			From http://php.net/manual/en/function.sort.php
 // INPUT:	$array = array to sort
@@ -179,7 +186,6 @@ function dhp_array_sort($array, $on, $order=SORT_ASC)
 } // dhp_array_sort()
 
 
-// dhp_get_projects()
 // PURPOSE:	Retrieve list of all DHP Projects in WP DB
 // RETURNS:	Array of arrays [ID, Title] sorted by Title
 
@@ -228,7 +234,6 @@ function add_dhp_marker_settings_box() {
 		'high'); 								// $priority
 }
 
-// show_dhp_marker_settings_box()
 // PURPOSE: Handle Callback to create editing boxes for Marker Settings box in admin panel
 // ASSUMES:	$post is set to this Marker post
 
@@ -293,7 +298,6 @@ function show_dhp_marker_settings_box()
 } // show_dhp_marker_settings_box()
 
 
-// buildMarkerMetaFields($theMeta)
 // PURPOSE: Create HTML to display all custom field values of Marker
 // INPUT:	$theMeta = array (provided by WP) of key-pairs: [ field-name, field-value ]
 // RETURNS:	HTML string the data in $theMeta as unordered list
@@ -312,7 +316,6 @@ function buildMarkerMetaFields($theMeta)
 } // buildMarkerMetaFields()
 
 
-// createIDfromName($theName)
 // PURPOSE:	Create WP slug corresonding custom field
 // INPUT:	$theName = string for name of mote
 // RETURNS:	WP-style slug form of mote name
@@ -388,7 +391,6 @@ function createIDfromName($theName)
 
 add_action( 'restrict_manage_posts', 'dhp_markers_filter_restrict_manage_posts' );
 
-// dhp_markers_filter_restrict_manage_posts()
 // PURPOSE: Create HTML code to create Drop-down list of Projects to filter lists of Markers in admin Panel
 // INPUT:	$_GET['post_type'] is set to post type being edited in admin panel
 
@@ -428,7 +430,6 @@ function dhp_markers_filter_restrict_manage_posts()
 
 add_filter( 'parse_query', 'dhp_markers_filter' );
 
-// dhp_markers_filter($query)
 // PURPOSE:	Modify the query string (used to show list in Markers admin panel) according to UI selection
 // INPUT:	$query = the array describing the query for Markers to display in panel
 //			$_GET['post_type'] = post type of posts being displayed in admin panel
@@ -452,7 +453,6 @@ function dhp_markers_filter( $query )
 
 add_filter('manage_edit-dhp-markers_columns', 'add_dhp_markers_columns');
 
-// add_dhp_markers_columns($columns)
 // PURPOSE: Handle modifying array of columns to show when listing Markers in admin panel
 // INPUT:	$columns = hash/array of field names and labels for the columns to display
 // RETURNS:	Hash/array of column names with Project added
@@ -500,7 +500,6 @@ function dhp_markers_custom_column($column, $post_id)
 	// Edit only
 add_action( 'wp_ajax_dhpAddUpdateMetaField', 'dhpAddUpdateMetaField' );
 
-// dhpAddUpdateMetaField()
 // PURPOSE: Handle saving edited values for a single field
 // INPUT:	$_POST['post_id'] = the ID of the Marker post
 //			$_POST['field_name'] = the name of the custom field
@@ -518,7 +517,6 @@ function dhpAddUpdateMetaField()
 	// Edit only
 add_action( 'wp_ajax_dhpDeleteMoteMeta', 'dhpDeleteMoteMeta' );
 
-// dhpDeleteMoteMeta()
 // PURPOSE: Handle deleting custom value/mote from a Marker post
 // INPUT:	$_POST['post_id'] = ID of Marker post
 //			$_POST['post_id'] = ID of custom field to remove
@@ -535,7 +533,6 @@ function dhpDeleteMoteMeta()
 	// Edit only
 add_action( 'wp_ajax_dhpUpdateProjectSettings', 'dhpUpdateProjectSettings' );
 
-// dhpUpdateProjectSettings()
 // PURPOSE:	Handle updating the big, hairy project_settings string in the Project post
 // INPUT:	$_POST['project'] = ID of the Project post
 //			$_POST['project_settings'] = new settings String
@@ -552,7 +549,6 @@ function dhpUpdateProjectSettings()
 	// Edit only
 add_action( 'wp_ajax_dhpGetProjectSettings', 'dhpGetProjectSettings' );
 
-// dhpGetProjectSettings()
 // PURPOSE: Retrieve project_settings String for Project
 // INPUT:	$_POST['project'] = ID of Project post whose settings are to be retrieved
 

@@ -2015,10 +2015,6 @@ function add_dhp_project_admin_scripts( $hook )
  		// Editing a specific project in admin panel
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( $post->post_type == 'project' ) {
-        		// Get the object for the Project so we can pass the custom fields
-			// $projObj = new DHPressProject($postID);
-			// $customFields = $projObj->getAllCustomFieldNames();
-
         		// Library styles
 			wp_enqueue_style('jquery-ui-style', plugins_url('/lib/jquery-ui-1.10.4/themes/base/jquery.ui.all.css', dirname(__FILE__)) );
 			wp_enqueue_style('jquery-colorpicker-style', plugins_url('/lib/colorpicker/jquery.colorpicker.css',  dirname(__FILE__)),
