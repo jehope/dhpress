@@ -1847,7 +1847,9 @@ function dhpPerformTests()
 				$results .= verifyLegend($projObj, $ep->settings->color, 2);
 					// all Short Text Filter Motes must have been created as Legend but values don't matter
 				foreach ($ep->settings->filterMotes as $filterMote) {
-					$results .= verifyLegend($projObj, $theLegend, 0);
+					if ($filterMote->type === 'Short Text') {
+						$results .= verifyLegend($projObj, $filterMote, 0);
+					}
 				}
 				break;
 			}
@@ -1855,7 +1857,10 @@ function dhpPerformTests()
 
 			// Go through markers and ensure all values are valid:
 			//  Go through mote definitions and check values
+			//  Stop after >= 20 errors
 		$loop = $projObj->setAllMarkerLoop();
+		$numErrors = 0;
+		$error = false;
 		while ( $loop->have_posts() ) : $loop->the_post();
 			$marker_id = get_the_ID();
 
@@ -1901,33 +1906,44 @@ function dhpPerformTests()
 						}
 						break;
 					} // switch
+						// Add rest of error information
 					if ($error) {
 						$results .=  ' given for mote '.$mote->name.' (custom field '.$mote->cf.') in marker '.get_the_title().'</p>';
+						$numErrors++;
 					}
-				}
+				} // if (!is_null)
 			} // foreach
+				// don't continue if excessive errors found
+			if ($numErrors >= 20) {
+				$results .= '<p>Stopped checking errors in Marker data as more than 20 errors have been found. Correct these and try again.</p>';
+				break;
+			}
 		endwhile;
 
 			// If transcript source is set, ensure the category has been created
-		if ($projSettings->views->source != null && $projSettings->views->source != '' && $projSettings->views->source != 'disable') {
-			$transSrcCheck = verifyLegend($projObj, $theLegend, 0);
+		$source = $projSettings->views->source;
+		if ($source && $source !== '' && $source !== 'disable') {
+			$transSrcCheck = verifyLegend($projObj, $source, 0);
 			if ($transSrcCheck != '') {
-				$results .= '<p>You have specified the Source mote'.$projSettings->views->source.
+				$results .= '<p>You have specified the Source mote'.$source.
 							'for Transcription fragmentation but you have not created yet as a category.</p>';
 			}
 		}
 
 			// Check transcript data itself
-		if ($projSettings->views->transcript->transcript && $projSettings->views->transcript->transcript != ''
-				&& $projSettings->views->transcript->transcript != 'disable')
+		$source = $projSettings->views->transcript->transcript;
+		if ($source && $source !== '' && $source !== 'disable')
 		{
 			// TO DO
 		}
 
+			// Are the results all clear?
 		if ($results === '') {
 			$results = '<p>All data on server has been examined and approved.</p>';
+		} else {
+			$results .= '<p>Data tests now complete.</p>';
 		}
-	}
+	} // if projSettings
 
 	die($results);
 } // dhpPerformTests()
