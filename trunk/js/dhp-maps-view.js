@@ -134,7 +134,7 @@ var dhpMapsView = {
             case 'OSM':
                 var subDomains = layerDef.dhp_map_subdomains.split('|');
                 if(subDomains.length>1) {
-                    newLayer = new L.TileLayer(layerDef.dhp_map_url, {
+                    newLayer = L.tileLayer(layerDef.dhp_map_url, {
                         subdomains: subDomains,
                         attribution: layerDef.dhp_map_source,
                         maxZoom: 20,
@@ -144,7 +144,7 @@ var dhpMapsView = {
                     });
                 }
                 else {
-                    newLayer = new L.TileLayer(layerDef.dhp_map_url, { 
+                    newLayer = L.tileLayer(layerDef.dhp_map_url, { 
                         attribution: layerDef.dhp_map_source, 
                         maxZoom: 20, 
                         opacity: opacity,
@@ -182,7 +182,8 @@ var dhpMapsView = {
         }); // each sourceLayers
 
             // The control object manages which layers are visible at any time (user selection)
-        dhpMapsView.control = new L.control.layers().addTo(dhpMapsView.mapLeaflet);
+        dhpMapsView.control = L.control.layers();
+        dhpMapsView.control.addTo(dhpMapsView.mapLeaflet);
             // Add each layer to the map object
         _.each(dhpMapsView.mapLayers, function(theLayer) {
             if(theLayer.options.isBaseLayer || theLayer.options.layerType == 'base layer') {
@@ -285,7 +286,8 @@ var dhpMapsView = {
             onEachFeature: dhpMapsView.onEachFeature,
             pointToLayer: dhpMapsView.pointToLayer,
             filter: dhpMapsView.filterMapMarkers 
-        }).addTo(dhpMapsView.mapLeaflet);
+        });
+        dhpMapsView.markerLayer.addTo(dhpMapsView.mapLeaflet);
         dhpMapsView.markerLayer.options.layerName = 'Markers';
 
         dhpMapsView.control.addOverlay(dhpMapsView.markerLayer, 'Markers' );
@@ -339,7 +341,7 @@ var dhpMapsView = {
         var fType = fColor.substring(0,1);
         switch (fType) {
         case '#':
-            return new L.CircleMarker(latlng, {
+            return L.circleMarker(latlng, {
                 radius: dhpMapsView.radius,
                 fillColor: fColor,
                 color: "#000",
@@ -359,7 +361,7 @@ var dhpMapsView = {
                 });
                 dhpMapsView.makiIcons[iName] = mIcon;
             }
-            return new L.marker(latlng, { icon: mIcon });
+            return L.marker(latlng, { icon: mIcon });
         default:
             throw new Error("Unsupported feature type: "+fColor);
         }
@@ -372,7 +374,7 @@ var dhpMapsView = {
         if (dhpMapsView.isTouch) {
             layer.bindPopup('<div><h1>'+feature.properties.title+
                 '</h1><a class="button success" onclick="javascript:dhpMapsView.onFeatureSelect()">More</a></div>',
-                {offset: new L.Point(0, -10)});
+                {offset: L.Point(0, -10)});
 
                 // Click is automatically handled by Leaflet popup
             layer.on({
