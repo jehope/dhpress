@@ -299,7 +299,7 @@ var dhpMapsView = {
 
         // PURPOSE: Determine what color to use for marker
         // INPUT:   cats = the array of legend categories for this marker
-        // TO DO:   Make more efficient -- goes through 2 to 3 exhaustive searches each marker
+        // TO DO:   Make more efficient: goes through 2 to 3 exhaustive searches for each marker
     getActiveTermColor: function(cats) {
         var returnColor;
             // Find which of this item's legend values match current legend selection
@@ -316,7 +316,7 @@ var dhpMapsView = {
         });
 
             // Does this term have a parent? Get color from parent
-        if(term.parent && dhpMapsView.useParent) {
+        if (term.parent && dhpMapsView.useParent) {
                 // Search through filter for parent's term entry
                 // NOTE: Further inefficiency: 3rd exhaustive search!!
             var parentTerm = _.find(dhpMapsView.catFilter.terms, function(parent) {
@@ -424,14 +424,11 @@ var dhpMapsView = {
         dhpMapsView.mapLeaflet.setView([dhpMapsView.mapEP.lat, dhpMapsView.mapEP.lon], dhpMapsView.mapEP.zoom);
     }, // resetMap()
 
-        // PURPOSE: Determine which markers to display based on selected array.
-        // RETURNS: Feature if its id is in selected array
+        // PURPOSE: Determine which markers to display based on selected array
+        // RETURNS: true or false, depending on if its id is in selected array
     filterMapMarkers: function(feature)
     {
-        var filterTerms = dhpMapsView.catFilterSelect;
-        if(_.intersection(feature.properties.categories, filterTerms).length >= 1) {
-            return feature;
-        }
+        return (_.intersection(feature.properties.categories, dhpMapsView.catFilterSelect).length >= 1);
     }, // filterMapMarkers()
 
         // PURPOSE: Handle visual impact of change of Legend selection
@@ -499,12 +496,12 @@ var dhpMapsView = {
         var countTerms = 0;
         var i, tempSelCat, tempFilter;
 
-        if(dhpMapsView.catFilter) {
+        if (dhpMapsView.catFilter) {
             countTerms = Object.keys(dhpMapsView.catFilter.terms).length;
         }
 
-        if(singleID) {
-            for(i=0;i<countTerms;i++) {
+        if (singleID) {
+            for (i=0;i<countTerms;i++) {
                 tempFilter = dhpMapsView.catFilter.terms[i];
                 if(tempFilter.id==singleID) {
                     selCatFilter[0] = tempFilter.id;
@@ -513,7 +510,7 @@ var dhpMapsView = {
             }
             // unknown, or multiple selection from legend
         } else {
-            jQuery('#legends .active-legend .compare input:checked').each(function(index){
+            jQuery('#legends .active-legend .compare input:checked').each(function(index) {
                 tempSelCat = jQuery(this).closest('.row').find('.columns .value').data( 'id' );
                 for(i=0;i<countTerms;i++) {
                     tempFilter = dhpMapsView.catFilter.terms[i];
@@ -820,8 +817,6 @@ var dhpMapsView = {
         // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
     loadMapMarkers: function()
     {
-        // console.log('loading');
-        //$('.modal-backdrop').css({'opacity':0.1});
     	jQuery.ajax({
             type: 'POST',
             url: dhpMapsView.ajaxURL,
