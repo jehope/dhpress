@@ -441,24 +441,6 @@ function save_dhp_project_settings($post_id)
 } // save_dhp_project_settings()
 
 
-// invertLatLon($latlon)
-// RETURNS:	New comma separated string with elements reversed, or null if incorrect format
-// INPUT:	String with 2 comma-separated numbers
-// TO DO:	Move to Map class?
-
-function invertLatLon($latlon)
-{
-	if(is_null($latlon) || $lonlat==','){
-		return null;
-	}
-	$tempLonLat = split(',',$latlon);
-	if (!is_numeric($tempLonLat[0]) || !is_numeric($tempLonLat[1])) {
-		return null;
-	}
-	return array($tempLonLat[1],$tempLonLat[0]);
-} // invertLatLon()
-
-
 // getCategoryValues($parent_term, $taxonomy)
 // PURPOSE: Get all of the visual features associated via metadata with the taxonomic terms associated with 1 Mote
 // INPUT:	$parent_term = Object for mote/top-level term
@@ -647,18 +629,11 @@ function createMarkerArray($project_id, $index)
 	case "map":
 			// Which field used to encode Lat-Long on map?
 		$map_pointsMote = $projObj->getMoteByName($eps->settings->coordMote);
-		if ($map_pointsMote->type=='Lat/Lon Coordinates') {
-			if (!$map_pointsMote->delim) { $map_pointsMote->delim=','; }
-			$coordMote = split($map_pointsMote->delim, $map_pointsMote->cf);
-			//array of custom fields
-		}
 			// Find all possible legends/filters for this map -- each marker needs these fields
 		$filters = $eps->settings->legends;
 			// Collect all possible category values/tax names for each mote in all filters
 		foreach ($filters as $legend) {
 			$term = get_term_by('name', $legend, $rootTaxName);
-			// $parent_term_id = $term->term_id;
-			// $parent_terms = get_terms( $rootTaxName, array( 'parent' => $parent_term_id, 'orderby' => 'term_group', 'hide_empty' => false ) );
 			if ($term) {
 				array_push($json_Object, getCategoryValues($term, $rootTaxName));
 			}
@@ -805,27 +780,13 @@ function createMarkerArray($project_id, $index)
 			// Map visualization features?
 			// Skip marker if missing necessary LatLong data or not valid numbers
 		if (!is_null($map_pointsMote)) {
-			if(count($coordMote)==2) {
-				$temp_lat = get_post_meta($marker_id, $coordMote[0], true);
-				$temp_lon = get_post_meta($marker_id, $coordMote[1], true);
-				// array_push($feature_collection['debug'], $temp_lat);
-				if ($temp_lat=="" || $temp_lon=="" || !is_numeric($temp_lat) || !is_numeric($temp_lon)) {
-					continue;
-				}
-				$lonlat = array($temp_lon,$temp_lat);
-			} elseif(count($coordMote)==1) {
-				$temp_latlon = get_post_meta($marker_id, $coordMote[0], true);
-				// array_push($feature_collection['debug'], $temp_latlon);
-				if ($temp_latlon=="") {
-					continue;
-				}
-					// invertLatLon will return null if non-numeric entries found!
-				$lonlat = invertLatLon($temp_latlon);
-				if (is_null($lonlat)) {
-					continue;
-				}
+			$latlon = get_post_meta($marker_id, $map_pointsMote->cf, true);
+			if (empty($latlon)) {
+				continue;
 			}
-			$thisFeature['geometry'] = array("type"=>"Point","coordinates"=> $lonlat);
+			$splitLatLon = split(',', $latlon);
+			$thisFeature['geometry'] = array("type"=>"Point",
+											"coordinates"=> array((float)$splitLatLon[1],(float)$splitLatLon[0]));
 		}
 
 			// Audio transcript features?
