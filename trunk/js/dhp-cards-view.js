@@ -390,7 +390,7 @@ var dhpCardsView = {
                 }
            }
         }
-    }, // getHighestParentColor()
+    }, // getCardColors()
 
         // PURPOSE: Handle selection in "card space"
     selectCard: function(evt)
@@ -505,7 +505,7 @@ var dhpCardsView = {
 
 
             // Create cards --------------------
-        var theCard, contentElement, contentData, theTitle, colorStr, classStr, moteIndex;
+        var theCard, contentElement, contentData, theTitle, colorStr, classStr, moteIndex, label;
 
         jQuery('#dhp-visual').append('<div id="card-container"></div>');
         var cardHolder = jQuery('#card-container');
@@ -561,7 +561,9 @@ var dhpCardsView = {
                 moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
                 contentData = theFeature.properties.content[moteName];
                 if (contentData) {
-                    contentElement = jQuery('<p class="datamote'+moteIndex+'"><i>'+moteName+'</i>: '+contentData+'</p>');
+                    label = (moteName === 'Thumbnail Left' || moteName === 'Thumbnail Right') ?
+                                '' : '<i>'+moteName+'</i>: ';
+                    contentElement = jQuery('<p class="datamote'+moteIndex+'">'+label+contentData+'</p>');
                     jQuery(theCard).append(contentElement);
                 }
             });

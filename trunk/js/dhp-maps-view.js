@@ -361,7 +361,7 @@ var dhpMapsView = {
                 });
                 dhpMapsView.makiIcons[iName] = mIcon;
             }
-            return L.marker(latlng, { icon: mIcon });
+            return L.marker(latlng, { icon: mIcon, riseOnHover: true });
         default:
             throw new Error("Unsupported feature type: "+fColor);
         }
