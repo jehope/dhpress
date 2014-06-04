@@ -10,7 +10,7 @@ var dhpTranscript = {
         // PURPOSE: Initialize transcript mechanisms
     initialize: function()
     {
-        this.parseTimeCode = /(\d\d*)\:(\d\d)\:(\d\d)(\.[\d]+)*/;         // a more exact parsing of time
+        this.parseTimeCode = /(\d\d)\:(\d\d)\:(\d\d)\.(\d\d?)/;         // a more exact parsing of time
     }, // initialize()
 
 
@@ -228,14 +228,11 @@ var dhpTranscript = {
         if (matchResults !== null) {
             // console.log("Parsed " + matchResults[1] + ":" + matchResults[2] + ":" + matchResults[3]);
             milliSecondsCode = (parseInt(matchResults[1])*3600 + parseInt(matchResults[2])*60 + parseFloat(matchResults[3])) * 1000;
-                // If there is a decimal portion, remove the period
-                // The multiplier to use depends on if it is 1 or 2 digits long (not inc. period)
-            if (matchResults[4]) {
-                if (matchResults[4].length == 2) {
-                    milliSecondsCode += parseInt(matchResults[4].slice(1))*100;
-                } else {
-                    milliSecondsCode += parseInt(matchResults[4].slice(1))*10;
-                }
+                // The multiplier to use for last digits depends on if it is 1 or 2 digits long
+            if (matchResults[4].length == 1) {
+                milliSecondsCode += parseInt(matchResults[4])*100;
+            } else {
+                milliSecondsCode += parseInt(matchResults[4])*10;
             }
         } else {
             throw new Error("Error in transcript file: Cannot parse " + timecode + " as timecode.");

@@ -1934,7 +1934,7 @@ function dhpPerformTests()
 						}
 						break;
 					case 'Timestamp':
-						if (preg_match("/\d\d:\d\d:\d\d(\.\d(\d)?)?-\d\d:\d\d:\d\d(\.\d(\d)?)?/", $moteValue) === 0) {
+						if (preg_match("/\d\d\:\d\d\:\d\d\.\d\d?-\d\d\:\d\d\:\d\d\.\d\d?/", $moteValue) === 0) {
 							$results .= '<p>Invalid Timestamp '.$moteValue;
 							$error = true;
 						}
