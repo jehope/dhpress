@@ -1728,6 +1728,73 @@ function dhpGetCustomFields()
 } // dhpGetCustomFields()
 
 
+// PURPOSE:	Verify that all timestamps can be found in transcription file
+// INPUT:	$transcMoteName = name of mote for a transcription setting
+// RETURNS:	Error string or ''
+
+function verifyTranscription($projObj, $projSettings, $transcMoteName)
+{
+		// don't check anything if the setting is disabled
+	if ($transcMoteName == '' || $transcMoteName == 'disable') {
+		return '';
+	}
+
+	$result = '';
+	$tcMote = $projSettings->views->transcript->timecode;
+
+		// Problem if timecode not defined
+	if ($tcMote == null || $tcMote == '' || $tcMote == 'disable') {
+		$result = '<p>You have not specified the Timestamp setting for the Transcription (despite setting Transcript motes).</p>';
+	} else {
+		$numErrors = 0;
+
+		$tcMoteDef = $projObj->getMoteByName($tcMote);
+		$transMoteDef = $projObj->getMoteByName($transcMoteName);
+
+		$loop = $projObj->setAllMarkerLoop();
+
+		while ($loop->have_posts()) : $loop->the_post();
+			$error = false;
+			$marker_id = get_the_ID();
+
+				// Get this marker's values for 
+			$timecode = get_post_meta($marker_id, $tcMoteDef->cf, true);
+			$transFile= get_post_meta($marker_id, $transMoteDef->cf, true);
+
+				// Skip check if either one missing
+			if ($timecode != null && $timecode != '' && $transFile != null && $transFile != '' && $transFile !== 'none') {
+					// Don't check invalid timestamps -- they should have already been reported
+				if (preg_match("/\d\d\:\d\d\:\d\d\.\d\d?-\d\d\:\d\d\:\d\d\.\d\d?/", $moteValue) === 1) {
+					$content = @file_get_contents($transFile);
+					if ($content == false) {
+						$result .= '<p>Problem reading file '.$transFile.' </p>';
+						$error = true;
+					} else {
+						$content  = utf8_encode($content);
+						$stamps	  = split("-", $timecode);
+						$clipStart= mb_strpos($content, $stamps[0]);
+						if ($clipStart == false) {
+							$result .= '<p> Cannot find timestamp '.$stamps[0].' in file '.$transFile.'</p>';
+							$error = true;
+						}
+						$clipEnd  = mb_strpos($content, $stamps[1]);
+						if ($clipEnd == false) {
+							$result .= '<p> Cannot find timestamp '.$stamps[1].' in file '.$transFile.'</p>';
+							$error = true;
+						}
+					} // file contents
+				} // if valid timestamp
+			} // if timecode and file values
+			if ($error && ++$numErrors >= 20) {
+				break;
+			}
+		endwhile;
+	}
+
+	return $result;
+} // verifyTranscription()
+
+
 // PURPOSE: Ensure metadata attached to category/legend is correct
 // INPUT:   $projObj = project object
 //			$theLegend = name of mote to check
@@ -1861,6 +1928,7 @@ function dhpPerformTests()
 		$loop = $projObj->setAllMarkerLoop();
 		$numErrors = 0;
 		$error = false;
+		$transcErrors = false;
 		while ( $loop->have_posts() ) : $loop->the_post();
 			$marker_id = get_the_ID();
 
@@ -1894,15 +1962,17 @@ function dhpPerformTests()
 						break;
 					case 'Transcript':
 							// Just look at beginning and end of URL
-						if (preg_match("!(https?|ftp)://!i", $moteValue) === 0 || preg_match("!\.txt$!i", $moteValue) === 0) {
+						if ($moteValue !== 'none' && (preg_match("!(https?|ftp)://!i", $moteValue) === 0 || preg_match("!\.txt$!i", $moteValue) === 0)) {
 							$results .= '<p>Invalid textfile URL';
 							$error = true;
+							$transcErrors = true;
 						}
 						break;
 					case 'Timestamp':
 						if (preg_match("/\d\d\:\d\d\:\d\d\.\d\d?-\d\d\:\d\d\:\d\d\.\d\d?/", $moteValue) === 0) {
 							$results .= '<p>Invalid Timestamp '.$moteValue;
 							$error = true;
+							$transcErrors = true;
 						}
 						break;
 					} // switch
@@ -1915,26 +1985,29 @@ function dhpPerformTests()
 			} // foreach
 				// don't continue if excessive errors found
 			if ($numErrors >= 20) {
-				$results .= '<p>Stopped checking errors in Marker data as more than 20 errors have been found. Correct these and try again.</p>';
+				$results .= '<p>Stopped checking errors in Marker data because more than 20 errors have been found. Correct these and try again.</p>';
 				break;
 			}
 		endwhile;
 
-			// If transcript source is set, ensure the category has been created
+			// If transcript (fragmentation) source is set, ensure the category has been created
 		$source = $projSettings->views->source;
 		if ($source && $source !== '' && $source !== 'disable') {
 			$transSrcCheck = verifyLegend($projObj, $source, 0);
 			if ($transSrcCheck != '') {
-				$results .= '<p>You have specified the Source mote'.$source.
-							'for Transcription fragmentation but you have not created yet as a category.</p>';
+				$results .= '<p>You have specified the Source mote '.$source.
+							' for Transcription fragmentation but you have not built it yet as a category.</p>';
 			}
 		}
 
-			// Check transcript data itself
-		$source = $projSettings->views->transcript->transcript;
-		if ($source && $source !== '' && $source !== 'disable')
-		{
-			// TO DO
+			// Check transcript data themselves -- this check is inefficient and redundant by nature
+			// No previous transcription errors must have been registered!
+		if (!$transcErrors) {
+			$results .= verifyTranscription($projObj, $projSettings, $projSettings->views->transcript->transcript);
+		}
+
+		if (!$transcErrors) {
+			$results .= verifyTranscription($projObj, $projSettings, $projSettings->views->transcript->transcript2);
 		}
 
 			// Are the results all clear?

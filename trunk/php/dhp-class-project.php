@@ -76,7 +76,7 @@
 		    	"select" : {								// For modal when item selected from visualation
 			        "title": String (name of mote),
 			        "width": "tiny" | "small" | "medium" | "large" | "x-large",
-			        "widgets": [							// Types of 'widgets' to display in selected Marker modal
+			        "widgets": [							// List of 'widgets' to display in selected Marker modal
 			        	'transcript'
 			        ],
 			        "content": [							// Motes to show when Marker selected in visualization
@@ -93,7 +93,7 @@
 					"audio" 	: Name of mote (that contains last part of URL to audio file)
 					"transcript" : Name of mote (that contains URL to textual transcription of original),
 					"transcript2" : Name of mote (that contains URL to textual transcription of any translation),
-					"timecode" : Name of mote (that contains the timecode),
+					"timecode" : Name of mote (that contains the timestamp),
 					"source"	: Name of mote with common value across excerpts of transcripts (taxonomy category),
 					"content"	: [							// Motes to show when tax/archive page shown
 			            String (mote name), ...
