@@ -114,6 +114,7 @@
 
       <h3>Custom Field Utilities</h3>
       <div>
+          <p>WARNING: These functions modify your data irrevocably and should be used with extreme caution. If you make changes to custom fields that correspond to Legends (Short Text motes), you will have to Rebuild them.</p>
           <div id="subaccordion">
             <h3>New Custom Field</h3>
             <div>
@@ -136,9 +137,7 @@
               <input type="checkbox" id="getFRMustMatch"> For matches of the value 
                  <input type="text" size="20" id="edFRMatchValue"/> (always applied if no filter) <br/>
               With this value <input type="text" size="20" id="edFRCFvalue"/> <br/>
-              <input type="checkbox" id="getFRFilterCF"> Only for markers with value
-                <select id="selFRFilterValue"></select>
-                in the field <select id="selFRFilterCF"></select> <br/>
+              <input type="checkbox" id="getFRFilterCF"> Only when the value in the field <select id="selFRFilterCF"></select> is <select id="selFRFilterValue"></select> <br/>
               <button id="btnDoFR" data-bind="jqButton, click: doFRCF">Do Find/Replace</button>
             </div>
 
