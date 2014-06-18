@@ -333,13 +333,13 @@ var dhpCardsView = {
         }
     }, // textColor
 
-        // PURPOSE: Called by createCards to determine color to use for marker
+        // PURPOSE: To determine color to use for marker
         // INPUT:   featureVals = array of category IDs (integers) associated with a feature/marker
         // RETURNS: Partial string to set color and background color (w/o closing ")
         // NOTES:   Will use first match on color to use for icon, or else default color
         // ASSUMES: colorValues has been loaded
-        // SIDEFX:  Caches textColor in text field, which builds first time encountered
-    getCardColors: function(featureVals)
+        // SIDEFX:  Caches textColor in text field of Legend, which builds first time encountered
+    getItemColor: function(featureVals)
     {
         var countTerms = dhpCardsView.colorValues.length; 
         var countCats = featureVals.length;
@@ -390,7 +390,7 @@ var dhpCardsView = {
                 }
            }
         }
-    }, // getCardColors()
+    }, // getItemColor()
 
         // PURPOSE: Handle selection in "card space"
     selectCard: function(evt)
@@ -544,7 +544,7 @@ var dhpCardsView = {
             }
 
             if (dhpCardsView.colorValues) {
-                colorStr = dhpCardsView.getCardColors(theFeature.properties.categories);
+                colorStr = dhpCardsView.getItemColor(theFeature.properties.categories);
             }
 
                 // Create container element for the card

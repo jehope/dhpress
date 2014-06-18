@@ -1015,15 +1015,28 @@ jQuery(document).ready(function($) {
           if (newTerm != null && newTerm != '') {
             var defaultViz = getDefaultViz();
             function insertNewTerm(newTermID) {
-                // Insert new item (without parent) at top of list, binding Assign code to section
-              var totalElement = $('<li class="dd-item dd3-item" data-id="'+newTermID+'" data-name="'+
-                  newTerm+'" data-parent="0"> <div class="dd-handle dd3-handle"></div><div class="dd3-content">'+
-                  newTerm+' (0) '+'&nbsp;&nbsp;<div class="select-legend">Assign '+defaultViz.html+'</div></div></li>');
-              $('.select-legend', totalElement).click(handleAssign);
-              $('#category-tree > .dd-list').prepend(totalElement);
-                // Clear out new term field
-              $('#ed-new-term').val('');
-            }
+console.log("Inserting new term with ID "+newTermID);
+                // termID 0 is special error code
+              if (newTermID) {
+                  // Insert new item (without parent) at top of list, binding Assign code to section
+                var totalElement = $('<li class="dd-item dd3-item" data-id="'+newTermID+'" data-name="'+
+                    newTerm+'" data-parent="0"> <div class="dd-handle dd3-handle"></div><div class="dd3-content">'+
+                    newTerm+' (0) '+'&nbsp;&nbsp;<div class="select-legend">Assign '+defaultViz.html+'</div></div></li>');
+                $('.select-legend', totalElement).click(handleAssign);
+                $('#category-tree > .dd-list').prepend(totalElement);
+                  // Clear out new term field
+                $('#ed-new-term').val('');
+              } else {
+                $("#mdl-server-err").dialog({
+                  modal: true,
+                  buttons: {
+                    OK: function() {
+                      $(this).dialog("close");
+                    }
+                  }
+                });
+              }
+            } // insertNewTerm()
             dhpCreateTermInTax(newTerm, theMote.name, insertNewTerm);
           }
         });
@@ -1925,11 +1938,10 @@ jQuery(document).ready(function($) {
               newTerm: newTermName,
               legendName: moteName
           },
-          success: function(data, textStatus, XMLHttpRequest){
+          success: function(data, textStatus, XMLHttpRequest) {
               var termData = JSON.parse(data);
               var termID = termData.termID;
               if (typeof(termID) == 'string') { termID = parseInt(termID); }
-
               callBack(termID);
           },
           error: function(XMLHttpRequest, textStatus, errorThrown){

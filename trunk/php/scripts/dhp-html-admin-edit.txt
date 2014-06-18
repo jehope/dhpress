@@ -322,6 +322,10 @@
 <!-- ================= Dialog boxes and modals -- put in hidden section ================= -->
 <div class="hide">
 
+    <div id="mdl-server-err" title="Server Error">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>There was an error on the server and your operation could not complete. Please try again.</p>
+    </div>
+
     <div id="mdl-del-mote" title="Delete mote?">
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete the mote definition and all references to it?</p>
     </div>

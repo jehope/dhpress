@@ -1104,6 +1104,11 @@ function dhpSaveLegendValues()
 	}
 	delete_option("{$projRootTaxName}_children");
 
+		// Taxonomy must be reassociated with Markers because user may have added parent terms
+		//	or changed hierarchy
+	// $projObj      = new DHPressProject($projectID);
+	// dhpBindTaxonomyToMarkers($projObj, $custom_field, $parent_id, $projRootTaxName, $mote_delim);
+
 	die('');
 } // dhpSaveLegendValues()
 
@@ -1195,17 +1200,18 @@ function dhpCreateTermInTax()
 	$results['parent'] = $parent_term;
 	$results['parentID'] = $parent_term_id;
 
-	// create new term
+		// create new term
 	$newTerm = wp_insert_term($dhp_term_name, $projRootTaxName, $args);
-	if ($newTerm == WP_Error) {
-		trigger_error("WP will not create new term ".$dhp_term_name." in taxonomy".$parent_term_name);
-	}
-
 	$results['newTerm'] = $newTerm;
-	$results['termID'] = $newTerm['term_id'];
+	if ($newTerm == WP_Error) {
+		// trigger_error("WP will not create new term ".$dhp_term_name." in taxonomy".$parent_term_name);
+		$results['termID'] = 0;
+	} else {
+		$results['termID'] = $newTerm['term_id'];
 
-		// Clear term taxonomy
-	delete_option("{$projRootTaxName}_children");
+			// Clear term taxonomy
+		delete_option("{$projRootTaxName}_children");
+	}
 
 	die(json_encode($results));
 } // dhpCreateTermInTax()
@@ -2079,15 +2085,17 @@ function add_dhp_project_admin_scripts( $hook )
 			wp_enqueue_script('jquery');
 			wp_enqueue_script('underscore');
 
-			wp_enqueue_script('jquery-ui-core');
-			wp_enqueue_script('jquery-ui-widget');
-			wp_enqueue_script('jquery-ui-mouse');
-			wp_enqueue_script('jquery-ui-button');
-			wp_enqueue_script('jquery-ui-draggable');
-			wp_enqueue_script('jquery-ui-position');
-			wp_enqueue_script('jquery-ui-dialog');
-			wp_enqueue_script('jquery-ui-accordion');
-			wp_enqueue_script('jquery-ui-slider');
+				// Will call our own versions of jquery-ui to minimize compatibility problems
+			wp_enqueue_script('dhp-jquery-ui-core', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.core.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-widget', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.widget.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-accordion', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.accordion.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-mouse', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.mouse.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-button', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.button.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-draggable', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.draggable.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-position', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.position.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-dialog', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.dialog.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-accordion', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.accordian.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-slider', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.slider.min.js', dirname(__FILE__)), 'jquery' );
 
 				// JS libraries specific to DH Press
 			wp_enqueue_script('jquery-nestable', plugins_url('/lib/jquery.nestable.js', dirname(__FILE__)), 'jquery' );
@@ -2097,12 +2105,12 @@ function add_dhp_project_admin_scripts( $hook )
 
 				// For touch-screen mechanisms
 			wp_enqueue_script('dhp-touch-punch', plugins_url('/lib/jquery.ui.touch-punch.js', dirname(__FILE__)),
-				array('jquery', 'jquery-ui-widget', 'jquery-ui-mouse') );
+				array('jquery', 'dhp-jquery-ui-widget', 'dhp-jquery-ui-mouse') );
 
 			wp_enqueue_script('knockout', plugins_url('/lib/knockout-3.1.0.js', dirname(__FILE__)) );
 
 				// Custom JavaScript for Admin Edit Panel
-			$allDepends = array('jquery', 'underscore', 'jquery-ui-core', 'jquery-nestable', 'jquery-colorpicker',
+			$allDepends = array('jquery', 'underscore', 'dhp-jquery-ui-core', 'jquery-nestable', 'jquery-colorpicker',
 								'knockout');
 			wp_enqueue_script('dhp-project-script', plugins_url('/js/dhp-project-admin.js', dirname(__FILE__)), $allDepends );
 			wp_localize_script('dhp-project-script', 'dhpDataLib', array(
@@ -2248,8 +2256,8 @@ function dhp_page_template( $page_template )
     	$vizParams = array();
 
 		//foundation styles
-        wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
-        wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
+        wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
+        wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
 		wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
 		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
@@ -2282,8 +2290,11 @@ function dhp_page_template( $page_template )
 
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
 
-			wp_enqueue_script('jquery-ui-core');
-	 		wp_enqueue_script('jquery-ui-slider');
+				// Will call our own versions of jquery-ui to minimize compatibility problems
+			wp_enqueue_script('dhp-jquery-ui-core',   plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.core.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-widget', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.widget.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-mouse', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.mouse.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-slider', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.slider.min.js', dirname(__FILE__)), 'jquery' );
 
 			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.3/leaflet.js', dirname(__FILE__)));
 			wp_enqueue_script('leaflet-maki', plugins_url('/lib/Leaflet.MakiMarkers.js', dirname(__FILE__)), 'leaflet');
@@ -2296,7 +2307,7 @@ function dhp_page_template( $page_template )
 			$vizParams["layerData"] = $layerData;
 
 	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps',
-	    							'jquery-ui-slider');
+	    							'dhp-jquery-ui-slider');
 	    	break;
 	    case 'cards':
 			wp_enqueue_style('dhp-cards-css', plugins_url('/css/dhp-cards.css',  dirname(__FILE__)) );

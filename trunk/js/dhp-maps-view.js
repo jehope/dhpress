@@ -547,6 +547,9 @@ var dhpMapsView = {
                     if(theTerm.parent) {
                         hasParentClass = 'hasParent';
                     }
+                    if (theTerm.icon_url == null || theTerm.icon_url == undefined) {
+                        throw new Error("Legend value "+theTerm.name+" has not been assigned a color or icon");
+                    }
                     var firstIconChar = theTerm.icon_url.substring(0,1);
                     var htmlStr;
                     switch (firstIconChar) {
