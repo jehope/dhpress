@@ -292,7 +292,7 @@ var dhpMapsView = {
 
         dhpMapsView.control.addOverlay(dhpMapsView.markerLayer, 'Markers' );
 
-        // dhpMapsView.mapLayers.push(dhpMapsView.markerLayer);
+        dhpMapsView.mapLayers.push(dhpMapsView.markerLayer);
     }, // createMarkerLayer()
 
     checkOpacity: function() {
@@ -433,11 +433,13 @@ var dhpMapsView = {
         return (_.intersection(feature.properties.categories, dhpMapsView.catFilterSelect).length >= 1);
     }, // filterMapMarkers()
 
-        // PURPOSE: Handle visual impact of change of Legend selection
+        // PURPOSE: Handle visual impact of change of Legend selection: selecting entirely (new Legend or selection )
     refreshMarkerLayer: function() {
         dhpMapsView.findSelectedCats();
         dhpMapsView.control.removeLayer(dhpMapsView.markerLayer);
         dhpMapsView.mapLeaflet.removeLayer(dhpMapsView.markerLayer);
+            // since createMarkerLayer() is going to create new marker layer, need to remove from layer array
+        dhpMapsView.mapLayers.pop();
         dhpMapsView.createMarkerLayer();
     }, // refreshMarkerLayer()
 
@@ -728,16 +730,23 @@ var dhpMapsView = {
         // NOTE:    The final map layer is for Markers, so has no corresponding user settings
     buildLayerControls: function()
     {
-        var layerOpacity;
+        var layerOpacity, label;
         var layerSettings = dhpMapsView.mapEP.layers;
-        _.each(dhpMapsView.mapLayers, function(thisLayer,index) {
-            layerOpacity = layerSettings[index].opacity || 1;
+        _.each(dhpMapsView.mapLayers, function(thisLayer, index) {
+                // Markers start out "fully on" by default
+            if (index == dhpMapsView.mapLayers.length-1) {
+                layerOpacity = 1;
+                label = 'Markers (Circles only)';
+            } else {
+                layerOpacity = layerSettings[index].opacity || 1;
+                label = thisLayer.options.layerName;
+            }
 
                 // Don't create checkbox or opacity slider for Blank layer
             if (thisLayer.options.layerName != 'Blank') {
                 jQuery('#layers-panel').append('<div class="layer'+index+'">'+
                     '<div class="row"><div class="columns small-12 large-12"><input type="checkbox" checked="checked"> '+
-                    '<a class="value" id="'+thisLayer.options.id+'">'+thisLayer.options.layerName+'</a></div></div>'+
+                    '<a class="value" id="'+thisLayer.options.id+'">'+label+'</a></div></div>'+
                     '<div class="row"><div class="columns small-12 large-12"><div class="layer-opacity"></div></div></div>'+
                     '</div>');
 
@@ -748,7 +757,7 @@ var dhpMapsView = {
                     step: 0.05,
                     values: [ layerOpacity ],
                     slide: function( event, ui ) {
-                        dhpMapsView.layerOpacity(thisLayer, ui);
+                        dhpMapsView.layerOpacity(index, ui.values[0]);
                     }
                 });
                     // Handle turning on and off map layer
@@ -764,12 +773,16 @@ var dhpMapsView = {
     }, // buildLayerControls()
 
         // PURPOSE: Callback to handle user setting of opacity slider
-    layerOpacity: function(layer, val) {
-        if (layer.options.layerName=='Markers') {
-            dhpMapsView.markerOpacity = val.values[ 0 ];
-        }
-        else {
-            layer.setOpacity(val.values[ 0 ]);       
+        // NOTES:   Opacity setting will only work for Circle (< Path) markers, not icons
+        //          Because Marker layer is destroyed and rebuilt whenever Legend changes, need to
+        //              pass index, not layer itself
+    layerOpacity: function(index, val) {
+        var layer = dhpMapsView.mapLayers[index];
+        if (index == dhpMapsView.mapLayers.length-1) {
+            dhpMapsView.markerOpacity = val;
+            layer.setStyle( { fillOpacity: dhpMapsView.markerOpacity, opacity: dhpMapsView.markerOpacity });
+        } else {
+            layer.setOpacity(val);
         }
     }, // layerOpacity()
 

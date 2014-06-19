@@ -1015,7 +1015,6 @@ jQuery(document).ready(function($) {
           if (newTerm != null && newTerm != '') {
             var defaultViz = getDefaultViz();
             function insertNewTerm(newTermID) {
-console.log("Inserting new term with ID "+newTermID);
                 // termID 0 is special error code
               if (newTermID) {
                   // Insert new item (without parent) at top of list, binding Assign code to section
