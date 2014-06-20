@@ -1,12 +1,12 @@
 # DH Press - Digital Humanities Toolkit
 
-Contributors: jehope, gaelicmichael, bgaston  
+Contributors: gaelicmichael, jehope, bgaston  
 Project Manager: Pamella Lach  
 Donate link: http://dhpress.org/  
 Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours  
 Requires at least: 3.4  
 Tested up to: 3.8  
-Stable tag: 1.9.4  
+Stable tag: 2.0
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html  
   
@@ -52,6 +52,12 @@ Go to DHPress > New Project and create a new project to get started
 == Changelog ==
 
 Posted on [release page](https://github.com/jehope/dhpress/releases).
+
+= 2.0 =
+* Entirely new Admin edit panel
+* TopicCards visualization
+* Multiple Entry Points
+* and much more...
 
 = 1.9.4 =
 * Implemented Leaflet on Map preview page
