@@ -1,0 +1,326 @@
+/** CSS styles specific to OpenLayers maps in DH Press
+ **/
+
+@charset "UTF-8";
+
+body.fullscreen {
+	overflow: hidden;
+}
+
+#dhp-visual {
+	z-index: 1000;
+}
+
+	/* Map always takes full space alloted to it */
+#dhpMap {
+	width: 100%;
+	height: 100%;
+}
+
+/*.fullscreen #dhpMap {
+	width: 100%;
+	height: 100%;
+}
+*/
+
+	/* Controls on Map */
+#dhp-visual div.olControlZoom {
+	top:10px;
+}
+
+.fullscreen #dhp-visual div.olControlZoom,
+.fullscreen #dhp-visual .leaflet-control-zoom {
+	/*top: 110px;*/
+	
+}
+#dhp-visual .leaflet-control-layers {
+/*	-webkit-transition: all 1s ease-out;
+    -moz-transition: all 1s ease-out;
+    -o-transition: all 1s ease-out;
+	transition: all 1s ease-out;
+	overflow: hidden;
+	width: 36px;
+	height: 36px;*/
+}
+#dhp-visual .leaflet-control-layers.leaflet-control-layers-expanded {
+/*	width: auto;
+	height: auto;*/
+}
+#dhp-visual .leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	/*display: block;*/
+	
+	}
+#dhp-visual .leaflet-control-layers .leaflet-control-layers-list {
+/*	display: block;
+	-webkit-transition: all 1s ease-out;
+    -moz-transition: all 1s ease-out;
+    -o-transition: all 1s ease-out;
+	transition: all 1s ease-out;*/
+/*	width: 36px;
+	height: 36px;*/
+}
+#dhp-visual .leaflet-control-layers .leaflet-control-layers-list, #dhp-visual .leaflet-control-layers-expanded .leaflet-control-layers-toggle
+{
+	/*opacity: 0;*/
+}
+#dhp-visual .leaflet-control-layers-expanded .leaflet-control-layers-list {
+/*	opacity: 1;
+	position: relative;
+	width: auto;
+	height: auto;*/
+}
+
+#dhp-visual .leaflet-popup-content-wrapper {
+	text-align: center;
+}
+input.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+}
+
+#dhp-visual .leaflet-bar a, #dhp-visual .leaflet-bar a:hover {
+	width: 36px;
+	height: 36px;
+	line-height: 36px;
+	font-size: 22px;
+}
+
+#dhp-visual .leaflet-control.reset-control {
+}
+
+#dhp-visual .leaflet-control.reset-control a {
+	line-height: 38px;
+	font-size: 20px;
+	color: #21759b;
+	/*text-align: center;
+	display: inline-block;
+	width: 100%;*/
+}
+
+.logged-in.fullscreen #dhp-visual div.olControlZoom {
+	top:70px;
+}
+
+.olControlZoom .reset-map {
+	margin-top: 5px;
+	padding-top: 2px;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+   	cursor: pointer;
+   	font-size: 18px;
+}
+
+.isMobile .olControlZoom .reset-map {
+	padding-top: 1px;
+	font-size: 16px;
+}
+	/* Foundation Icons required custom config */
+.olControlZoom a.olControlZoomIn {
+	padding-top: 2px;
+	font-size: 15px;
+	padding-left: 1px;
+}
+.olControlZoom a.olControlZoomOut {
+	font-size: 15px;
+	padding-top: 1px;
+}
+
+	/* OL error tiles */
+.olImageLoadError {
+ 	display: none;
+ 	visibility: hidden !important; 
+}
+
+.olMap .olControlAttribution {
+	bottom: 10px;
+	right: 10px;
+
+}
+#dhp-visual.olMap{
+	background: #eeeeee;
+}
+	/* Overrides most theme settings for img tags in the map only */
+.entry-content .olMap img,
+.widget .olMap img,
+.entry-content img.leaflet-tile {
+	max-width: none;
+	border-radius: 0;
+	box-shadow: none;
+}
+.leaflet-control-zoom {
+
+}
+	/* Legend style (by default non-fullscreen) */
+#legends {
+	position: relative;	
+	margin-left: 0;
+	overflow: auto;
+
+/*	max-width: 320px; */
+	min-width: 260px;
+	min-height: 180px;
+	max-height: 300px;
+
+	background: #fff;
+	background-color: rgba(255, 255, 255, .95);
+
+	/*foundation font style*/
+	color: #222;
+	font-family: "Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
+}
+
+#legends.mini {
+	min-height: 30px;
+    overflow: hidden;
+}
+
+	/* Override for fullscreen */
+.fullscreen #legends {
+	position:absolute;
+/*	overflow: hidden; */
+	overflow: auto;
+
+	min-width: 220px;
+	min-height: 300px;
+	max-height: 700px !important;
+
+	top: 20px;
+	left: 20px;
+	bottom: 20px;
+
+	z-index: 1103;
+	-moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+	-webkit-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+	box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+}
+
+.fullscreen #legends.mini {
+	min-height: 30px;
+    overflow: hidden;
+}
+
+
+@media all and (min-width: 1025px) {
+  .fullscreen #legends {
+  	min-width: 320px;
+  }
+}
+.logged-in.fullscreen #legends {
+	/*top:70px;*/
+}
+.legend-row {
+	
+}
+
+.legend-row .legend-div {
+	margin-left: 0px;
+}
+
+.legend-div .legend-title {
+	padding-left: 10px;
+	padding-right: 20px;
+	border-bottom: 1px solid #111;
+	font-size: 22px;
+	font-weight: bold;
+	z-index: 20;
+}
+
+.legend-div .terms {
+	position: absolute;
+	top:38px;
+	bottom: 0;
+	width: 100%;
+	z-index: 19;
+	overflow: auto;
+	margin-top: 1px;
+}
+
+.legend-div .terms .row {
+	width:100%;
+	cursor: pointer;
+	line-height: 15px;
+}
+.legend-div .terms .row.hasParent {
+	display: none;
+}
+.legend-div .terms .row:hover,
+.legend-div .terms .row.selected {
+	background: #e8f2e6;
+}
+
+/*
+.legend-div .terms img {
+	float: left;
+}*/
+
+.legend-div .terms .maki-icon {
+	margin: 0;
+	padding: 0;
+	float: left !important;
+	display: inline !important;
+}
+
+.legend-div .terms a {
+	line-height: 15px;
+	width: 100%;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	overflow: hidden;
+	display: inherit;
+}
+
+#layers-panel a {
+	line-height: 15px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	overflow: hidden;
+}
+
+.legend-div input[type='checkbox'] {
+	/*margin: 12px;*/
+	vertical-align: middle;
+	margin-top: 11px;
+}
+
+.legend-div .icon-legend {
+	width: 15px;
+	height: 15px;
+	margin:0;
+	margin-top: 9px;
+}
+
+	/* Little resize button on legends */
+.legend-resize {
+	padding: 7px;
+	position: absolute;
+	right: 0px;
+}
+
+	/* Controls for opacity for each layer */
+#layers-panel {
+	margin-left: 0px;
+}
+
+	/* Keep slider small */
+.layer-opacity {
+	max-width: 160px;
+}
+
+	/* Legends for child terms TODO: add html to display child terms */
+#child_legend {
+ 	background: #e8f2e6;
+ 	padding: 5px;
+ 	border: 3px solid #ccc;
+ 	display: none;
+}
+
+#child_legend h3 { 
+ 	padding-bottom: 5px;
+}
+
+#child_legend ul li {
+  	padding-bottom: 5px;
+}
+
