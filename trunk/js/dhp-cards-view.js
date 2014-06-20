@@ -171,9 +171,9 @@ var dhpCardsView = {
     }, // resetFilter()
 
         // PURPOSE: Handle user selection of Set Filter button
-        // TO DO:   Handle different mote types
         //              If Long Text type, user must enter text pattern
         //              If Short Text type, user can enter text pattern or choose value
+        // TO DO:   Handle different mote types
         //              If Date, user can enter start and stop dates
         //              If Number, user can enter min and max values
     setFilter: function()
@@ -209,7 +209,8 @@ var dhpCardsView = {
                 // if previously set, use last selection as default
             if (dhpCardsView.curFilterVal) {
                 jQuery('input:radio[name=filter-type]')[dhpCardsView.curFilterVal.index].checked = true;
-                if (dhpCardsView.curFilterVal.index == 0) {
+                    // 1 == Text pattern
+                if (dhpCardsView.curFilterVal.index == 1) {
                     jQuery('#filter-text-input').val(dhpCardsView.curFilterVal.text || '');
                 } else {
                     _.each(dhpCardsView.curFilterVal.values, function(valueName) {
@@ -272,11 +273,11 @@ var dhpCardsView = {
                 // get user selection
             var filterType = jQuery('input:radio[name=filter-type]:checked').val();
             if (filterType === 'text') {
-                dhpCardsView.curFilterVal.index = 0;
+                dhpCardsView.curFilterVal.index = 1;
                 dhpCardsView.curFilterVal.text = jQuery('#filter-text-input').val();
                 dhpCardsView.doTextFilter();
             } else {
-                dhpCardsView.curFilterVal.index = 1;
+                dhpCardsView.curFilterVal.index = 0;
                 dhpCardsView.curFilterVal.values = [];
                     // Gather the values chosen
                 jQuery('#st-filter-vals input:checked').each(function(index, item) {
