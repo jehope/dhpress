@@ -1,6 +1,6 @@
 // DHPressTranscript -- contains all data and functions dealing with transcriptions using SoundCloud
 // ASSUMES: Transcript modal is closed with button of class close-reveal-modal
-// USES:    JavaScript libraries jQuery, Underscore, Bootstrap ...
+// USES:    JavaScript libraries jQuery, Underscore, SoundCloud
 
 var dhpTranscript = {
         // Fields created by this object:
@@ -10,7 +10,7 @@ var dhpTranscript = {
         // PURPOSE: Initialize transcript mechanisms
     initialize: function()
     {
-        this.parseTimeCode = /(\d+)\:(\d+)\:([\d\.]+)/;         // a very generous definition of timecode!
+        this.parseTimeCode = /(\d\d)\:(\d\d)\:(\d\d)\.(\d\d?)/;         // a more exact parsing of time
     }, // initialize()
 
 
@@ -36,8 +36,8 @@ var dhpTranscript = {
         if (appendPos == null) {
             throw new Error("Cannot find HTML DIV at which to append transcript.");
         }
-        appendPos.append('<div class="transcript-ep"><p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p></div>');
-        appendPos.append('<input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript<br>');
+        jQuery(appendPos).append('<div class="transcript-ep"><p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p></div>');
+        jQuery(appendPos).append('<div style="padding-top:5px"><input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript</div><br>');
 
             // Must set these variables after HTML appended above
         var scWidget = SC.Widget(document.getElementById('scPlayer'));
@@ -102,7 +102,7 @@ var dhpTranscript = {
         });
 
             // Is there any primary transcript data?
-        if(transParams.transcript && transParams.transcript!=='none') {
+        if(transParams.transcript && transParams.transcript!=='') {
             if (fullTranscript) {
                 dhpTranscript.attachTranscript(transParams.transcript, 0);
             } else {
@@ -110,7 +110,7 @@ var dhpTranscript = {
             }
         }
             // Is there 2ndary transcript data? If only 2nd, treat as 1st
-        if(transParams.transcript==='none' && transParams.transcript2 && transParams.transcript2!=='none') {
+        if(transParams.transcript==='' && transParams.transcript2 && transParams.transcript2!=='') {
             if (fullTranscript) {
                 dhpTranscript.attachTranscript(transParams.transcript2, 0);
             } else {
@@ -118,7 +118,7 @@ var dhpTranscript = {
             }
         }
             // Otherwise, add 2nd to 1st
-        else if(transParams.transcript!=='none' && transParams.transcript2 && transParams.transcript2!=='none') {
+        else if(transParams.transcript!=='' && transParams.transcript2 && transParams.transcript2!=='') {
             if (fullTranscript) {
                 dhpTranscript.attachTranscript(transParams.transcript2, 1);
             } else {
@@ -228,6 +228,12 @@ var dhpTranscript = {
         if (matchResults !== null) {
             // console.log("Parsed " + matchResults[1] + ":" + matchResults[2] + ":" + matchResults[3]);
             milliSecondsCode = (parseInt(matchResults[1])*3600 + parseInt(matchResults[2])*60 + parseFloat(matchResults[3])) * 1000;
+                // The multiplier to use for last digits depends on if it is 1 or 2 digits long
+            if (matchResults[4].length == 1) {
+                milliSecondsCode += parseInt(matchResults[4])*100;
+            } else {
+                milliSecondsCode += parseInt(matchResults[4])*10;
+            }
         } else {
             throw new Error("Error in transcript file: Cannot parse " + timecode + " as timecode.");
             milliSecondsCode = 0;
@@ -261,10 +267,10 @@ var dhpTranscript = {
                 val = val.trim();
                 oddEven = index % 2;
                     // Skip values with line breaks...basically empty items
-                if(val.length>1) {
+                if (val.length>1) {
                         // Does it begin with a timecode?
-                    if(val[0]==='[' && val[1]==='0'){
-                        if(index>0) {
+                    if (val[0]==='[' && val[1]==='0') {
+                        if (index>0) {
                             jQuery('.row', transcript_html).eq(index-1).append('<div class="type-text">'+textBlock+'</div>');
                         }
                         index++;
@@ -302,18 +308,17 @@ var dhpTranscript = {
         var index = 0;
         var lineClass;
 
-        if(split_transcript) {
+        if (split_transcript) {
             _.each(split_transcript, function(val){
                     // Skip values with line breaks...basically empty items
                 val = val.trim();
-                if(val.length>1) {
-                    if(val[0]==='['&&val[1]==='0'){
+                if (val.length>1) {
+                    if (val[0]==='['&&val[1]==='0') {
                         if(index>0) {
                             textArray.push(textBlock);
                         }
                         textBlock='';
-                    }
-                    else {
+                    } else {
                         textBlock += val;
                     }
                     index++;

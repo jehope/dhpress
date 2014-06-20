@@ -15,25 +15,20 @@ jQuery(document).ready(function($) {
 
     // var postID = $('#map-post').val();
 
-    var baseLayer;
-
     /* Setup map */
     var dhpMapTest = L.map('dhp-visual',{ zoomControl:true,layerControl:true });
-
-    
+    $('#dhp-visual').width(600).height(500);
 
     /* Check whether the overlay is a base layer or not.     */
     /* If it is a base layer, then only load the base layer. */
-    /* If it is not a base layer, load a base layer first,   */
-    /* then load the overlay.                                */
     if(mapCategory == "base layer"){
-    	baseLayer = true;
         dhpMapTest.setView([0,0], 1);
         var newLayer;
 
         switch (mapType) {
         case 'OSM':
             var subDomains = $('#map-subdomains').val();
+
             subDomains = subDomains.split('|');
             if(subDomains.length>1) {
                 newLayer = new L.TileLayer(mapUrl, {
@@ -56,8 +51,9 @@ jQuery(document).ready(function($) {
             newLayer.addTo(dhpMapTest);
         }
 
+    /* If it is not a base layer, load a base layer first,   */
+    /* then load the overlay.                                */
     } else {
-    	baseLayer = false;
     	// add base layers
         /* Setup initial set of base map */
         /* Only show one when users choose to view a base map layer */

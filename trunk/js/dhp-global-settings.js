@@ -1,29 +1,32 @@
+// DH Press Global Settings -- deals with global settings for Kiosk mode
+// NOTES:   Variables in dhpGlobals are set via wp_localize_script() in print_scripts() of dhp-class-settings.php
+// ASSUMES: PHP code in dhp-class-settings has already embedded modal for tips in HTML
+
+// USES:    JavaScript libraries jQuery, Zurb Foundation
+
 jQuery(document).ready(function($) {
-
 	var newDHPSettings = new dhpGlobalSettings($);
-
 });
 
-var dhpGlobalSettings = function($) {
 
+var dhpGlobalSettings = function($) {
     var userActivity = false, secondsInactive = 0, activeMonitorID, maxSecondsInactive, myMonitor;
     var kioskTablet = true;
     var blockLinks = [];
         //Detect user agent and determine if kiosk device
     var kioskRE = new RegExp(dhpGlobals.kiosk_useragent, "i");
     var kioskDevice = kioskRE.test(navigator.userAgent.toLowerCase());
-        
+
         // Block links
     blockLinks = dhpGlobals.kiosk_blockurls.split(',');
     findAndBlockLinks.call(this,blockLinks);
-    
+
 		// Only execute if not loaded in iframe
 	if(!inIframe()) {
         
             // Monitor user activity, only if setting given
-        
         maxSecondsInactive = dhpGlobals.timeout_duration * 60;
-        console.log(maxSecondsInactive)
+        // console.log(maxSecondsInactive);
         if ((maxSecondsInactive !== null) && (maxSecondsInactive !== '') && (maxSecondsInactive !== '0') && (maxSecondsInactive !== 0)) {
             console.log('start activity monitor')
             if (typeof(maxSecondsInactive) === "string") {
@@ -33,62 +36,53 @@ var dhpGlobalSettings = function($) {
             addSiteListeners.call(this);
         }
 
-            // Override tips with custom modal
-        if(dhpGlobals.global_tip) {
-            $('.dhp-nav .top-bar-section .right .tips').remove();
-            $('.main-navigation .nav-menu').append('<li><li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal>Map Tips</a></li>');
-            
-
-            if(!dhpGlobals.kiosk_mode) {
-                $('.dhp-nav .top-bar-section .right').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal><i class="fi-info"></i> Tips</a></li>');
-            }
-            $(document).foundation();
-            $('.close-tip').on('click', function() {
-                $('#tipModal').foundation('reveal', 'close');
-            });
-        }
-            // Kiosk mode actions
+            // DH Press is in Kiosk mode -- modify DOM accordingly
         if(dhpGlobals.kiosk_mode && kioskDevice) {
+
+                // Move help from top nav-bar to lower global bar
+            if(dhpGlobals.global_tip) {
+                $('.dhp-nav .top-bar-section .right .tips').remove();
+                $('.main-navigation .nav-menu').append('<li><li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal>User Tips</a></li>');
+
+                    // This shouldn't be necessary, as a close binding is done in dhp-project-page already
+                // $('.close-tip').click(function() {
+                //     $('#tipModal').foundation('reveal', 'close');
+                // });
+            }
+
             $('body').addClass('kiosk-mode-non-iframe');
-            // For kiosk mode
-            // 65px is height of bottom menu
-            // $('#dhp-visual').height($('#dhp-visual').height()-65);
+                // For kiosk mode
+                // 65px is height of bottom menu
             $('#dhp-visual').css({ 'height': $('body').height() - 110, 'top' : 45 });
             if($('body').hasClass('logged-in')) {
                 $('#dhp-visual').css({ 'height': $('body').height() - 140, 'top' : 45 });
             }
-        
+
             $('body').append('<div class="kiosk-menu contain-to-grid"><nav class="top-bar" data-topbar><section class="top-bar-section"></section></nav></div>');
-           
+
             $('.main-navigation .nav-menu').clone().appendTo( '.kiosk-menu .top-bar-section' );
-            
+
             $(document).foundation();
             stretchKioskNav.call(this);
-            
         }
-	}
-    else {
-        
+
+        // This is just an iFrame within a larger Project view
+	} else {
             // Take care of projects in iframes(dual)
         if(dhpGlobals.kiosk_mode && kioskDevice) {
             $('body').addClass('kiosk-mode');
+                // Remove tips from inner iFrames nav-bars
             if(dhpGlobals.global_tip) {
                 $('.dhp-nav .top-bar-section .right .tips').remove();
             }
-            // $('#dhp-visual').height($('#dhp-visual').height()-65);
-            // $('#legends').height($('#legends').height()-65);
-            // $('.dhp-nav .top-bar-section .right').append('<li><a href="#" class="global-tip" data-reveal-id="tipModal" data-reveal><i class="fi-info"></i> Tips</a></li>');           
         }
     }
-        // Get rid of scrollbars for map viz
-    if($('body').hasClass('fullscreen')) {
-        $("html").css({'overflow':'hidden'});
-    }
+
         // Call function to add Credits text to footer
     if(dhpGlobals.dhp_love) {
         addDHPLove.call(this);
     }
-    
+
         // PURPOSE: Block link, try a second time(map renders links after load)    
     function findAndBlockLinks(linksArray) {
         $.each(linksArray, function(index,val){
@@ -99,11 +93,13 @@ var dhpGlobalSettings = function($) {
             }, 5000);
         });
     }
+
     function blockLink(link) {
         if(findLink(link)){
             clearTimeout(blockLinks[link]);
         }
     }
+
     function findLink(link) {
         if($('a[href*="'+link+'"]').length >= 1) {
             $('a[href*="'+link+'"]').on('click', function(e) {
@@ -114,6 +110,7 @@ var dhpGlobalSettings = function($) {
             return true;
         }       
     }
+
         //PURPOSE: Make nav menu the width of the items
     function stretchKioskNav() {
         var windowWidth = $(window).width();
@@ -127,6 +124,7 @@ var dhpGlobalSettings = function($) {
             //set the width of the nav bar
         $('.kiosk-menu .top-bar').css({'max-width':navWidth});
     }
+
         // PURPOSE: Find width of nav items
         // RETURN: px width of nav items
     function findKioskNavWidth() {
@@ -136,13 +134,14 @@ var dhpGlobalSettings = function($) {
         });
         return barWidth + 1;
     }
+
         // PURPOSE: Add DH Press credits to footer
     function addDHPLove() {
         $('.site-info').addClass('dhp-love').append('<p>This project has been created with DH Press, a digital humanities toolkit developed by UNC\'s Digital Innovation Lab and the Renaissance Computing Institute</p>')
     }
+
         // PURPOSE: Takes a WordPress gallery and cycles images like a screen saver
     function screenSaver() {
-
     }
 
 		// PURPOSE: assign listeners for user activity

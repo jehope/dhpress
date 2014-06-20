@@ -1,0 +1,518 @@
+
+<div id="ko-dhp">
+    <p data-bind="visible: optionsCF.length == 0" style="color: red">
+      Reminder: You cannot configure your Project until you import Markers associated with this Project by using the Project ID above. Be sure to Publish this project if you have just selected <b>Add New</b>.
+    </p>
+
+    <div data-bind="visible: optionsCF.length > 0">
+      <button id="btnSaveSettings" data-bind="jqButton, click: saveSettings, style: { color: settingsDirty() ? 'red' : 'green' }">Save Settings</button>
+      <button data-bind ="jqButton, click: showSettings">Show Settings in Console</button>
+    </div>
+
+      <div id="accordion">
+        <h3>General Settings</h3>
+        <div><ul>
+    	    <li>Label for Home Button: <input data-bind="value: edHomeBtnLbl" type="text" size="12" placeholder="Home"/></li>
+    	    <li>Home URL: <input data-bind="value: edHomeURL" type="text" size="30" placeholder="http://"/></li>
+    	  </ul></div>
+
+
+      <h3>Motes</h3>
+      <div>
+          <p>Create relational containers for data in WP custom fields</p>
+          <ul>
+            <li>Mote Name: <input data-bind="value: edMoteName" type="text" size="20"/></li>
+            <li>Custom Field: <select data-bind="value: edMoteCF, options: optionsCF"></select></li>
+            <li>
+            	Mote Type:
+            	<select data-bind="value: edMoteType">
+                    <option value="Short Text">Short Text</option>
+                    <option value="Long Text">Long Text</option>
+                    <option value="Lat/Lon Coordinates">Lat/Lon Coordinates</option>
+                    <option value="Image">Image</option>
+                    <option value="Link To">Link To</option>
+                    <option value="SoundCloud">SoundCloud</option>
+                    <option value="Transcript">Transcript</option>
+                    <option value="Timestamp">Timestamp</option>
+            	</select>
+            </li>
+            <li>Value delimiter:  <input data-bind="value: edMoteDelim" type="text" size="2"/></li>
+          </ul>
+          <button data-bind="jqButton, click: createMote">Create New</button>
+          <br/>
+          <div data-bind="template: { name: 'mote-template', foreach: allMotes }"></div>
+      </div>
+
+
+      <h3>Entry Points</h3>
+      <div>
+          <p>
+            <button data-bind="jqButton, click: createMapEP">Create Map</button>
+            <button data-bind="jqButton, click: createCardsEP">Create Cards</button>
+          </p>
+          <div data-bind="template: { name: calcEPTemplate, foreach: entryPoints, as: 'theEP' }"></div>
+      </div>
+
+
+      <h3>Views</h3>
+      <div>
+          <p>Fullscreen <input type="checkbox" data-bind="checked: edVizFullScreen"/>
+            Width: <input type="text" size="4" data-bind="value: edVizWidth"/>
+            Height: <input type="text" size="4" data-bind="value: edVizHeight"/>
+          </p>
+
+          <div id="subaccordion">
+            <h3>Modal windows (item selected from visualization)</h3>
+            <div>
+              Modal title: <select data-bind="options: anyTxtDMoteNames, value: edSelTitle" ></select>
+              Modal size:
+              <select data-bind="value: edSelWidth">
+                    <option value="tiny">Tiny</option>
+                    <option value="small">Small</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                    <option value="x-large">X-Large</option>
+                </select>
+              <br/>
+
+              Link 1: <select data-bind="value: edSelLinkMt, options: getModalLinkNames"></select> Label: <input type="text" size="12" data-bind="value: edSelLinkLbl"/> Open new tab: <input type="checkbox" data-bind="checked: edSelLinkNewTab"><br/>
+              Link 2: <select data-bind="value: edSelLink2Mt, options: getModalLinkNames"></select> Label: <input type="text" size="12" data-bind="value: edSelLink2Lbl"/> Open new tab: <input type="checkbox" data-bind="checked: edSelLink2NewTab"><br/>
+              Widgets to show: <button data-bind="jqButton, click: addWidget">Add</button> this widget:
+              	<select id="selModalWidget">
+              		<option value="transcript">Transcript</option>
+              	</select><br/>
+              <div data-bind="template: { name: 'widget-template', foreach: widgetList }"></div>
+
+              Motes to show:  <button data-bind="jqButton, click: addSelMote">Add</button> this mote: <select id="selModalMote" data-bind="options: contentMoteNames"></select><br/>
+              <div data-bind="template: { name: 'sel-mote-template', foreach: selMoteList }"></div>
+            </div>
+
+            <h3>Post view (Marker pages)</h3>
+            <div>
+              Page title: <select data-bind="value: edPostTitle, options: anyTxtDMoteNames"></select><br/>
+              Motes to show:  <button data-bind="jqButton, click: addPostMote">Add</button> this mote: <select id="selPostMote" data-bind="options: allMoteNames"></select><br/>
+              <div data-bind="template: { name: 'post-mote-template', foreach: postMoteList }"></div>
+            </div>
+
+            <h3>Taxonomy/Archive/Category view</h3>
+            <div>
+              Motes to show:  <button data-bind="jqButton, click: addTaxMote">Add</button> this mote: <select id="selTaxMote" data-bind="options: allMoteNames"></select><br/>
+              <div data-bind="template: { name: 'tax-mote-template', foreach: taxMoteList }"></div>
+            </div>
+
+            <h3>Transcript view</h3>
+            <div>
+              Audio Source: <select data-bind="value: edTrnsAudio, options: soundMoteNames"></select><br/>
+              Transcript: <select data-bind="value: edTrnsTransc, options: transcMoteNames"></select><br/>
+              Transcript 2: <select data-bind="value: edTrnsTransc2, options: transcMoteNames"></select><br/>
+              Timecode: <select data-bind="value: edTrnsTime, , options: tstMoteNames"></select><br/>
+              Source: <select data-bind="value: edTrnsSrc, options: stdMoteNames"></select><br/>
+            </div>
+          </div> <!-- subaccordion -->
+        </div> <!-- Views -->
+
+
+      <h3>Custom Field Utilities</h3>
+      <div>
+          <p>WARNING: These functions modify your data irrevocably and should be used with extreme caution. If you make changes to custom fields that correspond to Legends (Short Text motes), you will have to Rebuild them.</p>
+          <div id="subaccordion">
+            <h3>New Custom Field</h3>
+            <div>
+              Create new custom field named <input type="text" size="15" id="newCFName"/><br/>
+              Default value <input type="text" size="15" id="newCFDefault"/><br/>
+              <button id="btnNewCF" data-bind="jqButton, click: createNewCF">Create Custom Field</button>
+            </div>
+
+            <h3>Delete Custom Field</h3>
+            <div>
+              <button data-bind="jqButton, click: getDelCurrentCFs">Get Custom Fields</button><br/>
+              Delete this custom field: <select id="selDelCFList"> </select>
+                <button id="btnDelOldCF" data-bind="jqButton, click: delOldCF">Delete</button>
+            </div>
+
+            <h3>Find/Replace Custom Field Values</h3>
+            <div>
+              <button data-bind="jqButton, click: getFRCurrentCFs">Get Custom Fields</button> <br/>
+                Replace values in the field <select id="selFRCFSelect"></select> <br/>
+              <input type="checkbox" id="getFRMustMatch"> For matches of the value 
+                 <input type="text" size="20" id="edFRMatchValue"/> (always applied if no filter) <br/>
+              With this value <input type="text" size="20" id="edFRCFvalue"/> <br/>
+              <input type="checkbox" id="getFRFilterCF"> Only when the value in the field <select id="selFRFilterCF"></select> is <select id="selFRFilterValue"></select> <br/>
+              <button id="btnDoFR" data-bind="jqButton, click: doFRCF">Do Find/Replace</button>
+            </div>
+
+          </div> <!-- subaccordion -->
+      </div> <!-- Custom Field Utilities -->
+
+
+      <h3>Testing and Error-checking</h3>
+      <div>
+        <button id="runTests" data-bind="jqButton, click: runTests">Run tests</button></br>
+        <div id="testResults"></div>
+      </div>
+
+    </div> <!-- accordion -->
+
+
+<!-- ================== KO Templates ================== -->
+
+<script type="text/html" id="mote-template">
+    <li>
+        Mote <span data-bind="text: $index"></span>
+        <b><span data-bind="text: name"></span></b> of type <i><span data-bind="text: type"></span></i> from
+        <span data-bind="text: cf"></span>, delimiter [ <span data-bind="text: delim"></span> ]
+        <button data-bind="jqButton, click: $parent.editMote">Edit</button>
+        <button data-bind="jqButton, click: $parent.delMote">Delete</button>
+        <span data-bind="if: type == 'Short Text'">
+            <button data-bind="jqButton, click: $parent.configCat" class="configCat">Configure</button>
+            <button data-bind="jqButton, click: $parent.rebuildCat" class="rebuildCat">Rebuild</button>
+        </span>
+    </li>
+</script>
+
+<!-- Map Entry Point Templates -->
+<script type="text/html" id="ep-map-template">
+    <h2><b>Map Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Map</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
+    <ul>
+        <li>Map short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
+        <li>Map Center (Lat)
+            <input class="ed-lat-id" data-bind="value: theEP.settings.lat" type="text" size="6"/>
+            (Long) <input class="ed-lon-id" data-bind="value: theEP.settings.lon" type="text" size="6"/>
+            Initial Zoom <input data-bind="value: theEP.settings.zoom" type="text" size="2"/>
+        </li>
+        <li>Marker Radius <select data-bind="value: theEP.settings.size">
+                <option value="s">Small</option>
+                <option value="m">Medium</option>
+                <option value="l">Large</option>
+            </select>&nbsp;
+          Marker Mote (for Lat/Lon) <select data-bind="value: theEP.settings.coordMote, options: $root.coordMoteNames"></select>
+        </li>
+        <div data-bind="template: { name: 'map-layer-template', foreach: theEP.settings.layers, as: 'theLayer' }"></div>
+        <button data-bind="jqButton, click: $root.addLayer.bind(theEP)">Add Layer</button>
+        <div data-bind="template: { name: 'map-legend-template', foreach: theEP.settings.legends }"></div>
+        <button data-bind="jqButton, click: $root.addMapLegend.bind(theEP)">Add Legend</button>
+    </ul>
+</script>
+
+<script type="text/html" id="map-layer-template">
+    <li>
+        <span data-bind="if: $index() == 0">
+            <b>Base Layer</b>
+            <select data-bind="value: theLayer.id, options: $root.baseLayers, optionsText: 'name', optionsValue: 'layerID'"></select>
+        </span>
+        <span data-bind="if: $index() > 0">
+            <b>Overlay Layer <span data-bind="text: $index"></span></b>
+            <select data-bind="value: theLayer.id, options: $root.overLayers, optionsText: 'name', optionsValue: 'layerID'"></select>
+            <button data-bind="jqButton, click: function() { $root.delLayer($data, theEP, $index()); }">Delete</button>
+        </span>
+        Opacity <span data-bind="text: theLayer.opacity"></span>
+        <div class="opacity-slider"><div data-bind="opacitySlider: theLayer.opacity"></div></div>
+    </li>
+</script>
+
+<script type="text/html" id="map-legend-template">
+    <li>
+        <b>Legend <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.stMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delMapLegend($data, theEP, $index()); }">Delete</button>
+    </li>
+</script>
+
+
+<!-- Card Entry Point Template -->
+<script type="text/html" id="ep-cards-template">
+    <h2><b>Cards Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Cards</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
+    <ul>
+        <li>Card short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
+        <li>Card Title <select data-bind="value: theEP.settings.title, options: $root.anyTxtDMoteNames"></select></li>
+        <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Values must be configured for colors)</li>
+        <li>Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="9"/>&nbsp;
+        Width <select data-bind="value: theEP.settings.width">
+                              <option value="auto">Automatic</option>
+                              <option value="thin">Thin</option>
+                              <option value="med-width">Medium</option>
+                              <option value="wide">Wide</option>
+              </select>
+        Height <select data-bind="value: theEP.settings.height">
+                              <option value="auto">Automatic</option>
+                              <option value="short">Short</option>
+                              <option value="med-height">Medium</option>
+                              <option value="tall">Tall</option>
+              </select>
+        </li>
+        <li>Background Color <input data-bind="value: theEP.settings.bckGrd" type="text" size="12"/> (CSS color name, #hexvalue, or blank for default)</li>
+        <div data-bind="template: { name: 'cards-content-template', foreach: theEP.settings.content }"></div>
+        <button data-bind="jqButton, click: $root.addCardContent.bind(theEP)">Add Content Mote</button>
+
+        <div data-bind="template: { name: 'cards-filter-template', foreach: theEP.settings.filterMotes }"></div>
+        <button data-bind="jqButton, click: $root.addCardFilter.bind(theEP)">Add Filter Mote</button>
+
+        <div data-bind="template: { name: 'cards-sort-template', foreach: theEP.settings.sortMotes }"></div>
+        <button data-bind="jqButton, click: $root.addCardSort.bind(theEP)">Add Sort Mote</button>
+    </ul>
+</script>
+
+<script type="text/html" id="cards-content-template">
+    <li>
+        Cards content mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.contentMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delCardContent($data, theEP, $index()); }">Delete</button>
+    </li>
+</script>
+
+<script type="text/html" id="cards-filter-template">
+    <li>
+        Cards filter mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.anyTxtMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delCardFilter($data, theEP, $index()); }">Delete</button>
+    </li>
+</script>
+
+<script type="text/html" id="cards-sort-template">
+    <li>
+        Cards sort mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.anyTxtMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delCardSort($data, theEP, $index()); }">Delete</button>
+    </li>
+</script>
+
+
+<!-- Views Data -->
+<script type="text/html" id="widget-template">
+    <li>
+        <b>Widget <span data-bind="text: $index"></span></b>: <span data-bind="text: name"></span>
+        <button data-bind="jqButton, click: function() { $root.delWidget($index()); }">Delete</button>
+    </li>
+</script>
+
+<script type="text/html" id="sel-mote-template">
+    <li>
+        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.contentMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delSelMote($index()); }">Delete</button>
+    </li>
+</script>
+
+<script type="text/html" id="post-mote-template">
+    <li>
+        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.allMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delPostMote($index()); }">Delete</button>
+    </li>
+</script>
+
+<script type="text/html" id="tax-mote-template">
+    <li>
+        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.allMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delTaxMote($index()); }">Delete</button>
+    </li>
+</script>
+
+
+<!-- ================= Dialog boxes and modals -- put in hidden section ================= -->
+<div class="hide">
+
+    <div id="mdl-server-err" title="Server Error">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>There was an error on the server and your operation could not complete. Please try again.</p>
+    </div>
+
+    <div id="mdl-del-mote" title="Delete mote?">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete the mote definition and all references to it?</p>
+    </div>
+
+    <div id="mdl-no-cfs" title="No Custom Fields">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>You have not imported any Markers associated with this Project and therefore cannot define motes.</p>
+    </div>
+
+    <div id="mdl-mote-name-badchars" title="Illegal Characters">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>This mote cannot be created with the name you have given. You can only use alphanumeric characters, spaces, underscores and hyphens in mote names.</p>
+    </div>
+
+    <div id="mdl-edit-mote" title="Edit Mote">
+        <h3 id="mdl-edit-mote-title"></h3>
+        Name: <input id="edMoteModalName" type="text" size="20"/><br/>
+        Mote Type:
+        <select id="edMoteModalType">
+            <option value="Short Text">Short Text</option>
+            <option value="Long Text">Long Text</option>
+            <option value="Lat/Lon Coordinates">Lat/Lon Coordinates</option>
+            <option value="Image">Image</option>
+            <option value="Link To">Link To</option>
+            <option value="SoundCloud">SoundCloud</option>
+            <option value="Transcript">Transcript</option>
+            <option value="Timestamp">Timestamp</option>
+        </select><br/>
+        Custom Field: <select id="edMoteModalCF" data-bind="options: optionsCF"></select><br/>
+        Value delimiter: <input id="edMoteModalDelim" type="text" size="2"/><br/>
+        <p>WARNING: Editing the mote definition will reset it in the rest of the settings. <span id="edMoteModalSTWarn">Delete this mote and recreate it if you have already created the corresponding legend and need to specify a different delimiter or custom field.</span></p>
+    </div> <!-- Edit Mote Modal -->
+
+    <div id="mdl-del-ep" title="Delete entry point?">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete this entry point?</p>
+    </div>
+
+    <div id="mdl-rebuild-cat" title="Rebuild Legend?">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to rebuild this Legend from scratch?</p>
+    </div>
+
+    <div id="mdl-config-cat" title="Configure Legend">
+        <h3 id="mdl-config-cat-title"></h3>
+        <div>
+            <input type="radio" name="viz-type-setting" value="colors"/>Use Colors
+            <input type="radio" name="viz-type-setting" value="icons"/>Use Icons
+            <button id="viz-type-reset" data-bind="jqButton">Reset All</button>
+            <input type="hidden" id="color-picker"></input>
+        </div><br/>
+        <button id="add-new-term" data-bind="jqButton">Add Term</button> <input id="ed-new-term" type="text" size="16"/>
+        <p class="wait-message">Please wait while the category/legend data is loaded.</p>
+        <div class="dd" id="category-tree">
+            <ol class="dd-list">
+            </ol>
+        </div>
+    </div> <!-- Configure Legend Modal -->
+
+    <div id="mdl-del-cf" title="Delete custom field?">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete this custom field entirely? This cannot be undone.</p>
+    </div>
+
+    <div id="mdl-fr-cf" title="Find/Replace custom field?">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to execute this find/replace operation on the custom field? This cannot be undone.</p>
+    </div>
+
+    <div id="mdl-mote-name-too-long" title="Error">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>The name of your mote is too long: a mote name cannot be longer than 32 characters.</p>
+    </div>
+
+    <div id="mdl-select-icon" title="Select Icon">
+        <p id="mdl-select-icon-title"></p>
+        <ol class="icon-list" id="select-icon-list">
+            <li class="maki-icon circle-stroked"></li>
+            <li class="maki-icon circle"></li>
+            <li class="maki-icon square-stroked"></li>
+            <li class="maki-icon square"></li>
+            <li class="maki-icon triangle-stroked"></li>
+            <li class="maki-icon triangle"></li>
+            <li class="maki-icon star-stroked"></li>
+            <li class="maki-icon star"></li>
+            <li class="maki-icon cross"></li>
+            <li class="maki-icon marker-stroked"></li>
+            <li class="maki-icon marker"></li>
+            <li class="maki-icon religious-jewish"></li>
+            <li class="maki-icon religious-christian"></li>
+            <li class="maki-icon religious-muslim"></li>
+            <li class="maki-icon cemetery"></li>
+            <li class="maki-icon rocket"></li>
+            <li class="maki-icon airport"></li>
+            <li class="maki-icon heliport"></li>
+            <li class="maki-icon rail"></li>
+            <li class="maki-icon rail-metro"></li>
+            <li class="maki-icon rail-light"></li>
+            <li class="maki-icon bus"></li>
+            <li class="maki-icon fuel"></li>
+            <li class="maki-icon parking"></li>
+            <li class="maki-icon parking-garage"></li>
+            <li class="maki-icon airfield"></li>
+            <li class="maki-icon roadblock"></li>
+            <li class="maki-icon ferry"></li>
+            <li class="maki-icon harbor"></li>
+            <li class="maki-icon bicycle"></li>
+            <li class="maki-icon park"></li>
+            <li class="maki-icon park2"></li>
+            <li class="maki-icon museum"></li>
+            <li class="maki-icon lodging"></li>
+            <li class="maki-icon monument"></li>
+            <li class="maki-icon zoo"></li>
+            <li class="maki-icon garden"></li>
+            <li class="maki-icon campsite"></li>
+            <li class="maki-icon theatre"></li>
+            <li class="maki-icon art-gallery"></li>
+            <li class="maki-icon pitch"></li>
+            <li class="maki-icon soccer"></li>
+            <li class="maki-icon america-football"></li>
+            <li class="maki-icon tennis"></li>
+            <li class="maki-icon basketball"></li>
+            <li class="maki-icon baseball"></li>
+            <li class="maki-icon golf"></li>
+            <li class="maki-icon swimming"></li>
+            <li class="maki-icon cricket"></li>
+            <li class="maki-icon skiing"></li>
+            <li class="maki-icon school"></li>
+            <li class="maki-icon college"></li>
+            <li class="maki-icon library"></li>
+            <li class="maki-icon post"></li>
+            <li class="maki-icon fire-station"></li>
+            <li class="maki-icon town-hall"></li>
+            <li class="maki-icon police"></li>
+            <li class="maki-icon prison"></li>
+            <li class="maki-icon embassy"></li>
+            <li class="maki-icon beer"></li>
+            <li class="maki-icon restaurant"></li>
+            <li class="maki-icon cafe"></li>
+            <li class="maki-icon shop"></li>
+            <li class="maki-icon fast-food"></li>
+            <li class="maki-icon bar"></li>
+            <li class="maki-icon bank"></li>
+            <li class="maki-icon grocery"></li>
+            <li class="maki-icon cinema"></li>
+            <li class="maki-icon pharmacy"></li>
+            <li class="maki-icon hospital"></li>
+            <li class="maki-icon danger"></li>
+            <li class="maki-icon industrial"></li>
+            <li class="maki-icon warehouse"></li>
+            <li class="maki-icon commercial"></li>
+            <li class="maki-icon building"></li>
+            <li class="maki-icon place-of-worship"></li>
+            <li class="maki-icon alcohol-shop"></li>
+            <li class="maki-icon logging"></li>
+            <li class="maki-icon oil-well"></li>
+            <li class="maki-icon slaughterhouse"></li>
+            <li class="maki-icon dam"></li>
+            <li class="maki-icon water"></li>
+            <li class="maki-icon wetland"></li>
+            <li class="maki-icon disability"></li>
+            <li class="maki-icon telephone"></li>
+            <li class="maki-icon emergency-telephone"></li>
+            <li class="maki-icon toilets"></li>
+            <li class="maki-icon waste-basket"></li>
+            <li class="maki-icon music"></li>
+            <li class="maki-icon land-use"></li>
+            <li class="maki-icon city"></li>
+            <li class="maki-icon town"></li>
+            <li class="maki-icon village"></li>
+            <li class="maki-icon farm"></li>
+            <li class="maki-icon bakery"></li>
+            <li class="maki-icon dog-park"></li>
+            <li class="maki-icon lighthouse"></li>
+            <li class="maki-icon clothing-store"></li>
+            <li class="maki-icon polling-place"></li>
+            <li class="maki-icon playground"></li>
+            <li class="maki-icon entrance"></li>
+            <li class="maki-icon heart"></li>
+            <li class="maki-icon london-underground"></li>
+            <li class="maki-icon minefield"></li>
+            <li class="maki-icon rail-underground"></li>
+            <li class="maki-icon rail-above"></li>
+            <li class="maki-icon camera"></li>
+            <li class="maki-icon laundry"></li>
+            <li class="maki-icon car"></li>
+            <li class="maki-icon suitcase"></li>
+            <li class="maki-icon hairdresser"></li>
+            <li class="maki-icon chemist"></li>
+            <li class="maki-icon mobilephone"></li>
+            <li class="maki-icon scooter"></li>
+        </ol>
+    </div> <!-- Select Icon Modal -->
+
+</div>
+
+</div> <!-- ko-dhp -->

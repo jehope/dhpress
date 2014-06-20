@@ -1,6 +1,6 @@
 # DH Press - Digital Humanities Toolkit
 
-Contributors: jehope, gaelicmichael, bgaston
+Contributors: jehope, gaelicmichael
 Donate link: http://dhpress.org/
 Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours
 Requires at least: 3.4
@@ -39,6 +39,12 @@ Go to DHPress > New Project and create a new project to get started
 
 
 == Changelog ==
+
+= 2.0 =
+* Entirely new Admin edit panel
+* TopicCards visualization
+* Multiple Entry Points
+* and much more...
 
 = 1.7.0 = 
 * Include two side by side transcripts

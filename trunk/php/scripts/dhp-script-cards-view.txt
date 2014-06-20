@@ -1,0 +1,53 @@
+    <!-- Handlebars Templates for Cards View -->
+
+<script id="dhp-script-cards-legend-head" type="text/x-handlebars-template">
+  <div id="legends"> </div>
+</script>
+
+<script id="dhp-script-cards-sort" type="text/x-handlebars-template">
+  <li class="has-dropdown">
+      <a href="#">Sort By</a>
+      <ul class="dropdown" id="dhp-cards-sort"">
+          <!-- links -->
+      </ul>
+  </li>
+</script>
+
+<script id="dhp-script-cards-filter-menu" type="text/x-handlebars-template">
+  <li class="has-dropdown">
+      <a href="#">Filter By</a>
+      <ul class="dropdown" id="dhp-cards-filter-menu"">
+          <!-- links -->
+      </ul>
+  </li>
+  <li class="active"><a id="dhp-filter-set" href="#">Options</a></li>
+  <li class="divider"></li>
+  <li class="active"><a id="dhp-filter-reset" href="#">No Filter</a></li>
+</script>
+
+<script id="dhp-script-filterModal" type="text/x-handlebars-template">
+  <div id="filterModal" class="reveal-modal large" data-reveal>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="filterModalLabel"></h3>
+      </div>
+      <div class="modal-body clearfix">
+      </div>
+      <div class="reveal-modal-footer clearfix ">
+        <ul class="button-group left"><li><a class="button success close-select-modal">Apply</a></li></ul>
+        <ul class="button-group right"><li><a class="button close-select-modal">Cancel</a></li></ul>
+      </div>
+    </div> <!-- modal-content -->
+    <a class="close-reveal-modal close-select-modal">&#215;</a>
+  </div> <!-- filterModal -->
+</script>
+
+<script id="dhp-script-filter-ltext" type="text/x-handlebars-template">
+  Filter by text (pattern) <input id="filter-text-input" type="text" size="8"/> <br/>
+</script>
+
+<script id="dhp-script-filter-stext" type="text/x-handlebars-template">
+  <input type="radio" name="filter-type" value="valSel"/>Select Legend value(s)<br/>
+  <div id="st-filter-vals"></div>
+  <input type="radio" name="filter-type" value="text"> Or filter by text pattern <input id="filter-text-input" type="text" size="12"/> <br/>
+</script>

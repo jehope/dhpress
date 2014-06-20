@@ -83,33 +83,6 @@ function dhp_mapset_init()
   register_post_type('dhp-maps',$args);
 }
 
-    // Add new taxonomy, NOT hierarchical
-// function mapset_init()
-// {
-//   $labels = array(
-//     'name' => _x( 'Mapsets', 'taxonomy general name' ),
-//     'singular_name' => _x( 'Mapset', 'taxonomy singular name' ),
-//     'all_items' => __( 'All Mapsets' ),
-//     'parent_item' => null,
-//     'parent_item_colon' => null,
-//     'edit_item' => __( 'Edit Mapset' ), 
-//     'update_item' => __( 'Update Mapset' ),
-//     'add_new_item' => __( 'Add New Mapset' ),
-//     'new_item_name' => __( 'New Mapset Name' ),
-//     'add_or_remove_items' => __( 'Add or remove mapsets' ),
-//     'menu_name' => __( 'Mapsets' ),
-//   ); 
-//   register_taxonomy('mapset','dhp-maps',array(
-//     'hierarchical' => true,
-//     'labels' => $labels,
-//     'show_ui' => true,
-//     'update_count_callback' => '_update_post_term_count',
-//     'query_var' => true,
-//     'rewrite' => array( 'slug' => 'mapsets' ),
-//   ));
-// }
-//add_action( 'init', 'mapset_init' );
-
 
 add_action( 'admin_enqueue_scripts', 'add_dhp_map_library_scripts', 10, 1 );
 
@@ -231,7 +204,7 @@ function show_dhp_map_settings_box()
     echo '<tr><td align=right>*Short title:</td><td><input name="dhp_map_shortname" id="dhp_map_shortname" type="text" size="60" value="'.$mapAttributes['dhp_map_shortname'].'"/></td></tr>';
     echo '<tr><td align=right>*URL:</td><td><input name="dhp_map_url" id="dhp_map_url" type="text" size="30" value="'.$mapAttributes['dhp_map_url'].'"/></td></tr>';
     echo '<tr><td align=right>Subdomains:</td><td><input name="dhp_map_subdomains" id="dhp_map_subdomains" type="text" size="30" value="'.$mapAttributes['dhp_map_subdomains'].'"/></td></tr>';
-    echo '<tr><td align=right>*Type:</td><td><select name="dhp_map_type" id="dhp_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML" '.$selectKML.' >KML</option><option value="DHP" '.$selectDHP.'>Custom DHP</option><option value="OSM" '.$selectOSM.'>OSM</option><option value="OSM" '.$selectTMS.'>TMS</option></select></td></tr>';
+    echo '<tr><td align=right>*Type:</td><td><select name="dhp_map_type" id="dhp_map_type"><option value="" '.$selectType.'>Please select a type</option><option value="Blank" '.$selectBlank.'>Blank</option><option value="WMS" '.$selectWMS.' disabled>WMS</option><option value="KML" '.$selectKML.' >KML</option><option value="DHP" '.$selectDHP.'>Custom DHP</option><option value="OSM" '.$selectOSM.'>OSM</option><option value="OSM" '.$selectTMS.'>TMS</option></select></td></tr>';
     echo '<tr><td align=right>*Category:</td><td><select name="dhp_map_category" id="dhp_map_category"><option value="" '.$selectCategory.'>Please select a category</option><option value="base layer" '.$selectBaseLayer.'>Base Layer</option><option value="overlay" '.$selectOverlay.' >Overlay</option></select></td></tr>';
 
     echo '<tr><td align=right>*North bounds:</td><td><input name="dhp_map_n_bounds" id="dhp_map_n_bounds" type="text" size="10" value="'.$mapAttributes['dhp_map_n_bounds'].'"/></td></tr>';
@@ -300,15 +273,15 @@ function dhp_map_page_template( $page_template )
         $page_template = dirname( __FILE__ ) . '/dhp-map-template.php';
 
         wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-        wp_enqueue_style('ol-map', plugins_url('/css/ol-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-        wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.2/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-            
+        wp_enqueue_style('dhp-map', plugins_url('/css/dhp-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+        wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.3/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+
         wp_enqueue_script('jquery');
         wp_enqueue_script('underscore');
 
         wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
 
-        wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.2/leaflet.js', dirname(__FILE__)));
+        wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.3/leaflet.js', dirname(__FILE__)));
         wp_enqueue_script('dhp-maps-view', plugins_url('/js/dhp-maps-view.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
         wp_enqueue_script('dhp-custom-maps', plugins_url('/js/dhp-custom-maps.js', dirname(__FILE__)), 'leaflet', DHP_PLUGIN_VERSION);
         wp_enqueue_script('dhp-public-map-script', plugins_url('/js/dhp-map-page.js', dirname(__FILE__)), array('leaflet', 'dhp-custom-maps' ), DHP_PLUGIN_VERSION);
@@ -337,7 +310,8 @@ function dhp_maps_filter_restrict_manage_posts()
         //in 'label' => 'value' format
         $values = array(
                         'DHP' => 'DHP',
-                        'KML' => 'KML'
+                        'KML' => 'KML',
+                        'Blank' => 'Blank'
                         // 'Google' => 'Google'
         );
         ?>
