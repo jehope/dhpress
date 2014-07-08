@@ -148,7 +148,7 @@ jQuery(document).ready(function($) {
   } // MapEntryPoint()
 
 
-    // Class constructor for Entry Point
+    // Class constructor for Cards Entry Point
   var CardsEntryPoint = function(epSettings) {
     var self = this;
 
@@ -177,6 +177,26 @@ jQuery(document).ready(function($) {
       self.settings.sortMotes.push(new ArrayString(sMote));
     });
   } // CardsEntryPoint()
+
+
+    // Class constructor for Pinboard Entry Point
+  var PinboardEntryPoint = function(epSettings) {
+    var self = this;
+
+    self.type = 'pinboard';
+    self.label= ko.observable(epSettings.label || 'name me');
+    self.settings = { };
+    self.settings.imageURL = ko.observable(epSettings.settings.imageURL);
+    self.settings.width = ko.observable(epSettings.settings.width);
+    self.settings.height = ko.observable(epSettings.settings.height);
+    self.settings.size = ko.observable(epSettings.settings.size);
+    self.settings.icon = ko.observable(epSettings.settings.icon);
+    self.settings.coordMote = ko.observable(epSettings.settings.coordMote);
+    self.settings.legends = ko.observableArray();
+    ko.utils.arrayForEach(normalizeArray(epSettings.settings.legends), function(theLegend) {
+      self.settings.legends.push(new ArrayString(theLegend));
+    });
+  } // PinboardEntryPoint()
 
     // Create new "blank" layer to store in Map entry point
     // NOTES: opacity is the only property that needs double binding
@@ -265,7 +285,7 @@ jQuery(document).ready(function($) {
       projSettings.general.homeLabel = self.edHomeBtnLbl();
       projSettings.general.homeURL = self.edHomeURL();
 
-      projSettings['motes'] = [];
+      projSettings.motes = [];
       ko.utils.arrayForEach(self.allMotes(), function(theMote) {
         var savedMote = {};
         savedMote.name    = theMote.name;
@@ -335,6 +355,19 @@ jQuery(document).ready(function($) {
           savedEP.settings.sortMotes = [];
           ko.utils.arrayForEach(theEP.settings.sortMotes(), function(sMote) {
             savedEP.settings.sortMotes.push(sMote.name());
+          });
+          break;
+
+        case 'pinboard':
+          savedEP.settings.imageURL = theEP.settings.imageURL();
+          savedEP.settings.width = theEP.settings.width();
+          savedEP.settings.height = theEP.settings.height();
+          savedEP.settings.size = theEP.settings.size();
+          savedEP.settings.icon = theEP.settings.icon();
+          savedEP.settings.coordMote = theEP.settings.coordMote();
+          savedEP.settings.legends = [];
+          ko.utils.arrayForEach(theEP.settings.legends(), function(theLegend) {
+            savedEP.settings.legends.push(theLegend.name());
           });
           break;
         } // switch ep type
@@ -444,6 +477,9 @@ jQuery(document).ready(function($) {
     }, self);
     self.coordMoteNames = ko.computed(function() {
       return doGetMoteNames(['Lat/Lon Coordinates']);
+    }, self);
+    self.xyMoteNames = ko.computed(function() {
+      return doGetMoteNames(['X-Y Coordinates']);
     }, self);
     self.stMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text']);
@@ -570,6 +606,12 @@ jQuery(document).ready(function($) {
                 theEP.settings.content.remove(function(mote) { return mote.name() === moteName; });
                 theEP.settings.filterMotes.remove(function(mote) { return mote.name() === moteName; });
                 theEP.settings.sortMotes.remove(function(mote) { return mote.name() === moteName; });
+                break;
+              case 'pinboard':
+                if (theEP.settings.coordMote() == moteName) {
+                  theEP.settings.coordMote('');
+                }
+                theEP.settings.legends.remove(function(mote) { return mote.name() === moteName; });
                 break;
               }
             });
@@ -1142,6 +1184,26 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new pinboard entry point
+    self.createPinEP = function() {
+      var _blankPinEP = {
+        type: 'pinboard',
+        label: 'name me',
+        settings: {
+          imageURL: '',
+          width: 500,
+          height: 500,
+          icon: '',
+          size: 'm',
+          coordMote: '',
+          legends: [ ]
+        }
+      };
+      self.setEP(_blankPinEP);
+      self.settingsDirty(true);
+    };
+
+
       // PURPOSE: Programmatically add an entry point to the settings (not via user interface)
     self.setEP = function(theEP) {
       var newEP;
@@ -1151,6 +1213,9 @@ jQuery(document).ready(function($) {
         break;
       case 'cards':
         newEP = new CardsEntryPoint(theEP);
+        break;
+      case 'pinboard':
+        newEP = new PinboardEntryPoint(theEP);
         break;
       }
       self.entryPoints.push(newEP);
@@ -1184,6 +1249,8 @@ jQuery(document).ready(function($) {
         return 'ep-map-template';
       case 'cards':
         return 'ep-cards-template';
+      case 'pinboard':
+        return 'ep-pin-template';
       }
     }; // calcEPTemplate()
 
@@ -1274,6 +1341,18 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new pinboard legend
+    self.addPinLegend = function(theEP) {
+      theEP.settings.legends.push(new ArrayString(''));
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to create new pinboard legend
+    self.delPinLegend = function(theLegend, theEP, index) {
+      theEP.settings.legends.splice(index, 1);
+      self.settingsDirty(true);
+    };
+
 
 //------------------------------------------ Views -----------------------------------------
 
@@ -1361,6 +1440,7 @@ jQuery(document).ready(function($) {
       ko.utils.arrayForEach(self.entryPoints(), function(theEP) {
         switch(theEP.type) {
         case 'map':
+        case 'pinboard':
           ko.utils.arrayForEach(theEP.settings.legends(), function (filterMote) {
             var moteName = filterMote.name();
               // Don't add if it already exists
@@ -1708,7 +1788,18 @@ jQuery(document).ready(function($) {
               theEP.label()+'").</p>');
           }
           break;
-        }
+        case 'pinboard':
+            // Do pinboards have at least one legend?
+          if (theEP.settings.legends().length == 0) {
+            $('#testResults').append('<p>You have not yet added a legend to the Pinboard entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          if (theEP.settings.coordMote() == '') {
+            $('#testResults').append('<p>You must specify the mote that will provide the coordinate for the Pinboard entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          break;
+        } // switch
       });
 
         // Is there at least one mote for select modal content?

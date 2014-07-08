@@ -25,7 +25,7 @@
 		    ],
 		    "eps": [										// contents of settings depends on type of entry point
 		    	{
-		            "type": String ("map" or "cards"),
+		            "type": String ("map" | "cards" | "pinboard" ),
 		            "label" : String (short and unique across entry points),
 		            "settings": {									// Map settings are as follows
 		                "lat": Number,
@@ -48,8 +48,8 @@
 		            }
 		            "settings" : {									// Topic Cards settings are as follows
 						"title": String (name of mote),				// to display on top of card
-		            	"width" : Number,							// Pixel width of cards
-		            	"height" : Number,							// Pixel height of cards
+		            	"width" : String,							// card width: "auto", thin", "med-width", "wide"
+		            	"height" : String,							// card height: "auto", "short", "med-height", "tall"
 						"color": String (name of mote),				// to determine color of card
 						"defColor" : String (CSS color to use),		// as default when no mote value
 						"bckGrd" : String (CSS color or # hex),
@@ -62,6 +62,17 @@
 						"sortMotes": [
 							// Array of mote names to use to sort cards (Short Text, Number types)
 						]
+		            }
+		            "settings" : {									// Pinboard settings are as follows
+		                "imageURL" : String,						// complete URL to background image
+		            	"width" : Number,							// Pixel width of background image
+		            	"height" : Number,							// Pixel height of background image
+		                "size": Character,							// relative size of markers: "s" | "m" | "l"
+		                "icon": String,								// Name of icon marker to use or "disable"
+						"coordMote": String (name of mote),			// mote which supplies X-Y coordinate
+		                "legends": [								// List of mote Legends/categories
+		                    String (name of mote), ...
+		                ]
 		            }
 		        }
 		    },

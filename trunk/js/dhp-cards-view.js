@@ -286,6 +286,8 @@ var dhpCardsView = {
 
                 if (dhpCardsView.curFilterVal.values.length) {
                         // A match on any of the values will qualify a card
+                        // TO DO: If hierarchical filter categories are to be supported, will need
+                        //      to deal with parent values here
                     var filterText = dhpCardsView.curFilterVal.values.join('|');
                     var regExp = new RegExp(filterText, "i");
                     var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);

@@ -29,6 +29,7 @@
                     <option value="Short Text">Short Text</option>
                     <option value="Long Text">Long Text</option>
                     <option value="Lat/Lon Coordinates">Lat/Lon Coordinates</option>
+                    <option value="X-Y Coordinates">X-Y Coordinates</option>
                     <option value="Image">Image</option>
                     <option value="Link To">Link To</option>
                     <option value="SoundCloud">SoundCloud</option>
@@ -49,6 +50,7 @@
           <p>
             <button data-bind="jqButton, click: createMapEP">Create Map</button>
             <button data-bind="jqButton, click: createCardsEP">Create Cards</button>
+            <button data-bind="jqButton, click: createPinEP">Create Pinboard</button>
           </p>
           <div data-bind="template: { name: calcEPTemplate, foreach: entryPoints, as: 'theEP' }"></div>
       </div>
@@ -285,6 +287,50 @@
     <li>
         Cards sort mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.anyTxtMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delCardSort($data, theEP, $index()); }">Delete</button>
+    </li>
+</script>
+
+
+<!-- Pinboard Point Templates -->
+<script type="text/html" id="ep-pin-template">
+    <h2><b>Pinboard Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Pinboard</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
+    <ul>
+        <li>Pinboard short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
+        <li>Background Image URL
+            <input data-bind="value: theEP.settings.imageURL" type="text" size="24"/>
+        </li>
+        <li>Background Image Size: Width (in pixels)
+            <input data-bind="value: theEP.settings.width" type="text" size="4"/>
+            Height (in pixels) <input data-bind="value: theEP.settings.height" type="text" size="4"/>
+        </li>
+        <li>Pin marker: Size <select data-bind="value: theEP.settings.size">
+                <option value="s">Small</option>
+                <option value="m">Medium</option>
+                <option value="l">Large</option>
+            </select>&nbsp;
+          Shape <select data-bind="value: theEP.settings.icon">
+                <option value="circle">Circle</option>
+                <option value="tack">Tack</option>
+            </select>&nbsp;
+          Mote (for X-Y) <select data-bind="value: theEP.settings.coordMote, options: $root.xyMoteNames"></select>
+        </li>
+        <div data-bind="template: { name: 'pin-legend-template', foreach: theEP.settings.legends }"></div>
+        <button data-bind="jqButton, click: $root.addPinLegend.bind(theEP)">Add Legend</button>
+    </ul>
+</script>
+
+<script type="text/html" id="pin-legend-template">
+    <li>
+        <b>Legend <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.stMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delMapLegend($data, theEP, $index()); }">Delete</button>
     </li>
 </script>
 
