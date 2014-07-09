@@ -27,7 +27,7 @@ var dhpCardsView = {
         //			cardsEP      = settings for cards entry point (from project settings)
         //          moteDefs     = mote definitions
         //          callBacks    = object loaded with project-page callback functions
-    initializeCards: function(ajaxURL, projectID, vizIndex, cardsEP, moteDefs, callBacks)
+    initialize: function(ajaxURL, projectID, vizIndex, cardsEP, moteDefs, callBacks)
     {
         var menuHTML, active;
 
@@ -139,7 +139,7 @@ var dhpCardsView = {
         dhpCardsView.dataAttrs     = _.sortBy(dhpCardsView.dataAttrs, function(moteName) { return moteName; });
 
         dhpCardsView.loadCards();
-    }, // initializeCards()
+    }, // initialize()
 
         // RETURNS: Mote definition for mote whose name is moteName
     findMoteByName: function(moteName)

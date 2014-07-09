@@ -132,15 +132,21 @@ jQuery(document).ready(function($) {
         });
 
             // all custom maps must have already been loaded into run-time "library"
-        dhpMapsView.initMapInterface(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams, callBacks);
+        dhpMapsView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams, callBacks);
 
         updateVizSpace = dhpMapsView.dhpUpdateSize;
         break;
 
     case 'cards':
-        dhpCardsView.initializeCards(ajaxURL, projectID, vizIndex, thisEP.settings, dhpSettings.motes, callBacks);
+        dhpCardsView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, dhpSettings.motes, callBacks);
 
         updateVizSpace = dhpCardsView.updateVizSpace;
+        break;
+
+    case 'pinboard';
+        dhpPinboardView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams, callBacks););
+
+        updateVizSpace = dhpPinboardView.dhpUpdateSize;
         break;
     }
 

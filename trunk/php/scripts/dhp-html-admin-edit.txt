@@ -305,7 +305,7 @@
     <ul>
         <li>Pinboard short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Background Image URL
-            <input data-bind="value: theEP.settings.imageURL" type="text" size="24"/>
+            <input data-bind="value: theEP.settings.imageURL" type="text" size="48"/>
         </li>
         <li>Background Image Size: Width (in pixels)
             <input data-bind="value: theEP.settings.width" type="text" size="4"/>

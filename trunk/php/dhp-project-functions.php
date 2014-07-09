@@ -14,6 +14,8 @@ define( 'DHP_HTML_ADMIN_EDIT',  'dhp-html-admin-edit.txt' );
 define( 'DHP_SCRIPT_PROJ_VIEW',  'dhp-script-proj-view.txt' );
 define( 'DHP_SCRIPT_MAP_VIEW',   'dhp-script-map-view.txt' );
 define( 'DHP_SCRIPT_CARDS_VIEW',   'dhp-script-cards-view.txt' );
+define( 'DHP_SCRIPT_PINBOARD_VIEW',   'dhp-script-pin-view.txt' );
+
 // define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unused
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
 
@@ -640,6 +642,20 @@ function createMarkerArray($project_id, $index)
 		}
 		break;
 
+	case "pinboard":
+			// Which field used to encode Lat-Long on map?
+		$pin_pointsMote = $projObj->getMoteByName($eps->settings->coordMote);
+			// Find all possible legends/filters for this pinboard -- each marker needs these fields
+		$filters = $eps->settings->legends;
+			// Collect all possible category values/tax names for each mote in all filters
+		foreach ($filters as $legend) {
+			$term = get_term_by('name', $legend, $rootTaxName);
+			if ($term) {
+				array_push($json_Object, getCategoryValues($term, $rootTaxName));
+			}
+		}
+		break;
+
 	case "cards":
 			// Convert title mote to custom field --
 			// If no title, no need (currently) to create cards property for markers
@@ -784,9 +800,21 @@ function createMarkerArray($project_id, $index)
 			if (empty($latlon)) {
 				continue;
 			}
-			$splitLatLon = split(',', $latlon);
+			$split = split(',', $latlon);
 			$thisFeature['geometry'] = array("type"=>"Point",
-											"coordinates"=> array((float)$splitLatLon[1],(float)$splitLatLon[0]));
+											"coordinates"=> array((float)$split[1],(float)$split[0]));
+		}
+
+			// Pinboard visualization features?
+			// Skip marker if missing necessary LatLong data or not valid numbers
+		if (!is_null($pin_pointsMote)) {
+			$xycoord = get_post_meta($marker_id, $pin_pointsMote->cf, true);
+			if (empty($xycoord)) {
+				continue;
+			}
+			$split = split(',', $xycoord);
+			$thisFeature['geometry'] = array("type"=>"Point",
+											"coordinates"=> array((float)$split[0],(float)$split[1]));
 		}
 
 			// Audio transcript features?
@@ -1912,6 +1940,7 @@ function dhpPerformTests()
 		foreach ($projSettings->eps as $ep) {
 			switch ($ep->type) {
 			case 'map':
+			case 'pinboard':
 				foreach ($ep->settings->legends as $theLegend) {
 					$results .= verifyLegend($projObj, $theLegend, 1);
 				}
@@ -1945,8 +1974,9 @@ function dhpPerformTests()
 					$error = false;
 					switch ($mote->type) {
 					case 'Lat/Lon Coordinates':
+					case 'X-Y Coordinates':
 						if (preg_match("/(-?\d+(\.?\d?)?),(\s?-?\d+(\.?\d?)?)/", $moteValue) === 0) {
-							$results .= '<p>Invalid Lat/Long Coordinate '.$moteValue;
+							$results .= '<p>Invalid Coordinate '.$moteValue;
 							$error = true;
 						}
 						break;
@@ -2212,6 +2242,9 @@ function dhp_mod_page_content($content) {
 		case 'cards':
 	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_CARDS_VIEW);
 			break;
+		case 'pinboard':
+	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_PINBOARD_VIEW);
+			break;
 		}
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
 		break;
@@ -2309,6 +2342,7 @@ function dhp_page_template( $page_template )
 	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps',
 	    							'dhp-jquery-ui-slider');
 	    	break;
+
 	    case 'cards':
 			wp_enqueue_style('dhp-cards-css', plugins_url('/css/dhp-cards.css',  dirname(__FILE__)) );
 
@@ -2318,6 +2352,17 @@ function dhp_page_template( $page_template )
 
 	    	array_push($dependencies, 'isotope', 'dhp-cards-view');
 	    	break;
+
+	    case 'pinboard':
+			wp_enqueue_style('dhp-pinboard-css', plugins_url('/css/dhp-pinboard.css',  dirname(__FILE__)) );
+
+			wp_enqueue_script('snap', plugins_url('/lib/snap.svg-min.js', dirname(__FILE__)));
+			wp_enqueue_script('dhp-pinboard-view', plugins_url('/js/dhp-pinboard-view.js', dirname(__FILE__)), 
+				'snap' );
+
+	    	array_push($dependencies, 'snap', 'dhp-pinboard-view');
+	    	break;
+
 	    default:
 	 		trigger_error("Unknown visualization type: ".$thisEP->type);
 	    	break;
@@ -2335,7 +2380,7 @@ function dhp_page_template( $page_template )
 	    	// Enqueue page JS last, after we've determine what dependencies might be
 		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
 
-		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
+		wp_localize_script('dhp-public-project-script', 'dhpData', array(
 			'ajax_url'   => $dev_url,
 			'vizParams'  => $vizParams,
 			'settings'   => $allSettings
@@ -2346,21 +2391,21 @@ function dhp_page_template( $page_template )
 		$project_id = get_post_meta($post->ID, 'project_id',true);
 		$projObj = new DHPressProject($project_id);
 
-		//foundation styles
-		wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
-		wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
+			//foundation styles
+		wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
+		wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
 		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('jquery');
-		wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
-		wp_enqueue_script( 'dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
+		wp_enqueue_script('dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
+		wp_enqueue_script('dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('underscore');
 
 			// Enqueue last, after dependencies determined
 		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION);
 
-		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
+		wp_localize_script('dhp-public-project-script', 'dhpData', array(
 			'ajax_url' => $dev_url,
 			'settings' => $projObj->getAllSettings()
 		) );
