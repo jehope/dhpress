@@ -300,7 +300,8 @@ var dhpMapsView = {
 
         // PURPOSE: Determine what color to use for marker
         // INPUT:   cats = the array of legend categories for this marker
-        // TO DO:   Make more efficient: goes through 2 to 3 exhaustive searches for each marker
+        // TO DO:   Make more efficient: since Legend/Category terms have been flattened & viz info
+        //              copied to children it should not be necessary to find parent
     getActiveTermColor: function(cats) {
         var returnColor;
             // Find which of this item's legend values match current legend selection
@@ -311,7 +312,7 @@ var dhpMapsView = {
         }
 
             // Now, look through the current legend values for which matches first overlap
-            // TO DO: Make this more efficient: the search is done (exhaustively) twice here!
+            // TO DO: Search for flattened term w/ icon_url info
         var term = _.find(dhpMapsView.catFilter.terms, function(item) {
             return (item.id == matchID);
         });
@@ -469,7 +470,7 @@ var dhpMapsView = {
                 dhpMapsView.switchFilter(newLegend);
                 dhpMapsView.dhpUpdateSize();
 
-                    // Change active menu item
+                    // Change active menu item in navbar drop-down
                 jQuery('.legend-dropdown > .active').removeClass('active');
                 jQuery(target).parent().addClass('active');
 
@@ -541,10 +542,11 @@ var dhpMapsView = {
                 // "Root" DIV for this particular Legend
             legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+
                             '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
-                // Create entries for all of the 1st-level terms (do not represent children of terms)
+                // Create entries for all terms (though 2nd-level children are made invisible)
             _.each(filterTerms, function(theTerm) {
                 if (legendName !== theTerm.name) {
                     var hasParentClass = '';
+                        // Make 2nd-level children invisible with CSS
                     if(theTerm.parent) {
                         hasParentClass = 'hasParent';
                     }
@@ -581,13 +583,21 @@ var dhpMapsView = {
             var active = (legIndex == 0) ? ' class="active"' : '';
             jQuery('.dhp-nav .legend-dropdown').append('<li'+active+'><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
         });
+            // Add Layers to legends
+        jQuery('#legends .legend-row').append('<div class="legend-div" id="layers-panel"><div class="legend-title">Layer Controls</div></div>');
+
+            // Hide all Legends, except 0 by default
+        jQuery('.legend-div').hide();
+        jQuery('#term-legend-0').show();
+        jQuery('#term-legend-0').addClass('active-legend');
+
             // Update checkbox height(varies by theme/browser) 
         dhpMapsView.checkboxHeight = jQuery('#legends').find('input:checkbox').height();
 
             //Initialize new foundation elements
         jQuery(document).foundation();
 
-            // Handle resizing Legend (min/max)
+            // For small mobile screens, expand Legend menu on hover
         jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
         if(!jQuery('body').hasClass('isMobile')) {
             jQuery('.legend-resize').hide();
@@ -599,7 +609,7 @@ var dhpMapsView = {
             });
         }
 
-            // Add legend hide/show action
+            // Add legend Min-Max expand/contract action
         jQuery('.legend-resize').on('click', function(){
             if(jQuery('#legends').hasClass('mini')) {
                 jQuery('#legends').animate({ height: legendHeight },
@@ -634,8 +644,8 @@ var dhpMapsView = {
                 jQuery(this).closest('.row').addClass('selected');
                 jQuery(this).closest('.row').find('input').prop('checked', true);
 
-                    //child terms are now hidden in legend. This selects them if parent is checked
-                if(dhpMapsView.useParent) {
+                    // Child terms are hidden in menu -- selects them also automatically if parent is checked
+                if (dhpMapsView.useParent) {
                     jQuery('.active-legend .terms .row').find('*[data-parent="'+spanName+'"]').each(function( index ) {
                         jQuery( this ).closest('.row').find('input').prop('checked',true);
                     }); 
@@ -667,13 +677,6 @@ var dhpMapsView = {
             }
             dhpMapsView.refreshMarkerLayer();
         });
-            // Add Layers to legends
-        jQuery('#legends .legend-row').append('<div class="legend-div" id="layers-panel"><div class="legend-title">Layer Controls</div></div>');
-        jQuery('.legend-div').hide();
-
-            // Show Legend 0 by default
-        jQuery('#term-legend-0').show();
-        jQuery('#term-legend-0').addClass('active-legend');
 
             // Handle selection of different Legends from navbar
         jQuery('.dhp-nav .legend-dropdown a').click(function(evt) {
@@ -716,7 +719,6 @@ var dhpMapsView = {
         });
 
           // Show initial Legend selection and show it as active on the menu
-        dhpMapsView.slidersShowing = false;
         dhpMapsView.catFilter = legendList[0];
         dhpMapsView.currentLegend = legendList[0].name;
         dhpMapsView.slidersShowing = false;

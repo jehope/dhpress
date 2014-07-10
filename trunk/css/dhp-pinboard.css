@@ -3,6 +3,10 @@
 
 @charset "UTF-8";
 
+.hide {
+	display: hidden;
+}
+
 body.fullscreen {
 	overflow: hidden;
 }
@@ -29,22 +33,28 @@ body.fullscreen {
 
 /* ==================== NAV BUTTONS ====================*/
 
-    /* 7 nav icons */
-#dhp-controls {
+    /* 7 nav icons occupying 26x26 */
+#dhp-image-controls {
+	z-index: 1000;
+
     height: 26px;
     width: 182px;
     border: 1px solid #000;
-    margin: 0;
+    margin: 2px;
     padding: 0;
 }
 
-#dhp-controls ul {
+#dhp-image-controls ul {
+	z-index: 1000;
+
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-#dhp-controls li {
+#dhp-image-controls li {
+	z-index: 1000;
+
     list-style-type: none;
     display: inline;
     float: left;
@@ -187,9 +197,11 @@ body.fullscreen {
 	cursor: pointer;
 	line-height: 15px;
 }
+	/* Don't display legend items that are children nodes */
 .legend-div .terms .row.hasParent {
 	display: none;
 }
+
 .legend-div .terms .row:hover,
 .legend-div .terms .row.selected {
 	background: #e8f2e6;

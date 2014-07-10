@@ -143,8 +143,8 @@ jQuery(document).ready(function($) {
         updateVizSpace = dhpCardsView.updateVizSpace;
         break;
 
-    case 'pinboard';
-        dhpPinboardView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams, callBacks););
+    case 'pinboard':
+        dhpPinboardView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams, callBacks);
 
         updateVizSpace = dhpPinboardView.dhpUpdateSize;
         break;

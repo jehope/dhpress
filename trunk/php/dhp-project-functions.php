@@ -577,10 +577,15 @@ function dhp_get_term_by_parent($link_terms, $terms, $rootTaxName)
 			// 	 	"features" :
 			// 		[
 			// 			{ "type" : "Feature",
-			//							// Only if map
-			// 			  "geometry" : { "type" : "Point", "coordinates" : longlat },
+			//							// Only if map or pinboard
+			// 			  "geometry" : {
+			//					"type" : "Point",
+			//					"coordinates" : LongLat (or X-Y)
+			//			  },
 			//							// Only if topic card
-			//			  "card" : { "title": String },
+			//			  "card" : {
+			//					"title": String
+			//			  },
 			// 			  "properties" :
 			// 				[
 			//							// All data corresponding to categories/legends associated with marker

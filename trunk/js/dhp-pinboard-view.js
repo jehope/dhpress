@@ -13,10 +13,11 @@ var dhpPinboardView = {
 
         //					rawAjaxData = raw data returned from AJAX
         //					allMarkers = All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
+        //                          Points to features array
 
-        //                  currentLegend = name of current legend/filter mote
-        //                  catFilter = All values for currently selected Legend; see data desc in getIconsForTerms() of dhp-project-functions.php
-        //                  catFilterSelect = Current selection of legend/categories; Subset of catFilter.terms
+        //                  filters = array of all reformatted(flattend) Legend/Filter data
+        //                  curLgdName = name of current legend/filter
+        //                  curLgdFilter = pointer to current legend/filter array
 
         //                  radius = radius of geometric markers
         //                  iconSize = "s" | "m" | "l"
@@ -36,11 +37,11 @@ var dhpPinboardView = {
         //          mapEP        = settings for map entry point (from project settings)
         //          viewParams   = array of data about map layers (see dhpGetMapLayerData() in dhp-project-functions)
         //          callBacks    = set of callback functions back to dhp-project-page functions
-    initPinboard: function(ajaxURL, projectID, vizIndex, pinboardEP, viewParams, callBacks) {
+    initialize: function(ajaxURL, projectID, vizIndex, pinboardEP, viewParams, callBacks) {
              // Constants
         dhpPinboardView.checkboxHeight  = 12; // default checkbox height
-        dhpPinboardView.navButtonsW     = 182;
-        dhpPinboardView.navButtonsH     = 30;
+        dhpPinboardView.minWidth        = 182; // 182px for horizontal + 260px for Legend key
+        dhpPinboardView.controlHeight   = 49;  // max(navButtonHeight[30], LegendHeight[45]) + 4
 
             // Save visualization data for later
         dhpPinboardView.ajaxURL        = ajaxURL;
@@ -82,59 +83,224 @@ var dhpPinboardView = {
             // Add pinboard elements to nav bar
         jQuery('.dhp-nav .top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-pin-menus").html()));
 
-            // Set size of visualization space to background image plus navigation controls
-        jQuery("#dhp-visual").width(pinboardEP.width <= dhpPinboardView.navButtonsW ?
-                                    dhpPinboardView.navButtonsW : pinboardEP.width+4);
-        jQuery("#dhp-visual").height(pinboardEP.height+dhpPinboardView.navButtonsH);
+            // Set total size of visualization space to background image plus navigation controls
+        jQuery("#dhp-visual").width(pinboardEP.width < dhpPinboardView.minWidth ?
+                                    dhpPinboardView.minWidth : pinboardEP.width+4);
+        jQuery("#dhp-visual").height(pinboardEP.height+dhpPinboardView.controlHeight);
 
-            // Create buttons for navigating & zooming background image
+            // Create control div for Legend and image navigation buttons
         jQuery("#dhp-visual").append('<div id="dhp-controls"></div>');
-        jQuery("#dhp-controls").append('<ul><li class="refresh"></li><li class="zoom"></li><li class="reduce"></li><li class="left"></li><li class="right"></li><li class="up"></li><li class="down"></li></ul>');
 
             // Create placeholder for Legend menu
-        jQuery('#dhp-visual').append(Handlebars.compile(jQuery("#dhp-script-pin-legend-head").html()));
+        jQuery('#dhp-controls').append(Handlebars.compile(jQuery("#dhp-script-pin-legend-head").html()));
 
-            // Create view for background image
-        jQuery('#dhp-visual').append('<div id="dhpMap"></div>');
+            // Create buttons for navigating & zooming background image
+        jQuery('#dhp-controls').append('<div id="dhp-image-controls"><ul><li class="refresh"></li><li class="zoom"></li><li class="reduce"></li><li class="left"></li><li class="right"></li><li class="up"></li><li class="down"></li></ul></div>');
+        jQuery("#dhp-image-controls .refresh").click(dhpPinboardView.resetView);
+        jQuery("#dhp-image-controls .zoom").click(dhpPinboardView.zoomIn);
+        jQuery("#dhp-image-controls .reduce").click(dhpPinboardView.zoomOut);
+        jQuery("#dhp-image-controls .left").click(dhpPinboardView.goLeft);
+        jQuery("#dhp-image-controls .right").click(dhpPinboardView.goRight);
+        jQuery("#dhp-image-controls .up").click(dhpPinboardView.goUp);
+        jQuery("#dhp-image-controls .down").click(dhpPinboardView.goDown);
+
+            // Initialize Snap and create "paper" palette
+        dhpPinboardView.svgRoot = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        jQuery(dhpPinboardView.svgRoot).width(pinboardEP.width+2).height(pinboardEP.height+2);
+        // jQuery(dhpPinboardView.svgRoot).css({"border": "1px solid red" });
+
+        jQuery("#dhp-visual").append(dhpPinboardView.svgRoot);
+        dhpPinboardView.paper = Snap(dhpPinboardView.svgRoot);
+
+            // Create background image
+        dhpPinboardView.paper.image(pinboardEP.imageURL, 0, 0, pinboardEP.width, pinboardEP.height);
 
         dhpPinboardView.loadMarkers();
     }, // initPinboard()
 
 
+        // PURPOSE: Reset background image to initial 1-1 setting
+    resetView: function() {
+        dhpPinboardView.viewL=0;
+        dhpPinboardView.viewT=0;
+        dhpPinboardView.viewW=dhpPinboardView.pinboardEP.width;
+        dhpPinboardView.viewH=dhpPinboardView.pinboardEP.height;
+        viewScale=100;
+        dhpPinboardView.recalcViewBox();
+    }, // resetView()
+
+
+    zoomIn: function() {
+        var centX, centY, newW, newH;
+            // Allow a maximum of 5x zoom
+        if (dhpPinboardView.viewScale > 20) {
+                // To zoom in, we need to substract % of pix shown!
+            dhpPinboardView.viewScale -= dhpPinboardView.zoomStep;
+                // Compute current width, height and center point
+            centX = dhpPinboardView.viewL + (dhpPinboardView.viewW / 2);
+            centY = dhpPinboardView.viewT + (dhpPinboardView.viewH / 2);
+                // calculate new width and height according to new zoom
+            newW = ((dhpPinboardView.pinboardEP.width * dhpPinboardView.viewScale) / 100);
+            newH = ((dhpPinboardView.pinboardEP.height * dhpPinboardView.viewScale) / 100);
+                // calculate new viewBox coords
+            dhpPinboardView.viewL = centX - (newW / 2);
+            dhpPinboardView.viewW = newW;
+            dhpPinboardView.viewT = centY - (newH / 2);
+            dhpPinboardView.viewH = newH;
+            dhpPinboardView.recalcViewBox();
+        }
+    }, // zoomIn()
+
+
+    zoomOut: function() {
+        var centX, centY, newW, newH;
+            // Allow a maximum of 1.5x zoom
+        if (dhpPinboardView.viewScale < 150) {
+                // To zoom out, we need to add % of pix shown!
+            dhpPinboardView.viewScale += dhpPinboardView.zoomStep;
+                // Compute current width, height and center point
+            centX = dhpPinboardView.viewL + (dhpPinboardView.viewW / 2);
+            centY = dhpPinboardView.viewT + (dhpPinboardView.viewH / 2);
+                // calculate new width and height according to new zoom
+            newW = ((dhpPinboardView.pinboardEP.width * dhpPinboardView.viewScale) / 100);
+            newH = ((dhpPinboardView.pinboardEP.height * dhpPinboardView.viewScale) / 100);
+                // calculate new viewBox coords
+            dhpPinboardView.viewL = centX - (newW / 2);
+            dhpPinboardView.viewW = newW;
+            dhpPinboardView.viewT = centY - (newH / 2);
+            dhpPinboardView.viewH = newH;
+            dhpPinboardView.recalcViewBox();
+        }
+    }, // zoomOut()
+
+
+    goLeft: function() {
+        var stepX;
+        stepX = (dhpPinboardView.pinboardEP.width * dhpPinboardView.zoomScale) / 100;
+            // calculate new viewBox coords
+        dhpPinboardView.viewL += stepX;
+        dhpPinboardView.recalcViewBox();
+    }, // goLeft()
+
+
+    goRight: function() {
+        var stepX;
+        stepX = (dhpPinboardView.pinboardEP.width * dhpPinboardView.zoomScale) / 100;
+            // calculate new viewBox coords
+        dhpPinboardView.viewL -= stepX;
+        recalcViewBox();
+    }, // goRight()
+
+
+    goUp: function() {
+        var stepY;
+        stepY = (dhpPinboardView.pinboardEP.height * dhpPinboardView.zoomScale) / 100;
+            // calculate new viewBox coords
+        dhpPinboardView.viewT += stepY;
+        dhpPinboardView.recalcViewBox();
+    }, // goUp()
+
+
+    goDown: function() {
+        var stepY;
+        stepY = (dhpPinboardView.pinboardEP.height * dhpPinboardView.zoomScale) / 100;
+            // calculate new viewBox coords
+        dhpPinboardView.viewT -= stepY;
+        dhpPinboardView.recalcViewBox();
+    }, // goDown()
+
+
+        // PURPOSE: Set new viewBox given current coordinates
+    recalcViewBox: function() {
+            // reset viewBox with new settings (top, left, width, height)
+        var newSettings = dhpPinboardView.viewL.toString()+" "+dhpPinboardView.viewT.toString()+" "+
+                            dhpPinboardView.viewW.toString()+" "+dhpPinboardView.viewH.toString();
+        // console.log("resetting viewbox to "+newSettings);
+        dhpPinboardView.svgRoot.setAttribute("viewBox", newSettings);
+    }, // recalcViewBox()
+
+
         // PURPOSE: Create marker objects for pinboard visualization; called by loadMapMarkers()
         // INPUT:   geoData = all AJAX data as JSON object: Array of ["type", ...]
-        // SIDE-FX: assigns variables allMarkers, catFilter, rawAjaxData
+        // SIDE-FX: assigns variables rawAjaxData, allMarkers, filters
     createDataObjects: function(geoData) 
     {
         dhpPinboardView.rawAjaxData = geoData;
 
-        var legends = [];
+        dhpPinboardView.filters = [];
 
             // Assign data to appropriate objects
         _.each(dhpPinboardView.rawAjaxData, function(dataSet) {
             switch(dataSet.type) {
             case 'filter':
-                legends.push(dhpPinboardView.formatTerms(dataSet));
+                dhpPinboardView.filters.push(dhpPinboardView.reformatTerms(dataSet));
                 break;
             case 'FeatureCollection':
-                dhpPinboardView.allMarkers = dataSet;
+                dhpPinboardView.allMarkers = dataSet.features;
                 break;
             }
         });
 
+            // filters will now consist of array of objects with .name and .terms properties
+            // each .terms property is an array of flattened legend key arrays
+
             // First legend will be selected by default
-        dhpPinboardView.createLegends(legends);
-        dhpPinboardView.createMarkerLayer();
-        dhpPinboardView.buildLayerControls();   
+        dhpPinboardView.createLegends();
+        dhpPinboardView.createSVG();
     }, // createDataObjects()
+
+
+        // RETURNS: An array of indices to the markers belonging to the given category
+    getMarkersOfCategory: function(theCategory)
+    {
+        var catIndices=[], found;
+
+            // Go through all of the markers
+        _.each(dhpPinboardView.allMarkers, function(theMarker, index) {
+                // For each marker, see if it is marked with this category
+            found= _.find(theMarker.properties.categories, function(theCat) {
+                return theCat == theCategory;
+            });
+            if (found) {
+                catIndices.push(index);
+            }
+        });
+        return catIndices;
+    }, // getMarkersOfCategory()
+
+
+        // PURPOSE: Create SVG data to represent markers on image
+        // INPUT:   Array of Legend/Filters
+        // ASSUMES: 2nd-level Legend value gets checked or unchecked by 1st-level parent, so that
+        //              Markers can retain their distinctive 2nd-level IDs
+        // NOTES:   Need to create nested <g> groups to correspond to Legend heads and values
+        //          Then we can show or hide various Legends by setting attributes
+        //          Legend heads will have class .lgd-head and id #lgd-id+ID#
+        //          Legend values will have class .lgd-val and id #lgd-id+ID#
+    createSVG: function(legends)
+    {
+        _.each(dhpPinboardView.filters, function(theLegend, legIndex) {
+            var filterTerms = theLegend.terms;
+            var legendName = theLegend.name;
+
+                // Create SVG g[roup] for the Legend Head
+            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+
+                            '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
+                // Create entries for all of the 1st-level terms (do not represent children of terms)
+            _.each(filterTerms, function(theTerm) {
+                if (legendName !== theTerm.name) {
+                    // TO DO: Create SVG groups and markers
+                }
+            });
+        });
+    }, // createSVG()
 
 
         // PURPOSE: Called by createDataObjects() to take nested array(s) of terms and convert to flat array
         //              of items with fields: id, parent, name, icon_url
         // NOTES:   In array returned by php, parent markers have <id> field but children have <term_id>
-        // TO DO:   This looks very inefficient -- redo
         // RETURNS: Object with 2 properties: terms and all
-    formatTerms: function(oldTerms)
+    reformatTerms: function(oldTerms)
     {
         var newTerms = oldTerms;
         var termArray = [];
@@ -154,232 +320,106 @@ var dhpPinboardView = {
 
         newTerms.terms = termArray;
 
-            // use array of just IDs for speedy intersection checks
-        _.each(newTerms.terms, function(theTerm) {
-            allTerms.push(theTerm.id);
-        });
-        newTerms.all = allTerms;
-
         return newTerms;
-    }, // formatTerms()
+    }, // reformatTerms()
 
-
-        // PURPOSE: Creates and draws marker layer on map
-        //          Called whenever the terms are filtered (inc initial display)
-    createMarkerLayer: function() {
-    }, // createMarkerLayer()
-
-
-        // PURPOSE: Determine what color to use for marker
-        // INPUT:   cats = the array of legend categories for this marker
-        // TO DO:   Make more efficient: goes through 2 to 3 exhaustive searches for each marker
-    getActiveTermColor: function(cats) {
-        var returnColor;
-            // Find which of this item's legend values match current legend selection
-        var matchID = _.intersection(dhpPinboardView.catFilterSelect, cats);
-            // For motes with multiple values, we will need to arbitrarily select first match
-        if (_.isArray(matchID)) {
-            matchID = matchID[0];
-        }
-
-            // Now, look through the current legend values for which matches first overlap
-            // TO DO: Make this more efficient: the search is done (exhaustively) twice here!
-        var term = _.find(dhpPinboardView.catFilter.terms, function(item) {
-            return (item.id == matchID);
-        });
-
-            // Does this term have a parent? Get color from parent
-        if (term.parent && dhpPinboardView.useParent) {
-                // Search through filter for parent's term entry
-                // NOTE: Further inefficiency: 3rd exhaustive search!!
-            var parentTerm = _.find(dhpPinboardView.catFilter.terms, function(parent) {
-                return (parent.id == term.parent);
-            });
-            returnColor = parentTerm['icon_url'];
-
-            // No parent, get this icon's color
-        } else {
-            dhpPinboardView.parentIcon = term['icon_url'];
-            returnColor = term['icon_url'];
-        }
-
-        return returnColor;
-    }, // getActiveTermColor()
-
-
-        // PURPOSE: Create the Leaflet feature associated with this entry
-    pointToLayer: function(feature, latlng) {
-        var fColor = dhpPinboardView.getActiveTermColor(feature.properties.categories);
-        var fType = fColor.substring(0,1);
-        switch (fType) {
-        case '#':
-            return L.circleMarker(latlng, {
-                radius: dhpPinboardView.radius,
-                fillColor: fColor,
-                color: "#000",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: dhpPinboardView.checkOpacity
-            });
-        case '.':
-                // See if maki-icon has already been created and if not create it
-            var iName = fColor.substring(1);
-            var mIcon = dhpPinboardView.makiIcons[iName];
-            if (mIcon == undefined || mIcon == null) {
-                mIcon = L.MakiMarkers.icon({
-                    icon: iName,
-                    color: "#12a",
-                    size: dhpPinboardView.makiSize
-                });
-                dhpPinboardView.makiIcons[iName] = mIcon;
-            }
-            return L.marker(latlng, { icon: mIcon, riseOnHover: true });
-        default:
-            throw new Error("Unsupported feature type: "+fColor);
-        }
-    }, // pointToLayer()
-
-        // PURPOSE: Bind controls for each Marker
-    onEachFeature: function(feature, layer)
-    {
-            // Hover popup only for touchscreen
-        if (dhpPinboardView.isTouch) {
-            layer.bindPopup('<div><h1>'+feature.properties.title+
-                '</h1><a class="button success" onclick="javascript:dhpPinboardView.onFeatureSelect()">More</a></div>',
-                {offset: L.Point(0, -10)});
-
-                // Click is automatically handled by Leaflet popup
-            layer.on({
-                mouseover: dhpPinboardView.hoverFeature,
-                mouseout: dhpPinboardView.resetHighlight
-            });
-        } else {
-            layer.on({
-                click: dhpPinboardView.clickFeature
-            });
-        }
-    }, // onEachFeature()
-
-        // PURPOSE: Determine which markers to display based on selected array
-        // RETURNS: true or false, depending on if its id is in selected array
-    filterMapMarkers: function(feature)
-    {
-        return (_.intersection(feature.properties.categories, dhpPinboardView.catFilterSelect).length >= 1);
-    }, // filterMapMarkers()
-
-        // PURPOSE: Handle visual impact of change of Legend selection: selecting entirely (new Legend or selection )
-    refreshMarkerLayer: function() {
-        dhpPinboardView.findSelectedCats();
-        dhpPinboardView.control.removeLayer(dhpPinboardView.markerLayer);
-        dhpPinboardView.mapLeaflet.removeLayer(dhpPinboardView.markerLayer);
-            // since createMarkerLayer() is going to create new marker layer, need to remove from layer array
-        dhpPinboardView.mapLayers.pop();
-        dhpPinboardView.createMarkerLayer();
-    }, // refreshMarkerLayer()
 
         // PURPOSE: Handle user selection of legend in navbar menu
         // INPUT:   target = element selected by user
     switchLegend: function(target)
     {
-            // Unhighlight the layers button in nav bar
-        jQuery('#layers-button').parent().removeClass('active');
+        var newLgdName = jQuery(target).text();
 
-        var newLegend = jQuery(target).text();
-
-            // If sliders are showing, then might just need to adjust Legend display, not recalculate
-        if (dhpPinboardView.slidersShowing || newLegend !== dhpPinboardView.currentLegend) {
-            dhpPinboardView.slidersShowing = false;
-
-                // Don't display current (or any) Legend
+        if (newLgdName !== dhpPinboardView.curLgdName) {
+                // Don't display current (or any) Legend in main Legend key
             jQuery('.legend-div').hide();
             jQuery('.legend-div').removeClass('active-legend');
 
-                // Display selected legend (whose ID was stored in href)
+                // Display selected legend (whose ID was stored in href) in main Legend key
             var action = jQuery(target).attr('href');
             jQuery(action).addClass('active-legend');
             jQuery(action).show();
 
-            if (newLegend !== dhpPinboardView.currentLegend) {
-                    // Update the markers to show on map
-                dhpPinboardView.switchFilter(newLegend);
-                dhpPinboardView.dhpUpdateSize();
+                // Change active menu item
+            jQuery('.legend-dropdown > .active').removeClass('active');
+            jQuery(target).parent().addClass('active');
 
-                    // Change active menu item
-                jQuery('.legend-dropdown > .active').removeClass('active');
-                jQuery(target).parent().addClass('active');
-
-                dhpPinboardView.currentLegend = newLegend;
-            }
+                // Update the markers to show on pinboard
+            dhpPinboardView.switchFilter(newLgdName);
+            dhpPinboardView.dhpUpdateSize();
         }
-    },  // switchLegend()
+    }, // switchLegend()
 
-        // PURPOSE: Handle user selecting new legend category
+
+        // PURPOSE: Handle data implications of new Legend/Category
         // INPUT:   filterName = name of legend/category selected
         // ASSUMES: rawAjaxData has been assigned, selectControl has been initialized
-        // SIDE-FX: Changes catFilter
+        // SIDE-FX: Sets curLgdName, curLgdFilter; modifies svg class settings
     switchFilter: function(filterName)
     {
-        var filterObj = _.where(dhpPinboardView.rawAjaxData, {type: "filter", name: filterName});
-        dhpPinboardView.catFilter = filterObj[0];
-        dhpPinboardView.refreshMarkerLayer();
-    },  // switchFilter()
+            // Reset current Legend/Filter variables
+        dhpPinboardView.curLgdName = filterName;
+        dhpPinboardView.curLgdFilter = _.find(dhpPinboardView.filters, function(theFilter) {
+            return theFilter.name === filterName;
+        });
 
-        // PURPOSE: Handle user selection of a legend value, so that only markers with that value shown
-        // INPUT:   singleID = ID of the Legend value to select
-        // RETURNS: Array of term objects from catFilter that match current UI selection based on ID
-        // ASSUMES: catFilter is null or contains lists of terms for current Legend/Filter
-    findSelectedCats: function(singleID)
-    {
-        var selCatFilter = [];
-        var countTerms = 0;
-        var i, tempSelCat, tempFilter;
+console.log("Switch to filter [name]:"+dhpPinboardView.curLgdFilter.name+" [id]:"+dhpPinboardView.curLgdFilter.id);
 
-        if (dhpPinboardView.catFilter) {
-            countTerms = Object.keys(dhpPinboardView.catFilter.terms).length;
-        }
+            // Add "hide" to class of all Legend heads in SVG
+        var allGroupings = dhpPinboardView.paper.selectAll('.lgd-head');
+        _.each(allGroupings, function(theGrouping, index) {
+            theGrouping.addClass('hide');
+        });
 
-        if (singleID) {
-            for (i=0;i<countTerms;i++) {
-                tempFilter = dhpPinboardView.catFilter.terms[i];
-                if(tempFilter.id==singleID) {
-                    selCatFilter[0] = tempFilter.id;
-                    break;
-                }
-            }
-            // unknown, or multiple selection from legend
+            // Remove "hide" for this Legend head in SVG
+        var thisGroup = dhpPinboardView.paper.select('.lgd-head #lgd-id'+dhpPinboardView.curLgdFilter.terms[0].id);
+        if (thisGroup) {
+            thisGroup.removeClass('hide');
         } else {
-            jQuery('#legends .active-legend .compare input:checked').each(function(index) {
-                tempSelCat = jQuery(this).closest('.row').find('.columns .value').data( 'id' );
-                for(i=0;i<countTerms;i++) {
-                    tempFilter = dhpPinboardView.catFilter.terms[i];
-                    if(tempFilter.id==tempSelCat) {
-                        selCatFilter[index] = tempFilter.id;
-                    }
-                }
-            });
+console.log("Bug in Lgd head handling: Legend Head not found");
         }
-        dhpPinboardView.catFilterSelect = selCatFilter;
-    }, // findSelectedCats()
+    }, // switchFilter()
+
+
+        // PURPOSE: Handle user changing Legend keys in current Legend -- show current marker selection
+        // ASSUMES: All Legends but current has "hide" in class
+    refreshMarkerLayer: function()
+    {
+        var grpsToHide, lgdID, grpsToShow;
+
+            // Hide all Legend values in current Legend by default
+        grpsToHide = dhpPinboardView.paper.select('#lgd-id'+dhpPinboardView.curLgdFilter.terms[0].id+' .lgd-val');
+
+            // Go through all checked Legend values and remove hide from class of all assoc. markers
+        jQuery('#legends .active-legend .compare input:checked').each(function(index) {
+            lgdID = jQuery(this).closest('.row').find('.columns .value').data('id');
+            grpsToShow = dhpPinboardView.paper.selectAll('#lgd-id'+lgdID);
+            _.each(grpsToShow, function(theGrouping, index) {
+                theGrouping.addClass('hide');
+            });
+        });
+    }, // refreshMarkerLayer()
+
 
         // PURPOSE: Create HTML for all of the legends for this visualization
-        // INPUT:   legendList = array of legends to display; each element has field "name" and array "terms" of [id, name, icon_url ]
-    createLegends: function(legendList) 
+    createLegends: function() 
     {
         var legendHtml;
         var legendHeight;
 
             // Build Legend controls on the right (category toggles) for each legend value and insert Legend name into dropdown above
-        _.each(legendList, function(theLegend, legIndex) {
+        _.each(dhpPinboardView.filters, function(theLegend, legIndex) {
             var filterTerms = theLegend.terms;
             var legendName = theLegend.name;
 
                 // "Root" DIV for this particular Legend
             legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+
                             '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
-                // Create entries for all of the 1st-level terms (do not represent children of terms)
+                // Create entries for all terms (though 2nd-level children are made invisible)
             _.each(filterTerms, function(theTerm) {
                 if (legendName !== theTerm.name) {
                     var hasParentClass = '';
+                        // Make 2nd-level children invisible with CSS
                     if(theTerm.parent) {
                         hasParentClass = 'hasParent';
                     }
@@ -409,24 +449,31 @@ var dhpPinboardView = {
                                                     theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                 }
             });
-            jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-map-legend-hideshow").html()));
-
+                // Put the Hide/Show checkbox at beginning of Legend
+            jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-pin-legend-hideshow").html()));
+                // Add constructed Legend key to total
             jQuery('#legends .legend-row').append(legendHtml);
                 // Add Legend title to dropdown menu in navbar -- make 1st Legend active by default
             var active = (legIndex == 0) ? ' class="active"' : '';
             jQuery('.dhp-nav .legend-dropdown').append('<li'+active+'><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
         });
+
+            // Hide all Legends, except 0 by default
+        jQuery('.legend-div').hide();
+        jQuery('#term-legend-0').show();
+        jQuery('#term-legend-0').addClass('active-legend');
+
             // Update checkbox height(varies by theme/browser) 
         dhpPinboardView.checkboxHeight = jQuery('#legends').find('input:checkbox').height();
 
             //Initialize new foundation elements
         jQuery(document).foundation();
 
-            // Handle resizing Legend (min/max)
+            // For small mobile screens, expand Legend menu on hover
         jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
         if(!jQuery('body').hasClass('isMobile')) {
             jQuery('.legend-resize').hide();
-            jQuery('#legends').hover(function(){
+            jQuery('#legends').hover(function() {
                 jQuery('.legend-resize').fadeIn(100);
             },
             function() {
@@ -434,9 +481,9 @@ var dhpPinboardView = {
             });
         }
 
-            // Add legend hide/show action
-        jQuery('.legend-resize').on('click', function(){
-            if(jQuery('#legends').hasClass('mini')) {
+            // Add legend Min-Max expand/contract action
+        jQuery('.legend-resize').click(function(){
+            if (jQuery('#legends').hasClass('mini')) {
                 jQuery('#legends').animate({ height: legendHeight },
                     500,
                     function() {
@@ -451,11 +498,11 @@ var dhpPinboardView = {
         });
 
             // Handle user selection of value name from current Legend
-        jQuery('#legends div.terms .row a').on('click', function(event) {
+        jQuery('#legends div.terms .row a').click(function(event) {
             var spanName = jQuery(this).data('id');
 
                 // "Hide/Show all" button
-            if(spanName==='all') {
+            if (spanName==='all') {
                     // Should legend values now be checked or unchecked?
                 var boxState = jQuery(this).closest('.row').find('input').prop('checked');
                 jQuery('.active-legend .terms .row').find('input').prop('checked',!boxState);
@@ -469,24 +516,24 @@ var dhpPinboardView = {
                 jQuery(this).closest('.row').addClass('selected');
                 jQuery(this).closest('.row').find('input').prop('checked', true);
 
-                    //child terms are now hidden in legend. This selects them if parent is checked
-                if(dhpPinboardView.useParent) {
+                    // Child terms are hidden in menu -- selects them also automatically if parent is checked
+                if (dhpPinboardView.useParent) {
                     jQuery('.active-legend .terms .row').find('*[data-parent="'+spanName+'"]').each(function( index ) {
                         jQuery( this ).closest('.row').find('input').prop('checked',true);
                     }); 
                 }
             }
-                //update map
+                //update pinboard
             dhpPinboardView.refreshMarkerLayer();
         });
 
             // Handle user selection of checkbox from current Legend
-        jQuery('#legends div.terms input').on('click', function(event) {
+        jQuery('#legends div.terms input').click(function(event) {
             var checkAll = jQuery(this).closest('.row').hasClass('check-all');
             var boxState = jQuery(this).prop('checked');
             var spanName = jQuery(this).closest('.row').find('a').data('id');
                 // "Hide/Show all" checkbox
-            if( checkAll ) {
+            if (checkAll) {
                 jQuery('.active-legend .terms .row').find('input').prop('checked',boxState);
             }
                 // toggle individual terms
@@ -494,7 +541,7 @@ var dhpPinboardView = {
                 jQuery('.active-legend .terms .check-all').find('input').prop('checked',false);
                 
                     //child terms are now hidden in legend. This selects them if parent is checked
-                if(dhpPinboardView.useParent) {
+                if (dhpPinboardView.useParent) {
                     jQuery('.active-legend .terms .row').find('*[data-parent="'+spanName+'"]').each(function( index ) {
                         jQuery( this ).closest('.row').find('input').prop('checked',true);
                     });
@@ -502,13 +549,6 @@ var dhpPinboardView = {
             }
             dhpPinboardView.refreshMarkerLayer();
         });
-            // Add Layers to legends
-        jQuery('#legends .legend-row').append('<div class="legend-div" id="layers-panel"><div class="legend-title">Layer Controls</div></div>');
-        jQuery('.legend-div').hide();
-
-            // Show Legend 0 by default
-        jQuery('#term-legend-0').show();
-        jQuery('#term-legend-0').addClass('active-legend');
 
             // Handle selection of different Legends from navbar
         jQuery('.dhp-nav .legend-dropdown a').click(function(evt) {
@@ -516,47 +556,11 @@ var dhpPinboardView = {
             dhpPinboardView.switchLegend(evt.target);
         });
 
-            // Handle selecting "Layer Sliders" button on navbar
-        jQuery('#layers-button').click(function(evt) {
-            evt.preventDefault();
-
-                // Hide current Legend info
-            jQuery('.legend-div').hide();
-            jQuery('.legend-div').removeClass('active-legend');
-
-                // Were sliders already showing? Make filter mote legend visible again
-            if (dhpPinboardView.slidersShowing) {
-                    // Find the legend div that should be active now!
-                var activeLegend = jQuery('.legend-title').filter(function() {
-                    return (jQuery(this).text() === dhpPinboardView.currentLegend);
-                }).parent();
-
-                jQuery(activeLegend).addClass('active-legend');
-                jQuery(activeLegend).show();
-
-                jQuery('#layers-button').parent().removeClass('active');
-
-                dhpPinboardView.slidersShowing = false;
-
-                // Show sliders now
-            } else {
-                    // Show section of Legend with sliders
-                jQuery('#layers-panel').addClass('active-legend');
-                jQuery('#layers-panel').show();
-
-                jQuery('#layers-button').parent().addClass('active');
-
-                dhpPinboardView.slidersShowing = true;
-            }
-        });
-
           // Show initial Legend selection and show it as active on the menu
-        dhpPinboardView.slidersShowing = false;
-        dhpPinboardView.catFilter = legendList[0];
-        dhpPinboardView.currentLegend = legendList[0].name;
-        dhpPinboardView.slidersShowing = false;
-        dhpPinboardView.findSelectedCats();
+        dhpPinboardView.switchFilter(dhpPinboardView.filters[0].name);
+        dhpPinboardView.refreshMarkerLayer();
     }, // createLegends()
+
 
         // PURPOSE: Handle user selection of a marker on a map to bring up modal
         // INPUT:   e = event whose target is the feature selected on map
@@ -567,7 +571,8 @@ var dhpPinboardView = {
         dhpPinboardView.callBacks.showMarkerModal(dhpPinboardView.currentFeature);
     }, // onFeatureSelect()
 
-        // PURPOSE: Resizes map-specific elements when browser size changes
+
+        // PURPOSE: Resizes pinboard-specific elements when browser size changes
     dhpUpdateSize: function()
     {
         var newRowHeight, checkboxMargin;
@@ -585,10 +590,8 @@ var dhpPinboardView = {
             jQuery('.columns', this).eq(0).height(newRowHeight);
             jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
         });
-
-            // This is an Leaflet function to redraw the markers after map resize
-        dhpPinboardView.mapLeaflet.invalidateSize();
     }, // dhpUpdateSize()
+
 
         // RETURNS: true if touch is supported (and hence no mouse)
     isTouchDevice: function() {
