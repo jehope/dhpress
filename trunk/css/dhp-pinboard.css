@@ -7,36 +7,33 @@
 	display: hidden;
 }
 
-body.fullscreen {
-	overflow: hidden;
-}
-
-    /* Enable scroll bar in case background image is too large */
 #dhp-visual {
-	z-index: 1000;
-    overflow: auto;
+/*	z-index: 1000; */
 }
 
     /* Take over full screen but leave room for Nav bar */
 .fullscreen #dhp-visual {
-/*    width: 100%;
-    height: 100%; */
+    width: 100%;
+    height: 100%;
     top: 45px;
 }
 
-/*.fullscreen #dhpMap {
-	width: 100%;
-	height: 100%;
+    /* Enable scroll bar in case background image is too large */
+#svg-container {
+/*    z-index: 1000; */
+/*    overflow: auto; */
 }
-*/
+
+svg {
+/*    z-index: 1000; */
+/*    display:block; */
+}
 
 
 /* ==================== NAV BUTTONS ====================*/
 
     /* 7 nav icons occupying 26x26 */
 #dhp-image-controls {
-	z-index: 1000;
-
     height: 26px;
     width: 182px;
     border: 1px solid #000;
@@ -45,16 +42,12 @@ body.fullscreen {
 }
 
 #dhp-image-controls ul {
-	z-index: 1000;
-
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
 #dhp-image-controls li {
-	z-index: 1000;
-
     list-style-type: none;
     display: inline;
     float: left;

@@ -8,7 +8,7 @@
 
 var dhpPinboardView = {
 
-        // Contains fields: ajaxURL, projectID, mapEP, viewParams, vizIndex
+        // Contains fields: ajaxURL, projectID, pinboardEP, viewParams, vizIndex
         //                  callBacks = object containing callback functions to dhp-project-page
 
         //					rawAjaxData = raw data returned from AJAX
@@ -70,6 +70,10 @@ var dhpPinboardView = {
 
         dhpPinboardView.anyPopupsOpen = false;
 
+            // ensure that EP parameters are integers, not strings
+        pinboardEP.width = parseInt(pinboardEP.width);
+        pinboardEP.height = parseInt(pinboardEP.height);
+
             // set view/scroll window parameters
 
             // viewBox coordinates -- start out 1-1 actual pixel view
@@ -106,10 +110,13 @@ var dhpPinboardView = {
 
             // Initialize Snap and create "paper" palette
         dhpPinboardView.svgRoot = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
         jQuery(dhpPinboardView.svgRoot).width(pinboardEP.width+2).height(pinboardEP.height+2);
         // jQuery(dhpPinboardView.svgRoot).css({"border": "1px solid red" });
 
-        jQuery("#dhp-visual").append(dhpPinboardView.svgRoot);
+            // Create container for SVG and insert the "paper"
+        jQuery("#dhp-visual").append('<div id="svg-container"></div>');
+        jQuery("#svg-container").append(dhpPinboardView.svgRoot);
         dhpPinboardView.paper = Snap(dhpPinboardView.svgRoot);
 
             // Create background image
@@ -215,7 +222,7 @@ var dhpPinboardView = {
             // reset viewBox with new settings (top, left, width, height)
         var newSettings = dhpPinboardView.viewL.toString()+" "+dhpPinboardView.viewT.toString()+" "+
                             dhpPinboardView.viewW.toString()+" "+dhpPinboardView.viewH.toString();
-        // console.log("resetting viewbox to "+newSettings);
+        console.log("resetting viewbox to "+newSettings);
         dhpPinboardView.svgRoot.setAttribute("viewBox", newSettings);
     }, // recalcViewBox()
 
@@ -251,6 +258,7 @@ var dhpPinboardView = {
 
 
         // RETURNS: An array of indices to the markers belonging to the given category
+        // NOTES:   Must return 1st-level terms and all 2nd-level children
     getMarkersOfCategory: function(theCategory)
     {
         var catIndices=[], found;
@@ -270,29 +278,63 @@ var dhpPinboardView = {
 
 
         // PURPOSE: Create SVG data to represent markers on image
-        // INPUT:   Array of Legend/Filters
-        // ASSUMES: 2nd-level Legend value gets checked or unchecked by 1st-level parent, so that
-        //              Markers can retain their distinctive 2nd-level IDs
         // NOTES:   Need to create nested <g> groups to correspond to Legend heads and values
         //          Then we can show or hide various Legends by setting attributes
         //          Legend heads will have class .lgd-head and id #lgd-id+ID#
         //          Legend values will have class .lgd-val and id #lgd-id+ID#
-    createSVG: function(legends)
+        // ASSUMES: 2nd-level Legend value gets checked or unchecked by 1st-level parent, so that
+        //              Markers can retain their distinctive 2nd-level IDs
+        //          Legend head is the first term that appears in each Legend/Filter array
+    createSVG: function()
     {
-        _.each(dhpPinboardView.filters, function(theLegend, legIndex) {
-            var filterTerms = theLegend.terms;
-            var legendName = theLegend.name;
+        var legendName, lgdHeadGroup, lgdHeadVal, markerIndices, theMarker, shape;
 
-                // Create SVG g[roup] for the Legend Head
-            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+
-                            '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
-                // Create entries for all of the 1st-level terms (do not represent children of terms)
-            _.each(filterTerms, function(theTerm) {
-                if (legendName !== theTerm.name) {
-                    // TO DO: Create SVG groups and markers
-                }
-            });
-        });
+        _.each(dhpPinboardView.filters, function(theLegend, legIndex) {
+            legendName = theLegend.name;
+
+                // Create grouping for Legend head
+            lgdHeadGroup = dhpPinboardView.paper.group();
+                // Create entries for all of the 1st-level terms
+            _.each(theLegend.terms, function(theTerm) {
+                if (legendName === theTerm.name) {
+                        // Can't set the attributes for Legend head until we get to its term entry
+                    lgdHeadGroup.attr( { class: 'lgd-head', id: 'lgd-id'+theTerm.id } );
+                } else {
+                        // Create grouping for Legend value
+                    lgdHeadVal = lgdHeadGroup.group();
+                    lgdHeadVal.attr( { class: 'lgd-val', id: 'lgd-id'+theTerm.id } );
+                    markerIndices = dhpPinboardView.getMarkersOfCategory(theTerm.id);
+                        // Create each marker in this group
+                    _.each(markerIndices, function(mIndex) {
+                        theMarker = dhpPinboardView.allMarkers[mIndex];
+                        // switch(dhpPinboardView.pinboardEP.icon) {
+                        // case 'circle':
+                            shape = dhpPinboardView.paper.circle(theMarker.geometry.coordinates[0],
+                                                                theMarker.geometry.coordinates[1],
+                                                                dhpPinboardView.radius);
+                            shape.attr({
+                                fill: theTerm.icon_url,
+                                stroke: "#000", strokeWidth: 1
+                            });
+                        //     break;
+                        // case 'tack':
+                        //     break;
+                        // } // switch
+                        shape.node.id = mIndex;
+                        shape.data("i", mIndex);
+                            // Clicking shape must invoke select modal
+                        shape.click(function() {
+                                // Get index to marker
+                            var index = parseInt(this.data("i"));
+                            var clicked = dhpPinboardView.allMarkers[index];
+                            dhpPinboardView.callBacks.showMarkerModal(clicked);
+                        });
+                        lgdHeadVal.add(shape);
+                    }); // each marker
+                } // if
+            }); // each Legend value
+            lgdHeadGroup.add(lgdHeadVal);
+        }); // each Legend Head
     }, // createSVG()
 
 
@@ -360,23 +402,25 @@ var dhpPinboardView = {
             // Reset current Legend/Filter variables
         dhpPinboardView.curLgdName = filterName;
         dhpPinboardView.curLgdFilter = _.find(dhpPinboardView.filters, function(theFilter) {
-            return theFilter.name === filterName;
+            return theFilter.name == filterName;
         });
 
-console.log("Switch to filter [name]:"+dhpPinboardView.curLgdFilter.name+" [id]:"+dhpPinboardView.curLgdFilter.id);
+        var term0 = dhpPinboardView.curLgdFilter.terms[0];
 
             // Add "hide" to class of all Legend heads in SVG
         var allGroupings = dhpPinboardView.paper.selectAll('.lgd-head');
         _.each(allGroupings, function(theGrouping, index) {
-            theGrouping.addClass('hide');
+            if (!theGrouping.hasClass('hide')) {
+                theGrouping.addClass('hide');
+            }
         });
 
             // Remove "hide" for this Legend head in SVG
-        var thisGroup = dhpPinboardView.paper.select('.lgd-head #lgd-id'+dhpPinboardView.curLgdFilter.terms[0].id);
+        var thisGroup = dhpPinboardView.paper.select('#lgd-id'+term0.id);
         if (thisGroup) {
             thisGroup.removeClass('hide');
         } else {
-console.log("Bug in Lgd head handling: Legend Head not found");
+            throw new Error("Bug in Legend head handling: Legend Head ID not found in SVG");
         }
     }, // switchFilter()
 
@@ -388,14 +432,19 @@ console.log("Bug in Lgd head handling: Legend Head not found");
         var grpsToHide, lgdID, grpsToShow;
 
             // Hide all Legend values in current Legend by default
-        grpsToHide = dhpPinboardView.paper.select('#lgd-id'+dhpPinboardView.curLgdFilter.terms[0].id+' .lgd-val');
+        grpsToHide = dhpPinboardView.paper.selectAll('#lgd-id'+dhpPinboardView.curLgdFilter.terms[0].id+' .lgd-val');
+        _.each(grpsToHide, function(theGrouping, index) {
+            if (!theGrouping.hasClass('hide')) {
+                theGrouping.addClass('hide');
+            }
+        });
 
             // Go through all checked Legend values and remove hide from class of all assoc. markers
         jQuery('#legends .active-legend .compare input:checked').each(function(index) {
             lgdID = jQuery(this).closest('.row').find('.columns .value').data('id');
             grpsToShow = dhpPinboardView.paper.selectAll('#lgd-id'+lgdID);
             _.each(grpsToShow, function(theGrouping, index) {
-                theGrouping.addClass('hide');
+                    theGrouping.removeClass('hide');
             });
         });
     }, // refreshMarkerLayer()
@@ -556,20 +605,11 @@ console.log("Bug in Lgd head handling: Legend Head not found");
             dhpPinboardView.switchLegend(evt.target);
         });
 
-          // Show initial Legend selection and show it as active on the menu
-        dhpPinboardView.switchFilter(dhpPinboardView.filters[0].name);
+            // Set defaults without calling switchfilter()
+        dhpPinboardView.curLgdFilter = dhpPinboardView.filters[0];
+        dhpPinboardView.curLgdName = dhpPinboardView.curLgdFilter.name;
         dhpPinboardView.refreshMarkerLayer();
     }, // createLegends()
-
-
-        // PURPOSE: Handle user selection of a marker on a map to bring up modal
-        // INPUT:   e = event whose target is the feature selected on map
-        //             HOWEVER! This also called from hover modal WITHOUT a parameter!
-        // ASSUMES: currentFeature is set for reason noted above
-    onFeatureSelect: function(e)
-    {
-        dhpPinboardView.callBacks.showMarkerModal(dhpPinboardView.currentFeature);
-    }, // onFeatureSelect()
 
 
         // PURPOSE: Resizes pinboard-specific elements when browser size changes
