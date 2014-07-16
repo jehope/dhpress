@@ -57,7 +57,7 @@ jQuery(document).ready(function($) {
         sizeStr = 'width:'+ String(dhpSettings.views.miniWidth)+'px; ';
     }
     if (dhpSettings.views.miniHeight && dhpSettings.views.miniHeight != '') {
-        sizeStr += 'height:'+ String(dhpSettings.views.miniHeight)+'px;';
+        sizeStr += 'height:'+ String(dhpSettings.views.miniHeight)+'px';
     }
     if (sizeStr !== '') {
         $('<style type="text/css"> @media screen and (min-width: 600px) { #dhp-visual { '+
@@ -140,7 +140,7 @@ jQuery(document).ready(function($) {
     case 'cards':
         dhpCardsView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, dhpSettings.motes, callBacks);
 
-        updateVizSpace = dhpCardsView.updateVizSpace;
+        updateVizSpace = dhpCardsView.dhpUpdateSize;
         break;
 
     case 'pinboard':

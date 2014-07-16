@@ -88,9 +88,9 @@ var dhpPinboardView = {
         jQuery('.dhp-nav .top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-pin-menus").html()));
 
             // Set total size of visualization space to background image plus navigation controls
-        jQuery("#dhp-visual").width(pinboardEP.width < dhpPinboardView.minWidth ?
-                                    dhpPinboardView.minWidth : pinboardEP.width+4);
-        jQuery("#dhp-visual").height(pinboardEP.height+dhpPinboardView.controlHeight);
+        // jQuery("#dhp-visual").width(pinboardEP.width < dhpPinboardView.minWidth ?
+        //                             dhpPinboardView.minWidth : pinboardEP.width+4);
+        // jQuery("#dhp-visual").height(pinboardEP.height+dhpPinboardView.controlHeight);
 
             // Create control div for Legend and image navigation buttons
         jQuery("#dhp-visual").append('<div id="dhp-controls"></div>');
@@ -99,14 +99,14 @@ var dhpPinboardView = {
         jQuery('#dhp-controls').append(Handlebars.compile(jQuery("#dhp-script-pin-legend-head").html()));
 
             // Create buttons for navigating & zooming background image
-        jQuery('#dhp-controls').append('<div id="dhp-image-controls"><ul><li class="refresh"></li><li class="zoom"></li><li class="reduce"></li><li class="left"></li><li class="right"></li><li class="up"></li><li class="down"></li></ul></div>');
-        jQuery("#dhp-image-controls .refresh").click(dhpPinboardView.resetView);
-        jQuery("#dhp-image-controls .zoom").click(dhpPinboardView.zoomIn);
-        jQuery("#dhp-image-controls .reduce").click(dhpPinboardView.zoomOut);
-        jQuery("#dhp-image-controls .left").click(dhpPinboardView.goLeft);
-        jQuery("#dhp-image-controls .right").click(dhpPinboardView.goRight);
-        jQuery("#dhp-image-controls .up").click(dhpPinboardView.goUp);
-        jQuery("#dhp-image-controls .down").click(dhpPinboardView.goDown);
+        jQuery('#dhp-controls').append('<div id="dhp-image-controls"><div id="pin-left"></div><div id="pin-right"></div><div id="pin-down"></div><div id="pin-up"></div><div id="pin-reduce"></div><div id="pin-zoom"></div><div id="pin-refresh"></div></div>');
+        jQuery("#pin-refresh").click(dhpPinboardView.resetView);
+        jQuery("#pin-zoom").click(dhpPinboardView.zoomIn);
+        jQuery("#pin-reduce").click(dhpPinboardView.zoomOut);
+        jQuery("#pin-left").click(dhpPinboardView.goLeft);
+        jQuery("#pin-right").click(dhpPinboardView.goRight);
+        jQuery("#pin-up").click(dhpPinboardView.goUp);
+        jQuery("#pin-down").click(dhpPinboardView.goDown);
 
             // Initialize Snap and create "paper" palette
         dhpPinboardView.svgRoot = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -138,6 +138,7 @@ var dhpPinboardView = {
 
 
     zoomIn: function() {
+console.log("zoom in");
         var centX, centY, newW, newH;
             // Allow a maximum of 5x zoom
         if (dhpPinboardView.viewScale > 20) {
@@ -160,6 +161,7 @@ var dhpPinboardView = {
 
 
     zoomOut: function() {
+console.log("zoom out");
         var centX, centY, newW, newH;
             // Allow a maximum of 1.5x zoom
         if (dhpPinboardView.viewScale < 150) {
@@ -254,6 +256,8 @@ var dhpPinboardView = {
             // First legend will be selected by default
         dhpPinboardView.createLegends();
         dhpPinboardView.createSVG();
+
+        // dhpPinboardView.dhpUpdateSize();
     }, // createDataObjects()
 
 
@@ -298,7 +302,14 @@ var dhpPinboardView = {
             _.each(theLegend.terms, function(theTerm) {
                 if (legendName === theTerm.name) {
                         // Can't set the attributes for Legend head until we get to its term entry
-                    lgdHeadGroup.attr( { class: 'lgd-head', id: 'lgd-id'+theTerm.id } );
+                        // Only first legend is visible initially, so set class accordingly
+                    var lgdAtts = { id: 'lgd-id'+theTerm.id };
+                    if (legIndex == 0) {
+                        lgdAtts.class = 'lgd-head';
+                    } else {
+                        lgdAtts.class = 'lgd-head hide';
+                    }
+                    lgdHeadGroup.attr(lgdAtts);
                 } else {
                         // Create grouping for Legend value
                     lgdHeadVal = lgdHeadGroup.group();
@@ -608,11 +619,10 @@ var dhpPinboardView = {
             // Set defaults without calling switchfilter()
         dhpPinboardView.curLgdFilter = dhpPinboardView.filters[0];
         dhpPinboardView.curLgdName = dhpPinboardView.curLgdFilter.name;
-        dhpPinboardView.refreshMarkerLayer();
     }, // createLegends()
 
 
-        // PURPOSE: Resizes pinboard-specific elements when browser size changes
+        // PURPOSE: Resizes pinboard-specific elements initially and when browser size changes
     dhpUpdateSize: function()
     {
         var newRowHeight, checkboxMargin;
@@ -630,6 +640,13 @@ var dhpPinboardView = {
             jQuery('.columns', this).eq(0).height(newRowHeight);
             jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
         });
+
+            // Width of svg-container is same as visual space
+        jQuery('#svg-container').width(jQuery('#dhp-visual').width());
+            // Height of svg-container will be total viz space minus height of navbar, margins, border & scroll bar itself
+        var svgHeight = jQuery('#dhp-visual').height() - (dhpPinboardView.controlHeight+16);
+        jQuery('#svg-container').height(svgHeight);
+console.log("Setting height to "+svgHeight);
     }, // dhpUpdateSize()
 
 

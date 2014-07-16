@@ -311,10 +311,10 @@ var dhpCardsView = {
     }, // doFilter()
 
         // PURPOSE: Resizes dhp elements when browser size changes
-    updateVizSpace: function()
+    dhpUpdateSize: function()
     {
         jQuery("#card-container").isotope();
-    }, // updateVizSpace()
+    }, // dhpUpdateSize()
 
         // PURPOSE: Return the text color for card depending on background color
         // ASSUMES: bColor is in format #xxxxxx where each x is a hexadecimal numeral

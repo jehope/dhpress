@@ -21,79 +21,91 @@
     /* Enable scroll bar in case background image is too large */
 #svg-container {
 /*    z-index: 1000; */
-/*    overflow: auto; */
+/*    width: 500px;
+    height: 500px; */
+    border: 2px solid #000;
+    overflow: auto;
 }
 
 svg {
 /*    z-index: 1000; */
-/*    display:block; */
 }
 
 
 /* ==================== NAV BUTTONS ====================*/
 
-    /* 7 nav icons occupying 26x26 */
+    /* 7 nav icons */
 #dhp-image-controls {
-    height: 26px;
-    width: 182px;
+    height: 32px;
+    width: 240px;
+    margin: 3px;
+    margin-right: 6px;
+    padding: 0;
+
     border: 1px solid #000;
-    margin: 2px;
-    padding: 0;
+    background-image: url('images/pinbuttons.jpg');
+
+    float: right;
+
+    -moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+    -webkit-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+    box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
 }
 
-#dhp-image-controls ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+#pin-left {
+    position: relative;
+    top: 1;
+    left: 5;
+    height: 30;
+    width: 25;
 }
 
-#dhp-image-controls li {
-    list-style-type: none;
-    display: inline;
-    float: left;
-    border: 1px dotted gray; /* to check visible */
+#pin-right {
+    position: relative;
+    top: 1;
+    left: 38;
+    height: 30;
+    width: 25;
 }
 
-.refresh {
-    width: 24px;
-    height: 24px;
-    background-image: url('images/refresh.png');
+#pin-down {
+    position: relative;
+    top: 1;
+    left: 72;
+    height: 30;
+    width: 25;
 }
 
-.zoom {
-    width: 24px;
-    height: 24px;
-    background-image: url('images/zoom.png');
+#pin-up {
+    position: relative;
+    top: 1;
+    left: 105;
+    height: 30;
+    width: 25;
 }
 
-.reduce {
-    width: 24px;
-    height: 24px;
-    background-image: url('images/reduce.png');
+#pin-reduce {
+    position: relative;
+    top: 1;
+    left: 138;
+    height: 30;
+    width: 25;
 }
 
-.left {
-    width: 24px;
-    height: 24px;
-    background: url('images/left.png') no-repeat;
+#pin-zoom {
+    position: relative;
+    top: 1;
+    left: 177;
+    height: 30;
+    width: 25;
 }
 
-.right {
-    width: 24px;
-    height: 24px;
-    background: url('images/right.png') no-repeat;
-}
-
-.up {
-    width: 24px;
-    height: 24px;
-    background: url('images/up.png');
-}
-
-.down {
-    width: 24px;
-    height: 24px;
-    background: url('images/down.png');
+#pin-refresh {
+    position: relative;
+    top: 1;
+    left: 210;
+    height: 30;
+    width: 25;
 }
 
 /* ==================== LEGENDS ====================*/
