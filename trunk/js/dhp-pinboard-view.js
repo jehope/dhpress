@@ -22,6 +22,7 @@ var dhpPinboardView = {
         //                  radius = radius of geometric markers
         //                  iconSize = "s" | "m" | "l"
 
+        //                  iWidth, iHeight = actual pixel width and height of image
         //                  viewL, viewT, viewW, viewH = current viewport into background image
         //                  viewScale = current zoom scale % (100=fullsize)
         //                  zoomStep = % of zoom or reduce for each step
@@ -71,16 +72,16 @@ var dhpPinboardView = {
         dhpPinboardView.anyPopupsOpen = false;
 
             // ensure that EP parameters are integers, not strings
-        pinboardEP.width = parseInt(pinboardEP.width);
-        pinboardEP.height = parseInt(pinboardEP.height);
+        dhpPinboardView.iWidth  = typeof(pinboardEP.width)  === 'number' ? pinboardEP.width  : parseInt(pinboardEP.width);
+        dhpPinboardView.iHeight = typeof(pinboardEP.height) === 'number' ? pinboardEP.height : parseInt(pinboardEP.height);
 
             // set view/scroll window parameters
 
             // viewBox coordinates -- start out 1-1 actual pixel view
         dhpPinboardView.viewL=0;
         dhpPinboardView.viewT=0;
-        dhpPinboardView.viewW=pinboardEP.width;
-        dhpPinboardView.viewH=pinboardEP.height;
+        dhpPinboardView.viewW=dhpPinboardView.iWidth;
+        dhpPinboardView.viewH=dhpPinboardView.iHeight;
         dhpPinboardView.viewScale=100;
         dhpPinboardView.zoomStep=10;
 
@@ -111,7 +112,7 @@ var dhpPinboardView = {
             // Initialize Snap and create "paper" palette
         dhpPinboardView.svgRoot = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
-        jQuery(dhpPinboardView.svgRoot).width(pinboardEP.width+2).height(pinboardEP.height+2);
+        jQuery(dhpPinboardView.svgRoot).width(dhpPinboardView.iWidth+2).height(dhpPinboardView.iHeight+2);
         // jQuery(dhpPinboardView.svgRoot).css({"border": "1px solid red" });
 
             // Create container for SVG and insert the "paper"
@@ -120,25 +121,51 @@ var dhpPinboardView = {
         dhpPinboardView.paper = Snap(dhpPinboardView.svgRoot);
 
             // Create background image
-        dhpPinboardView.paper.image(pinboardEP.imageURL, 0, 0, pinboardEP.width, pinboardEP.height);
+        dhpPinboardView.paper.image(pinboardEP.imageURL, 0, 0, dhpPinboardView.iWidth, dhpPinboardView.iHeight);
 
         dhpPinboardView.loadMarkers();
     }, // initPinboard()
+
+
+        // PURPOSE: Resizes pinboard-specific elements initially and when browser size changes
+    dhpUpdateSize: function()
+    {
+        var newRowHeight, checkboxMargin;
+
+            //resize legend term position for long titles
+        jQuery('.active-legend .terms').css({top: jQuery('.active-legend .legend-title').height() });
+
+            //resize legend items that are two lines and center checkbox
+        jQuery('.active-legend .row').each(function(key,value) {
+                //height of row containing text(could be multiple lines)
+            newRowHeight   = jQuery('.columns', this).eq(1).height();
+                // variable to center checkbox in row
+            checkboxMargin = (newRowHeight - dhpPinboardView.checkboxHeight) / 2;
+                // set elements in rows with new values
+            jQuery('.columns', this).eq(0).height(newRowHeight);
+            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
+        });
+
+            // Width of svg-container is same as visual space
+        jQuery('#svg-container').width(jQuery('#dhp-visual').width()-2);
+            // Height of svg-container will be total viz space minus height of navbar, margins, border & scroll bar itself
+        var svgHeight = jQuery('#dhp-visual').height() - (dhpPinboardView.controlHeight+40);
+        jQuery('#svg-container').height(svgHeight);
+    }, // dhpUpdateSize()
 
 
         // PURPOSE: Reset background image to initial 1-1 setting
     resetView: function() {
         dhpPinboardView.viewL=0;
         dhpPinboardView.viewT=0;
-        dhpPinboardView.viewW=dhpPinboardView.pinboardEP.width;
-        dhpPinboardView.viewH=dhpPinboardView.pinboardEP.height;
-        viewScale=100;
+        dhpPinboardView.viewW=dhpPinboardView.iWidth;
+        dhpPinboardView.viewH=dhpPinboardView.iHeight;
+        dhpPinboardView.viewScale=100;
         dhpPinboardView.recalcViewBox();
     }, // resetView()
 
 
     zoomIn: function() {
-console.log("zoom in");
         var centX, centY, newW, newH;
             // Allow a maximum of 5x zoom
         if (dhpPinboardView.viewScale > 20) {
@@ -148,8 +175,8 @@ console.log("zoom in");
             centX = dhpPinboardView.viewL + (dhpPinboardView.viewW / 2);
             centY = dhpPinboardView.viewT + (dhpPinboardView.viewH / 2);
                 // calculate new width and height according to new zoom
-            newW = ((dhpPinboardView.pinboardEP.width * dhpPinboardView.viewScale) / 100);
-            newH = ((dhpPinboardView.pinboardEP.height * dhpPinboardView.viewScale) / 100);
+            newW = ((dhpPinboardView.iWidth  * dhpPinboardView.viewScale) / 100);
+            newH = ((dhpPinboardView.iHeight * dhpPinboardView.viewScale) / 100);
                 // calculate new viewBox coords
             dhpPinboardView.viewL = centX - (newW / 2);
             dhpPinboardView.viewW = newW;
@@ -161,7 +188,6 @@ console.log("zoom in");
 
 
     zoomOut: function() {
-console.log("zoom out");
         var centX, centY, newW, newH;
             // Allow a maximum of 1.5x zoom
         if (dhpPinboardView.viewScale < 150) {
@@ -171,8 +197,8 @@ console.log("zoom out");
             centX = dhpPinboardView.viewL + (dhpPinboardView.viewW / 2);
             centY = dhpPinboardView.viewT + (dhpPinboardView.viewH / 2);
                 // calculate new width and height according to new zoom
-            newW = ((dhpPinboardView.pinboardEP.width * dhpPinboardView.viewScale) / 100);
-            newH = ((dhpPinboardView.pinboardEP.height * dhpPinboardView.viewScale) / 100);
+            newW = ((dhpPinboardView.iWidth  * dhpPinboardView.viewScale) / 100);
+            newH = ((dhpPinboardView.iHeight * dhpPinboardView.viewScale) / 100);
                 // calculate new viewBox coords
             dhpPinboardView.viewL = centX - (newW / 2);
             dhpPinboardView.viewW = newW;
@@ -185,7 +211,7 @@ console.log("zoom out");
 
     goLeft: function() {
         var stepX;
-        stepX = (dhpPinboardView.pinboardEP.width * dhpPinboardView.zoomScale) / 100;
+        stepX = (dhpPinboardView.iWidth * dhpPinboardView.zoomStep) / 100;
             // calculate new viewBox coords
         dhpPinboardView.viewL += stepX;
         dhpPinboardView.recalcViewBox();
@@ -194,16 +220,16 @@ console.log("zoom out");
 
     goRight: function() {
         var stepX;
-        stepX = (dhpPinboardView.pinboardEP.width * dhpPinboardView.zoomScale) / 100;
+        stepX = (dhpPinboardView.iWidth * dhpPinboardView.zoomStep) / 100;
             // calculate new viewBox coords
         dhpPinboardView.viewL -= stepX;
-        recalcViewBox();
+        dhpPinboardView.recalcViewBox();
     }, // goRight()
 
 
     goUp: function() {
         var stepY;
-        stepY = (dhpPinboardView.pinboardEP.height * dhpPinboardView.zoomScale) / 100;
+        stepY = (dhpPinboardView.iHeight * dhpPinboardView.zoomStep) / 100;
             // calculate new viewBox coords
         dhpPinboardView.viewT += stepY;
         dhpPinboardView.recalcViewBox();
@@ -212,7 +238,7 @@ console.log("zoom out");
 
     goDown: function() {
         var stepY;
-        stepY = (dhpPinboardView.pinboardEP.height * dhpPinboardView.zoomScale) / 100;
+        stepY = (dhpPinboardView.iHeight * dhpPinboardView.zoomStep) / 100;
             // calculate new viewBox coords
         dhpPinboardView.viewT -= stepY;
         dhpPinboardView.recalcViewBox();
@@ -224,7 +250,6 @@ console.log("zoom out");
             // reset viewBox with new settings (top, left, width, height)
         var newSettings = dhpPinboardView.viewL.toString()+" "+dhpPinboardView.viewT.toString()+" "+
                             dhpPinboardView.viewW.toString()+" "+dhpPinboardView.viewH.toString();
-        console.log("resetting viewbox to "+newSettings);
         dhpPinboardView.svgRoot.setAttribute("viewBox", newSettings);
     }, // recalcViewBox()
 
@@ -620,34 +645,6 @@ console.log("zoom out");
         dhpPinboardView.curLgdFilter = dhpPinboardView.filters[0];
         dhpPinboardView.curLgdName = dhpPinboardView.curLgdFilter.name;
     }, // createLegends()
-
-
-        // PURPOSE: Resizes pinboard-specific elements initially and when browser size changes
-    dhpUpdateSize: function()
-    {
-        var newRowHeight, checkboxMargin;
-
-            //resize legend term position for long titles
-        jQuery('.active-legend .terms').css({top: jQuery('.active-legend .legend-title').height() });
-
-            //resize legend items that are two lines and center checkbox
-        jQuery('.active-legend .row').each(function(key,value) {
-                //height of row containing text(could be multiple lines)
-            newRowHeight   = jQuery('.columns', this).eq(1).height();
-                // variable to center checkbox in row
-            checkboxMargin = (newRowHeight - dhpPinboardView.checkboxHeight) / 2;
-                // set elements in rows with new values
-            jQuery('.columns', this).eq(0).height(newRowHeight);
-            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
-        });
-
-            // Width of svg-container is same as visual space
-        jQuery('#svg-container').width(jQuery('#dhp-visual').width());
-            // Height of svg-container will be total viz space minus height of navbar, margins, border & scroll bar itself
-        var svgHeight = jQuery('#dhp-visual').height() - (dhpPinboardView.controlHeight+16);
-        jQuery('#svg-container').height(svgHeight);
-console.log("Setting height to "+svgHeight);
-    }, // dhpUpdateSize()
 
 
         // RETURNS: true if touch is supported (and hence no mouse)

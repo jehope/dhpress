@@ -21,10 +21,9 @@
     /* Enable scroll bar in case background image is too large */
 #svg-container {
 /*    z-index: 1000; */
-/*    width: 500px;
-    height: 500px; */
     border: 2px solid #000;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
 }
 
 svg {
@@ -34,7 +33,7 @@ svg {
 
 /* ==================== NAV BUTTONS ====================*/
 
-    /* 7 nav icons */
+    /* 7 image movement icons */
 #dhp-image-controls {
     height: 32px;
     width: 240px;
@@ -53,59 +52,52 @@ svg {
 }
 
 #pin-left {
-    position: relative;
-    top: 1;
-    left: 5;
-    height: 30;
-    width: 25;
+    height: 32px;
+    width: 34px;
+
+    display: inline-block;
 }
 
 #pin-right {
-    position: relative;
-    top: 1;
-    left: 38;
-    height: 30;
-    width: 25;
+    height: 32px;
+    width: 33px;
+
+    display: inline-block;
 }
 
 #pin-down {
-    position: relative;
-    top: 1;
-    left: 72;
-    height: 30;
-    width: 25;
+    height: 32px;
+    width: 33px;
+
+    display: inline-block;
 }
 
 #pin-up {
-    position: relative;
-    top: 1;
-    left: 105;
-    height: 30;
-    width: 25;
+    height: 32px;
+    width: 33px;
+
+    display: inline-block;
 }
 
 #pin-reduce {
-    position: relative;
-    top: 1;
-    left: 138;
-    height: 30;
-    width: 25;
+    height: 32px;
+    width: 38px;
+
+    display: inline-block;
 }
 
 #pin-zoom {
-    position: relative;
-    top: 1;
-    left: 177;
-    height: 30;
-    width: 25;
+    height: 32px;
+    width: 37px;
+
+    display: inline-block;
 }
 
 #pin-refresh {
-    position: relative;
-    top: 1;
-    left: 210;
-    height: 30;
-    width: 25;
+    height: 32px;
+    width: 30px;
+
+    display: inline-block;
 }
 
 /* ==================== LEGENDS ====================*/
