@@ -196,6 +196,10 @@ jQuery(document).ready(function($) {
     ko.utils.arrayForEach(normalizeArray(epSettings.settings.legends), function(theLegend) {
       self.settings.legends.push(new ArrayString(theLegend));
     });
+    self.settings.layers = ko.observableArray();
+    ko.utils.arrayForEach(normalizeArray(epSettings.settings.layers), function(theLayer) {
+      self.settings.layers.push(new PinLayer(theLayer));
+    });
   } // PinboardEntryPoint()
 
     // Create new "blank" layer to store in Map entry point
@@ -220,6 +224,14 @@ jQuery(document).ready(function($) {
     self.layerID = layerID;
   } // MapOption()
 
+    // Create new "blank" layer to store in Pinboard entry point
+  var PinLayer = function(theLayer) {
+    var self = this;
+
+    self.label = ko.observable(theLayer.label);
+    self.file  = ko.observable(theLayer.file);
+  } // PinLayer()
+
 
 //=================================== MAIN OBJECT ===================================
 
@@ -229,7 +241,7 @@ jQuery(document).ready(function($) {
   var ProjectSettings = function(allCustomFields, allMapLayers) {
     var self = this;
 
-      // Need to copy into separate arrays according to Base and Overlay
+      // Need to copy map layers into separate arrays according to Base and Overlay
     self.baseLayers = [ ];
     self.overLayers = [ ];
 
@@ -368,6 +380,14 @@ jQuery(document).ready(function($) {
           savedEP.settings.legends = [];
           ko.utils.arrayForEach(theEP.settings.legends(), function(theLegend) {
             savedEP.settings.legends.push(theLegend.name());
+          });
+          savedEP.settings.layers = [];
+            // Create a layer object for each layer to save
+          ko.utils.arrayForEach(theEP.settings.layers(), function(theLayer) {
+            var savedLayer = {};
+            savedLayer.label = theLayer.label();
+            savedLayer.file  = theLayer.file();
+            savedEP.settings.layers.push(savedLayer);
           });
           break;
         } // switch ep type
@@ -1193,10 +1213,11 @@ jQuery(document).ready(function($) {
           imageURL: '',
           width: 500,
           height: 500,
-          icon: '',
+          icon: 'circle',
           size: 'm',
           coordMote: '',
-          legends: [ ]
+          legends: [ ],
+          layers: [ ]
         }
       };
       self.setEP(_blankPinEP);
@@ -1279,7 +1300,7 @@ jQuery(document).ready(function($) {
     };
 
       // PURPOSE: Handle user selection to add map overlay
-    self.addLayer = function(theEP) {
+    self.addMapLayer = function(theEP) {
       var _blankLayer = {
         id: 0, name: '', opacity: 1, mapType: 'type-DHP', mapTypeId: 0
       };
@@ -1288,7 +1309,7 @@ jQuery(document).ready(function($) {
     };
 
       // PURPOSE: Handle user selection to remove map overlay
-    self.delLayer = function(theLayer, theEP, index) {
+    self.delMapLayer = function(theLayer, theEP, index) {
       theEP.settings.layers.splice(index, 1);
       self.settingsDirty(true);
     };
@@ -1350,6 +1371,21 @@ jQuery(document).ready(function($) {
       // PURPOSE: Handle user selection to create new pinboard legend
     self.delPinLegend = function(theLegend, theEP, index) {
       theEP.settings.legends.splice(index, 1);
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to add map overlay
+    self.addPinLayer = function(theEP) {
+      var _blankLayer = {
+        label: '', file: ''
+      };
+      theEP.settings.layers.push(new PinLayer(_blankLayer));
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to remove map overlay
+    self.delPinLayer = function(theLayer, theEP, index) {
+      theEP.settings.layers.splice(index, 1);
       self.settingsDirty(true);
     };
 

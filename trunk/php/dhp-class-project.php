@@ -27,6 +27,7 @@
 		    	{
 		            "type": String ("map" | "cards" | "pinboard" ),
 		            "label" : String (short and unique across entry points),
+
 		            "settings": {									// Map settings are as follows
 		                "lat": Number,
 		                "lon": Number,
@@ -46,6 +47,7 @@
 		                    String (name of mote), ...
 		                ]
 		            }
+
 		            "settings" : {									// Topic Cards settings are as follows
 						"title": String (name of mote),				// to display on top of card
 		            	"width" : String,							// card width: "auto", thin", "med-width", "wide"
@@ -63,6 +65,7 @@
 							// Array of mote names to use to sort cards (Short Text, Number types)
 						]
 		            }
+
 		            "settings" : {									// Pinboard settings are as follows
 		                "imageURL" : String,						// complete URL to background image
 		            	"width" : Number,							// Pixel width of background image
@@ -72,6 +75,11 @@
 						"coordMote": String (name of mote),			// mote which supplies X-Y coordinate
 		                "legends": [								// List of mote Legends/categories
 		                    String (name of mote), ...
+		                ],
+		                "layers": [									// List of SVG layers to add on top of image
+		                	{ label: String,
+		                	  file: String (complete URL)
+		                	} , ...
 		                ]
 		            }
 		        }

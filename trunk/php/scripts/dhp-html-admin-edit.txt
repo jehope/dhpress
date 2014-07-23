@@ -198,7 +198,7 @@
           Marker Mote (for Lat/Lon) <select data-bind="value: theEP.settings.coordMote, options: $root.coordMoteNames"></select>
         </li>
         <div data-bind="template: { name: 'map-layer-template', foreach: theEP.settings.layers, as: 'theLayer' }"></div>
-        <button data-bind="jqButton, click: $root.addLayer.bind(theEP)">Add Layer</button>
+        <button data-bind="jqButton, click: $root.addMapLayer.bind(theEP)">Add Layer</button>
         <div data-bind="template: { name: 'map-legend-template', foreach: theEP.settings.legends }"></div>
         <button data-bind="jqButton, click: $root.addMapLegend.bind(theEP)">Add Legend</button>
     </ul>
@@ -213,7 +213,7 @@
         <span data-bind="if: $index() > 0">
             <b>Overlay Layer <span data-bind="text: $index"></span></b>
             <select data-bind="value: theLayer.id, options: $root.overLayers, optionsText: 'name', optionsValue: 'layerID'"></select>
-            <button data-bind="jqButton, click: function() { $root.delLayer($data, theEP, $index()); }">Delete</button>
+            <button data-bind="jqButton, click: function() { $root.delMapLayer($data, theEP, $index()); }">Delete</button>
         </span>
         Opacity <span data-bind="text: theLayer.opacity"></span>
         <div class="opacity-slider"><div data-bind="opacitySlider: theLayer.opacity"></div></div>
@@ -325,9 +325,20 @@
             </select>&nbsp;
           Mote (for X-Y) <select data-bind="value: theEP.settings.coordMote, options: $root.xyMoteNames"></select>
         </li>
+        <div data-bind="template: { name: 'pin-layer-template', foreach: theEP.settings.layers, as: 'theLayer' }"></div>
+        <button data-bind="jqButton, click: $root.addPinLayer.bind(theEP)">Add SVG Layer File</button>
         <div data-bind="template: { name: 'pin-legend-template', foreach: theEP.settings.legends }"></div>
         <button data-bind="jqButton, click: $root.addPinLegend.bind(theEP)">Add Legend</button>
     </ul>
+</script>
+
+<script type="text/html" id="pin-layer-template">
+    <li>
+      <b>SVG Layer File <span data-bind="text: $index"></span></b>
+      <input data-bind="value: theLayer.label" type="text" size="12"/> </input>
+      <input data-bind="value: theLayer.file" type="text" size="48"/> </input>
+      <button data-bind="jqButton, click: function() { $root.delPinLayer($data, theEP, $index()); }">Delete</button>
+    </li>
 </script>
 
 <script type="text/html" id="pin-legend-template">

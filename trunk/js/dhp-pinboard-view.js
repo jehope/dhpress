@@ -34,6 +34,8 @@ var dhpPinboardView = {
         //                  icons (Object with properties that are SNAP path defs)
         //                      ballon, magGlass, thumbtack
 
+        //                  loadedLayers = Snap group element for loaded SVG overlay layers
+
         // PURPOSE: Initialize new leaflet map, layers, and markers                         
         // INPUT:   ajaxURL      = URL to WP
         //          projectID    = ID of project
@@ -143,7 +145,26 @@ var dhpPinboardView = {
         dhpPinboardView.icons.thumbtack = dhpPinboardView.paper.path(pathThumbtack);
         dhpPinboardView.icons.thumbtack.toDefs();
 
-        dhpPinboardView.loadMarkers();
+            // Create SVG overlay layers --
+            // Must be loaded recursively (due to asynchronous calls) to ensure correct order
+        var loadArray = pinboardEP.layers || [];
+        dhpPinboardView.loadedLayers = dhpPinboardView.paper.group();
+
+        function loadHandler(lIndex)
+        {
+                // All layers have been loaded -- go on to markers
+            if (lIndex >= loadArray.length) {
+                dhpPinboardView.loadMarkers();
+            } else {
+                var layerInfo = loadArray[lIndex];
+                    // After layer loaded, add it to SVG and request next layer
+                Snap.load(layerInfo.file, function(thisLayer) {
+                    dhpPinboardView.loadedLayers.append(thisLayer);
+                    loadHandler(lIndex+1);
+                }); // load()
+            } // else
+        }
+        loadHandler(0);
     }, // initPinboard()
 
 
