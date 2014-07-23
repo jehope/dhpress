@@ -19,9 +19,6 @@ var dhpPinboardView = {
         //                  curLgdName = name of current legend/filter
         //                  curLgdFilter = pointer to current legend/filter array
 
-        //                  radius = radius of geometric markers
-        //                  iconSize = "s" | "m" | "l"
-
         //                  iWidth, iHeight = actual pixel width and height of image
         //                  viewL, viewT, viewW, viewH = current viewport into background image
         //                  viewScale = current zoom scale % (100=fullsize)
@@ -31,6 +28,11 @@ var dhpPinboardView = {
         //                  isTouch = this is a touch-screen interface, not mouse
         //                  currentFeature = map feature currently highlighted or selected (with modal)
         //                  anyPopupsOpen = true when a popover modal is currently open
+
+        //                  radius = radius of geometric markers
+        //                  iconSize = "s" | "m" | "l"
+        //                  icons (Object with properties that are SNAP path defs)
+        //                      ballon, magGlass, thumbtack
 
         // PURPOSE: Initialize new leaflet map, layers, and markers                         
         // INPUT:   ajaxURL      = URL to WP
@@ -54,18 +56,6 @@ var dhpPinboardView = {
 
         dhpPinboardView.isTouch        = dhpPinboardView.isTouchDevice();
 
-        dhpPinboardView.iconSize       = pinboardEP.size;
-        switch (pinboardEP.size) {
-        case "s":
-            dhpPinboardView.radius     = 4;
-            break;
-        case "m":
-            dhpPinboardView.radius     = 8;
-            break;
-        case "l":
-            dhpPinboardView.radius     = 12;
-            break;
-        }
             // Expand to show/hide child terms and use their colors
         dhpPinboardView.useParent = true;
 
@@ -122,6 +112,36 @@ var dhpPinboardView = {
 
             // Create background image
         dhpPinboardView.paper.image(pinboardEP.imageURL, 0, 0, dhpPinboardView.iWidth, dhpPinboardView.iHeight);
+
+        var pathBallon = "M8,0C4.687,0,2,2.687,2,6c0,3.854,4.321,8.663,5,9.398C7.281,15.703,7.516,16,8,16s0.719-0.297,1-0.602  C9.679,14.663,14,9.854,14,6C14,2.687,11.313,0,8,0z M8,10c-2.209,0-4-1.791-4-4s1.791-4,4-4s4,1.791,4,4S10.209,10,8,10z M8,4  C6.896,4,6,4.896,6,6s0.896,2,2,2s2-0.896,2-2S9.104,4,8,4z";
+        var pathMagGlass = "M15.7,14.3l-3.105-3.105C13.473,10.024,14,8.576,14,7c0-3.866-3.134-7-7-7S0,3.134,0,7s3.134,7,7,7  c1.576,0,3.024-0.527,4.194-1.405L14.3,15.7c0.184,0.184,0.38,0.3,0.7,0.3c0.553,0,1-0.447,1-1C16,14.781,15.946,14.546,15.7,14.3z   M2,7c0-2.762,2.238-5,5-5s5,2.238,5,5s-2.238,5-5,5S2,9.762,2,7z";
+        var pathThumbtack = "M16.729,4.271c-0.389-0.391-1.021-0.393-1.414-0.004c-0.104,0.104-0.176,0.227-0.225,0.355  c-0.832,1.736-1.748,2.715-2.904,3.293C10.889,8.555,9.4,9,7,9C6.87,9,6.74,9.025,6.618,9.076C6.373,9.178,6.179,9.373,6.077,9.617  c-0.101,0.244-0.101,0.52,0,0.764c0.051,0.123,0.124,0.234,0.217,0.326l3.243,3.243L5,20l6.05-4.537l3.242,3.242  c0.092,0.094,0.203,0.166,0.326,0.217C14.74,18.973,14.87,19,15,19s0.26-0.027,0.382-0.078c0.245-0.102,0.44-0.295,0.541-0.541  C15.974,18.26,16,18.129,16,18c0-2.4,0.444-3.889,1.083-5.166c0.577-1.156,1.556-2.072,3.293-2.904  c0.129-0.049,0.251-0.121,0.354-0.225c0.389-0.393,0.387-1.025-0.004-1.414L16.729,4.271z";
+
+            // Prepare marker usage and icons
+        dhpPinboardView.iconSize       = pinboardEP.size;
+        switch (pinboardEP.size) {
+        case "s":
+            dhpPinboardView.radius     = 4;
+            dhpPinboardView.diamondPts = [ [0,-4], [4,0], [0,4], [-4,0] ];
+            break;
+        case "m":
+            dhpPinboardView.radius     = 8;
+            dhpPinboardView.diamondPts = [ [0,-9], [9,0], [0,9], [-9,0] ];
+            break;
+        case "l":
+            dhpPinboardView.radius     = 12;
+            dhpPinboardView.diamondPts = [ [0,-12], [12,0], [0,12], [-12,0] ];
+            break;
+        }
+            // Prepare object for icon definitions
+        dhpPinboardView.icons = { };
+            // Create each one as path and move to definitions section of SVG
+        dhpPinboardView.icons.ballon = dhpPinboardView.paper.path(pathBallon);
+        dhpPinboardView.icons.ballon.toDefs();
+        dhpPinboardView.icons.magGlass = dhpPinboardView.paper.path(pathMagGlass);
+        dhpPinboardView.icons.magGlass.toDefs();
+        dhpPinboardView.icons.thumbtack = dhpPinboardView.paper.path(pathThumbtack);
+        dhpPinboardView.icons.thumbtack.toDefs();
 
         dhpPinboardView.loadMarkers();
     }, // initPinboard()
@@ -328,7 +348,10 @@ var dhpPinboardView = {
                 if (legendName === theTerm.name) {
                         // Can't set the attributes for Legend head until we get to its term entry
                         // Only first legend is visible initially, so set class accordingly
-                    var lgdAtts = { id: 'lgd-id'+theTerm.id };
+                    var lgdAtts = { id: 'lgd-id'+theTerm.id,
+                                    stroke: "#000",
+                                    strokeWidth: 1
+                                  };
                     if (legIndex == 0) {
                         lgdAtts.class = 'lgd-head';
                     } else {
@@ -337,25 +360,39 @@ var dhpPinboardView = {
                     lgdHeadGroup.attr(lgdAtts);
                 } else {
                         // Create grouping for Legend value
+                        // Set color for all items of this value
                     lgdHeadVal = lgdHeadGroup.group();
-                    lgdHeadVal.attr( { class: 'lgd-val', id: 'lgd-id'+theTerm.id } );
+                    lgdHeadVal.attr( { class: 'lgd-val',
+                                        id: 'lgd-id'+theTerm.id,
+                                        fill: theTerm.icon_url
+                                    } );
                     markerIndices = dhpPinboardView.getMarkersOfCategory(theTerm.id);
                         // Create each marker in this group
                     _.each(markerIndices, function(mIndex) {
                         theMarker = dhpPinboardView.allMarkers[mIndex];
-                        // switch(dhpPinboardView.pinboardEP.icon) {
-                        // case 'circle':
+                        switch(dhpPinboardView.pinboardEP.icon) {
+                        case 'circle':
                             shape = dhpPinboardView.paper.circle(theMarker.geometry.coordinates[0],
                                                                 theMarker.geometry.coordinates[1],
                                                                 dhpPinboardView.radius);
-                            shape.attr({
-                                fill: theTerm.icon_url,
-                                stroke: "#000", strokeWidth: 1
-                            });
-                        //     break;
-                        // case 'tack':
-                        //     break;
-                        // } // switch
+                            break;
+                        case 'diamond':
+                            shape = dhpPinboardView.paper.polygon(dhpPinboardView.diamondPts);
+                            shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
+                            break;
+                        case 'tack':
+                            shape = dhpPinboardView.icons.thumbtack.use();
+                            shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
+                            break;
+                        case 'ballon':
+                            shape = dhpPinboardView.icons.ballon.use();
+                            shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
+                            break;
+                        case 'mag':
+                            shape = dhpPinboardView.icons.magGlass.use();
+                            shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
+                            break;
+                        } // switch
                         shape.node.id = mIndex;
                         shape.data("i", mIndex);
                             // Clicking shape must invoke select modal

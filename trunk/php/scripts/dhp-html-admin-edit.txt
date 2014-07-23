@@ -311,14 +311,17 @@
             <input data-bind="value: theEP.settings.width" type="text" size="4"/>
             Height (in pixels) <input data-bind="value: theEP.settings.height" type="text" size="4"/>
         </li>
-        <li>Pin marker: Size <select data-bind="value: theEP.settings.size">
+        <li>Pin marker: Size (circle and diamond only) <select data-bind="value: theEP.settings.size">
                 <option value="s">Small</option>
                 <option value="m">Medium</option>
                 <option value="l">Large</option>
             </select>&nbsp;
           Shape <select data-bind="value: theEP.settings.icon">
                 <option value="circle">Circle</option>
+                <option value="diamond">Diamond</option>
+                <option value="ballon">Ballon</option>
                 <option value="tack">Tack</option>
+                <option value="mag">Magnifying Glass</option>
             </select>&nbsp;
           Mote (for X-Y) <select data-bind="value: theEP.settings.coordMote, options: $root.xyMoteNames"></select>
         </li>
