@@ -8,6 +8,7 @@
   </li>
 
   <li class="divider"></li>
+  <li><a id="layers-button" href="#">Layer Buttons</a></li>
 </script>
 
 

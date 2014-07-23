@@ -465,6 +465,7 @@ var dhpMapsView = {
             jQuery(action).addClass('active-legend');
             jQuery(action).show();
 
+                // Have to do extra check in case we are just switching out layer sliders
             if (newLegend !== dhpMapsView.currentLegend) {
                     // Update the markers to show on map
                 dhpMapsView.switchFilter(newLegend);

@@ -335,8 +335,8 @@
 <script type="text/html" id="pin-layer-template">
     <li>
       <b>SVG Layer File <span data-bind="text: $index"></span></b>
-      <input data-bind="value: theLayer.label" type="text" size="12"/> </input>
-      <input data-bind="value: theLayer.file" type="text" size="48"/> </input>
+      <input data-bind="value: theLayer.label" type="text" size="12" placeholder="Label"/> </input>
+      <input data-bind="value: theLayer.file" type="text" size="48" placeholder="File URL"/> </input>
       <button data-bind="jqButton, click: function() { $root.delPinLayer($data, theEP, $index()); }">Delete</button>
     </li>
 </script>

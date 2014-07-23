@@ -35,6 +35,7 @@ var dhpPinboardView = {
         //                      ballon, magGlass, thumbtack
 
         //                  loadedLayers = Snap group element for loaded SVG overlay layers
+        //                  layerBtnsOn = TRUE if the layer buttons are currently showing on Legend menu
 
         // PURPOSE: Initialize new leaflet map, layers, and markers                         
         // INPUT:   ajaxURL      = URL to WP
@@ -60,6 +61,7 @@ var dhpPinboardView = {
 
             // Expand to show/hide child terms and use their colors
         dhpPinboardView.useParent = true;
+        dhpPinboardView.layerBtnsOn = false;
 
         dhpPinboardView.anyPopupsOpen = false;
 
@@ -159,7 +161,10 @@ var dhpPinboardView = {
                 var layerInfo = loadArray[lIndex];
                     // After layer loaded, add it to SVG and request next layer
                 Snap.load(layerInfo.file, function(thisLayer) {
-                    dhpPinboardView.loadedLayers.append(thisLayer);
+                        // Must attach an ID to it so that it can be turned on and off
+                    var g = thisLayer.select("g");
+                    g.attr( { id: 'oLayer'+lIndex } );
+                    dhpPinboardView.loadedLayers.append(g);
                     loadHandler(lIndex+1);
                 }); // load()
             } // else
@@ -321,6 +326,7 @@ var dhpPinboardView = {
 
             // First legend will be selected by default
         dhpPinboardView.createLegends();
+        dhpPinboardView.createLayerButtons();
         dhpPinboardView.createSVG();
 
         // dhpPinboardView.dhpUpdateSize();
@@ -466,7 +472,9 @@ var dhpPinboardView = {
     {
         var newLgdName = jQuery(target).text();
 
-        if (newLgdName !== dhpPinboardView.curLgdName) {
+        if (dhpPinboardView.layerBtnsOn  || newLgdName !== dhpPinboardView.curLgdName) {
+            dhpPinboardView.layerBtnsOn = false;
+
                 // Don't display current (or any) Legend in main Legend key
             jQuery('.legend-div').hide();
             jQuery('.legend-div').removeClass('active-legend');
@@ -476,13 +484,16 @@ var dhpPinboardView = {
             jQuery(action).addClass('active-legend');
             jQuery(action).show();
 
-                // Change active menu item
-            jQuery('.legend-dropdown > .active').removeClass('active');
-            jQuery(target).parent().addClass('active');
+                // Have to do extra check in case we are just switching out layer buttons
+            if (newLgdName !== dhpPinboardView.curLgdName) {
+                    // Change active menu item in top menu
+                jQuery('.legend-dropdown > .active').removeClass('active');
+                jQuery(target).parent().addClass('active');
 
-                // Update the markers to show on pinboard
-            dhpPinboardView.switchFilter(newLgdName);
-            dhpPinboardView.dhpUpdateSize();
+                    // Update the markers to show on pinboard
+                dhpPinboardView.switchFilter(newLgdName);
+                dhpPinboardView.dhpUpdateSize();
+            }
         }
     }, // switchLegend()
 
@@ -601,6 +612,9 @@ var dhpPinboardView = {
             jQuery('.dhp-nav .legend-dropdown').append('<li'+active+'><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
         });
 
+            // Add Layers to legends
+        jQuery('#legends .legend-row').append('<div class="legend-div" id="layers-panel"><div class="legend-title">Layer Buttons</div></div>');
+
             // Hide all Legends, except 0 by default
         jQuery('.legend-div').hide();
         jQuery('#term-legend-0').show();
@@ -699,10 +713,72 @@ var dhpPinboardView = {
             dhpPinboardView.switchLegend(evt.target);
         });
 
+            // Handle selecting "Layer Buttons" button on navbar
+        jQuery('#layers-button').click(function(evt) {
+            evt.preventDefault();
+
+                // Hide current Legend info
+            jQuery('.legend-div').hide();
+            jQuery('.legend-div').removeClass('active-legend');
+
+                // Were sliders already showing? Make filter mote legend visible again
+            if (dhpPinboardView.layerBtnsOn) {
+                    // Find the legend div that should be active now!
+                var activeLegend = jQuery('.legend-title').filter(function() {
+                    return (jQuery(this).text() === dhpPinboardView.curLgdName);
+                }).parent();
+
+                jQuery(activeLegend).addClass('active-legend');
+                jQuery(activeLegend).show();
+
+                jQuery('#layers-button').parent().removeClass('active');
+
+                dhpPinboardView.layerBtnsOn = false;
+
+                // Show buttons now
+            } else {
+                    // Show section of Legend with sliders
+                jQuery('#layers-panel').addClass('active-legend');
+                jQuery('#layers-panel').show();
+
+                jQuery('#layers-button').parent().addClass('active');
+
+                dhpPinboardView.layerBtnsOn = true;
+            }
+        });
+
+
             // Set defaults without calling switchfilter()
         dhpPinboardView.curLgdFilter = dhpPinboardView.filters[0];
         dhpPinboardView.curLgdName = dhpPinboardView.curLgdFilter.name;
     }, // createLegends()
+
+
+        // PURPOSE: Create button to turn on/off each SVG overlay layer in Legend area
+        // ASSUMES: HTML element "layers-panel" has been inserted into document by createLegends()
+        //              (so this must be called after createLegends)
+    createLayerButtons: function()
+    {
+        var layerSettings = dhpPinboardView.pinboardEP.layers;
+        _.each(layerSettings, function(thisLayer, index) {
+            jQuery('#layers-panel').append('<div id="oLayerCtrl'+index+'">'+
+                '<div class="row"><div class="columns small-12 large-12"><input type="checkbox" checked="checked"> '+
+                '<a class="value" id="oLayerCtrlA'+index+'">'+thisLayer.label+'</a></div></div></div>');
+                // Handle turning on and off pinboard layer
+            jQuery('#oLayerCtrl'+index+' input').click(function() {
+                svgLayer = dhpPinboardView.paper.select('#oLayer'+index);
+                    // Ensure layer visible
+                if(jQuery(this).is(':checked')) {
+                    svgLayer.removeClass('hide');
+                    // Ensure layer invisible
+                } else {
+                    if (!svgLayer.hasClass('hide')) {
+                        svgLayer.addClass('hide');
+                    }
+                }
+            });
+        });
+    }, // createLayerButtons()
 
 
         // RETURNS: true if touch is supported (and hence no mouse)
