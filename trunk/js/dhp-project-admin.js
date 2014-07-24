@@ -82,7 +82,8 @@ jQuery(document).ready(function($) {
 //===================================== UTILITIES ===================================
 
     // PURPOSE: Ensure that data is returned as array
-    // NOTES:   This is necessary because of irregular JSON encoding: sometimes array is encoded as Object properties
+    // NOTES:   This was necessary because of irregular JSON encoding in DH Press 1.X:
+    //            sometimes array was encoded as Object properties; shouldn't be needed now.
   function normalizeArray(data) {
     if (_.isArray(data)) {
       return data;
@@ -199,6 +200,29 @@ jQuery(document).ready(function($) {
     self.settings.layers = ko.observableArray();
     ko.utils.arrayForEach(normalizeArray(epSettings.settings.layers), function(theLayer) {
       self.settings.layers.push(new PinLayer(theLayer));
+    });
+  } // PinboardEntryPoint()
+
+
+    // Class constructor for Tree Entry Point
+  var TreeEntryPoint = function(epSettings) {
+    var self = this;
+
+    self.type = 'tree';
+    self.label= ko.observable(epSettings.label || 'name me');
+    self.settings = { };
+    self.settings.form = ko.observable(epSettings.settings.form);
+    self.settings.width = ko.observable(epSettings.settings.width);
+    self.settings.height = ko.observable(epSettings.settings.height);
+    self.settings.head = ko.observable(epSettings.settings.head);
+    self.settings.children = ko.observable(epSettings.settings.children);
+    self.settings.label = ko.observable(epSettings.settings.label);
+    self.settings.fSize = ko.observable(epSettings.settings.fSize);
+    self.settings.radius = ko.observable(epSettings.settings.radius);
+    self.settings.padding = ko.observable(epSettings.settings.padding);
+    self.settings.legends = ko.observableArray();
+    ko.utils.arrayForEach(normalizeArray(epSettings.settings.legends), function(theLegend) {
+      self.settings.legends.push(new ArrayString(theLegend));
     });
   } // PinboardEntryPoint()
 
@@ -390,6 +414,22 @@ jQuery(document).ready(function($) {
             savedEP.settings.layers.push(savedLayer);
           });
           break;
+
+        case 'tree':
+          savedEP.settings.form = theEP.settings.form();
+          savedEP.settings.width = theEP.settings.width();
+          savedEP.settings.height = theEP.settings.height();
+          savedEP.settings.head = theEP.settings.head();
+          savedEP.settings.children = theEP.settings.children();
+          savedEP.settings.label = theEP.settings.label();
+          savedEP.settings.fSize = theEP.settings.fSize();
+          savedEP.settings.radius = theEP.settings.radius();
+          savedEP.settings.padding = theEP.settings.padding();
+          savedEP.settings.legends = [];
+          ko.utils.arrayForEach(theEP.settings.legends(), function(theLegend) {
+            savedEP.settings.legends.push(theLegend.name());
+          });
+          break;
         } // switch ep type
         projSettings.eps.push(savedEP);
       }); // for each EP
@@ -500,6 +540,9 @@ jQuery(document).ready(function($) {
     }, self);
     self.xyMoteNames = ko.computed(function() {
       return doGetMoteNames(['X-Y Coordinates']);
+    }, self);
+    self.pointerMoteNames = ko.computed(function() {
+      return doGetMoteNames(['Pointer']);
     }, self);
     self.stMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text']);
@@ -628,9 +671,12 @@ jQuery(document).ready(function($) {
                 theEP.settings.sortMotes.remove(function(mote) { return mote.name() === moteName; });
                 break;
               case 'pinboard':
-                if (theEP.settings.coordMote() == moteName) {
-                  theEP.settings.coordMote('');
-                }
+                if (theEP.settings.coordMote() == moteName) { theEP.settings.coordMote(''); }
+                theEP.settings.legends.remove(function(mote) { return mote.name() === moteName; });
+                break;
+              case 'tree':
+                if (theEP.settings.children() == moteName) {  theEP.settings.children(''); }
+                if (theEP.settings.label() == moteName) {  theEP.settings.label(''); }
                 theEP.settings.legends.remove(function(mote) { return mote.name() === moteName; });
                 break;
               }
@@ -1224,6 +1270,27 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new pinboard entry point
+    self.createTreeEP = function() {
+      var _blankTreeEP = {
+        type: 'tree',
+        label: 'name me',
+        settings: {
+          form: '',
+          width: 1000,
+          height: 1000,
+          head: '',
+          children: '',
+          label: '',
+          fSize: '10',
+          radius: '4',
+          padding: '120',
+          legends: [ ]
+        }
+      };
+      self.setEP(_blankTreeEP);
+      self.settingsDirty(true);
+    };
 
       // PURPOSE: Programmatically add an entry point to the settings (not via user interface)
     self.setEP = function(theEP) {
@@ -1237,6 +1304,9 @@ jQuery(document).ready(function($) {
         break;
       case 'pinboard':
         newEP = new PinboardEntryPoint(theEP);
+        break;
+      case 'tree':
+        newEP = new TreeEntryPoint(theEP);
         break;
       }
       self.entryPoints.push(newEP);
@@ -1272,6 +1342,8 @@ jQuery(document).ready(function($) {
         return 'ep-cards-template';
       case 'pinboard':
         return 'ep-pin-template';
+      case 'tree':
+        return 'ep-tree-template';
       }
     }; // calcEPTemplate()
 
@@ -1389,6 +1461,17 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new pinboard legend
+    self.addTreeLegend = function(theEP) {
+      theEP.settings.legends.push(new ArrayString(''));
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to create new pinboard legend
+    self.delTreeLegend = function(theLegend, theEP, index) {
+      theEP.settings.legends.splice(index, 1);
+      self.settingsDirty(true);
+    };
 
 //------------------------------------------ Views -----------------------------------------
 

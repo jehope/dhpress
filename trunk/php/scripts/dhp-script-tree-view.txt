@@ -1,0 +1,23 @@
+    <!-- Handlebars Templates for Tree View -->
+
+<script id="dhp-script-tree-menus" type="text/x-handlebars-template">
+  <li class="has-dropdown">
+      <a href="#">Legends</a>
+      <ul class="dropdown legend-dropdown"">
+          <!-- links -->
+      </ul>
+  </li>
+</script>
+
+
+<script id="dhp-script-tree-legend-head" type="text/x-handlebars-template">
+  <div id="legends" ><div class="legend-row"></div></div>
+</script>
+
+
+<script id="dhp-script-tree-legend-hideshow" type="text/x-handlebars-template">
+  <div class="row check-all"> 
+    <div class="small-4 large-2 columns"><input type="checkbox" checked="checked"></div>
+    <div class="small-8 large-10 columns"><a class="value" data-id="all">Hide/Show All</a></div>
+  </div>
+</script>
