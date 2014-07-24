@@ -713,6 +713,42 @@ var dhpPinboardView = {
             dhpPinboardView.switchLegend(evt.target);
         });
 
+            // Set defaults without calling switchfilter()
+        dhpPinboardView.curLgdFilter = dhpPinboardView.filters[0];
+        dhpPinboardView.curLgdName = dhpPinboardView.curLgdFilter.name;
+    }, // createLegends()
+
+
+        // PURPOSE: Create button to turn on/off each SVG overlay layer in Legend area
+        // ASSUMES: createLegends() has already been called to create other legends
+    createLayerButtons: function()
+    {
+            // If there are no layers, hide button and don't do anything else
+        if (dhpPinboardView.pinboardEP.layers.length == 0) {
+            jQuery('#layers-button').hide();
+            return;
+        }
+
+        var layerSettings = dhpPinboardView.pinboardEP.layers;
+        _.each(layerSettings, function(thisLayer, index) {
+            jQuery('#layers-panel').append('<div id="oLayerCtrl'+index+'">'+
+                '<div class="row"><div class="columns small-2 large-1"><input type="checkbox" checked="checked"></div> '+
+                '<div class="columns small-10 large-11"><a class="value" id="oLayerCtrlA'+index+'">'+thisLayer.label+'</a></div></div></div>');
+                // Handle turning on and off pinboard svg overlay layer
+            jQuery('#oLayerCtrl'+index+' input').click(function() {
+                svgLayer = dhpPinboardView.paper.select('#oLayer'+index);
+                    // Ensure layer visible
+                if(jQuery(this).is(':checked')) {
+                    svgLayer.removeClass('hide');
+                    // Ensure layer invisible
+                } else {
+                    if (!svgLayer.hasClass('hide')) {
+                        svgLayer.addClass('hide');
+                    }
+                }
+            });
+        });
+
             // Handle selecting "Layer Buttons" button on navbar
         jQuery('#layers-button').click(function(evt) {
             evt.preventDefault();
@@ -747,36 +783,6 @@ var dhpPinboardView = {
             }
         });
 
-            // Set defaults without calling switchfilter()
-        dhpPinboardView.curLgdFilter = dhpPinboardView.filters[0];
-        dhpPinboardView.curLgdName = dhpPinboardView.curLgdFilter.name;
-    }, // createLegends()
-
-
-        // PURPOSE: Create button to turn on/off each SVG overlay layer in Legend area
-        // ASSUMES: HTML element "layers-panel" has been inserted into document by createLegends()
-        //              (so this must be called after createLegends)
-    createLayerButtons: function()
-    {
-        var layerSettings = dhpPinboardView.pinboardEP.layers;
-        _.each(layerSettings, function(thisLayer, index) {
-            jQuery('#layers-panel').append('<div id="oLayerCtrl'+index+'">'+
-                '<div class="row"><div class="columns small-2 large-1"><input type="checkbox" checked="checked"></div> '+
-                '<div class="columns small-10 large-11"><a class="value" id="oLayerCtrlA'+index+'">'+thisLayer.label+'</a></div></div></div>');
-                // Handle turning on and off pinboard svg overlay layer
-            jQuery('#oLayerCtrl'+index+' input').click(function() {
-                svgLayer = dhpPinboardView.paper.select('#oLayer'+index);
-                    // Ensure layer visible
-                if(jQuery(this).is(':checked')) {
-                    svgLayer.removeClass('hide');
-                    // Ensure layer invisible
-                } else {
-                    if (!svgLayer.hasClass('hide')) {
-                        svgLayer.addClass('hide');
-                    }
-                }
-            });
-        });
     }, // createLayerButtons()
 
 
