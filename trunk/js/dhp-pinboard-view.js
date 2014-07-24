@@ -747,7 +747,6 @@ var dhpPinboardView = {
             }
         });
 
-
             // Set defaults without calling switchfilter()
         dhpPinboardView.curLgdFilter = dhpPinboardView.filters[0];
         dhpPinboardView.curLgdName = dhpPinboardView.curLgdFilter.name;
@@ -762,9 +761,9 @@ var dhpPinboardView = {
         var layerSettings = dhpPinboardView.pinboardEP.layers;
         _.each(layerSettings, function(thisLayer, index) {
             jQuery('#layers-panel').append('<div id="oLayerCtrl'+index+'">'+
-                '<div class="row"><div class="columns small-12 large-12"><input type="checkbox" checked="checked"> '+
-                '<a class="value" id="oLayerCtrlA'+index+'">'+thisLayer.label+'</a></div></div></div>');
-                // Handle turning on and off pinboard layer
+                '<div class="row"><div class="columns small-2 large-1"><input type="checkbox" checked="checked"></div> '+
+                '<div class="columns small-10 large-11"><a class="value" id="oLayerCtrlA'+index+'">'+thisLayer.label+'</a></div></div></div>');
+                // Handle turning on and off pinboard svg overlay layer
             jQuery('#oLayerCtrl'+index+' input').click(function() {
                 svgLayer = dhpPinboardView.paper.select('#oLayer'+index);
                     // Ensure layer visible

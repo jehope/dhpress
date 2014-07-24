@@ -64,7 +64,7 @@
           </p>
 
           <div id="subaccordion">
-            <h3>Modal windows (item selected from visualization)</h3>
+            <h3>Select Modal windows (item selected from visualization)</h3>
             <div>
               Modal title: <select data-bind="options: anyTxtDMoteNames, value: edSelTitle" ></select>
               Modal size:

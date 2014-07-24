@@ -271,13 +271,6 @@ input.leaflet-control-layers-selector {
 	display: inherit;
 }
 
-#layers-panel a {
-	line-height: 15px;
-	padding-top: 10px;
-	padding-bottom: 10px;
-	overflow: hidden;
-}
-
 .legend-div input[type='checkbox'] {
 	/*margin: 12px;*/
 	vertical-align: middle;
@@ -296,11 +289,6 @@ input.leaflet-control-layers-selector {
 	padding: 7px;
 	position: absolute;
 	right: 0px;
-}
-
-	/* Controls for opacity for each layer */
-#layers-panel {
-	margin-left: 0px;
 }
 
 	/* Keep slider small */
@@ -324,3 +312,14 @@ input.leaflet-control-layers-selector {
   	padding-bottom: 5px;
 }
 
+	/* Controls for opacity for each layer */
+#layers-panel {
+	margin-left: 0px;
+}
+
+#layers-panel a {
+	line-height: 15px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	overflow: hidden;
+}

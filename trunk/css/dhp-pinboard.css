@@ -261,3 +261,16 @@ svg {
   	padding-bottom: 5px;
 }
 
+    /* Controls for opacity for each layer */
+#layers-panel {
+    margin-left: 0px;
+}
+
+#layers-panel a.value {
+    line-height: 15px;
+    margin-top: 5px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    overflow: hidden;
+}
+

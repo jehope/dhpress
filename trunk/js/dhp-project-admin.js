@@ -1834,6 +1834,16 @@ jQuery(document).ready(function($) {
             $('#testResults').append('<p>You must specify the mote that will provide the coordinate for the Pinboard entry point (given the label "'+
               theEP.label()+'").</p>');
           }
+          var w;
+          if (theEP.settings.width() == '' || isNaN(w=parseInt(theEP.settings.width(),10)) || w <= 0) {
+            $('#testResults').append('<p>You must specify a valid background image width for the Pinboard entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          var h;
+          if (theEP.settings.height() == '' || isNaN(h=parseInt(theEP.settings.height(),10)) || h <= 0) {
+            $('#testResults').append('<p>You must specify a valid background image height for the Pinboard entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
           break;
         } // switch
       });
