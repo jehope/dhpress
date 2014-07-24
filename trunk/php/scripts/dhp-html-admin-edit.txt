@@ -344,7 +344,7 @@
 <script type="text/html" id="pin-legend-template">
     <li>
         <b>Legend <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.stMoteNames"></select>
-        <button data-bind="jqButton, click: function() { $root.delMapLegend($data, theEP, $index()); }">Delete</button>
+        <button data-bind="jqButton, click: function() { $root.delPinLegend($data, theEP, $index()); }">Delete</button>
     </li>
 </script>
 
