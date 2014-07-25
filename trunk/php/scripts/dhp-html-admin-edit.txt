@@ -382,16 +382,8 @@
             Font size (pixels) <input data-bind="value: theEP.settings.fSize" type="text" size="2"/>
             Marker radius (pixels) <input data-bind="value: theEP.settings.radius" type="text" size="2"/>
         </li>
-        <div data-bind="template: { name: 'tree-legend-template', foreach: theEP.settings.legends }"></div>
-        <button data-bind="jqButton, click: $root.addTreeLegend.bind(theEP)">Add Legend</button>
+        <li>Marker Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Values must be configured for colors)</li>
     </ul>
-</script>
-
-<script type="text/html" id="tree-legend-template">
-    <li>
-        <b>Legend <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.stMoteNames"></select>
-        <button data-bind="jqButton, click: function() { $root.delTreeLegend($data, theEP, $index()); }">Delete</button>
-    </li>
 </script>
 
 

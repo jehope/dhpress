@@ -93,9 +93,7 @@
 		            	"fSize" : Number,							// Size of label font in pixels
 		            	"radius" : Number,							// Size of circles in pixels (when used)
 		            	"padding" : Number,							// Size of padding (in pixels - form dependent)
-		                "legends": [								// List of mote Legends/categories
-		                    String (name of mote), ...
-		                ],
+		                "color": String (name of mote)				// For color of mote
 		            }
 		        }
 		    },

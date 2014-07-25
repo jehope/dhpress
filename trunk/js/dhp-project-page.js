@@ -148,6 +148,12 @@ jQuery(document).ready(function($) {
 
         updateVizSpace = dhpPinboardView.dhpUpdateSize;
         break;
+
+    case 'tree':
+        dhpTreeView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, callBacks);
+
+        updateVizSpace = dhpTreeView.dhpUpdateSize;
+        break;
     }
 
         // Transcription widget

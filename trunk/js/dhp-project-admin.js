@@ -220,10 +220,7 @@ jQuery(document).ready(function($) {
     self.settings.fSize = ko.observable(epSettings.settings.fSize);
     self.settings.radius = ko.observable(epSettings.settings.radius);
     self.settings.padding = ko.observable(epSettings.settings.padding);
-    self.settings.legends = ko.observableArray();
-    ko.utils.arrayForEach(normalizeArray(epSettings.settings.legends), function(theLegend) {
-      self.settings.legends.push(new ArrayString(theLegend));
-    });
+    self.settings.color = ko.observable(epSettings.settings.color);
   } // PinboardEntryPoint()
 
     // Create new "blank" layer to store in Map entry point
@@ -425,10 +422,7 @@ jQuery(document).ready(function($) {
           savedEP.settings.fSize = theEP.settings.fSize();
           savedEP.settings.radius = theEP.settings.radius();
           savedEP.settings.padding = theEP.settings.padding();
-          savedEP.settings.legends = [];
-          ko.utils.arrayForEach(theEP.settings.legends(), function(theLegend) {
-            savedEP.settings.legends.push(theLegend.name());
-          });
+          savedEP.settings.color = theEP.settings.color();
           break;
         } // switch ep type
         projSettings.eps.push(savedEP);
@@ -677,7 +671,7 @@ jQuery(document).ready(function($) {
               case 'tree':
                 if (theEP.settings.children() == moteName) {  theEP.settings.children(''); }
                 if (theEP.settings.label() == moteName) {  theEP.settings.label(''); }
-                theEP.settings.legends.remove(function(mote) { return mote.name() === moteName; });
+                if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
                 break;
               }
             });
@@ -1285,7 +1279,7 @@ jQuery(document).ready(function($) {
           fSize: '10',
           radius: '4',
           padding: '120',
-          legends: [ ]
+          color: ''
         }
       };
       self.setEP(_blankTreeEP);
@@ -1461,18 +1455,6 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
-      // PURPOSE: Handle user selection to create new pinboard legend
-    self.addTreeLegend = function(theEP) {
-      theEP.settings.legends.push(new ArrayString(''));
-      self.settingsDirty(true);
-    };
-
-      // PURPOSE: Handle user selection to create new pinboard legend
-    self.delTreeLegend = function(theLegend, theEP, index) {
-      theEP.settings.legends.splice(index, 1);
-      self.settingsDirty(true);
-    };
-
 //------------------------------------------ Views -----------------------------------------
 
       // User-editable values
@@ -1541,7 +1523,7 @@ jQuery(document).ready(function($) {
 
 
       // PURPOSE: Return list of possible modal links for select modal
-      // NOTES:   List contains all URL types and all Text motes that appear in Map legends and Card colors
+      // NOTES:   List contains all URL types and all Text motes that appear in EP legends
     self.getModalLinkNames = ko.computed(function() {
       var linkList = ['disable', 'marker'];
 
@@ -1568,6 +1550,7 @@ jQuery(document).ready(function($) {
             }
           });
           break;
+        case 'tree':
         case 'cards':
           var colorName = theEP.settings.color();
           if (colorName && colorName !== '' && colorName !== 'disable') {
