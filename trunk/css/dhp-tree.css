@@ -4,7 +4,6 @@
 @charset "UTF-8";
 
 body {
-    background: #C0C0C0;
 }
 
 .hide {
@@ -25,11 +24,16 @@ body {
 }
 
     /* Enable scroll bar in case background image is too large */
-svg {
+#svg-container {
 /*    z-index: 1000; */
     border: 2px solid #000;
     overflow-x: auto;
     overflow-y: auto;
+}
+
+svg {
+/*    z-index: 1000; */
+    background: #C0C0C0;
 }
 
     /* SVG MARKER ELEMENTS ============================ */

@@ -987,17 +987,6 @@ function createTreeNode($nodeName, $projectID, $rootTaxName, $nameCF, $childrenC
 		'posts_per_page' => 1,
 		'name' => $nodeName,
 		array( 'meta_key' => 'project_id', 'meta_value' => $projectID )
-		// 'meta_query' => array(
-		// 	'relation' => 'AND',
-		// 	array(
-		// 		'key' => 'project_id',
-		// 		'value' => $projectID
-		// 	),
-		// 	array(
-		// 		'key' => 'name',
-		// 		'value' => $nodeName
-		// 	)
-		// )
 	);
 	$loop = new WP_Query($args);
 

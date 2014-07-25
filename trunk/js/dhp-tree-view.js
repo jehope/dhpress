@@ -66,8 +66,6 @@ var dhpTreeView = {
         dhpTreeView.padding = typeof(treeEP.padding) === 'number' ? treeEP.padding  : parseInt(treeEP.padding);
         dhpTreeView.radius  = typeof(treeEP.radius) === 'number' ? treeEP.radius  : parseInt(treeEP.radius);
         dhpTreeView.fSize   = typeof(treeEP.fSize) === 'number' ? treeEP.fSize  : parseInt(treeEP.fSize);
-
-console.log("Init A");
             // set view/scroll window parameters
 
             // Add pinboard elements to nav bar
@@ -78,14 +76,15 @@ console.log("Init A");
         //                             dhpPinboardView.minWidth : pinboardEP.width+4);
         // jQuery("#dhp-visual").height(pinboardEP.height+dhpPinboardView.controlHeight);
 
-            // Create control div for Legend and image navigation buttons
+            // Create control div for Legend Key
         jQuery("#dhp-visual").append('<div id="dhp-controls"></div>');
 
             // Create placeholder for Legend menu
         jQuery('#dhp-controls').append(Handlebars.compile(jQuery("#dhp-script-tree-legend-head").html()));
 
             // Create SVG for D3
-        dhpTreeView.svg = d3.select("body").append("svg").attr("width", dhpTreeView.iWidth).attr("height", dhpTreeView.iHeight);
+        jQuery("#dhp-visual").append('<div id="svg-container"></div>');
+        dhpTreeView.svg = d3.select("#svg-container").append("svg").attr("width", dhpTreeView.iWidth).attr("height", dhpTreeView.iHeight);
 
             // Other initialization will depend on form of tree
         switch (treeEP.form) {
@@ -97,7 +96,6 @@ console.log("Init A");
             break;
         }
 
-console.log("Init B");
             // Make asynchronous call to load marker data in tree form
         jQuery.ajax({
             type: 'POST',
@@ -142,10 +140,10 @@ console.log("Init B");
         // });
 
             // Width of svg-container is same as visual space
-        // jQuery('#svg-container').width(jQuery('#dhp-visual').width()-2);
+        jQuery('#svg-container').width(jQuery('#dhp-visual').width()-2);
             // Height of svg-container will be total viz space minus height of navbar, margins, border & scroll bar itself
-        // var svgHeight = jQuery('#dhp-visual').height() - (dhpTreeView.controlHeight+40);
-        // jQuery('#svg-container').height(svgHeight);
+        var svgHeight = jQuery('#dhp-visual').height() - (dhpTreeView.controlHeight+40);
+        jQuery('#svg-container').height(svgHeight);
     }, // dhpUpdateSize()
 
 
