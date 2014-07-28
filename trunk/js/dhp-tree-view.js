@@ -361,8 +361,9 @@ var dhpTreeView = {
                         .enter().append("g")
                         .attr("class", "node")
                         .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-                        .on("click", function(d, index) {
-                            console.log("Selected node name "+d.name+" which is index "+index);
+                        .on("click", function(d) {
+                            dhpTreeView.callBacks.showMarkerModal(d);
+                            // console.log("Selected node name "+d.name+" which is index "+index);
                         });
 
             node.append("circle")
@@ -397,8 +398,8 @@ var dhpTreeView = {
                 .append("g")
                 .attr("class", "node")
                 .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
-                .on("click", function(d, index) {
-                    console.log("Selected node name "+d.name+" which is index "+index);
+                .on("click", function(d) {
+                    dhpTreeView.callBacks.showMarkerModal(d);
                 });
 
                 // Create the actual circle element
@@ -428,14 +429,18 @@ var dhpTreeView = {
                 .style("fill", function(d) {
                   return dhpTreeView.getItemColor(d.properties.categories);
                 })
-                .on("click", function() { } );
+                .on("click", function(d) {
+                    dhpTreeView.callBacks.showMarkerModal(d);
+                } );
 
             labels = dhpTreeView.vis.selectAll(".label")
                 .data(dhpTreeView.partition.nodes(nodeData));
 
             aLabel = labels.enter().append("text")
                 .attr("class", "label")
-                .on("click", function() { } )
+                .on("click", function(d) {
+                    dhpTreeView.callBacks.showMarkerModal(d);
+                } )
                 // .style("font-size", dhpTreeView.fSize+'px')
                 .style("fill", function(d) {
                   return dhpTreeView.brightness(d3.rgb(dhpTreeView.getItemColor(d.properties.categories))) < 125 ? "#eee" : "#000";

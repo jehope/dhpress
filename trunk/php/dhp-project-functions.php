@@ -977,7 +977,7 @@ function dhpGetMarkers()
 // RETURNS: Nested Array for $nodeName and all of its children
 // TO DO:	Create a getMarkerFeatures function that reduces redundancy with createMarkerArray()
 
-function createTreeNode($nodeName, $projectID, $rootTaxName, $nameCF, $childrenCF, $childrenDelim, $selectContent,
+function createTreeNode($nodeName, $projectID, $projObj, $rootTaxName, $nameCF, $childrenCF, $childrenDelim, $selectContent,
 						$audio, $transcript, $transcript2, $timecode,
 						$title_mote, $link_parent, $child_terms, $link_parent2, $child_terms2)
 {
@@ -1122,7 +1122,7 @@ function createTreeNode($nodeName, $projectID, $rootTaxName, $nameCF, $childrenC
 		$children = array();
 		foreach($childName as $theChildName) {
 			$trimName = trim($theChildName);
-			$theChildData = createTreeNode($trimName, $projectID, $rootTaxName, $nameCF, $childrenCF, $childrenDelim, $selectContent,
+			$theChildData = createTreeNode($trimName, $projectID, $projObj, $rootTaxName, $nameCF, $childrenCF, $childrenDelim, $selectContent,
 						$audio, $transcript, $transcript2, $timecode,
 						$title_mote, $link_parent, $child_terms, $link_parent2, $child_terms2);
 				// Don't add if data error (name not found)
@@ -1296,7 +1296,7 @@ function createMarkerTree($project_id, $index)
 	}
 
 		// Begin with head node
-	$markers = createTreeNode($eps->settings->head, $project_id, $rootTaxName, $nameCF,
+	$markers = createTreeNode($eps->settings->head, $project_id, $projObj, $rootTaxName, $nameCF,
 					$childrenCF, $childrenDelim, $selectContent,
 					$audio, $transcript, $transcript2, $timecode,
 					$title_mote, $link_parent, $child_terms, $link_parent2, $child_terms2);
