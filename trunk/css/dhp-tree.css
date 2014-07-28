@@ -26,7 +26,6 @@ body {
     /* Enable scroll bar in case background image is too large */
 #svg-container {
 /*    z-index: 1000; */
-    top: 48px;
     border: 2px solid #000;
     overflow-x: auto;
     overflow-y: auto;
@@ -53,6 +52,12 @@ svg {
   fill: none;
   stroke: #6699CC;
   stroke-width: 1.5px;
+}
+
+    /* The dial for depthtrees */
+path.arc {
+  cursor: move;
+  fill: #fff;
 }
 
     /* LEGENDS (by default non-fullscreen) ======== */
