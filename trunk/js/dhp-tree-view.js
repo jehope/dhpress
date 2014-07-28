@@ -12,9 +12,6 @@ var dhpTreeView = {
         //                  callBacks = object containing callback functions to dhp-project-page
 
         //					rawAjaxData = raw data returned from AJAX
-        //					allMarkers = All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
-        //                          Points to features array
-
         //                  legendTerms = terms array of Legend
 
         //                  iWidth, iHeight = pixel width and height of "palette"
@@ -27,10 +24,13 @@ var dhpTreeView = {
         //                  iconSize = "s" | "m" | "l"
         //                  icons (Object with properties that are SNAP path defs)
         //                      ballon, magGlass, thumbtack
-        //                  tRadius = radius of radial tree
 
+        //                  tRadius = radius of radial tree
         //                  m0 = for rotating radial tree
         //                  rotate = degree to which radial tree currently rotated
+
+        //                  xScale, yScale = scales for segment wheel
+        //                  arc = function that creates segment arcs
 
         //                  === D3 Objects ===
         //                  cluster = cluster layout
@@ -95,11 +95,14 @@ var dhpTreeView = {
             // Other initialization will depend on form of tree
         switch (treeEP.form) {
         case 'flat':
-            dhpTreeView.vis = dhpTreeView.svg.append("g").attr("transform", "translate("+treeEP.padding+",0)");
+            dhpTreeView.vis = dhpTreeView.svg.append("g")
+                .style("font-size", dhpTreeView.fSize+'px')
+                .attr("transform", "translate("+treeEP.padding+",0)");
 
             dhpTreeView.tree = d3.layout.cluster().size([dhpTreeView.iHeight, dhpTreeView.iWidth - (treeEP.padding*2)]);
             dhpTreeView.diagonal = d3.svg.diagonal().projection(function(d) { return [d.y, d.x]; });
             break;
+
         case 'radial':
             dhpTreeView.tRadius = Math.min(dhpTreeView.iWidth, dhpTreeView.iHeight) / 2;
             dhpTreeView.m0 = null;
@@ -116,7 +119,9 @@ var dhpTreeView = {
             dhpTreeView.diagonal = d3.svg.diagonal.radial()
                 .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
 
-            dhpTreeView.vis = dhpTreeView.svg.append("g").attr("transform", "translate(" + (dhpTreeView.tRadius+1)
+            dhpTreeView.vis = dhpTreeView.svg.append("g")
+                .style("font-size", dhpTreeView.fSize+'px')
+                .attr("transform", "translate(" + (dhpTreeView.tRadius+1)
                                     + "," + (dhpTreeView.tRadius+1) + ")");
 
                 // Create the outer rotate wheel
@@ -127,7 +132,27 @@ var dhpTreeView = {
                 .on("mousemove.spin", dhpTreeView.mMoveSpin)
                 .on("mouseup.spin", dhpTreeView.mUpSpin);
             break;
-        }
+
+        case 'segment':
+            dhpTreeView.tRadius = Math.min(dhpTreeView.iWidth, dhpTreeView.iHeight) / 2;
+            dhpTreeView.xScale = d3.scale.linear().range([0, 2 * Math.PI]);
+            dhpTreeView.yScale = d3.scale.linear().range([0, dhpTreeView.tRadius]);
+
+            dhpTreeView.vis = dhpTreeView.svg.append("g")
+                .style("font-size", dhpTreeView.fSize+'px')
+                .attr("transform", "translate(" + (dhpTreeView.tRadius+1)
+                                    + "," + (dhpTreeView.tRadius+1) + ")");
+
+                // All partitions of equal size
+            dhpTreeView.partition = d3.layout.partition().value(function(d) { return 1; } );
+
+            dhpTreeView.arc = d3.svg.arc()
+                .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, dhpTreeView.xScale(d.x))); })
+                .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, dhpTreeView.xScale(d.x + d.dx))); })
+                .innerRadius(function(d) { return Math.max(0, dhpTreeView.yScale(d.y)); })
+                .outerRadius(function(d) { return Math.max(0, dhpTreeView.yScale(d.y + d.dy)); });
+            break;
+        } // switch()
 
             // Make asynchronous call to load marker data in tree form
         jQuery.ajax({
@@ -254,6 +279,14 @@ var dhpTreeView = {
     }, // createLegend()
 
 
+        // PURPOSE: To compute the brightness value of the background
+        // INPUT:   rgb = a string in hex format (#xxxxxx)
+        // http://www.w3.org/WAI/ER/WD-AERT/#color-contrast
+    brightness: function(rgb) {
+      return rgb.r * .299 + rgb.g * .587 + rgb.b * .114;
+    }, // brightness()
+
+
         // PURPOSE: To determine color to use for marker
         // INPUT:   featureVals = array of category IDs (integers) associated with a feature/marker
         // RETURNS: Partial string to set color and background color (w/o closing ")
@@ -309,6 +342,7 @@ var dhpTreeView = {
         var nodeData = dhpTreeView.rawData[dhpTreeView.rawData.length-1];
         var padding = dhpTreeView.treeEP.padding;
         var nodes, links, link, node;
+        var paths, labels, aLabel;
 
         switch (dhpTreeView.treeEP.form) {
         case 'flat': 
@@ -340,7 +374,7 @@ var dhpTreeView = {
             node.append("text")
                   .attr("dx", function(d) { return d.children ? -8 : 8; })
                   .attr("dy", 3)
-                  .style("font-size", dhpTreeView.fSize+'px')
+                  // .style("font-size", dhpTreeView.fSize+'px')
                   .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
                   .text(function(d) { return d.name; });
             break;
@@ -376,7 +410,7 @@ var dhpTreeView = {
                 })
                 // Create the text label for the node
             node.append("text")
-                .style( "font-size", dhpTreeView.fSize+'px')
+                // .style( "font-size", dhpTreeView.fSize+'px')
                     // 1/3 character size between anchor point (of g) and text
                 .attr("dy", ".31em")
                     // Whether the end or beginning of the label is next to the node depends on the angle
@@ -385,7 +419,64 @@ var dhpTreeView = {
                 .attr("transform", function(d) { return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)"; })
                 .text(function(d) { return d.name; });
             break;
-        }
+
+        case 'segment':
+            paths = dhpTreeView.vis.selectAll("path")
+                .data(dhpTreeView.partition.nodes(nodeData))
+                .enter().append("path")
+                .attr("d", dhpTreeView.arc)
+                .style("fill", function(d) {
+                  return dhpTreeView.getItemColor(d.properties.categories);
+                })
+                .on("click", function() { } );
+
+            labels = dhpTreeView.vis.selectAll(".label")
+                .data(dhpTreeView.partition.nodes(nodeData));
+
+            aLabel = labels.enter().append("text")
+                .attr("class", "label")
+                .on("click", function() { } )
+                // .style("font-size", dhpTreeView.fSize+'px')
+                .style("fill", function(d) {
+                  return dhpTreeView.brightness(d3.rgb(dhpTreeView.getItemColor(d.properties.categories))) < 125 ? "#eee" : "#000";
+                })
+                    // Does the text point belong on the left or right side?
+                .attr("text-anchor", function(d) {
+                  if (d.depth) {
+                      return dhpTreeView.xScale(d.x + d.dx / 2) > Math.PI ? "end" : "start";
+                  } else {
+                      return "middle";
+                  }
+                })
+                .attr("dy", ".2em")
+                .attr("transform", function(d) {
+                      if (d.depth) {
+                          var multiline = (d.name || "").split(" ").length > 1,
+                              angle = dhpTreeView.xScale(d.x + d.dx / 2) * 180 / Math.PI - 90,
+                              rotate = angle + (multiline ? -.5 : 0);
+                          return "rotate(" + rotate + ")translate(" + (dhpTreeView.yScale(d.y) + dhpTreeView.padding) +
+                                ")rotate(" + (angle > 90 ? -180 : 0) + ")"; 
+                      } else {
+                          // return "translate(-"+topNodeLOffset+",-"+topNodeTOffset+")";
+                          return "";
+                      }
+                }) // .text(function(d) { return d.name; })
+                ;
+
+                // Enable up to three word segments in label
+            aLabel.append("tspan")
+                .attr("x", 0)
+                .text(function(d) { return d.name.split(" ")[0]; });
+            aLabel.append("tspan")
+                .attr("x", 0)
+                .attr("dy", "1em")
+                .text(function(d) { return d.name.split(" ")[1]; });
+            aLabel.append("tspan")
+                .attr("x", 0)
+                .attr("dy", "1em")
+                .text(function(d) { return d.name.split(" ")[2]; });
+            break;
+        } // switch(tree form)
     }, // createData()
 
 
