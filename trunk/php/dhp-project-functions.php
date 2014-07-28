@@ -1121,7 +1121,8 @@ function createTreeNode($nodeName, $projectID, $rootTaxName, $nameCF, $childrenC
 			// Create array for all descendants and call this recursively to fetch them
 		$children = array();
 		foreach($childName as $theChildName) {
-			$theChildData = createTreeNode($theChildName, $projectID, $rootTaxName, $nameCF, $childrenCF, $childrenDelim, $selectContent,
+			$trimName = trim($theChildName);
+			$theChildData = createTreeNode($trimName, $projectID, $rootTaxName, $nameCF, $childrenCF, $childrenDelim, $selectContent,
 						$audio, $transcript, $transcript2, $timecode,
 						$title_mote, $link_parent, $child_terms, $link_parent2, $child_terms2);
 				// Don't add if data error (name not found)
@@ -2613,10 +2614,10 @@ function dhp_mod_page_content($content) {
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
 		break;
 	default:
-		$to_append = '';
+		$to_append = '<div class="dhp-entrytext"></div>';
 		break;
 	}
-	return $content.'<div class="dhp-post" id="'.$postID.'"><div class="dhp-entrytext"></div>'.$to_append.'</div>';
+	return $content.'<div class="dhp-post" id="'.$postID.'">'.$to_append.'</div>';
 } // dhp_mod_page_content()
 
 

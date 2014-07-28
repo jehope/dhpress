@@ -1,14 +1,5 @@
     <!-- Handlebars Templates for Tree View -->
 
-<script id="dhp-script-tree-menus" type="text/x-handlebars-template">
-  <li class="has-dropdown">
-      <a href="#">Legends</a>
-      <ul class="dropdown legend-dropdown"">
-          <!-- links -->
-      </ul>
-  </li>
-</script>
-
 
 <script id="dhp-script-tree-legend-head" type="text/x-handlebars-template">
   <div id="legends" ><div class="legend-row"></div></div>
