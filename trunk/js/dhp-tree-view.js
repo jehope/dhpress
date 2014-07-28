@@ -5,7 +5,6 @@
 
 // USES:    JavaScript libraries jQuery, Underscore, D3
 
-
 var dhpTreeView = {
 
         // Contains fields: ajaxURL, projectID, treeEP, viewParams, vizIndex
@@ -17,8 +16,6 @@ var dhpTreeView = {
         //                  iWidth, iHeight = pixel width and height of "palette"
         //                  padding = padding in pixels -- tree-specific
         //                      flat: the space given to labels of first and last nodes
-        //                  svg = the D3 object for the SVG div
-        //                  vis = the D3 object which takes the shapes
 
         //                  mRadius = radius of geometric markers
         //                  iconSize = "s" | "m" | "l"
@@ -26,15 +23,17 @@ var dhpTreeView = {
         //                      ballon, magGlass, thumbtack
 
         //                  tRadius = radius of radial tree
-        //                  m0 = for rotating radial tree
+        //                  m0 = original mouse click coordinate (rotating radial tree)
         //                  rotate = degree to which radial tree currently rotated
 
+        //                  === D3 Objects ===
+        //                  svg = the D3 object for the SVG div
+        //                  vis = the D3 object which takes the shapes
+        //                  tree = D3 layout for flat and radial trees
+        //                  partition = D3 layout for segment wheel
+        //                  diagonal = diagonal projection (if used)
         //                  xScale, yScale = scales for segment wheel
         //                  arc = function that creates segment arcs
-
-        //                  === D3 Objects ===
-        //                  cluster = cluster layout
-        //                  diagonal = diagonal projection (if used)
 
         //                  useParent = if true (always true!), actions on parent term affect child terms
         //                  isTouch = this is a touch-screen interface, not mouse
