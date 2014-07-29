@@ -32,6 +32,10 @@ code {
 	top:30px;
 }
 
+.top-bar-section ul li>a {
+	font-size: 1rem;
+}
+
 .tab-content {
 	min-height: 150px;
 }
