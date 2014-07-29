@@ -82,7 +82,8 @@ jQuery(document).ready(function($) {
 //===================================== UTILITIES ===================================
 
     // PURPOSE: Ensure that data is returned as array
-    // NOTES:   This is necessary because of irregular JSON encoding: sometimes array is encoded as Object properties
+    // NOTES:   This was necessary because of irregular JSON encoding in DH Press 1.X:
+    //            sometimes array was encoded as Object properties; shouldn't be needed now.
   function normalizeArray(data) {
     if (_.isArray(data)) {
       return data;
@@ -200,6 +201,26 @@ jQuery(document).ready(function($) {
     ko.utils.arrayForEach(normalizeArray(epSettings.settings.layers), function(theLayer) {
       self.settings.layers.push(new PinLayer(theLayer));
     });
+  } // PinboardEntryPoint()
+
+
+    // Class constructor for Tree Entry Point
+  var TreeEntryPoint = function(epSettings) {
+    var self = this;
+
+    self.type = 'tree';
+    self.label= ko.observable(epSettings.label || 'name me');
+    self.settings = { };
+    self.settings.form = ko.observable(epSettings.settings.form);
+    self.settings.width = ko.observable(epSettings.settings.width);
+    self.settings.height = ko.observable(epSettings.settings.height);
+    self.settings.head = ko.observable(epSettings.settings.head);
+    self.settings.children = ko.observable(epSettings.settings.children);
+    self.settings.label = ko.observable(epSettings.settings.label);
+    self.settings.fSize = ko.observable(epSettings.settings.fSize);
+    self.settings.radius = ko.observable(epSettings.settings.radius);
+    self.settings.padding = ko.observable(epSettings.settings.padding);
+    self.settings.color = ko.observable(epSettings.settings.color);
   } // PinboardEntryPoint()
 
     // Create new "blank" layer to store in Map entry point
@@ -390,6 +411,19 @@ jQuery(document).ready(function($) {
             savedEP.settings.layers.push(savedLayer);
           });
           break;
+
+        case 'tree':
+          savedEP.settings.form = theEP.settings.form();
+          savedEP.settings.width = theEP.settings.width();
+          savedEP.settings.height = theEP.settings.height();
+          savedEP.settings.head = theEP.settings.head();
+          savedEP.settings.children = theEP.settings.children();
+          savedEP.settings.label = theEP.settings.label();
+          savedEP.settings.fSize = theEP.settings.fSize();
+          savedEP.settings.radius = theEP.settings.radius();
+          savedEP.settings.padding = theEP.settings.padding();
+          savedEP.settings.color = theEP.settings.color();
+          break;
         } // switch ep type
         projSettings.eps.push(savedEP);
       }); // for each EP
@@ -500,6 +534,9 @@ jQuery(document).ready(function($) {
     }, self);
     self.xyMoteNames = ko.computed(function() {
       return doGetMoteNames(['X-Y Coordinates']);
+    }, self);
+    self.pointerMoteNames = ko.computed(function() {
+      return doGetMoteNames(['Pointer']);
     }, self);
     self.stMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text']);
@@ -628,10 +665,13 @@ jQuery(document).ready(function($) {
                 theEP.settings.sortMotes.remove(function(mote) { return mote.name() === moteName; });
                 break;
               case 'pinboard':
-                if (theEP.settings.coordMote() == moteName) {
-                  theEP.settings.coordMote('');
-                }
+                if (theEP.settings.coordMote() == moteName) { theEP.settings.coordMote(''); }
                 theEP.settings.legends.remove(function(mote) { return mote.name() === moteName; });
+                break;
+              case 'tree':
+                if (theEP.settings.children() == moteName) {  theEP.settings.children(''); }
+                if (theEP.settings.label() == moteName) {  theEP.settings.label(''); }
+                if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
                 break;
               }
             });
@@ -1224,6 +1264,27 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new pinboard entry point
+    self.createTreeEP = function() {
+      var _blankTreeEP = {
+        type: 'tree',
+        label: 'name me',
+        settings: {
+          form: '',
+          width: 1000,
+          height: 1000,
+          head: '',
+          children: '',
+          label: '',
+          fSize: '10',
+          radius: '4',
+          padding: '120',
+          color: ''
+        }
+      };
+      self.setEP(_blankTreeEP);
+      self.settingsDirty(true);
+    };
 
       // PURPOSE: Programmatically add an entry point to the settings (not via user interface)
     self.setEP = function(theEP) {
@@ -1237,6 +1298,9 @@ jQuery(document).ready(function($) {
         break;
       case 'pinboard':
         newEP = new PinboardEntryPoint(theEP);
+        break;
+      case 'tree':
+        newEP = new TreeEntryPoint(theEP);
         break;
       }
       self.entryPoints.push(newEP);
@@ -1272,6 +1336,8 @@ jQuery(document).ready(function($) {
         return 'ep-cards-template';
       case 'pinboard':
         return 'ep-pin-template';
+      case 'tree':
+        return 'ep-tree-template';
       }
     }; // calcEPTemplate()
 
@@ -1389,7 +1455,6 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
-
 //------------------------------------------ Views -----------------------------------------
 
       // User-editable values
@@ -1458,7 +1523,7 @@ jQuery(document).ready(function($) {
 
 
       // PURPOSE: Return list of possible modal links for select modal
-      // NOTES:   List contains all URL types and all Text motes that appear in Map legends and Card colors
+      // NOTES:   List contains all URL types and all Text motes that appear in EP legends
     self.getModalLinkNames = ko.computed(function() {
       var linkList = ['disable', 'marker'];
 
@@ -1485,6 +1550,7 @@ jQuery(document).ready(function($) {
             }
           });
           break;
+        case 'tree':
         case 'cards':
           var colorName = theEP.settings.color();
           if (colorName && colorName !== '' && colorName !== 'disable') {

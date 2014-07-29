@@ -77,9 +77,30 @@ var dhpMapsView = {
         dhpMapsView.initializeMap2();
 
         dhpMapsView.createLayers();
-        dhpMapsView.loadMapMarkers();
         dhpMapsView.createMapControls();
+
+        jQuery.ajax({
+            type: 'POST',
+            url: dhpMapsView.ajaxURL,
+            data: {
+                action: 'dhpGetMarkers',
+                project: dhpMapsView.projectID,
+                index: dhpMapsView.vizIndex
+            },
+            success: function(data, textStatus, XMLHttpRequest)
+            {
+                dhpMapsView.createDataObjects(JSON.parse(data));
+                    // Remove Loading modal
+                callBacks.remLoadingModal();
+                jQuery('.reveal-modal-bg').remove();
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown)
+            {
+               alert(errorThrown);
+            }
+        });
     }, // initialize()
+
 
         // PURPOSE: Initialize map viewing area with controls
     initializeMap2: function()
@@ -90,7 +111,7 @@ var dhpMapsView = {
         jQuery('.dhp-nav .top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-map-menus").html()));
 
             // Insert Legend area -- Joe had "after" but menu off map above if not "append"
-        jQuery('#dhp-visual').append(Handlebars.compile(jQuery("#dhp-script-map-legend-head").html()));
+        jQuery('#dhp-visual').append(Handlebars.compile(jQuery("#dhp-script-legend-head").html()));
 
         jQuery('#dhp-visual').append('<div id="dhpMap"/>');
 
@@ -278,6 +299,7 @@ var dhpMapsView = {
         return newTerms;
     }, // formatTerms()
 
+
         // PURPOSE: Creates and draws marker layer on map
         //          Called whenever the terms are filtered (inc initial display)
     createMarkerLayer: function() {
@@ -293,6 +315,7 @@ var dhpMapsView = {
 
         dhpMapsView.mapLayers.push(dhpMapsView.markerLayer);
     }, // createMarkerLayer()
+
 
     checkOpacity: function() {
         return dhpMapsView.markerOpacity;
@@ -335,6 +358,7 @@ var dhpMapsView = {
         return returnColor;
     }, // getActiveTermColor()
 
+
         // PURPOSE: Create the Leaflet feature associated with this entry
     pointToLayer: function(feature, latlng) {
         var fColor = dhpMapsView.getActiveTermColor(feature.properties.categories);
@@ -366,6 +390,7 @@ var dhpMapsView = {
             throw new Error("Unsupported feature type: "+fColor);
         }
     }, // pointToLayer()
+
 
         // PURPOSE: Bind controls for each Marker
     onEachFeature: function(feature, layer)
@@ -532,102 +557,10 @@ var dhpMapsView = {
         // INPUT:   legendList = array of legends to display; each element has field "name" and array "terms" of [id, name, icon_url ]
     createLegends: function(legendList) 
     {
-        var legendHtml;
-        var legendHeight;
-
-            // Build Legend controls on the right (category toggles) for each legend value and insert Legend name into dropdown above
-        _.each(legendList, function(theLegend, legIndex) {
-            var filterTerms = theLegend.terms;
-            var legendName = theLegend.name;
-
-                // "Root" DIV for this particular Legend
-            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+
-                            '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
-                // Create entries for all terms (though 2nd-level children are made invisible)
-            _.each(filterTerms, function(theTerm) {
-                if (legendName !== theTerm.name) {
-                    var hasParentClass = '';
-                        // Make 2nd-level children invisible with CSS
-                    if(theTerm.parent) {
-                        hasParentClass = 'hasParent';
-                    }
-                    if (theTerm.icon_url == null || theTerm.icon_url == undefined) {
-                        throw new Error("Legend value "+theTerm.name+" has not been assigned a color or icon");
-                    }
-                    var firstIconChar = theTerm.icon_url.substring(0,1);
-                    var htmlStr;
-                    switch (firstIconChar) {
-                    case '#':
-                        htmlStr = '<div class="small-3 large-2 columns" style="background:'+
-                            theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
-                        break;
-                    case '.':
-                        htmlStr = '<div class="small-2 large-1 columns"><div class="maki-icon '+
-                            theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
-                        break;
-                    default:
-                            // TO DO: Support uploaded images!
-                        // icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat right; background-size: 50%;';
-                        throw new Error('Unknown visual feature: '+theTerm.icon_url);
-                    }
-
-                        // Append new legend value to menu according to type
-                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+htmlStr+
-                                                    '<div class="small-9 large-10 columns"><a class="value" data-id="'+
-                                                    theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
-                }
-            });
-            jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-map-legend-hideshow").html()));
-
-            jQuery('#legends .legend-row').append(legendHtml);
-                // Add Legend title to dropdown menu in navbar -- make 1st Legend active by default
-            var active = (legIndex == 0) ? ' class="active"' : '';
-            jQuery('.dhp-nav .legend-dropdown').append('<li'+active+'><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
-        });
-            // Add Layers to legends
-        jQuery('#legends .legend-row').append('<div class="legend-div" id="layers-panel"><div class="legend-title">Layer Controls</div></div>');
-
-            // Hide all Legends, except 0 by default
-        jQuery('.legend-div').hide();
-        jQuery('#term-legend-0').show();
-        jQuery('#term-legend-0').addClass('active-legend');
-
-            // Update checkbox height(varies by theme/browser) 
-        dhpMapsView.checkboxHeight = jQuery('#legends').find('input:checkbox').height();
-
-            //Initialize new foundation elements
-        jQuery(document).foundation();
-
-            // For small mobile screens, expand Legend menu on hover
-        jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
-        if(!jQuery('body').hasClass('isMobile')) {
-            jQuery('.legend-resize').hide();
-            jQuery('#legends').hover(function(){
-                jQuery('.legend-resize').fadeIn(100);
-            },
-            function() {
-                jQuery('.legend-resize').fadeOut(100);
-            });
-        }
-
-            // Add legend Min-Max expand/contract action
-        jQuery('.legend-resize').on('click', function(){
-            if(jQuery('#legends').hasClass('mini')) {
-                jQuery('#legends').animate({ height: legendHeight },
-                    500,
-                    function() {
-                        jQuery('#legends').removeClass('mini');
-                    });
-            } 
-            else {
-                legendHeight = jQuery('#legends').height();
-                jQuery('#legends').addClass('mini');                
-                jQuery('#legends').animate({ height: 37 }, 500 );
-            }
-        });
+        dhpMapsView.callBacks.createLegends(legendList, 'Layer Controls');
 
             // Handle user selection of value name from current Legend
-        jQuery('#legends div.terms .row a').on('click', function(event) {
+        jQuery('#legends div.terms .row a').click(function(event) {
             var spanName = jQuery(this).data('id');
 
                 // "Hide/Show all" button
@@ -800,22 +733,6 @@ var dhpMapsView = {
         // PURPOSE: Resizes map-specific elements when browser size changes
     dhpUpdateSize: function()
     {
-        var newRowHeight, checkboxMargin;
-
-            //resize legend term position for long titles
-        jQuery('.active-legend .terms').css({top: jQuery('.active-legend .legend-title').height() });
-
-            //resize legend items that are two lines and center checkbox
-        jQuery('.active-legend .row').each(function(key,value) {
-                //height of row containing text(could be multiple lines)
-            newRowHeight   = jQuery('.columns', this).eq(1).height();
-                // variable to center checkbox in row
-            checkboxMargin = (newRowHeight - dhpMapsView.checkboxHeight) / 2;
-                // set elements in rows with new values
-            jQuery('.columns', this).eq(0).height(newRowHeight);
-            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
-        });
-
             // TO DO: Resize layer opacity DIVs??
 
             // This is an Leaflet function to redraw the markers after map resize
@@ -832,31 +749,5 @@ var dhpMapsView = {
         // }
         // return false;
         return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
-    },
-
-        // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
-    loadMapMarkers: function()
-    {
-    	jQuery.ajax({
-            type: 'POST',
-            url: dhpMapsView.ajaxURL,
-            data: {
-                action: 'dhpGetMarkers',
-                project: dhpMapsView.projectID,
-                index: dhpMapsView.vizIndex
-            },
-            success: function(data, textStatus, XMLHttpRequest)
-            {
-                dhpMapsView.createDataObjects(JSON.parse(data));
-                    // Remove Loading modal
-                dhpMapsView.callBacks.remLoadingModal();
-                jQuery('.reveal-modal-bg').remove();
-            },
-            error: function(XMLHttpRequest, textStatus, errorThrown)
-            {
-               alert(errorThrown);
-            }
-        });
-    } // loadMapMarkers()
-
+    }
 };

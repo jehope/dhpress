@@ -3,7 +3,14 @@
 
 @charset "UTF-8";
 
-	/* Navigation Bar at top of screen */
+
+	/* FIX: Adjusts foundations nowrap style for code blocks */
+code {
+	white-space: inherit;
+}
+
+	/* ======== NAVIGATION BAR ========= */
+
 .dhp-nav {
 	z-index: 1102;
 	width: 100%;
@@ -28,20 +35,31 @@
 .top-bar-section ul li>a {
 	font-size: 1rem;
 }
-	/* Loading message styles */
+
+.tab-content {
+	min-height: 150px;
+}
+
+.nav-tabs {
+	text-transform: capitalize;
+}
+
+	/* =========== MODALS =========== */
 #loading {
 	position: fixed;
-	
 }
+
 .loading-content {
 	width: 100%;
 	background: url('../images/ajax-loader.gif') no-repeat center 10px;
 }
+
 .loading-content h3.loading-title {
 	padding-top: 40px;
 	text-align: center;
 	font-size: 28px;
 }
+
 .reveal-modal-bg {
 	z-index: 1103;
 }
@@ -50,11 +68,6 @@
 	z-index: 1104;
 	max-height: 75%;
 	overflow: auto;
-}
-
-	/* FIX: Adjusts foundations nowrap style for code blocks */
-code {
-	white-space: inherit;
 }
 
 .reveal-modal-footer {
@@ -71,12 +84,10 @@ html.fullscreen {
 	overflow: hidden;
 }
 
-	/* Visualization frame */
+	/* ========== VISUALIZATION FRAME ========= */
+
 #dhp-visual {
 	position: relative;
-/*	width:100%;
-	height:400px;
-*/
 	background: #fff;
 }
 
@@ -90,32 +101,8 @@ html.fullscreen {
 	bottom: 0;
 }
 
-	/* Viewing Project content */
-.entry-content .dhp-entrytext h3 {
-	clear: none;
-	margin-bottom: 3px;
-	font-weight: bold;
-}
+	/* ========== MODAL WINDOWS =========== */
 
-.entry-content .dhp-entrytext p {
-	margin-top: 3px;
-	margin-bottom: 6px;
-}
-
-.entry-content .dhp-entrytext p.thumb-right {
-	float: right;
-	padding-left: 5px;
-	padding-bottom: 5px; 	
-}
-
-.entry-content .dhp-entrytext p.thumb-left {
-	float: left;
-	padding-right: 5px;
-	padding-bottom: 5px;
-}
-
-
-	/* Modal Windows */
 .modal {
 	z-index: 1150;
 }
@@ -167,20 +154,8 @@ html.fullscreen {
 	filter: alpha(opacity=60);
 }
 
-/* -- attempting fix 
-#markerModal {
-	resize: both;
-}
-*/
+/* ============= LEGENDS ============= */
 
 .legend {
 	display:none;
-}
-
-.tab-content {
-	min-height: 150px;
-}
-
-.nav-tabs {
-	text-transform: capitalize;
 }

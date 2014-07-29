@@ -1,4 +1,4 @@
-// PURPOSE: Handle viewing Project content visualizations
+// PURPOSE: Handle management of Project content visualizations
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //          vizParams.layerData = array with all data needed for dhp-custom-maps
 //          vizParams.current = index of current visualization in entry points
@@ -17,6 +17,7 @@ jQuery(document).ready(function($) {
         // modal and GUI support
     var modalSize;
     var browserMobile = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
+    var checkboxHeight;
         // For reaching functions in this file used by various visualization modules
     var callBacks;
         // Visualization-specific callbacks
@@ -37,7 +38,9 @@ jQuery(document).ready(function($) {
         // Create callback object so that visualization modules can access functions in this file
     callBacks = {
         remLoadingModal: removeLoadingMessage,
-        showMarkerModal: showMarkerModal
+        showMarkerModal: showMarkerModal,
+        create1Legend:   create1Legend,
+        createLegends:   createLegends
     };
 
         //Add project nav bar
@@ -148,6 +151,12 @@ jQuery(document).ready(function($) {
 
         updateVizSpace = dhpPinboardView.dhpUpdateSize;
         break;
+
+    case 'tree':
+        dhpTreeView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, callBacks);
+
+        updateVizSpace = dhpTreeView.dhpUpdateSize;
+        break;
     }
 
         // Transcription widget
@@ -208,6 +217,23 @@ jQuery(document).ready(function($) {
         if (updateVizSpace) {
             updateVizSpace();
         }
+
+            // Update menu sizes
+        var newRowHeight, checkboxMargin;
+
+            //resize legend term position for long titles
+        jQuery('.active-legend .terms').css({top: jQuery('.active-legend .legend-title').height() });
+
+            //resize legend items that are two lines and center checkbox
+        jQuery('.active-legend .row').each(function(key,value) {
+                //height of row containing text(could be multiple lines)
+            newRowHeight   = jQuery('.columns', this).eq(1).height();
+                // variable to center checkbox in row
+            checkboxMargin = (newRowHeight - checkboxHeight) / 2;
+                // set elements in rows with new values
+            jQuery('.columns', this).eq(0).height(newRowHeight);
+            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
+        });
     } // windowResized()
 
 
@@ -299,6 +325,177 @@ jQuery(document).ready(function($) {
             });
         }
     } // createNavBar()
+
+        // PURPOSE: Create multi-legend Legend key for the visualization
+        // INPUT:   legendList = array of legends to display; each element has field "name" and array "terms" of [id, name, icon_url ]
+        //          layerTitle = label for the Layers panel (or null if none)
+        // NOTES:   Handles user interaction with Legend itself, but not actions connected to visualization
+        //          legend-head div must have already been inserted at appropriate place
+    function createLegends(legendList, layerTitle)
+    {
+        var legendHtml;
+        var legendHeight;
+
+            // Build Legend controls on the right (category toggles) for each legend value and insert Legend name into dropdown above
+        _.each(legendList, function(theLegend, legIndex) {
+            var filterTerms = theLegend.terms;
+            var legendName = theLegend.name;
+
+                // "Root" DIV for this particular Legend
+            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+
+                            '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
+                // Create entries for all terms (though 2nd-level children are made invisible)
+            _.each(filterTerms, function(theTerm) {
+                if (legendName !== theTerm.name) {
+                    var hasParentClass = '';
+                        // Make 2nd-level children invisible with CSS
+                    if(theTerm.parent) {
+                        hasParentClass = 'hasParent';
+                    }
+                    if (theTerm.icon_url == null || theTerm.icon_url == undefined) {
+                        throw new Error("Legend value "+theTerm.name+" has not been assigned a color or icon");
+                    }
+                    var firstIconChar = theTerm.icon_url.substring(0,1);
+                    var htmlStr;
+                    switch (firstIconChar) {
+                    case '#':
+                        htmlStr = '<div class="small-3 large-2 columns" style="background:'+
+                            theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
+                        break;
+                    case '.':
+                        htmlStr = '<div class="small-2 large-1 columns"><div class="maki-icon '+
+                            theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
+                        break;
+                    default:
+                            // TO DO: Support uploaded images!
+                        // icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat right; background-size: 50%;';
+                        throw new Error('Unknown visual feature: '+theTerm.icon_url);
+                    }
+
+                        // Append new legend value to menu according to type
+                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+htmlStr+
+                                                    '<div class="small-9 large-10 columns"><a class="value" data-id="'+
+                                                    theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
+                }
+            });
+            jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-legend-hideshow").html()));
+
+            jQuery('#legends .legend-row').append(legendHtml);
+                // Add Legend title to dropdown menu in navbar -- make 1st Legend active by default
+            var active = (legIndex == 0) ? ' class="active"' : '';
+            jQuery('.dhp-nav .legend-dropdown').append('<li'+active+'><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
+        });
+            // Add Layers div to legends (if any)
+        if (layerTitle) {
+            jQuery('#legends .legend-row').append('<div class="legend-div" id="layers-panel"><div class="legend-title">'+layerTitle+'</div></div>');
+        }
+
+            // Hide all Legends, except 0 by default
+        jQuery('.legend-div').hide();
+        jQuery('#term-legend-0').show();
+        jQuery('#term-legend-0').addClass('active-legend');
+
+            // Update checkbox height(varies by theme/browser) 
+        checkboxHeight = jQuery('#legends').find('input:checkbox').height();
+
+            //Initialize new foundation elements
+        jQuery(document).foundation();
+
+            // For small mobile screens, expand Legend menu on hover
+        jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
+        if(!jQuery('body').hasClass('isMobile')) {
+            jQuery('.legend-resize').hide();
+            jQuery('#legends').hover(function(){
+                jQuery('.legend-resize').fadeIn(100);
+            },
+            function() {
+                jQuery('.legend-resize').fadeOut(100);
+            });
+        }
+
+            // Add legend Min-Max expand/contract action
+        jQuery('.legend-resize').on('click', function(){
+            if(jQuery('#legends').hasClass('mini')) {
+                jQuery('#legends').animate({ height: legendHeight },
+                    500,
+                    function() {
+                        jQuery('#legends').removeClass('mini');
+                    });
+            } 
+            else {
+                legendHeight = jQuery('#legends').height();
+                jQuery('#legends').addClass('mini');                
+                jQuery('#legends').animate({ height: 37 }, 500 );
+            }
+        });
+    } // createLegends()
+
+
+        // PURPOSE: Create a single-legend Legend key
+        // INPUT:   legendName = name of legend (String)
+        //          legendList = array of Legend data
+        // NOTES:   Handles user interaction with Legend itself, but not actions connected to visualization
+        //          legend-head div must have already been inserted at appropriate place
+    function create1Legend(legendName, legendList) {
+        var legendHtml;
+
+            // "Root" DIV for the Legend
+        legendHtml = jQuery('<div class="legend-div"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
+            // Create entries for all of the 1st-level terms (do not represent children of terms)
+        _.each(legendList, function(theTerm) {
+            if (legendName !== theTerm.name) {
+                var hasParentClass = '';
+                if (theTerm.parent) {
+                    hasParentClass = 'hasParent';
+                }
+                var firstIconChar = theTerm.icon_url.substring(0,1);
+                switch (firstIconChar) {
+                case '#':
+                        // Append new legend value to menu according to type
+                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
+                        '<div class="small-2 large-1 columns splash" style="background:'+theTerm.icon_url+'"></div>'+
+                        '<div class="small-10 large-11 columns"><a class="value" data-id="'+
+                        theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
+                    break;
+                default:
+                    throw new Error('Visual feature not supported for Topic Cards: '+theTerm.icon_url);
+                }
+            }
+        });
+
+        jQuery('#legends').append(legendHtml);
+
+            // Update checkbox height (varies by theme/browser)
+        checkboxHeight = jQuery('#legends').find('input:checkbox').height();
+
+            // Handle resizing Legend (min/max)
+        jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
+        if(!jQuery('body').hasClass('isMobile')) {
+            jQuery('.legend-resize').hide();
+            jQuery('#legends').hover(function(){
+                jQuery('.legend-resize').fadeIn(100);
+            },
+            function() {
+                jQuery('.legend-resize').fadeOut(100);
+            });
+        }
+
+            // Add legend hide/show action
+        jQuery('.legend-resize').on('click', function(){
+            if(jQuery('#legends').hasClass('mini')) {
+                jQuery('#legends').animate({ height: legendHeight },
+                    500,
+                    function() {
+                        jQuery('#legends').removeClass('mini');
+                    });
+            } 
+            else {
+                legendHeight = jQuery('#legends').height();
+                jQuery('#legends').addClass('mini');                
+                jQuery('#legends').animate({ height: 37 }, 500 );
+            }
+        });
+    } // create1Legend()
 
 
         // RETURNS: true if the Select Modal has a widget whose name is modalName

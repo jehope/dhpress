@@ -15,6 +15,7 @@ define( 'DHP_SCRIPT_PROJ_VIEW',  'dhp-script-proj-view.txt' );
 define( 'DHP_SCRIPT_MAP_VIEW',   'dhp-script-map-view.txt' );
 define( 'DHP_SCRIPT_CARDS_VIEW',   'dhp-script-cards-view.txt' );
 define( 'DHP_SCRIPT_PINBOARD_VIEW',   'dhp-script-pin-view.txt' );
+define( 'DHP_SCRIPT_TREE_VIEW',   'dhp-script-tree-view.txt' );
 
 // define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unused
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
@@ -945,6 +946,388 @@ function createMarkerArray($project_id, $index)
 } // createMarkerArray()
 
 
+// Enable for both editing and viewing
+
+add_action('wp_ajax_dhpGetMarkers', 'dhpGetMarkers' );
+add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkers');
+
+// PURPOSE:	Handle Ajax call to get all markers for a Project for a Tree view
+// ASSUMED: A Tree view Entry Point is the current 
+// INPUT:	$_POST['project'] is ID of Project
+// RETURNS:	JSON object of array of marker values
+
+function dhpGetMarkers()
+{
+	$dhp_project = $_POST['project'];
+	$index =		$_POST['index'];
+	$mArray = createMarkerArray($dhp_project, $index);
+
+	// $result = json_encode($mArray);
+	// $result = stripslashes($result);
+	// die($result);
+	die(json_encode($mArray));
+} // dhpGetMarkers()
+
+
+// TREE MARKER CODE ==================
+
+// PURPOSE: Retrieve all of the relevant info about this node and all call recursively for all of its children
+// INPUT:   $nodeName = the name of the custom post
+//			$eps = Entry Point settings
+// RETURNS: Nested Array for $nodeName and all of its children
+// TO DO:	Create a getMarkerFeatures function that reduces redundancy with createMarkerArray()
+
+function createTreeNode($nodeName, $projectID, $projObj, $rootTaxName, $nameCF, $childrenCF, $childrenDelim, $selectContent,
+						$audio, $transcript, $transcript2, $timecode,
+						$title_mote, $link_parent, $child_terms, $link_parent2, $child_terms2)
+{
+		// Get the WP post corresponding to this marker
+	$args = array( 
+		'post_type' => 'dhp-markers', 
+		'posts_per_page' => 1,
+		'name' => $nodeName,
+		array( 'meta_key' => 'project_id', 'meta_value' => $projectID )
+	);
+	$loop = new WP_Query($args);
+
+		// We can only abort if not found
+	if (!$loop->have_posts()) {
+		trigger_error("Tree view label assigned to unknown mote");
+		return null;
+	}
+
+	$loop->the_post();
+	$marker_id = get_the_ID();
+
+		// Feature will hold properties and some other values for each marker
+	$thisFeature = array();
+
+		// Fetch name for marker
+	$nameVal = get_post_meta($marker_id, $nameCF, true);
+	$thisFeature["name"] = $nameVal;
+
+		// Most data goes into properties field
+	$thisFeaturesProperties = array();
+
+		// First set up fields required by visualizations, abandon marker if missing
+
+		// Audio transcript features?
+	if (!is_null($audio)) {
+		$audio_val = get_post_meta($marker_id, $audio, true);
+		$thisFeaturesProperties["audio"] = $audio_val;
+	}
+	if (!is_null($transcript)) {
+		$transcript_val = get_post_meta($marker_id, $transcript, true);
+		$thisFeaturesProperties["transcript"]  = $transcript_val;
+	}
+	if (!is_null($transcript2)) {
+		$transcript2_val = get_post_meta($marker_id, $transcript2, true);
+		$thisFeaturesProperties["transcript2"] = $transcript2_val;
+	}
+	if (!is_null($timecode)) {
+		$timecode_val = get_post_meta($marker_id, $timecode, true);
+		$thisFeaturesProperties["timecode"]    = $timecode_val;
+	}
+
+	if ($title_mote) {
+		if($title_mote=='the_title') {
+			$title = get_the_title();
+		} else {
+			$title = get_post_meta($marker_id,$title_mote,true);
+		}
+		$thisFeaturesProperties["title"] = $title;
+	}
+
+		// Get all of the legend/category values associated with this marker post
+	$args = array('fields' => 'ids');
+	$post_terms = wp_get_post_terms($marker_id, $rootTaxName, $args);
+	$term_array = array();
+	foreach ($post_terms as $term) {
+			// Convert tax category names into IDs
+		array_push($term_array,intval($term));
+	}
+	$thisFeaturesProperties["categories"]  = $term_array;
+
+	// $feature_collection['debug'] = $viewsContent;
+	$content_att = array();
+
+		// Gather all values to be displayed in modal if marker selected
+		// Should not apply filters to post content because DH Press markup gets inserted!
+	if (count($selectContent)) {
+		foreach( $selectContent as $contentMoteName ) {
+			if ($contentMoteName == 'the_content') {
+				$content_val = get_post_field('post_content', $marker_id);
+			} elseif ($contentMoteName == 'the_title') {
+				$content_val = get_the_title();
+			} else {
+				$content_mote = $projObj->getMoteByName($contentMoteName);
+				$contentCF = $content_mote->cf;
+				if($contentCF =='the_content') {
+					$content_val = get_post_field('post_content', $marker_id);
+				} elseif ($contentCF=='the_title') {
+					$content_val = get_the_title();
+				} else {
+					$content_val = get_post_meta($marker_id, $contentCF, true);
+				}
+			}
+			if (!is_null($content_val) && ($content_val !== '')) {
+					// Do we need to wrap data?
+				if($content_mote->type=='Image') {
+					$content_val = '<img src="'.addslashes($content_val).'" />';
+				}
+				$content_att[$contentMoteName] = $content_val;
+			}
+		} // foreach
+		$thisFeaturesProperties["content"]     = $content_att;
+	}
+
+		// Does item link to its own Marker page, Taxonomy page, or Mote value?
+	if ($link_parent && $child_terms && $child_terms != 'disable') {
+		if ($child_terms=='marker') {
+			$term_links = get_permalink();
+		}
+		elseif(strpos($link_parent, '(Mote)') !== FALSE) {
+			$term_links = get_post_meta($marker_id, $child_terms->cf, true);
+		}
+		else {
+			$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $rootTaxName);
+		}
+		if ($term_links)
+			$thisFeaturesProperties["link"] = addslashes($term_links);
+	}
+
+	if ($link_parent2 && $child_terms2 && $child_terms2 != 'disable') {
+		if ($child_terms2=='marker') {
+			$term_links2 = get_permalink();
+		}
+		elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
+			$term_links2 = get_post_meta($marker_id, $child_terms2->cf, true);
+		}
+		else {
+			$term_links2 = dhp_get_term_by_parent($child_terms2, $post_terms, $rootTaxName);
+		}
+		if ($term_links2)
+			$thisFeaturesProperties["link2"] = addslashes($term_links2);
+	}
+
+		// Store all of the properties
+	$thisFeature['properties'] = $thisFeaturesProperties;
+
+		// Now that we've constructed this feature, call recursively for all of its children
+	$childrenVal = get_post_meta($marker_id, $childrenCF, true);
+	if (!is_null($childrenVal) && ($childrenVal !== '')) {
+		$childName = explode($childrenDelim, $childrenVal);
+
+			// Create array for all descendants and call this recursively to fetch them
+		$children = array();
+		foreach($childName as $theChildName) {
+			$trimName = trim($theChildName);
+			$theChildData = createTreeNode($trimName, $projectID, $projObj, $rootTaxName, $nameCF, $childrenCF, $childrenDelim, $selectContent,
+						$audio, $transcript, $transcript2, $timecode,
+						$title_mote, $link_parent, $child_terms, $link_parent2, $child_terms2);
+				// Don't add if data error (name not found)
+			if ($theChildData != null) {
+				array_push($children, $theChildData);
+			}
+		}
+			// Store in feature for sending off
+		$thisFeature['children'] = $children;
+	}
+
+		// Return this marker
+	return $thisFeature;
+} // createTreeNode()
+
+
+// PURPOSE: Similar to createMarkerArray() but creates tree of marker data not flat array
+// INPUT:	$project_id = ID of Project to view
+//			$index = index of entry-point to display
+// RETURNS: JSON object describing all markers associated with Project
+//			[0..n-1] contains results from getCategoryValues() defined above;
+//			[n] is a Nested tree
+//				{
+// 					"name": String,
+//					"properties" :
+//					[
+//							// All data corresponding to categories/legends associated with marker
+//						"categories" : [ integer IDs of category terms ],
+//							// Data used to create modals
+//						"title" : String,
+//							// Data needed by select modal or card filter/sort
+//						"content" : [
+//							{ moteName : moteValue }, ...
+//						],
+//						"link" : URL,
+//						"link2" : URL
+//							// Those below only in the case of transcript markers
+//						"audio" : String,
+//						"transcript" : String,
+//						"transcript2" : String,
+//						"timecode" : String,
+//					],
+//					"children" : [
+//						Objects of the same sort
+//					]
+//				}
+// ASSUMES:  Color Legend has been created and category/taxonomy bound to Markers
+
+function createMarkerTree($project_id, $index)
+{
+		// initialize result array
+	$json_Object = array();
+
+		// get Project info
+	$projObj      = new DHPressProject($project_id);
+	$rootTaxName  = $projObj->getRootTaxName();
+	$projSettings = $projObj->getAllSettings();
+
+	$audio = $transcript = $transcript2 = $timecode = null;
+
+		// By default, a marker's content is the set of data needed by select modal
+	$selectContent = array();
+	if ($projSettings->views->select->content) {
+		foreach ($projSettings->views->select->content as $theMote) {
+			array_push($selectContent, $theMote);
+		}
+	}
+
+	$eps = $projSettings->eps[$index];
+
+		// Prepare for fetching name of markers
+	$nameCF = $eps->settings->label;
+	if ($nameCF != 'the_title' && $nameCF != 'the_content') {
+		$nameCF = $projObj->getCustomFieldForMote($nameCF);
+		if (is_null($nameCF)) {
+			trigger_error("Tree view label assigned to unknown mote");
+		}
+	}
+
+		// Prepare for fetching markers' children pointer
+	$childrenMote = $projObj->getMoteByName($eps->settings->children);
+	$childrenDelim = $childrenMote->delim;
+	$childrenCF = $childrenMote->cf;
+	if (is_null($childrenCF)) {
+		trigger_error("Tree view children assigned to unknown mote");
+	}
+
+		// Get the Legend info for this Tree view's Legend data
+		// We will assume that Legend has been created and category/taxonomy bound to Markers
+	$colorCF = $eps->settings->color;
+	if ($colorCF != '' && $colorCF != 'disable') {
+		$colorCF = $projObj->getCustomFieldForMote($colorCF);
+		if (is_null($colorCF)) {
+			trigger_error("Tree view color assigned to unknown mote");
+		}
+			// Create a legend for the color values
+		$term = get_term_by('name', $colorCF, $rootTaxName);
+		if ($term) {
+			array_push($json_Object, getCategoryValues($term, $rootTaxName));
+		}
+	}
+
+		// If a marker is selected and leads to a transcript in modal, need those values also
+	if ($projObj->selectModalHas("transcript")) {
+		$audio = $projSettings->views->transcript->audio;
+			// Translate from Mote Name to Custom Field name
+		if (!is_null($audio) && ($audio !== '')) {
+			$audio = $projObj->getCustomFieldForMote($audio);
+			$transcript = $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript);
+			$transcript2= $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript2);
+			$timecode   = $projObj->getCustomFieldForMote($projSettings->views->transcript->timecode);
+		}
+	}
+
+		// Ensure that any new content requested from markers is not redundant
+	$selectContent = array_unique($selectContent);
+
+		// Link parent enables linking to either the Post page for this Marker,
+		//	or to the category/taxonomy which includes this Marker
+	$link_parent = $projSettings->views->select->link;
+	if($link_parent) {
+		if($link_parent=='marker') {
+		//$parent_id = get_term_by('name', $link_parent, $rootTaxName);
+			$child_terms = 'marker';
+		}
+		elseif($link_parent=='disable') {
+			$term_links = 'disable';
+			$child_terms = 'disable';
+		}
+			// Link to mote value
+		elseif(strpos($link_parent, '(Mote)') !== FALSE) {
+			$linkMoteName = str_replace(' (Mote)', '', $link_parent);
+			$child_terms = $projObj->getMoteByName($linkMoteName);
+		}
+		else {
+				// translate into category/term ID
+			$parent_id = get_term_by('name', $link_parent, $rootTaxName);
+				// find all category terms
+			$child_terms = get_term_children($parent_id->term_id, $rootTaxName);
+		}
+	}
+
+	$link_parent2 = $projSettings->views->select->link2;
+	if($link_parent2) {
+		if($link_parent2=='marker') {
+		//$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
+			$child_terms2 = 'marker';
+		}
+		elseif($link_parent2=='disable') {
+			$term_links2 = 'disable';
+			$child_terms2 = 'disable';
+		}
+			// Link to mote value
+		elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
+			$link2MoteName = str_replace(' (Mote)', '', $link_parent2);
+			$child_terms2 = $projObj->getMoteByName($link2MoteName);
+		} else {
+			$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
+			$child_terms2 = get_term_children($parent_id2->term_id, $rootTaxName);
+		}
+	}
+
+		// Determine whether title is default title of marker post or another (custom) field
+	$title_mote = $projSettings->views->select->title;
+	if ($title_mote != 'the_title') {
+		$temp_mote = $projObj->getMoteByName($title_mote);
+		if (is_null($temp_mote)) {
+			trigger_error("Modal view title assigned to unknown mote");
+		}
+		$title_mote = $temp_mote->cf;
+	}
+
+		// Begin with head node
+	$markers = createTreeNode($eps->settings->head, $project_id, $projObj, $rootTaxName, $nameCF,
+					$childrenCF, $childrenDelim, $selectContent,
+					$audio, $transcript, $transcript2, $timecode,
+					$title_mote, $link_parent, $child_terms, $link_parent2, $child_terms2);
+
+	array_push($json_Object, $markers);
+	return $json_Object;
+} // createMarkerTree()
+
+
+// Enable for both editing and viewing
+
+add_action('wp_ajax_dhpGetMarkerTree', 'dhpGetMarkerTree' );
+add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkerTree');
+
+// dhpGetMarkers()
+// PURPOSE:	Handle Ajax call to get all markers for a Project
+// INPUT:	$_POST['project'] is ID of Project
+// RETURNS:	JSON object of marker values in tree form (see createMarkerTree above)
+// ASSUMES: Current Entry Point (at index) is a Tree view
+
+function dhpGetMarkerTree()
+{
+	$dhp_project = $_POST['project'];
+	$index =		$_POST['index'];
+
+	$mArray = createMarkerTree($dhp_project, $index);
+
+	die(json_encode($mArray));
+} // dhpGetMarkerTree()
+
+
 // ====================== AJAX Functions ======================
 
 add_action( 'wp_ajax_dhpSaveProjectSettings', 'dhpSaveProjectSettings' );
@@ -1287,33 +1670,9 @@ function dhpDeleteHeadTerm()
 
 // Enable for both editing and viewing
 
-add_action('wp_ajax_dhpGetMarkers', 'dhpGetMarkers' );
-add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkers');
-
-// dhpGetMarkers()
-// PURPOSE:	Handle Ajax call to get all markers for a Project
-// INPUT:	$_POST['project'] is ID of Project
-// RETURNS:	JSON object of array of marker values
-
-function dhpGetMarkers()
-{
-	$dhp_project = $_POST['project'];
-	$index =		$_POST['index'];
-	$mArray = createMarkerArray($dhp_project, $index);
-
-	// $result = json_encode($mArray);
-	// $result = stripslashes($result);
-	// die($result);
-	die(json_encode($mArray));
-} // dhpGetMarkers()
-
-
-// Enable for both editing and viewing
-
 add_action( 'wp_ajax_dhpGetMoteContent', 'dhpGetMoteContent' );
 add_action('wp_ajax_nopriv_dhpGetMoteContent', 'dhpGetMoteContent');
 
-// dhpGetMoteContent()
 // PURPOSE: Handle Ajax call to fetch the Project-specific data for a specific marker
 // INPUT:	$_POST['post'] = ID of marker post
 // RETURNS:	JSON object of marker data
@@ -1326,12 +1685,12 @@ function dhpGetMoteContent()
 	die(json_encode($post_meta_content));
 } // dhpGetMoteContent()
 
+
 // Enable for both editing and viewing
 
-add_action( 'wp_ajax_dhpGetTranscriptClip', 'dhpGetTranscriptClip' );
+add_action('wp_ajax_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 add_action('wp_ajax_nopriv_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 
-// getTranscriptClip($tran,$clip)
 // PURPOSE:	Retrieve section of text file for transcript
 // INPUT:	$tran = full text of transcript
 //			$clip = String containing from-end time of segment
@@ -1358,7 +1717,6 @@ function getTranscriptClip($transcript, $clip)
 } // getTranscriptClip()
 
 
-// loadTranscriptFromFile($fileUrl)
 // PURPOSE:	Load the contents of a transcript file
 // INPUT:	$fileUrl = the URL to the file
 // RETURNS:	The data in file, if successful
@@ -1373,7 +1731,6 @@ function loadTranscriptFromFile($fileUrl)
 } // loadTranscriptFromFile()
 
 
-// dhpGetTranscriptClip()
 // PURPOSE: AJAX function to retrieve section of transcript when viewing a Marker
 // INPUT:	$_POST['project'] = ID of Project post
 //			$_POST['transcript'] = URL to file containing contents of transcript
@@ -2250,14 +2607,18 @@ function dhp_mod_page_content($content) {
 		case 'pinboard':
 	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_PINBOARD_VIEW);
 			break;
+		case 'tree':
+				// currently nothing is used
+	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_TREE_VIEW);
+			break;
 		}
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
 		break;
 	default:
-		$to_append = '';
+		$to_append = '<div class="dhp-entrytext"></div>';
 		break;
 	}
-	return $content.'<div class="dhp-post" id="'.$postID.'"><div class="dhp-entrytext"></div>'.$to_append.'</div>';
+	return $content.'<div class="dhp-post" id="'.$postID.'">'.$to_append.'</div>';
 } // dhp_mod_page_content()
 
 
@@ -2298,7 +2659,7 @@ function dhp_page_template( $page_template )
         wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
 		wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
-		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		wp_enqueue_style('dhp-project', plugins_url('/css/dhp-project.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('underscore');
 		wp_enqueue_script('jquery');
@@ -2368,6 +2729,16 @@ function dhp_page_template( $page_template )
 	    	array_push($dependencies, 'snap', 'dhp-pinboard-view');
 	    	break;
 
+	    case 'tree':
+			wp_enqueue_style('dhp-tree-css', plugins_url('/css/dhp-tree.css',  dirname(__FILE__)) );
+
+			wp_enqueue_script('d3', plugins_url('/lib/d3.min.js', dirname(__FILE__)));
+			wp_enqueue_script('dhp-tree-view', plugins_url('/js/dhp-tree-view.js', dirname(__FILE__)), 
+				'd3' );
+
+	    	array_push($dependencies, 'd3', 'dhp-tree-view');
+	    	break;
+
 	    default:
 	 		trigger_error("Unknown visualization type: ".$thisEP->type);
 	    	break;
@@ -2400,7 +2771,7 @@ function dhp_page_template( $page_template )
 		wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
 		wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
-		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');

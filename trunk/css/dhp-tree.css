@@ -1,0 +1,193 @@
+/** CSS styles specific to Tree visualization in DH Press
+ **/
+
+@charset "UTF-8";
+
+body {
+}
+
+.hide {
+	display: hidden;
+}
+
+    /* MAJOR DIV CONTAINERS ======================= */
+
+#dhp-visual {
+/*	z-index: 1000; */
+}
+
+    /* Take over full screen but leave room for Nav bar */
+.fullscreen #dhp-visual {
+    width: 100%;
+    height: 100%;
+    top: 45px;
+}
+
+    /* Enable scroll bar in case background image is too large */
+#svg-container {
+/*    z-index: 1000; */
+    border: 2px solid #000;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+svg {
+/*    z-index: 1000; */
+    background: #C0C0C0;
+}
+
+    /* SVG MARKER ELEMENTS ============================ */
+
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.node {
+  font: 10px sans-serif;
+}
+
+.link {
+  fill: none;
+  stroke: #6699CC;
+  stroke-width: 1.5px;
+}
+
+    /* The dial for depthtrees */
+path.arc {
+  cursor: move;
+  fill: #fff;
+}
+
+    /* LEGENDS (by default non-fullscreen) ======== */
+#legends {
+    position: relative;  
+    margin-left: 0;
+    overflow: auto;
+
+/*    max-width: 320px; */
+    min-width: 260px;
+    min-height: 180px;
+    max-height: 300px;
+
+    z-index: 100 !important;
+
+    background: #fff;
+    background-color: rgba(255, 255, 255, .95);
+
+    /*foundation font style*/
+    color: #222;
+    font-family: "Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
+}
+
+#legends.mini {
+    min-height: 30px;
+    overflow: hidden;
+}
+
+    /* Override for fullscreen */
+    /* The "head" of legend should remain in place on page */
+.fullscreen #legends {
+    position:absolute;
+/*  overflow: hidden; */
+    overflow: auto;
+
+    min-width: 220px;
+    min-height: 300px;
+    max-height: 700px !important;
+
+    top: 6px;
+    left: 6px;
+    bottom: 20px;
+
+    -moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+    -webkit-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+    box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+}
+
+.fullscreen #legends.mini {
+    min-height: 30px;
+    overflow: hidden;
+}
+
+@media all and (min-width: 1025px) {
+  .fullscreen #legends {
+    min-width: 320px;
+  }
+}
+
+    /* the legend "body" should float above cards */
+#legends .legend-div {
+    z-index: 100 !important;
+
+    margin-left: 0px;
+}
+
+.legend-div .legend-title {
+    padding-left: 10px;
+    padding-right: 20px;
+    border-bottom: 1px solid #111;
+    font-size: 22px;
+    font-weight: bold;
+
+    z-index: 100 !important;
+}
+
+.legend-div .terms {
+    position: absolute;
+    top: 38px;
+    bottom: 0;
+    width: 100%;
+
+    z-index: 100 !important;
+
+    overflow: auto;
+    margin-top: 1px;
+}
+
+.legend-div .terms .row {
+    width:100%;
+    cursor: pointer;
+    line-height: 15px;
+
+    z-index: 100 !important;
+}
+
+    /* children are not shown: their parents stand in for them */
+.legend-div .terms .row.hasParent {
+    display: none;
+}
+
+.legend-div .terms .row:hover,
+.legend-div .terms .row.selected {
+    background: #e8f2e6;
+}
+
+.legend-div .terms a {
+    line-height: 15px;
+    width: 100%;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    overflow: hidden;
+    display: inherit;
+}
+
+    /* Little resize button on legends */
+.legend-resize {
+    padding: 7px;
+    position: absolute;
+    right: 0px;
+}
+
+    /* this just creates color area */
+.splash {
+    padding: 4px;
+    padding-left: 12px;
+    border: 1px solid black;
+    position: relative;
+    top: 6px;
+    left: 6px;
+    min-width: 20px;
+    min-height: 20px;
+}
