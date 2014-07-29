@@ -2608,7 +2608,8 @@ function dhp_mod_page_content($content) {
 	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_PINBOARD_VIEW);
 			break;
 		case 'tree':
-	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_TREE_VIEW);
+				// currently nothing is used
+	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_TREE_VIEW);
 			break;
 		}
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
@@ -2658,7 +2659,7 @@ function dhp_page_template( $page_template )
         wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
 		wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
-		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		wp_enqueue_style('dhp-project', plugins_url('/css/dhp-project.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('underscore');
 		wp_enqueue_script('jquery');
@@ -2770,7 +2771,7 @@ function dhp_page_template( $page_template )
 		wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
 		wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
-		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');

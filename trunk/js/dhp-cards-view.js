@@ -52,7 +52,7 @@ var dhpCardsView = {
         }
 
             // Insert Legend area as first thing in viz space -- Joe had "after" but menu off map above if not "append"
-        jQuery('#dhp-visual').prepend(Handlebars.compile(jQuery("#dhp-script-cards-legend-head").html()));
+        jQuery('#dhp-visual').prepend(Handlebars.compile(jQuery("#dhp-script-legend-head").html()));
 
             // Create nav bar menus --------------------
 
@@ -138,8 +138,26 @@ var dhpCardsView = {
         dhpCardsView.dataAttrs     = _.difference(dhpCardsView.allDataMotes, dhpCardsView.cardsEP.content);
         dhpCardsView.dataAttrs     = _.sortBy(dhpCardsView.dataAttrs, function(moteName) { return moteName; });
 
-        dhpCardsView.loadCards();
-    }, // initialize()
+        jQuery.ajax({
+            type: 'POST',
+            url: dhpCardsView.ajaxURL,
+            data: {
+                action: 'dhpGetMarkers',
+                project: dhpCardsView.projectID,
+                index: dhpCardsView.vizIndex
+            },
+            success: function(data, textStatus, XMLHttpRequest)
+            {
+                dhpCardsView.rawData = JSON.parse(data);
+                dhpCardsView.createCards();
+                dhpCardsView.callBacks.remLoadingModal();
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown)
+            {
+               alert(errorThrown);
+            }
+        });
+     }, // initialize()
 
         // RETURNS: Mote definition for mote whose name is moteName
     findMoteByName: function(moteName)
@@ -418,7 +436,7 @@ var dhpCardsView = {
 
             // Open modal for feature
         dhpCardsView.callBacks.showMarkerModal(selectedFeature);
-    },
+    }, // selectCard()
 
         // PURPOSE: Create marker objects for map visualization; called by loadMapMarkers()
         // ASSUMES: rawdata assigned to JSON object (as outlined in createMarkerArray() in dhp-project-functions.php)
@@ -445,67 +463,9 @@ var dhpCardsView = {
         }
 
             // Create Legend for colors (if colors exist)
-            //   This code modified from dhp-maps-view
         if (dhpCardsView.colorValues.length > 1) {
-            var legendName = dhpCardsView.cardsEP.color;
-            var legendHtml;
-
-                // "Root" DIV for the Legend
-            legendHtml = jQuery('<div class="legend-div"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
-                // Create entries for all of the 1st-level terms (do not represent children of terms)
-            _.each(dhpCardsView.colorValues, function(theTerm) {
-                if (legendName !== theTerm.name) {
-                    var hasParentClass = '';
-                    if (theTerm.parent) {
-                        hasParentClass = 'hasParent';
-                    }
-                    var firstIconChar = theTerm.icon_url.substring(0,1);
-                    switch (firstIconChar) {
-                    case '#':
-                            // Append new legend value to menu according to type
-                        jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
-                            '<div class="small-2 large-1 columns splash" style="background:'+theTerm.icon_url+'"></div>'+
-                            '<div class="small-10 large-11 columns"><a class="value" data-id="'+
-                            theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
-                        break;
-                    default:
-                        throw new Error('Visual feature not supported for Topic Cards: '+theTerm.icon_url);
-                    }
-                }
-            });
-
-            jQuery('#legends').append(legendHtml);
-
-                // Handle resizing Legend (min/max)
-            jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
-            if(!jQuery('body').hasClass('isMobile')) {
-                jQuery('.legend-resize').hide();
-                jQuery('#legends').hover(function(){
-                    jQuery('.legend-resize').fadeIn(100);
-                },
-                function() {
-                    jQuery('.legend-resize').fadeOut(100);
-                });
-            }
-
-                // Add legend hide/show action
-            jQuery('.legend-resize').on('click', function(){
-                if(jQuery('#legends').hasClass('mini')) {
-                    jQuery('#legends').animate({ height: legendHeight },
-                        500,
-                        function() {
-                            jQuery('#legends').removeClass('mini');
-                        });
-                } 
-                else {
-                    legendHeight = jQuery('#legends').height();
-                    jQuery('#legends').addClass('mini');                
-                    jQuery('#legends').animate({ height: 37 }, 500 );
-                }
-            });
-
+            dhpCardsView.callBacks.create1Legend(dhpCardsView.cardsEP.color, dhpCardsView.colorValues);
         } // if colorValues
-
 
             // Create cards --------------------
         var theCard, contentElement, contentData, theTitle, colorStr, classStr, moteIndex, label;
@@ -620,32 +580,5 @@ var dhpCardsView = {
 
             // Bind click code to the whole container... we'll search for specific card
         jQuery(cardHolder).click(dhpCardsView.selectCard);
-    }, // createCards()
-
-
-        // PURPOSE: Get markers associated with projectID via AJAX, insert into HTML
-    loadCards: function()
-    {
-        // console.log('loading');
-    	jQuery.ajax({
-            type: 'POST',
-            url: dhpCardsView.ajaxURL,
-            data: {
-                action: 'dhpGetMarkers',
-                project: dhpCardsView.projectID,
-                index: dhpCardsView.vizIndex
-            },
-            success: function(data, textStatus, XMLHttpRequest)
-            {
-                dhpCardsView.rawData = JSON.parse(data);
-                dhpCardsView.createCards();
-                dhpCardsView.callBacks.remLoadingModal();
-            },
-            error: function(XMLHttpRequest, textStatus, errorThrown)
-            {
-               alert(errorThrown);
-            }
-        });
-    } // loadCards()
-
+    } // createCards()
 };

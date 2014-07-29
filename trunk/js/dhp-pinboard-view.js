@@ -82,16 +82,11 @@ var dhpPinboardView = {
             // Add pinboard elements to nav bar
         jQuery('.dhp-nav .top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-pin-menus").html()));
 
-            // Set total size of visualization space to background image plus navigation controls
-        // jQuery("#dhp-visual").width(pinboardEP.width < dhpPinboardView.minWidth ?
-        //                             dhpPinboardView.minWidth : pinboardEP.width+4);
-        // jQuery("#dhp-visual").height(pinboardEP.height+dhpPinboardView.controlHeight);
-
             // Create control div for Legend and image navigation buttons
         jQuery("#dhp-visual").append('<div id="dhp-controls"></div>');
 
             // Create placeholder for Legend menu
-        jQuery('#dhp-controls').append(Handlebars.compile(jQuery("#dhp-script-pin-legend-head").html()));
+        jQuery('#dhp-controls').append(Handlebars.compile(jQuery("#dhp-script-legend-head").html()));
 
             // Create buttons for navigating & zooming background image
         jQuery('#dhp-controls').append('<div id="dhp-image-controls"><div id="pin-left"></div><div id="pin-right"></div><div id="pin-down"></div><div id="pin-up"></div><div id="pin-reduce"></div><div id="pin-zoom"></div><div id="pin-refresh"></div></div>');
@@ -156,7 +151,28 @@ var dhpPinboardView = {
         {
                 // All layers have been loaded -- go on to markers
             if (lIndex >= loadArray.length) {
-                dhpPinboardView.loadMarkers();
+                // dhpPinboardView.loadMarkers();
+                jQuery.ajax({
+                    type: 'POST',
+                    url: dhpPinboardView.ajaxURL,
+                    data: {
+                        action: 'dhpGetMarkers',
+                        project: dhpPinboardView.projectID,
+                        index: dhpPinboardView.vizIndex
+                    },
+                    success: function(data, textStatus, XMLHttpRequest)
+                    {
+                        dhpPinboardView.createDataObjects(JSON.parse(data));
+                            // Remove Loading modal
+                        dhpPinboardView.callBacks.remLoadingModal();
+                        jQuery('.reveal-modal-bg').remove();
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown)
+                    {
+                       alert(errorThrown);
+                    }
+                });
+
             } else {
                 var layerInfo = loadArray[lIndex];
                     // After layer loaded, add it to SVG and request next layer
@@ -176,22 +192,6 @@ var dhpPinboardView = {
         // PURPOSE: Resizes pinboard-specific elements initially and when browser size changes
     dhpUpdateSize: function()
     {
-        var newRowHeight, checkboxMargin;
-
-            //resize legend term position for long titles
-        jQuery('.active-legend .terms').css({top: jQuery('.active-legend .legend-title').height() });
-
-            //resize legend items that are two lines and center checkbox
-        jQuery('.active-legend .row').each(function(key,value) {
-                //height of row containing text(could be multiple lines)
-            newRowHeight   = jQuery('.columns', this).eq(1).height();
-                // variable to center checkbox in row
-            checkboxMargin = (newRowHeight - dhpPinboardView.checkboxHeight) / 2;
-                // set elements in rows with new values
-            jQuery('.columns', this).eq(0).height(newRowHeight);
-            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
-        });
-
             // Width of svg-container is same as visual space
         jQuery('#svg-container').width(jQuery('#dhp-visual').width()-2);
             // Height of svg-container will be total viz space minus height of navbar, margins, border & scroll bar itself
@@ -558,101 +558,7 @@ var dhpPinboardView = {
         // PURPOSE: Create HTML for all of the legends for this visualization
     createLegends: function() 
     {
-        var legendHtml;
-        var legendHeight;
-
-            // Build Legend controls on the right (category toggles) for each legend value and insert Legend name into dropdown above
-        _.each(dhpPinboardView.filters, function(theLegend, legIndex) {
-            var filterTerms = theLegend.terms;
-            var legendName = theLegend.name;
-
-                // "Root" DIV for this particular Legend
-            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+
-                            '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
-                // Create entries for all terms (though 2nd-level children are made invisible)
-            _.each(filterTerms, function(theTerm) {
-                if (legendName !== theTerm.name) {
-                    var hasParentClass = '';
-                        // Make 2nd-level children invisible with CSS
-                    if(theTerm.parent) {
-                        hasParentClass = 'hasParent';
-                    }
-                    if (theTerm.icon_url == null || theTerm.icon_url == undefined) {
-                        throw new Error("Legend value "+theTerm.name+" has not been assigned a color or icon");
-                    }
-                    var firstIconChar = theTerm.icon_url.substring(0,1);
-                    var htmlStr;
-                    switch (firstIconChar) {
-                    case '#':
-                        htmlStr = '<div class="small-3 large-2 columns" style="background:'+
-                            theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
-                        break;
-                    case '.':
-                        htmlStr = '<div class="small-2 large-1 columns"><div class="maki-icon '+
-                            theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
-                        break;
-                    default:
-                            // TO DO: Support uploaded images!
-                        // icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat right; background-size: 50%;';
-                        throw new Error('Unknown visual feature: '+theTerm.icon_url);
-                    }
-
-                        // Append new legend value to menu according to type
-                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+htmlStr+
-                                                    '<div class="small-9 large-10 columns"><a class="value" data-id="'+
-                                                    theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
-                }
-            });
-                // Put the Hide/Show checkbox at beginning of Legend
-            jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-pin-legend-hideshow").html()));
-                // Add constructed Legend key to total
-            jQuery('#legends .legend-row').append(legendHtml);
-                // Add Legend title to dropdown menu in navbar -- make 1st Legend active by default
-            var active = (legIndex == 0) ? ' class="active"' : '';
-            jQuery('.dhp-nav .legend-dropdown').append('<li'+active+'><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
-        });
-
-            // Add Layers to legends
-        jQuery('#legends .legend-row').append('<div class="legend-div" id="layers-panel"><div class="legend-title">Layer Buttons</div></div>');
-
-            // Hide all Legends, except 0 by default
-        jQuery('.legend-div').hide();
-        jQuery('#term-legend-0').show();
-        jQuery('#term-legend-0').addClass('active-legend');
-
-            // Update checkbox height(varies by theme/browser) 
-        dhpPinboardView.checkboxHeight = jQuery('#legends').find('input:checkbox').height();
-
-            //Initialize new foundation elements
-        jQuery(document).foundation();
-
-            // For small mobile screens, expand Legend menu on hover
-        jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
-        if(!jQuery('body').hasClass('isMobile')) {
-            jQuery('.legend-resize').hide();
-            jQuery('#legends').hover(function() {
-                jQuery('.legend-resize').fadeIn(100);
-            },
-            function() {
-                jQuery('.legend-resize').fadeOut(100);
-            });
-        }
-
-            // Add legend Min-Max expand/contract action
-        jQuery('.legend-resize').click(function(){
-            if (jQuery('#legends').hasClass('mini')) {
-                jQuery('#legends').animate({ height: legendHeight },
-                    500,
-                    function() {
-                        jQuery('#legends').removeClass('mini');
-                    });
-            } 
-            else {
-                legendHeight = jQuery('#legends').height();
-                jQuery('#legends').addClass('mini');                
-                jQuery('#legends').animate({ height: 37 }, 500 );
-            }
-        });
+        dhpPinboardView.callBacks.createLegends(dhpPinboardView.filters, 'Layer Buttons');
 
             // Handle user selection of value name from current Legend
         jQuery('#legends div.terms .row a').click(function(event) {
@@ -796,31 +702,5 @@ var dhpPinboardView = {
         // }
         // return false;
         return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
-    },
-
-        // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
-    loadMarkers: function()
-    {
-    	jQuery.ajax({
-            type: 'POST',
-            url: dhpPinboardView.ajaxURL,
-            data: {
-                action: 'dhpGetMarkers',
-                project: dhpPinboardView.projectID,
-                index: dhpPinboardView.vizIndex
-            },
-            success: function(data, textStatus, XMLHttpRequest)
-            {
-                dhpPinboardView.createDataObjects(JSON.parse(data));
-                    // Remove Loading modal
-                dhpPinboardView.callBacks.remLoadingModal();
-                jQuery('.reveal-modal-bg').remove();
-            },
-            error: function(XMLHttpRequest, textStatus, errorThrown)
-            {
-               alert(errorThrown);
-            }
-        });
-    } // loadMarkers()
-
+    }
 };

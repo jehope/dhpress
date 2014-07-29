@@ -71,19 +71,14 @@ var dhpTreeView = {
         dhpTreeView.fSize   = typeof(treeEP.fSize) === 'number' ? treeEP.fSize  : parseInt(treeEP.fSize);
             // set view/scroll window parameters
 
-            // Add pinboard elements to nav bar
+            // Add elements to nav bar
         // jQuery('.dhp-nav .top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-tree-menus").html()));
-
-            // Set total size of visualization space to background image plus navigation controls
-        // jQuery("#dhp-visual").width(pinboardEP.width < dhpPinboardView.minWidth ?
-        //                             dhpPinboardView.minWidth : pinboardEP.width+4);
-        // jQuery("#dhp-visual").height(pinboardEP.height+dhpPinboardView.controlHeight);
 
             // Create control div for Legend Key
         jQuery("#dhp-visual").append('<div id="dhp-controls"></div>');
 
             // Create placeholder for Legend menu
-        jQuery('#dhp-controls').append(Handlebars.compile(jQuery("#dhp-script-tree-legend-head").html()));
+        jQuery('#dhp-controls').append(Handlebars.compile(jQuery("#dhp-script-legend-head").html()));
 
         jQuery(document).foundation();
 
@@ -190,22 +185,6 @@ var dhpTreeView = {
         // PURPOSE: Resizes pinboard-specific elements initially and when browser size changes
     dhpUpdateSize: function()
     {
-        var newRowHeight, checkboxMargin;
-
-            //resize legend term position for long titles
-        jQuery('.active-legend .terms').css({top: jQuery('.active-legend .legend-title').height() });
-
-            //resize legend items that are two lines and center checkbox
-        jQuery('.active-legend .row').each(function(key,value) {
-                //height of row containing text(could be multiple lines)
-            newRowHeight   = jQuery('.columns', this).eq(1).height();
-                // variable to center checkbox in row
-            checkboxMargin = (newRowHeight - dhpTreeView.checkboxHeight) / 2;
-                // set elements in rows with new values
-            jQuery('.columns', this).eq(0).height(newRowHeight);
-            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
-        });
-
             // Width of svg-container is same as visual space
         jQuery('#svg-container').width(jQuery('#dhp-visual').width()-2);
             // Height of svg-container will be total viz space minus height of navbar, margins, border & scroll bar itself
@@ -215,69 +194,9 @@ var dhpTreeView = {
 
 
     createLegend: function() {
-        var legendData = dhpTreeView.legendTerms;
-
-            // Create Legend for colors (if colors exist)
-            //   This code modified from dhp-maps-view
-        if (legendData.length > 1) {
-            var legendName = dhpTreeView.treeEP.color;
-            var legendHtml;
-
-                // "Root" DIV for the Legend
-            legendHtml = jQuery('<div class="legend-div"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
-                // Create entries for all of the 1st-level terms (do not represent children of terms)
-            _.each(legendData, function(theTerm) {
-                if (legendName !== theTerm.name) {
-                    var hasParentClass = '';
-                    if (theTerm.parent) {
-                        hasParentClass = 'hasParent';
-                    }
-                    var firstIconChar = theTerm.icon_url.substring(0,1);
-                    switch (firstIconChar) {
-                    case '#':
-                            // Append new legend value to menu according to type
-                        jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
-                            '<div class="small-2 large-1 columns splash" style="background:'+theTerm.icon_url+'"></div>'+
-                            '<div class="small-10 large-11 columns"><a class="value" data-id="'+
-                            theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
-                        break;
-                    default:
-                        throw new Error('Visual feature not supported for Trees: '+theTerm.icon_url);
-                    }
-                }
-            });
-
-            jQuery('#legends').append(legendHtml);
-
-                // Handle resizing Legend (min/max)
-            jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
-            if(!jQuery('body').hasClass('isMobile')) {
-                jQuery('.legend-resize').hide();
-                jQuery('#legends').hover(function(){
-                    jQuery('.legend-resize').fadeIn(100);
-                },
-                function() {
-                    jQuery('.legend-resize').fadeOut(100);
-                });
-            }
-
-                // Add legend hide/show action
-            jQuery('.legend-resize').on('click', function(){
-                if(jQuery('#legends').hasClass('mini')) {
-                    jQuery('#legends').animate({ height: legendHeight },
-                        500,
-                        function() {
-                            jQuery('#legends').removeClass('mini');
-                        });
-                } 
-                else {
-                    legendHeight = jQuery('#legends').height();
-                    jQuery('#legends').addClass('mini');                
-                    jQuery('#legends').animate({ height: 37 }, 500 );
-                }
-            });
-
-        } // if legendData
+        if (dhpTreeView.legendTerms.length > 1) {
+            dhpTreeView.callBacks.create1Legend(dhpTreeView.treeEP.color, dhpTreeView.legendTerms);
+        }
     }, // createLegend()
 
 
