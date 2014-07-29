@@ -173,22 +173,6 @@ html.fullscreen {
 }
 */
 
-.entry-point {
-	min-height:200px;
-}
-
-.primary-entry, .secondary-entry {
-	width:300px;
-	margin-right:50px;
-	float:left;
-}
-
-.primary-entry li, .secondary-entry li {
-	padding:5px;
-	border:1px solid #000;
-	cursor:pointer;
-}
-
 .legend {
 	display:none;
 }

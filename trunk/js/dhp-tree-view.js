@@ -49,7 +49,7 @@ var dhpTreeView = {
              // Constants
         dhpTreeView.checkboxHeight  = 12; // default checkbox height
         dhpTreeView.minWidth        = 182; // 182px for horizontal + 260px for Legend key
-        dhpTreeView.controlHeight   = 49;  // max(navButtonHeight[30], LegendHeight[45]) + 4
+        dhpTreeView.controlHeight   = 49;  // LegendHeight[45] + 4
 
             // Save visualization data for later
         dhpTreeView.ajaxURL        = ajaxURL;
@@ -89,7 +89,8 @@ var dhpTreeView = {
 
             // Create SVG for D3
         jQuery("#dhp-visual").append('<div id="svg-container"></div>');
-        dhpTreeView.svg = d3.select("#svg-container").append("svg").attr("width", dhpTreeView.iWidth).attr("height", dhpTreeView.iHeight);
+        dhpTreeView.svg = d3.select("#svg-container").append("svg");
+        dhpTreeView.svg.attr("width", dhpTreeView.iWidth).attr("height", dhpTreeView.iHeight);
 
             // Other initialization will depend on form of tree
         switch (treeEP.form) {
@@ -108,7 +109,7 @@ var dhpTreeView = {
             dhpTreeView.rotate = 0;
 
                 // Size here is in a radial coordinate system
-                // Leave a pixel padding around outside arc
+                // Leave a pixel padding outside arc
             dhpTreeView.tree = d3.layout.tree().size([360, dhpTreeView.tRadius - (dhpTreeView.padding + 2)])
                     // set the spacing function between neighboring nodes
                 .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
@@ -126,7 +127,7 @@ var dhpTreeView = {
                 // Create the outer rotate wheel
             dhpTreeView.vis.append("path")
                 .attr("class", "arc")
-                .attr("d", d3.svg.arc().innerRadius(dhpTreeView.tRadius - dhpTreeView.padding).outerRadius(dhpTreeView.tRadius).startAngle(0).endAngle(2 * Math.PI))
+                .attr("d", d3.svg.arc().innerRadius(dhpTreeView.tRadius - dhpTreeView.padding).outerRadius(dhpTreeView.tRadius-2).startAngle(0).endAngle(2 * Math.PI))
                 .on("mousedown.spin", dhpTreeView.mDownSpin)
                 .on("mousemove.spin", dhpTreeView.mMoveSpin)
                 .on("mouseup.spin", dhpTreeView.mUpSpin);
@@ -135,7 +136,7 @@ var dhpTreeView = {
         case 'segment':
             dhpTreeView.tRadius = Math.min(dhpTreeView.iWidth, dhpTreeView.iHeight) / 2;
             dhpTreeView.xScale = d3.scale.linear().range([0, 2 * Math.PI]);
-            dhpTreeView.yScale = d3.scale.linear().range([0, dhpTreeView.tRadius]);
+            dhpTreeView.yScale = d3.scale.linear().range([0, (dhpTreeView.tRadius-4)]);
 
             dhpTreeView.vis = dhpTreeView.svg.append("g")
                 .style("font-size", dhpTreeView.fSize+'px')
@@ -152,6 +153,8 @@ var dhpTreeView = {
                 .outerRadius(function(d) { return Math.max(0, dhpTreeView.yScale(d.y + d.dy)); });
             break;
         } // switch()
+
+        dhpTreeView.dhpUpdateSize();
 
             // Make asynchronous call to load marker data in tree form
         jQuery.ajax({
