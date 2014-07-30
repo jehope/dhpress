@@ -166,9 +166,10 @@ var dhpTreeView = {
                 dhpTreeView.rawData = JSON.parse(data);
                 dhpTreeView.legendTerms = dhpTreeView.rawData[0];
                 if (dhpTreeView.legendTerms.type !== 'filter') {
-                    throw new Error('Data does not contain filter: '+dhpTreeView.rawData);
+                    dhpTreeView.legendTerms = null;
+                } else {
+                    dhpTreeView.legendTerms = dhpTreeView.legendTerms.terms;
                 }
-                dhpTreeView.legendTerms = dhpTreeView.legendTerms.terms;
 
                 dhpTreeView.createLegend();
                 dhpTreeView.createGraph();
@@ -194,7 +195,7 @@ var dhpTreeView = {
 
 
     createLegend: function() {
-        if (dhpTreeView.legendTerms.length > 1) {
+        if (dhpTreeView.legendTerms != null) {
             dhpTreeView.callBacks.create1Legend(dhpTreeView.treeEP.color, dhpTreeView.legendTerms);
         }
     }, // createLegend()
@@ -216,17 +217,21 @@ var dhpTreeView = {
         // SIDEFX:  Caches textColor in text field of Legend, which builds first time encountered
     getItemColor: function(featureVals)
     {
-        var countTerms = dhpTreeView.legendTerms.length; 
+            // If no color motes or if marker has no category values, return default
+        if (dhpTreeView.legendTerms == null) {
+            return '#3333FF';
+        }
+
         var countCats = featureVals.length;
+        if (countCats==0) {
+            return '#3333FF';
+        }
+
+        var countTerms = dhpTreeView.legendTerms.length; 
         var thisCat, thisCatID;
         var thisMarkerID;
         var catChildren;
         var i,j,k;
-
-            // If no color motes or if marker has no category values, return default
-        if (countTerms==0 || countCats==0) {
-            return '#eecc88';
-        }
 
         for(i=0;i<countTerms;i++) {         // for all category values
             thisCat = dhpTreeView.legendTerms[i];

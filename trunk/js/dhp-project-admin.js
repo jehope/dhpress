@@ -1911,6 +1911,34 @@ jQuery(document).ready(function($) {
               theEP.label()+'").</p>');
           }
           break;
+        case 'tree':
+          if (theEP.settings.head() == '') {
+            $('#testResults').append('<p>You must specify the head marker for the Tree entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          if (theEP.settings.children() == '') {
+            $('#testResults').append('<p>You must specify the Pointer mote which indicates descending generations for the Tree entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          if (theEP.settings.label() == '') {
+            $('#testResults').append('<p>You must specify the mote which provides node labels for the Tree entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          var i;
+          if (theEP.settings.fSize() == '' || isNaN(i=parseInt(theEP.settings.fSize(),10)) || i <= 8) {
+            $('#testResults').append('<p>You must specify a valid font size for the Tree entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          if (theEP.settings.width() == '' || isNaN(i=parseInt(theEP.settings.width(),10)) || i <= 20) {
+            $('#testResults').append('<p>You must specify a valid image width for the Tree entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          if (theEP.settings.height() == '' || isNaN(i=parseInt(theEP.settings.height(),10)) || i <= 20) {
+            $('#testResults').append('<p>You must specify a valid image height for the Tree entry point (given the label "'+
+              theEP.label()+'").</p>');
+          }
+          break;
+
         } // switch
       });
 
