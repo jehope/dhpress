@@ -18,6 +18,8 @@ jQuery(document).ready(function($) {
     var modalSize;
     var browserMobile = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
     var checkboxHeight;
+    var legendHeight;
+
         // For reaching functions in this file used by various visualization modules
     var callBacks;
         // Visualization-specific callbacks
@@ -221,11 +223,11 @@ jQuery(document).ready(function($) {
             // Update menu sizes
         var newRowHeight, checkboxMargin;
 
-            //resize legend term position for long titles
-        jQuery('.active-legend .terms').css({top: jQuery('.active-legend .legend-title').height() });
+            // Resize legend term position for long titles
+        jQuery('.legend-div > .terms').css({top: jQuery('.active-legend .legend-title').height() });
 
-            //resize legend items that are two lines and center checkbox
-        jQuery('.active-legend .row').each(function(key,value) {
+            // Resize legend items that are two lines and center checkbox
+        jQuery('.legend-div > terms > .row').each(function(key,value) {
                 //height of row containing text(could be multiple lines)
             newRowHeight   = jQuery('.columns', this).eq(1).height();
                 // variable to center checkbox in row
@@ -234,8 +236,9 @@ jQuery(document).ready(function($) {
             jQuery('.columns', this).eq(0).height(newRowHeight);
             jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
         });
-    } // windowResized()
 
+            // Resize Layers controls?
+    } // windowResized()
 
     function createNavBar()
     {
@@ -334,7 +337,6 @@ jQuery(document).ready(function($) {
     function createLegends(legendList, layerTitle)
     {
         var legendHtml;
-        var legendHeight;
 
             // Build Legend controls on the right (category toggles) for each legend value and insert Legend name into dropdown above
         _.each(legendList, function(theLegend, legIndex) {
@@ -342,7 +344,7 @@ jQuery(document).ready(function($) {
             var legendName = theLegend.name;
 
                 // "Root" DIV for this particular Legend
-            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+
+            legendHtml = jQuery('<div class="legend-div" id="term-legend-'+legIndex+
                             '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
                 // Create entries for all terms (though 2nd-level children are made invisible)
             _.each(filterTerms, function(theTerm) {
@@ -397,6 +399,8 @@ jQuery(document).ready(function($) {
 
             // Update checkbox height(varies by theme/browser) 
         checkboxHeight = jQuery('#legends').find('input:checkbox').height();
+            // Save height for min/max
+        legendHeight = jQuery('#legends').height();
 
             //Initialize new foundation elements
         jQuery(document).foundation();
@@ -414,17 +418,15 @@ jQuery(document).ready(function($) {
         }
 
             // Add legend Min-Max expand/contract action
-        jQuery('.legend-resize').on('click', function(){
-            if(jQuery('#legends').hasClass('mini')) {
+        jQuery('.legend-resize').click( function() {
+            if (jQuery('#legends').hasClass('mini')) {
                 jQuery('#legends').animate({ height: legendHeight },
                     500,
                     function() {
                         jQuery('#legends').removeClass('mini');
                     });
-            } 
-            else {
-                legendHeight = jQuery('#legends').height();
-                jQuery('#legends').addClass('mini');                
+            } else {
+                jQuery('#legends').addClass('mini');
                 jQuery('#legends').animate({ height: 37 }, 500 );
             }
         });
@@ -436,6 +438,7 @@ jQuery(document).ready(function($) {
         //          legendList = array of Legend data
         // NOTES:   Handles user interaction with Legend itself, but not actions connected to visualization
         //          legend-head div must have already been inserted at appropriate place
+        //          Handles maki-icons though they are not actually supported yet in relevant visualizations
     function create1Legend(legendName, legendList) {
         var legendHtml;
 
@@ -457,8 +460,15 @@ jQuery(document).ready(function($) {
                         '<div class="small-10 large-11 columns"><a class="value" data-id="'+
                         theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                     break;
+                case '.':
+                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
+                        '<div class="small-2 large-1 columns"><div class="maki-icon '+
+                        theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">'+
+                        '<div class="small-9 large-10 columns"><a class="value" data-id="'+
+                        theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
+                    break;
                 default:
-                    throw new Error('Visual feature not supported for Topic Cards: '+theTerm.icon_url);
+                    throw new Error('Visual feature not supported for Legend: '+theTerm.icon_url);
                 }
             }
         });
@@ -467,10 +477,12 @@ jQuery(document).ready(function($) {
 
             // Update checkbox height (varies by theme/browser)
         checkboxHeight = jQuery('#legends').find('input:checkbox').height();
+            // Save height for min/max
+        legendHeight = jQuery('#legends').height();
 
             // Handle resizing Legend (min/max)
         jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
-        if(!jQuery('body').hasClass('isMobile')) {
+        if (!jQuery('body').hasClass('isMobile')) {
             jQuery('.legend-resize').hide();
             jQuery('#legends').hover(function(){
                 jQuery('.legend-resize').fadeIn(100);
@@ -481,17 +493,15 @@ jQuery(document).ready(function($) {
         }
 
             // Add legend hide/show action
-        jQuery('.legend-resize').on('click', function(){
-            if(jQuery('#legends').hasClass('mini')) {
+        jQuery('.legend-resize').click(function() {
+            if (jQuery('#legends').hasClass('mini')) {
                 jQuery('#legends').animate({ height: legendHeight },
                     500,
                     function() {
                         jQuery('#legends').removeClass('mini');
                     });
-            } 
-            else {
-                legendHeight = jQuery('#legends').height();
-                jQuery('#legends').addClass('mini');                
+            } else {
+                jQuery('#legends').addClass('mini');
                 jQuery('#legends').animate({ height: 37 }, 500 );
             }
         });

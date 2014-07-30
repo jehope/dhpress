@@ -590,7 +590,7 @@ var dhpMapsView = {
         });
 
             // Handle user selection of checkbox from current Legend
-        jQuery('#legends div.terms input').on('click', function(event) {
+        jQuery('#legends div.terms input').click(function(event) {
             var checkAll = jQuery(this).closest('.row').hasClass('check-all');
             var boxState = jQuery(this).prop('checked');
             var spanName = jQuery(this).closest('.row').find('a').data('id');
@@ -733,8 +733,6 @@ var dhpMapsView = {
         // PURPOSE: Resizes map-specific elements when browser size changes
     dhpUpdateSize: function()
     {
-            // TO DO: Resize layer opacity DIVs??
-
             // This is an Leaflet function to redraw the markers after map resize
         dhpMapsView.mapLeaflet.invalidateSize();
     }, // dhpUpdateSize()

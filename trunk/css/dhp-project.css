@@ -169,7 +169,7 @@ html.fullscreen {
 /*	max-width: 320px; */
 	min-width: 260px;
 	min-height: 180px;
-	max-height: 300px;
+	max-height: 200px;
 
 	background: #fff;
 	background-color: rgba(255, 255, 255, .95);
@@ -192,11 +192,11 @@ html.fullscreen {
 
 	min-width: 220px;
 	min-height: 300px;
-	max-height: 700px !important;
+	max-height: 90% !important;
+/*	max-height: 700px !important; */
 
 	top: 6px;
 	left: 6px;
-/*	bottom: 20px; */
 
 	z-index: 1103;
 	-moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
