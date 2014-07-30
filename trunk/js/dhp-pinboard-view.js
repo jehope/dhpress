@@ -470,6 +470,9 @@ var dhpPinboardView = {
         // INPUT:   target = element selected by user
     switchLegend: function(target)
     {
+            // Unhighlight the layers button in nav bar
+        jQuery('#layers-button').parent().removeClass('active');
+
         var newLgdName = jQuery(target).text();
 
         if (dhpPinboardView.layerBtnsOn  || newLgdName !== dhpPinboardView.curLgdName) {
@@ -637,9 +640,9 @@ var dhpPinboardView = {
 
         var layerSettings = dhpPinboardView.pinboardEP.layers;
         _.each(layerSettings, function(thisLayer, index) {
-            jQuery('#layers-panel').append('<div id="oLayerCtrl'+index+'">'+
-                '<div class="row"><div class="columns small-2 large-1"><input type="checkbox" checked="checked"></div> '+
-                '<div class="columns small-10 large-11"><a class="value" id="oLayerCtrlA'+index+'">'+thisLayer.label+'</a></div></div></div>');
+            jQuery('#layers-panel').append('<div class="layer-set" id="oLayerCtrl'+index+'">'+
+                '<input type="checkbox" checked="checked"> '+
+                '<a class="value" id="oLayerCtrlA'+index+'">'+thisLayer.label+'</a></div>');
                 // Handle turning on and off pinboard svg overlay layer
             jQuery('#oLayerCtrl'+index+' input').click(function() {
                 svgLayer = dhpPinboardView.paper.select('#oLayer'+index);

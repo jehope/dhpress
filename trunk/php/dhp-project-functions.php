@@ -2654,7 +2654,7 @@ function dhp_page_template( $page_template )
     		// Communicate to visualizations by sending parameters in this array
     	$vizParams = array();
 
-		//foundation styles
+			// Foundation styles
         wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
         wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 

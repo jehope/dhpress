@@ -168,7 +168,7 @@ html.fullscreen {
 
 /*	max-width: 320px; */
 	min-width: 260px;
-	min-height: 180px;
+	min-height: 120px;
 	max-height: 200px;
 
 	background: #fff;
@@ -180,20 +180,22 @@ html.fullscreen {
 }
 
 #legends.mini {
-	min-height: 30px;
+/*	min-height: 37px; */
     overflow: hidden;
 }
 
 	/* Override for fullscreen */
 .fullscreen #legends {
 	position:absolute;
-/*	overflow: hidden; */
 	overflow: auto;
 
-	min-width: 220px;
+		/* These height settings are not working properly, and it's unclear why.
+			In fullscreen, only the min-height setting is used; max-height is ignored.
+		 */
 	min-height: 300px;
-	max-height: 90% !important;
-/*	max-height: 700px !important; */
+/*	min-height: 220px; */
+/*	max-height: 90% !important; */
+	max-height: 700px !important;
 
 	top: 6px;
 	left: 6px;
@@ -268,6 +270,9 @@ html.fullscreen {
 .legend-div .terms .maki-icon {
 	margin: 0;
 	padding: 0;
+
+	margin-left: -5px !important;
+
 	float: left !important;
 	display: inline !important;
 }
@@ -335,6 +340,7 @@ html.fullscreen {
     position: relative;
     top: 6px;
     left: 6px;
-    min-width: 20px;
+/*    min-width: 20px; */
+    width: 20px;
     min-height: 20px;
 }

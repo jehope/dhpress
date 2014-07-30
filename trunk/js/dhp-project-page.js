@@ -220,22 +220,29 @@ jQuery(document).ready(function($) {
             updateVizSpace();
         }
 
-            // Update menu sizes
-        var newRowHeight, checkboxMargin;
 
-            // Resize legend term position for long titles
-        jQuery('.legend-div > .terms').css({top: jQuery('.active-legend .legend-title').height() });
+            // Ensure that a long Legend title can take two lines w/o overlapping terms below
+            //   by setting top of terms section to bottom of title
+            // Loop through legend-div divs but only operate on those that are not Layer panels!
+        jQuery('.legend-div').each( function(index) {
+            if (jQuery(this).attr('id') !== 'layers-panel') {
+                var height = jQuery('.legend-title', this).height();
+                jQuery('terms', this).css( { top: height } );
+            }
+        });
 
             // Resize legend items that are two lines and center checkbox
-        jQuery('.legend-div > terms > .row').each(function(key,value) {
-                //height of row containing text(could be multiple lines)
-            newRowHeight   = jQuery('.columns', this).eq(1).height();
-                // variable to center checkbox in row
-            checkboxMargin = (newRowHeight - checkboxHeight) / 2;
-                // set elements in rows with new values
-            jQuery('.columns', this).eq(0).height(newRowHeight);
-            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
-        });
+            // NOTE: This algorithm is buggy -- creating height of 0px and margin-top of negative sizes
+        // jQuery('.legend-div > .terms > .row').each(function(key,value) {
+        //     var newRowHeight, checkboxMargin;
+        //         //height of row containing text(could be multiple lines)
+        //     newRowHeight   = jQuery('.columns', this).eq(1).height();
+        //         // variable to center checkbox in row
+        //     checkboxMargin = (newRowHeight - checkboxHeight) / 2;
+        //         // set elements in rows with new values
+        //     jQuery('.columns', this).eq(0).height(newRowHeight);
+        //     jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
+        // });
 
             // Resize Layers controls?
     } // windowResized()
@@ -361,11 +368,11 @@ jQuery(document).ready(function($) {
                     var htmlStr;
                     switch (firstIconChar) {
                     case '#':
-                        htmlStr = '<div class="small-3 large-2 columns" style="background:'+
+                        htmlStr = '<div class="small-2 large-2 columns" style="background:'+
                             theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
                         break;
                     case '.':
-                        htmlStr = '<div class="small-2 large-1 columns"><div class="maki-icon '+
+                        htmlStr = '<div class="small-1 large-1 columns"><div class="maki-icon '+
                             theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
                         break;
                     default:
@@ -376,7 +383,7 @@ jQuery(document).ready(function($) {
 
                         // Append new legend value to menu according to type
                     jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+htmlStr+
-                                                    '<div class="small-9 large-10 columns"><a class="value" data-id="'+
+                                                    '<div class="small-10 large-10 columns"><a class="value" data-id="'+
                                                     theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                 }
             });
@@ -456,15 +463,21 @@ jQuery(document).ready(function($) {
                 case '#':
                         // Append new legend value to menu according to type
                     jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
-                        '<div class="small-2 large-1 columns splash" style="background:'+theTerm.icon_url+'"></div>'+
-                        '<div class="small-10 large-11 columns"><a class="value" data-id="'+
+                        '<div class="small-1 large-1 columns splash" style="background:'+theTerm.icon_url+'"></div>'+
+                        '<div class="small-11 large-11 columns"><a class="value" data-id="'+
                         theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                     break;
                 case '.':
                     jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
+
                         '<div class="small-2 large-1 columns"><div class="maki-icon '+
                         theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">'+
                         '<div class="small-9 large-10 columns"><a class="value" data-id="'+
+
+                        // '<div class="small-2 large-2 columns"><div class="maki-icon '+
+                        // theTerm.icon_url.substring(1)+'"></div><input type="checkbox" checked="checked"></div>'+
+                        // '<div class="small-10 large-10 columns"><a class="value" data-id="'+
+
                         theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                     break;
                 default:

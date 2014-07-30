@@ -155,6 +155,9 @@ input.leaflet-control-layers-selector {
 .leaflet-control-zoom {
 }
 
+.layer-set {
+	margin: 6px;
+}
 
 #layers-panel a {
 	line-height: 15px;

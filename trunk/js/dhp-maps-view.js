@@ -679,13 +679,13 @@ var dhpMapsView = {
 
                 // Don't create checkbox or opacity slider for Blank layer
             if (thisLayer.options.layerName != 'Blank') {
-                jQuery('#layers-panel').append('<div class="layer'+index+'">'+
-                    '<div class="row"><div class="columns small-12 large-12"><input type="checkbox" checked="checked"> '+
-                    '<a class="value" id="'+thisLayer.options.id+'">'+label+'</a></div></div>'+
-                    '<div class="row"><div class="columns small-12 large-12"><div class="layer-opacity"></div></div></div>'+
+                jQuery('#layers-panel').append('<div class="layer-set" id="layer'+index+'">'+
+                    '<div><input type="checkbox" checked="checked"> '+
+                    '<a class="value" id="'+thisLayer.options.id+'">'+label+'</a></div>'+
+                    '<div><div class="layer-opacity"></div></div>'+
                     '</div>');
 
-                jQuery('.layer'+index+' .layer-opacity').slider({
+                jQuery('#layer'+index+' .layer-opacity').slider({
                     range: false,
                     min: 0,
                     max: 1,
@@ -696,7 +696,7 @@ var dhpMapsView = {
                     }
                 });
                     // Handle turning on and off map layer
-                jQuery( '.layer'+index+' input').click(function() {
+                jQuery( '#layer'+index+' input').click(function() {
                     if(jQuery(this).is(':checked')) {
                         dhpMapsView.mapLeaflet.addLayer(thisLayer);
                     } else {
