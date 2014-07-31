@@ -25,9 +25,7 @@ var dhpPinboardView = {
         //                  zoomStep = % of zoom or reduce for each step
 
         //                  useParent = if true (always true!), actions on parent term affect child terms
-        //                  isTouch = this is a touch-screen interface, not mouse
         //                  currentFeature = map feature currently highlighted or selected (with modal)
-        //                  anyPopupsOpen = true when a popover modal is currently open
 
         //                  radius = radius of geometric markers
         //                  iconSize = "s" | "m" | "l"
@@ -57,13 +55,9 @@ var dhpPinboardView = {
         dhpPinboardView.viewParams     = viewParams;
         dhpPinboardView.callBacks      = callBacks;
 
-        dhpPinboardView.isTouch        = dhpPinboardView.isTouchDevice();
-
             // Expand to show/hide child terms and use their colors
         dhpPinboardView.useParent = true;
         dhpPinboardView.layerBtnsOn = false;
-
-        dhpPinboardView.anyPopupsOpen = false;
 
             // ensure that EP parameters are integers, not strings
         dhpPinboardView.iWidth  = typeof(pinboardEP.width)  === 'number' ? pinboardEP.width  : parseInt(pinboardEP.width);
@@ -313,7 +307,7 @@ var dhpPinboardView = {
         _.each(dhpPinboardView.rawAjaxData, function(dataSet) {
             switch(dataSet.type) {
             case 'filter':
-                dhpPinboardView.filters.push(dhpPinboardView.reformatTerms(dataSet));
+                dhpPinboardView.filters.push(dhpPinboardView.callBacks.flattenTerms(dataSet));
                 break;
             case 'FeatureCollection':
                 dhpPinboardView.allMarkers = dataSet.features;
@@ -436,34 +430,6 @@ var dhpPinboardView = {
             lgdHeadGroup.add(lgdHeadVal);
         }); // each Legend Head
     }, // createSVG()
-
-
-        // PURPOSE: Called by createDataObjects() to take nested array(s) of terms and convert to flat array
-        //              of items with fields: id, parent, name, icon_url
-        // NOTES:   In array returned by php, parent markers have <id> field but children have <term_id>
-        // RETURNS: Object with 2 properties: terms and all
-    reformatTerms: function(oldTerms)
-    {
-        var newTerms = oldTerms;
-        var termArray = [];
-        var allTerms = [];
-
-        _.each(oldTerms.terms, function(theTerm) {
-            termArray.push(theTerm);
-            _.each(theTerm.children, function(theChild) {
-                termArray.push( {
-                    id: theChild.term_id,
-                    parent: theTerm.id,
-                    icon_url: theTerm.icon_url,    // child inherits parent's viz
-                    name: theChild.name
-                });
-            });
-        });
-
-        newTerms.terms = termArray;
-
-        return newTerms;
-    }, // reformatTerms()
 
 
         // PURPOSE: Handle user selection of legend in navbar menu
@@ -691,19 +657,5 @@ var dhpPinboardView = {
                 dhpPinboardView.layerBtnsOn = true;
             }
         });
-
-    }, // createLayerButtons()
-
-
-        // RETURNS: true if touch is supported (and hence no mouse)
-    isTouchDevice: function() {
-        // var msTouchEnabled = window.navigator.msMaxTouchPoints;
-        // var generalTouchEnabled = "ontouchstart" in document.createElement("div");
-
-        // if (msTouchEnabled || generalTouchEnabled) {
-        //     return true;
-        // }
-        // return false;
-        return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
-    }
+    } // createLayerButtons()
 };

@@ -53,7 +53,7 @@ var dhpMapsView = {
         dhpMapsView.viewParams     = viewParams;
         dhpMapsView.callBacks      = callBacks;
 
-        dhpMapsView.isTouch        = dhpMapsView.isTouchDevice();
+        dhpMapsView.isTouch        = callBacks.isTouchDevice();
 
         dhpMapsView.markerOpacity  = 1;     // default marker opacity
         dhpMapsView.makiSize       = mapEP.size;
@@ -272,23 +272,8 @@ var dhpMapsView = {
         // RETURNS: Object with 2 properties: terms and all
     formatTerms: function(oldTerms)
     {
-        var newTerms = oldTerms;
-        var termArray = [];
+        var newTerms = dhpMapsView.callBacks.flattenTerms(oldTerms);
         var allTerms = [];
-
-        _.each(oldTerms.terms, function(theTerm) {
-            termArray.push(theTerm);
-            _.each(theTerm.children, function(theChild) {
-                termArray.push( {
-                    id: theChild.term_id,
-                    parent: theTerm.id,
-                    icon_url: theTerm.icon_url,    // child inherits parent's viz
-                    name: theChild.name
-                });
-            });
-        });
-
-        newTerms.terms = termArray;
 
             // use array of just IDs for speedy intersection checks
         _.each(newTerms.terms, function(theTerm) {
@@ -707,6 +692,7 @@ var dhpMapsView = {
         });
     }, // buildLayerControls()
 
+
         // PURPOSE: Callback to handle user setting of opacity slider
         // NOTES:   Opacity setting will only work for Circle (< Path) markers, not icons
         //          Because Marker layer is destroyed and rebuilt whenever Legend changes, need to
@@ -735,17 +721,5 @@ var dhpMapsView = {
     {
             // This is an Leaflet function to redraw the markers after map resize
         dhpMapsView.mapLeaflet.invalidateSize();
-    }, // dhpUpdateSize()
-
-        // RETURNS: true if touch is supported (and hence no mouse)
-    isTouchDevice: function() {
-        // var msTouchEnabled = window.navigator.msMaxTouchPoints;
-        // var generalTouchEnabled = "ontouchstart" in document.createElement("div");
-
-        // if (msTouchEnabled || generalTouchEnabled) {
-        //     return true;
-        // }
-        // return false;
-        return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
-    }
+    } // dhpUpdateSize()
 };

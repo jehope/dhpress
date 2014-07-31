@@ -35,11 +35,6 @@ var dhpTreeView = {
         //                  xScale, yScale = scales for segment wheel
         //                  arc = function that creates segment arcs
 
-        //                  useParent = if true (always true!), actions on parent term affect child terms
-        //                  isTouch = this is a touch-screen interface, not mouse
-        //                  currentFeature = map feature currently highlighted or selected (with modal)
-        //                  anyPopupsOpen = true when a popover modal is currently open
-
         // PURPOSE: Initialize new leaflet map, layers, and markers                         
         // INPUT:   ajaxURL      = URL to WP
         //          projectID    = ID of project
@@ -47,8 +42,6 @@ var dhpTreeView = {
         //          callBacks    = set of callback functions back to dhp-project-page functions
     initialize: function(ajaxURL, projectID, vizIndex, treeEP, callBacks) {
              // Constants
-        dhpTreeView.checkboxHeight  = 12; // default checkbox height
-        dhpTreeView.minWidth        = 182; // 182px for horizontal + 260px for Legend key
         dhpTreeView.controlHeight   = 49;  // LegendHeight[45] + 4
 
             // Save visualization data for later
@@ -58,17 +51,13 @@ var dhpTreeView = {
         dhpTreeView.treeEP         = treeEP;
         dhpTreeView.callBacks      = callBacks;
 
-            // Expand to show/hide child terms and use their colors
-        dhpTreeView.useParent = true;
-
-        dhpTreeView.anyPopupsOpen = false;
-
             // ensure that EP parameters are integers, not strings
         dhpTreeView.iWidth  = typeof(treeEP.width)  === 'number' ? treeEP.width  : parseInt(treeEP.width);
         dhpTreeView.iHeight = typeof(treeEP.height) === 'number' ? treeEP.height : parseInt(treeEP.height);
         dhpTreeView.padding = typeof(treeEP.padding) === 'number' ? treeEP.padding  : parseInt(treeEP.padding);
         dhpTreeView.mRadius = typeof(treeEP.radius) === 'number' ? treeEP.radius  : parseInt(treeEP.radius);
         dhpTreeView.fSize   = typeof(treeEP.fSize) === 'number' ? treeEP.fSize  : parseInt(treeEP.fSize);
+
             // set view/scroll window parameters
 
             // Add elements to nav bar
@@ -201,61 +190,18 @@ var dhpTreeView = {
     }, // createLegend()
 
 
-        // PURPOSE: To compute the brightness value of the background
-        // INPUT:   rgb = a string in hex format (#xxxxxx)
-        // http://www.w3.org/WAI/ER/WD-AERT/#color-contrast
-    brightness: function(rgb) {
-      return rgb.r * .299 + rgb.g * .587 + rgb.b * .114;
-    }, // brightness()
-
-
         // PURPOSE: To determine color to use for marker
         // INPUT:   featureVals = array of category IDs (integers) associated with a feature/marker
-        // RETURNS: Partial string to set color and background color (w/o closing ")
         // NOTES:   Will use first match on color to use for icon, or else default color
-        // ASSUMES: colorValues has been loaded
-        // SIDEFX:  Caches textColor in text field of Legend, which builds first time encountered
+        // TO DO:   Could cache text color (as in Cards view)
     getItemColor: function(featureVals)
     {
             // If no color motes or if marker has no category values, return default
         if (dhpTreeView.legendTerms == null) {
             return '#3333FF';
         }
-
-        var countCats = featureVals.length;
-        if (countCats==0) {
-            return '#3333FF';
-        }
-
-        var countTerms = dhpTreeView.legendTerms.length; 
-        var thisCat, thisCatID;
-        var thisMarkerID;
-        var catChildren;
-        var i,j,k;
-
-        for(i=0;i<countTerms;i++) {         // for all category values
-            thisCat = dhpTreeView.legendTerms[i];
-            thisCatID = thisCat.id;
-
-            for(j=0; j<countCats; j++) {      // for all marker values
-                // legend categories
-                thisMarkerID = featureVals[j];
-                    // have we matched this element?
-                if (thisCatID===thisMarkerID) {
-                    return thisCat.icon_url;
-                    // check for matches on its children
-                } else {
-                    if (thisCat.children) {
-                        catChildren = thisCat.children;
-                        for (k=0; k<catChildren.length; k++) {
-                            if (catChildren[k].term_id==thisMarkerID) {
-                                return thisCat.icon_url;
-                            }
-                        }
-                    }
-                }
-           }
-        }
+        var color = dhpTreeView.callBacks.getItemColor(featureVals, dhpTreeView.legendTerms);
+        return (color == null) ? '#3333FF' : color;
     }, // getItemColor()
 
 
@@ -289,7 +235,6 @@ var dhpTreeView = {
                         .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
                         .on("click", function(d) {
                             dhpTreeView.callBacks.showMarkerModal(d);
-                            // console.log("Selected node name "+d.name+" which is index "+index);
                         });
 
             node.append("circle")
@@ -337,7 +282,6 @@ var dhpTreeView = {
                 })
                 // Create the text label for the node
             node.append("text")
-                // .style( "font-size", dhpTreeView.fSize+'px')
                     // 1/3 character size between anchor point (of g) and text
                 .attr("dy", ".31em")
                     // Whether the end or beginning of the label is next to the node depends on the angle
@@ -367,9 +311,9 @@ var dhpTreeView = {
                 .on("click", function(d) {
                     dhpTreeView.callBacks.showMarkerModal(d);
                 } )
-                // .style("font-size", dhpTreeView.fSize+'px')
                 .style("fill", function(d) {
-                  return dhpTreeView.brightness(d3.rgb(dhpTreeView.getItemColor(d.properties.categories))) < 125 ? "#eee" : "#000";
+                  var color = dhpTreeView.getItemColor(d.properties.categories);
+                  return dhpTreeView.callBacks.getTextColor(color);
                 })
                     // Does the text point belong on the left or right side?
                 .attr("text-anchor", function(d) {

@@ -334,31 +334,10 @@ var dhpCardsView = {
         jQuery("#card-container").isotope();
     }, // dhpUpdateSize()
 
-        // PURPOSE: Return the text color for card depending on background color
-        // ASSUMES: bColor is in format #xxxxxx where each x is a hexadecimal numeral
-        // NOTES:   Algorithm for choosing white or black at:
-        //            http://www.particletree.com/notebook/calculating-color-contrast-for-legible-text/
-        //          and http://stackoverflow.com/questions/5650924/javascript-color-contraster
-    textColor: function(bColor)
-    {
-        var brightness = 1.1;
-
-        brightness = ((parseInt(bColor.substr(1,2), 16) * 299.0) +
-                    (parseInt(bColor.substr(3,2), 16) * 587.0) +
-                    (parseInt(bColor.substr(5,2), 16) * 114.0)) / 255000.0;
-
-        if (brightness >= 0.5) {
-            return "black";
-        } else {
-            return "white";
-        }
-    }, // textColor
-
         // PURPOSE: To determine color to use for marker
         // INPUT:   featureVals = array of category IDs (integers) associated with a feature/marker
         // RETURNS: Partial string to set color and background color (w/o closing ")
         // NOTES:   Will use first match on color to use for icon, or else default color
-        // ASSUMES: colorValues has been loaded
         // SIDEFX:  Caches textColor in text field of Legend, which builds first time encountered
     getItemColor: function(featureVals)
     {
@@ -385,7 +364,7 @@ var dhpCardsView = {
                 if (thisCatID===thisMarkerID) {
                     if(thisCat.icon_url.substring(0,1) == '#') {
                         if (thisCat.txtColor == undefined) {
-                            thisCat.txtColor = dhpCardsView.textColor(thisCat.icon_url);
+                            thisCat.txtColor = dhpCardsView.callBacks.getTextColor(thisCat.icon_url);
                         }
                         return thisCat.icon_url+'; color:'+thisCat.txtColor;
                     } else {
@@ -399,7 +378,7 @@ var dhpCardsView = {
                             if(catChildren[k].term_id==thisMarkerID) {
                                if(thisCat.icon_url.substring(0,1) == '#') {
                                     if (thisCat.txtColor == undefined) {
-                                        thisCat.txtColor = dhpCardsView.textColor(thisCat.icon_url);
+                                        thisCat.txtColor = dhpCardsView.callBacks.getTextColor(thisCat.icon_url);
                                     }
                                     return thisCat.icon_url+'; color:'+thisCat.txtColor;
                                 } else {
@@ -476,7 +455,7 @@ var dhpCardsView = {
             // set default background and text colors
         var match = dhpCardsView.cardsEP.defColor.match(/^#([0-9a-f]{6})$/i);
         if (match) {
-            defTextColor = dhpCardsView.textColor(dhpCardsView.cardsEP.defColor);
+            defTextColor = dhpCardsView.callBacks.getTextColor(dhpCardsView.cardsEP.defColor);
             colorStr = dhpCardsView.cardsEP.defColor+'; color:'+defTextColor;
         } else {
             colorStr = dhpCardsView.cardsEP.defColor+'; color:#000000';

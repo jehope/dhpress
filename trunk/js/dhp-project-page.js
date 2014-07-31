@@ -17,8 +17,9 @@ jQuery(document).ready(function($) {
         // modal and GUI support
     var modalSize;
     var browserMobile = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
-    var checkboxHeight;
     var legendHeight;
+
+    // var checkboxHeight;
 
         // For reaching functions in this file used by various visualization modules
     var callBacks;
@@ -42,10 +43,14 @@ jQuery(document).ready(function($) {
         remLoadingModal: removeLoadingMessage,
         showMarkerModal: showMarkerModal,
         create1Legend:   create1Legend,
-        createLegends:   createLegends
+        createLegends:   createLegends,
+        flattenTerms:    flattenTerms,
+        getItemColor:    getItemColor,
+        getTextColor:    getTextColor,
+        isTouchDevice:   isTouchDevice
     };
 
-        //Add project nav bar
+        // Add generic project navigation bar
     createNavBar();
 
         // Insert Marker modal window HTML
@@ -247,6 +252,7 @@ jQuery(document).ready(function($) {
             // Resize Layers controls?
     } // windowResized()
 
+        // PURPOSE: Create the bones of the top navigation bar; visualizations can further specialize it
     function createNavBar()
     {
         var homeBtnLabel = dhpSettings.general.homeLabel;
@@ -405,7 +411,7 @@ jQuery(document).ready(function($) {
         jQuery('#term-legend-0').addClass('active-legend');
 
             // Update checkbox height(varies by theme/browser) 
-        checkboxHeight = jQuery('#legends').find('input:checkbox').height();
+        // checkboxHeight = jQuery('#legends').find('input:checkbox').height();
             // Save height for min/max
         legendHeight = jQuery('#legends').height();
 
@@ -489,7 +495,7 @@ jQuery(document).ready(function($) {
         jQuery('#legends').append(legendHtml);
 
             // Update checkbox height (varies by theme/browser)
-        checkboxHeight = jQuery('#legends').find('input:checkbox').height();
+        // checkboxHeight = jQuery('#legends').find('input:checkbox').height();
             // Save height for min/max
         legendHeight = jQuery('#legends').height();
 
@@ -519,6 +525,101 @@ jQuery(document).ready(function($) {
             }
         });
     } // create1Legend()
+
+
+        // PURPOSE: Takes nested array(s) of Legend terms and converts to flat array with fields:
+        //              id, parent, name, icon_url
+        // NOTES:   In array returned by php, parent markers have <id> field but children have <term_id>
+        // RETURNS: Object with new properties: terms
+    function flattenTerms(oldTerms)
+    {
+        var newTerms = oldTerms;
+        var termArray = [];
+        var allTerms = [];
+
+        _.each(oldTerms.terms, function(theTerm) {
+            termArray.push(theTerm);
+            _.each(theTerm.children, function(theChild) {
+                termArray.push( {
+                    id: theChild.term_id,
+                    parent: theTerm.id,
+                    icon_url: theTerm.icon_url,    // child inherits parent's viz
+                    name: theChild.name
+                });
+            });
+        });
+
+        newTerms.terms = termArray;
+
+        return newTerms;
+    } // flattenTerms()
+
+
+        // RETURNS: Color for feature given a particular Legend filter or null (no match)
+        // INPUT:   catTerms = array of category IDs (integers) associated with a feature/marker
+        //          legendTerms = array of category IDs for Legend key
+        // NOTES:   Will use first match on color to use for icon, or else default color
+        //          This could be optimized if legendTerms and/or catTerms were guaranteed to be in numeric order
+    function getItemColor(catTerms, legendTerms)
+    {
+        var countCats = catTerms.length;
+
+        if (countCats) {
+            var countTerms = legendTerms.length;
+            var thisCat, thisCatID;
+            var thisMarkerID;
+            var catChildren;
+            var i,j,k;
+
+            for(i=0;i<countTerms;i++) {         // for all category terms
+                thisCat = legendTerms[i];
+                thisCatID = thisCat.id;
+
+                for(j=0; j<countCats; j++) {      // for all marker terms
+                    // legend categories
+                    thisMarkerID = catTerms[j];
+                        // have we matched this element?
+                    if (thisCatID===thisMarkerID) {
+                        return thisCat.icon_url;
+                        // check for matches on its children
+                    } else {
+                        catChildren = thisCat.children;
+                        if (catChildren) {
+                            for (k=0; k<catChildren.length; k++) {
+                                if (catChildren[k].term_id==thisMarkerID) {
+                                    return thisCat.icon_url;
+                                }
+                            }
+                        }
+                    }
+               }
+            }
+        }
+            // no match: default with null result
+        return null;
+    } // getItemColor()
+
+
+        // RETURNS: Text color for card depending on background color
+        // INPUT:   bColor = color in format #xxxxxx where each x is a hexadecimal numeral
+        // NOTES:   Algorithm for choosing white or black at:
+        //            http://www.particletree.com/notebook/calculating-color-contrast-for-legible-text/
+        //          and http://stackoverflow.com/questions/5650924/javascript-color-contraster
+    function getTextColor(bColor)
+    {
+            // Prepare var for float value (? needed)
+        var brightness = 1.1;
+
+        brightness = ((parseInt(bColor.substr(1,2), 16) * 299.0) +
+                    (parseInt(bColor.substr(3,2), 16) * 587.0) +
+                    (parseInt(bColor.substr(5,2), 16) * 114.0)) / 255000.0;
+
+        if (brightness >= 0.5) {
+            return "black";
+        } else {
+            return "white";
+        }
+    } // getTextColor
 
 
         // RETURNS: true if the Select Modal has a widget whose name is modalName
@@ -658,4 +759,18 @@ jQuery(document).ready(function($) {
             //Open modal
         jQuery('#markerModal').foundation('reveal', 'open');
     } // showMarkerModal()
+
+
+        // RETURNS: true if touch is supported (and hence no mouse)
+    function isTouchDevice() {
+        // var msTouchEnabled = window.navigator.msMaxTouchPoints;
+        // var generalTouchEnabled = "ontouchstart" in document.createElement("div");
+
+        // if (msTouchEnabled || generalTouchEnabled) {
+        //     return true;
+        // }
+        // return false;
+        return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
+    }
+
 });
