@@ -2384,6 +2384,10 @@ function dhpPerformTests()
 							$transcErrors = true;
 						}
 						break;
+					case 'Pointer':
+							// Only way to check would be to explode string and check existence of each
+							// marker, but this would likely break the WP Query loop -- so ignore for now
+						break;
 					} // switch
 						// Add rest of error information
 					if ($error) {
@@ -2400,7 +2404,7 @@ function dhpPerformTests()
 		endwhile;
 
 			// If transcript (fragmentation) source is set, ensure the category has been created
-		$source = $projSettings->views->source;
+		$source = $projSettings->views->transcript->source;
 		if ($source && $source !== '' && $source !== 'disable') {
 			$transSrcCheck = verifyLegend($projObj, $source, 0);
 			if ($transSrcCheck != '') {
