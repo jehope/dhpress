@@ -2302,19 +2302,30 @@ function dhpPerformTests()
 		foreach ($projSettings->eps as $ep) {
 			switch ($ep->type) {
 			case 'map':
-			case 'pinboard':
+					// Map Legends can be color or icons -- just consistency
 				foreach ($ep->settings->legends as $theLegend) {
-					$results .= verifyLegend($projObj, $theLegend, 1);
+					$results .= verifyLegend($projObj, $theLegend, 2);
 				}
 				break;
 			case 'cards':
-				$results .= verifyLegend($projObj, $ep->settings->color, 2);
+					// Card Legends must be color only
+				$results .= verifyLegend($projObj, $ep->settings->color, 1);
 					// all Short Text Filter Motes must have been created as Legend but values don't matter
 				foreach ($ep->settings->filterMotes as $filterMote) {
 					if ($filterMote->type === 'Short Text') {
 						$results .= verifyLegend($projObj, $filterMote, 0);
 					}
 				}
+				break;
+			case 'pinboard':
+					// Pinboard Legends currently only support color
+				foreach ($ep->settings->legends as $theLegend) {
+					$results .= verifyLegend($projObj, $theLegend, 1);
+				}
+				break;
+			case 'tree':
+					// Tree legends currently only support color
+				$results .= verifyLegend($projObj, $ep->settings->color, 1);
 				break;
 			}
 		}
