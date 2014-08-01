@@ -545,27 +545,8 @@ function getCategoryValues($parent_term, $taxonomy)
 } // getCategoryValues()
 
 
-// PURPOSE:	Get link to category page based on category value, if one of $terms appears in $link_terms
-// INPUT:	$link_terms = array of taxonomic terms
-//			$terms = array of terms associated with a particular Marker
-//			$rootTaxName = root taxonomic term for Project
-// RETURNS: PermaLink for marker's term (from $terms) that appears in $link_terms
-// ASSUMES:	That strings in $terms have been HTML-escaped
-
-function dhp_get_term_by_parent($link_terms, $terms, $rootTaxName)
-{
-	foreach( $terms as $term ) {
-		$real_term = get_term_by('id', $term, $rootTaxName);
-		$intersect = array_intersect(array($real_term->term_id), $link_terms);
-		if ($intersect) {
-			 $term_link = get_term_link($real_term);
-			 return $term_link;
-		}
-	}
-} // dhp_get_term_by_parent()
-
-
 // ========================================= AJAX calls ======================================
+
 
 // PURPOSE:	Creates Legends and Feature Collections Object (as per OpenLayer) when looking at a project page;
 //			That is, return array describing all markers based on filter and visualization
@@ -609,55 +590,51 @@ function dhp_get_term_by_parent($link_terms, $terms, $rootTaxName)
 			// 		]
 			// 	}
 
-function createMarkerArray($project_id, $index)
+add_action('wp_ajax_dhpGetMarkers', 'dhpGetMarkers' );
+add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkers');
+
+// PURPOSE:	Handle Ajax call to get all markers for a Project for a Tree view
+// ASSUMED: A Tree view Entry Point is the current 
+// INPUT:	$_POST['project'] is ID of Project
+// RETURNS:	JSON object of array of marker values
+
+function dhpGetMarkers()
 {
+	$projectID = $_POST['project'];
+	$index = $_POST['index'];
+
 		// initialize result array
 	$json_Object = array();
-		// get Project info
-	$projObj      = new DHPressProject($project_id);
-	$rootTaxName  = $projObj->getRootTaxName();
-	$projSettings = $projObj->getAllSettings();
 
-    	// Initialize settings in case not used -- most of these are custom-field (not mote) names
-	$map_pointsMote = $coordMote = $filters = null;
-	$audio = $transcript = $transcript2 = $timecode = null;
-	$cardTitle = $cardColorMote = null;
+	$mQuery = new DHPressMarkerQuery($projectID, $index);
+	$projObj = $mQuery->projObj;
+	$eps = $mQuery->projSettings->eps[$index];
 
-		// By default, a marker's content is the set of data needed by select modal, but some
-		//	views may need to augment this
-	$selectContent = array();
-	if ($projSettings->views->select->content) {
-		foreach ($projSettings->views->select->content as $theMote) {
-			array_push($selectContent, $theMote);
-		}
-	}
-
-	$eps = $projSettings->eps[$index];
 	switch ($eps->type) {
 	case "map":
 			// Which field used to encode Lat-Long on map?
-		$map_pointsMote = $projObj->getMoteByName($eps->settings->coordMote);
+		$mapPointsMote = $projObj->getMoteByName($eps->settings->coordMote);
 			// Find all possible legends/filters for this map -- each marker needs these fields
 		$filters = $eps->settings->legends;
 			// Collect all possible category values/tax names for each mote in all filters
 		foreach ($filters as $legend) {
-			$term = get_term_by('name', $legend, $rootTaxName);
+			$term = get_term_by('name', $legend, $mQuery->rootTaxName);
 			if ($term) {
-				array_push($json_Object, getCategoryValues($term, $rootTaxName));
+				array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
 			}
 		}
 		break;
 
 	case "pinboard":
 			// Which field used to encode Lat-Long on map?
-		$pin_pointsMote = $projObj->getMoteByName($eps->settings->coordMote);
+		$pinPointsMote = $mQuery->projObj->getMoteByName($eps->settings->coordMote);
 			// Find all possible legends/filters for this pinboard -- each marker needs these fields
 		$filters = $eps->settings->legends;
 			// Collect all possible category values/tax names for each mote in all filters
 		foreach ($filters as $legend) {
-			$term = get_term_by('name', $legend, $rootTaxName);
+			$term = get_term_by('name', $legend, $mQuery->rootTaxName);
 			if ($term) {
-				array_push($json_Object, getCategoryValues($term, $rootTaxName));
+				array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
 			}
 		}
 		break;
@@ -678,131 +655,61 @@ function createMarkerArray($project_id, $index)
 		$cardColorMote = $eps->settings->color;
 		if ($cardColorMote != null && $cardColorMote !== '' && $cardColorMote != 'disable') {
 				// Create a legend for the color values
-			$term = get_term_by('name', $cardColorMote, $rootTaxName);
+			$term = get_term_by('name', $cardColorMote, $mQuery->rootTaxName);
 			if ($term) {
-				array_push($json_Object, getCategoryValues($term, $rootTaxName));
+				array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
 			}
 		}
 			// gather card contents
 		foreach ($eps->settings->content as $theContent) {
-			array_push($selectContent, $theContent);
+			array_push($mQuery->selectContent, $theContent);
 		}
 			// must add all sort and filter motes to content
 			// we must also collect all category values/tax names for filters that are Short Text motes,
 			//	but don't duplicate color legend
 		foreach ($eps->settings->filterMotes as $theContent) {
-			array_push($selectContent, $theContent);
+			array_push($mQuery->selectContent, $theContent);
 			$filterMote = $projObj->getMoteByName($theContent);
 			if ($filterMote->type=='Short Text' && $filterMote->name != $cardColorMote) {
-				$term = get_term_by('name', $theContent, $rootTaxName);
+				$term = get_term_by('name', $theContent, $mQuery->rootTaxName);
 				if ($term) {
-					array_push($json_Object, getCategoryValues($term, $rootTaxName));
+					array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
 				}
 			}
 		}
 		foreach ($eps->settings->sortMotes as $theContent) {
-			array_push($selectContent, $theContent);
+			array_push($mQuery->selectContent, $theContent);
 		}
 		break;
 	} // switch
 
-		// If a marker is selected and leads to a transcript in modal, need those values also
-	if ($projObj->selectModalHas("transcript")) {
-		$audio = $projSettings->views->transcript->audio;
-			// Translate from Mote Name to Custom Field name
-		if (!is_null($audio) && ($audio !== '')) {
-			$audio = $projObj->getCustomFieldForMote($audio);
-			$transcript = $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript);
-			$transcript2= $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript2);
-			$timecode   = $projObj->getCustomFieldForMote($projSettings->views->transcript->timecode);
-		}
-	}
-
 		// Ensure that any new content requested from markers is not redundant
-	$selectContent = array_unique($selectContent);
+	$mQuery->selectContent = array_unique($mQuery->selectContent);
 
 	$feature_collection = array();
 	$feature_collection['type'] = 'FeatureCollection';
 	$feature_array = array();
 
 
-		// Link parent enables linking to either the Post page for this Marker,
-		//	or to the category/taxonomy which includes this Marker
-	$link_parent = $projSettings->views->select->link;
-	if($link_parent) {
-		if($link_parent=='marker') {
-		//$parent_id = get_term_by('name', $link_parent, $rootTaxName);
-			$child_terms = 'marker';
-		}
-		elseif($link_parent=='disable') {
-			$term_links = 'disable';
-			$child_terms = 'disable';
-		}
-			// Link to mote value
-		elseif(strpos($link_parent, '(Mote)') !== FALSE) {
-			$linkMoteName = str_replace(' (Mote)', '', $link_parent);
-			$child_terms = $projObj->getMoteByName( $linkMoteName );
-		}
-		else {
-				// translate into category/term ID
-			$parent_id = get_term_by('name', $link_parent, $rootTaxName);
-				// find all category terms
-			$child_terms = get_term_children($parent_id->term_id, $rootTaxName);
-		}
-	}
-
-	$link_parent2 = $projSettings->views->select->link2;
-	if($link_parent2) {
-		if($link_parent2=='marker') {
-		//$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
-			$child_terms2 = 'marker';
-		}
-		elseif($link_parent2=='disable') {
-			$term_links2 = 'disable';
-			$child_terms2 = 'disable';
-		}
-			// Link to mote value
-		elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
-			$link2MoteName = str_replace(' (Mote)', '', $link_parent2);
-			$child_terms2 = $projObj->getMoteByName( $link2MoteName );
-		} else {
-			$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
-			$child_terms2 = get_term_children($parent_id2->term_id, $rootTaxName);
-		}
-	}
-
-		// Determine whether title is default title of marker post or another (custom) field
-	$title_mote = $projSettings->views->select->title;
-	if ($title_mote != 'the_title') {
-		$temp_mote = $projObj->getMoteByName($title_mote);
-		if (is_null($temp_mote)) {
-			trigger_error("Modal view title assigned to unknown mote");
-		}
-		$title_mote = $temp_mote->cf;
-	}
-
-	// $feature_collection['debugmsg'] = "coordMote count = ".count($coordMote)." moteName = ".$map_pointsMote["name"];
-	// $feature_collection['debug'] = array();
-
 		// Run query to return all marker posts belonging to this Project
 	$loop = $projObj->setAllMarkerLoop();
 	while ( $loop->have_posts() ) : $loop->the_post();
 
-		$marker_id = get_the_ID();
+		$markerID = get_the_ID();
 
 			// Feature will hold properties and some other values for each marker
 		$thisFeature = array();
 		$thisFeature['type']    = 'Feature';
 
 			// Most data goes into properties field
-		$thisFeaturesProperties = array();
+		$thisFeaturesProperties = $mQuery->getMarkerProperties($markerID);
 
 			// First set up fields required by visualizations, abandon marker if missing
 
 			// Map visualization features?
 			// Skip marker if missing necessary LatLong data or not valid numbers
-		if (!is_null($map_pointsMote)) {
-			$latlon = get_post_meta($marker_id, $map_pointsMote->cf, true);
+		if (!is_null($mapPointsMote)) {
+			$latlon = get_post_meta($markerID, $mapPointsMote->cf, true);
 			if (empty($latlon)) {
 				continue;
 			}
@@ -813,8 +720,8 @@ function createMarkerArray($project_id, $index)
 
 			// Pinboard visualization features?
 			// Skip marker if missing necessary LatLong data or not valid numbers
-		if (!is_null($pin_pointsMote)) {
-			$xycoord = get_post_meta($marker_id, $pin_pointsMote->cf, true);
+		if (!is_null($pinPointsMote)) {
+			$xycoord = get_post_meta($markerID, $pinPointsMote->cf, true);
 			if (empty($xycoord)) {
 				continue;
 			}
@@ -823,149 +730,28 @@ function createMarkerArray($project_id, $index)
 											"coordinates"=> array((float)$split[0],(float)$split[1]));
 		}
 
-			// Audio transcript features?
-		if (!is_null($audio)) {
-			$audio_val = get_post_meta($marker_id, $audio, true);
-			$thisFeaturesProperties["audio"] = $audio_val;
-		}
-		if (!is_null($transcript)) {
-			$transcript_val = get_post_meta($marker_id, $transcript, true);
-			$thisFeaturesProperties["transcript"]  = $transcript_val;
-		}
-		if (!is_null($transcript2)) {
-			$transcript2_val = get_post_meta($marker_id, $transcript2, true);
-			$thisFeaturesProperties["transcript2"] = $transcript2_val;
-		}
-		if (!is_null($timecode)) {
-			$timecode_val = get_post_meta($marker_id, $timecode, true);
-			$thisFeaturesProperties["timecode"]    = $timecode_val;
-		}
-
-		if ($title_mote) {
-			if($title_mote=='the_title') {
-				$title = get_the_title();
-			} else {
-				$title = get_post_meta($marker_id,$title_mote,true);
-			}
-			$thisFeaturesProperties["title"] = $title;
-		}
-
 			// NOTE: $cardTitle is currently only card-specific field
 		if ($cardTitle != null) {
 			$cardValues = array();
 			if ($cardTitle=='the_title') {
 				$title = get_the_title();
 			} else {
-				$title = get_post_meta($marker_id, $cardTitle, true);
+				$title = get_post_meta($markerID, $cardTitle, true);
 			}
 			$cardValues['title'] = $title;
 			$thisFeature['card'] = $cardValues;
 		}
 
-			// Get all of the legend/category values associated with this marker post
-		$args = array('fields' => 'ids');
-		$post_terms = wp_get_post_terms($marker_id, $rootTaxName, $args);
-		$term_array = array();
-		foreach ($post_terms as $term) {
-				// Convert tax category names into IDs
-			array_push($term_array,intval($term));
-		}
-		$thisFeaturesProperties["categories"]  = $term_array;
-
-		// $feature_collection['debug'] = $viewsContent;
-		$content_att = array();
-
-			// Gather all values to be displayed in modal if marker selected
-			// Should not apply filters to post content because DH Press markup gets inserted!
-		if (count($selectContent)) {
-			foreach( $selectContent as $contentMoteName ) {
-				if ($contentMoteName == 'the_content') {
-					$content_val = get_post_field('post_content', $marker_id);
-				} elseif ($contentMoteName == 'the_title') {
-					$content_val = get_the_title();
-				} else {
-					$content_mote = $projObj->getMoteByName($contentMoteName);
-					$contentCF = $content_mote->cf;
-					if($contentCF =='the_content') {
-						$content_val = get_post_field('post_content', $marker_id);
-					} elseif ($contentCF=='the_title') {
-						$content_val = get_the_title();
-					} else {
-						$content_val = get_post_meta($marker_id, $contentCF, true);
-					}
-				}
-				if (!is_null($content_val) && ($content_val !== '')) {
-						// Do we need to wrap data?
-					if($content_mote->type=='Image') {
-						$content_val = '<img src="'.addslashes($content_val).'" />';
-					}
-					$content_att[$contentMoteName] = $content_val;
-				}
-			} // foreach
-			$thisFeaturesProperties["content"]     = $content_att;
-		}
-
-			// Does item link to its own Marker page, Taxonomy page, or Mote value?
-		if ($link_parent && $child_terms && $child_terms != 'disable') {
-			if ($child_terms=='marker') {
-				$term_links = get_permalink();
-			}
-			elseif(strpos($link_parent, '(Mote)') !== FALSE) {
-				$term_links = get_post_meta($marker_id, $child_terms->cf, true);
-			}
-			else {
-				$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $rootTaxName);
-			}
-			if ($term_links)
-				$thisFeaturesProperties["link"] = addslashes($term_links);
-		}
-
-		if ($link_parent2 && $child_terms2 && $child_terms2 != 'disable') {
-			if ($child_terms2=='marker') {
-				$term_links2 = get_permalink();
-			}
-			elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
-				$term_links2 = get_post_meta($marker_id, $child_terms2->cf, true);
-			}
-			else {
-				$term_links2 = dhp_get_term_by_parent($child_terms2, $post_terms, $rootTaxName);
-			}
-			if ($term_links2)
-				$thisFeaturesProperties["link2"] = addslashes($term_links2);
-		}
-
 			// Store all of the properties
 		$thisFeature['properties'] = $thisFeaturesProperties;
 			// Save this marker
-		array_push($feature_array,$thisFeature);
+		array_push($feature_array, $thisFeature);
 	endwhile;
 
 	$feature_collection['features'] = $feature_array;
 	array_push($json_Object, $feature_collection);
-	return $json_Object;
-} // createMarkerArray()
 
-
-// Enable for both editing and viewing
-
-add_action('wp_ajax_dhpGetMarkers', 'dhpGetMarkers' );
-add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkers');
-
-// PURPOSE:	Handle Ajax call to get all markers for a Project for a Tree view
-// ASSUMED: A Tree view Entry Point is the current 
-// INPUT:	$_POST['project'] is ID of Project
-// RETURNS:	JSON object of array of marker values
-
-function dhpGetMarkers()
-{
-	$dhp_project = $_POST['project'];
-	$index =		$_POST['index'];
-	$mArray = createMarkerArray($dhp_project, $index);
-
-	// $result = json_encode($mArray);
-	// $result = stripslashes($result);
-	// die($result);
-	die(json_encode($mArray));
+	die(json_encode($json_Object));
 } // dhpGetMarkers()
 
 
@@ -975,18 +761,15 @@ function dhpGetMarkers()
 // INPUT:   $nodeName = the name of the custom post
 //			$eps = Entry Point settings
 // RETURNS: Nested Array for $nodeName and all of its children
-// TO DO:	Create a getMarkerFeatures function that reduces redundancy with createMarkerArray()
 
-function createTreeNode($nodeName, $projectID, $projObj, $rootTaxName, $nameCF, $childrenCF, $childrenDelim, $selectContent,
-						$audio, $transcript, $transcript2, $timecode,
-						$title_mote, $link_parent, $child_terms, $link_parent2, $child_terms2)
+function createTreeNode($nodeName, $mQuery, $childrenCF, $childrenDelim, $nameCF)
 {
 		// Get the WP post corresponding to this marker
 	$args = array( 
 		'post_type' => 'dhp-markers', 
 		'posts_per_page' => 1,
 		'name' => $nodeName,
-		array( 'meta_key' => 'project_id', 'meta_value' => $projectID )
+		array( 'meta_key' => 'project_id', 'meta_value' => $mQuery->projID )
 	);
 	$loop = new WP_Query($args);
 
@@ -997,124 +780,23 @@ function createTreeNode($nodeName, $projectID, $projObj, $rootTaxName, $nameCF, 
 	}
 
 	$loop->the_post();
-	$marker_id = get_the_ID();
+	$markerID = get_the_ID();
 
 		// Feature will hold properties and some other values for each marker
 	$thisFeature = array();
 
 		// Fetch name for marker
-	$nameVal = get_post_meta($marker_id, $nameCF, true);
+	$nameVal = get_post_meta($markerID, $nameCF, true);
 	$thisFeature["name"] = $nameVal;
 
 		// Most data goes into properties field
-	$thisFeaturesProperties = array();
-
-		// First set up fields required by visualizations, abandon marker if missing
-
-		// Audio transcript features?
-	if (!is_null($audio)) {
-		$audio_val = get_post_meta($marker_id, $audio, true);
-		$thisFeaturesProperties["audio"] = $audio_val;
-	}
-	if (!is_null($transcript)) {
-		$transcript_val = get_post_meta($marker_id, $transcript, true);
-		$thisFeaturesProperties["transcript"]  = $transcript_val;
-	}
-	if (!is_null($transcript2)) {
-		$transcript2_val = get_post_meta($marker_id, $transcript2, true);
-		$thisFeaturesProperties["transcript2"] = $transcript2_val;
-	}
-	if (!is_null($timecode)) {
-		$timecode_val = get_post_meta($marker_id, $timecode, true);
-		$thisFeaturesProperties["timecode"]    = $timecode_val;
-	}
-
-	if ($title_mote) {
-		if($title_mote=='the_title') {
-			$title = get_the_title();
-		} else {
-			$title = get_post_meta($marker_id,$title_mote,true);
-		}
-		$thisFeaturesProperties["title"] = $title;
-	}
-
-		// Get all of the legend/category values associated with this marker post
-	$args = array('fields' => 'ids');
-	$post_terms = wp_get_post_terms($marker_id, $rootTaxName, $args);
-	$term_array = array();
-	foreach ($post_terms as $term) {
-			// Convert tax category names into IDs
-		array_push($term_array,intval($term));
-	}
-	$thisFeaturesProperties["categories"]  = $term_array;
-
-	// $feature_collection['debug'] = $viewsContent;
-	$content_att = array();
-
-		// Gather all values to be displayed in modal if marker selected
-		// Should not apply filters to post content because DH Press markup gets inserted!
-	if (count($selectContent)) {
-		foreach( $selectContent as $contentMoteName ) {
-			if ($contentMoteName == 'the_content') {
-				$content_val = get_post_field('post_content', $marker_id);
-			} elseif ($contentMoteName == 'the_title') {
-				$content_val = get_the_title();
-			} else {
-				$content_mote = $projObj->getMoteByName($contentMoteName);
-				$contentCF = $content_mote->cf;
-				if($contentCF =='the_content') {
-					$content_val = get_post_field('post_content', $marker_id);
-				} elseif ($contentCF=='the_title') {
-					$content_val = get_the_title();
-				} else {
-					$content_val = get_post_meta($marker_id, $contentCF, true);
-				}
-			}
-			if (!is_null($content_val) && ($content_val !== '')) {
-					// Do we need to wrap data?
-				if($content_mote->type=='Image') {
-					$content_val = '<img src="'.addslashes($content_val).'" />';
-				}
-				$content_att[$contentMoteName] = $content_val;
-			}
-		} // foreach
-		$thisFeaturesProperties["content"]     = $content_att;
-	}
-
-		// Does item link to its own Marker page, Taxonomy page, or Mote value?
-	if ($link_parent && $child_terms && $child_terms != 'disable') {
-		if ($child_terms=='marker') {
-			$term_links = get_permalink();
-		}
-		elseif(strpos($link_parent, '(Mote)') !== FALSE) {
-			$term_links = get_post_meta($marker_id, $child_terms->cf, true);
-		}
-		else {
-			$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $rootTaxName);
-		}
-		if ($term_links)
-			$thisFeaturesProperties["link"] = addslashes($term_links);
-	}
-
-	if ($link_parent2 && $child_terms2 && $child_terms2 != 'disable') {
-		if ($child_terms2=='marker') {
-			$term_links2 = get_permalink();
-		}
-		elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
-			$term_links2 = get_post_meta($marker_id, $child_terms2->cf, true);
-		}
-		else {
-			$term_links2 = dhp_get_term_by_parent($child_terms2, $post_terms, $rootTaxName);
-		}
-		if ($term_links2)
-			$thisFeaturesProperties["link2"] = addslashes($term_links2);
-	}
+	$thisFeaturesProperties = $mQuery->getMarkerProperties($markerID);
 
 		// Store all of the properties
 	$thisFeature['properties'] = $thisFeaturesProperties;
 
 		// Now that we've constructed this feature, call recursively for all of its children
-	$childrenVal = get_post_meta($marker_id, $childrenCF, true);
+	$childrenVal = get_post_meta($markerID, $childrenCF, true);
 	if (!is_null($childrenVal) && ($childrenVal !== '')) {
 		$childName = explode($childrenDelim, $childrenVal);
 
@@ -1122,16 +804,16 @@ function createTreeNode($nodeName, $projectID, $projObj, $rootTaxName, $nameCF, 
 		$children = array();
 		foreach($childName as $theChildName) {
 			$trimName = trim($theChildName);
-			$theChildData = createTreeNode($trimName, $projectID, $projObj, $rootTaxName, $nameCF, $childrenCF, $childrenDelim, $selectContent,
-						$audio, $transcript, $transcript2, $timecode,
-						$title_mote, $link_parent, $child_terms, $link_parent2, $child_terms2);
+			$theChildData = createTreeNode($trimName, $mQuery, $childrenCF, $childrenDelim, $nameCF);
 				// Don't add if data error (name not found)
 			if ($theChildData != null) {
 				array_push($children, $theChildData);
 			}
 		}
-			// Store in feature for sending off
-		$thisFeature['children'] = $children;
+			// Store in feature if any descendents generated
+		if(count($children) > 0) {
+			$thisFeature['children'] = $children;
+		}
 	}
 
 		// Return this marker
@@ -1139,7 +821,14 @@ function createTreeNode($nodeName, $projectID, $projObj, $rootTaxName, $nameCF, 
 } // createTreeNode()
 
 
-// PURPOSE: Similar to createMarkerArray() but creates tree of marker data not flat array
+
+// Enable for both editing and viewing
+
+add_action('wp_ajax_dhpGetMarkerTree', 'dhpGetMarkerTree' );
+add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkerTree');
+
+// PURPOSE:	Handle Ajax call to get all markers for a Project
+// 			Similar to createMarkerArray() but creates tree of marker data not flat array
 // INPUT:	$project_id = ID of Project to view
 //			$index = index of entry-point to display
 // RETURNS: JSON object describing all markers associated with Project
@@ -1171,27 +860,17 @@ function createTreeNode($nodeName, $projectID, $projObj, $rootTaxName, $nameCF, 
 //				}
 // ASSUMES:  Color Legend has been created and category/taxonomy bound to Markers
 
-function createMarkerTree($project_id, $index)
+function dhpGetMarkerTree()
 {
+	$projectID = $_POST['project'];
+	$index = $_POST['index'];
+
 		// initialize result array
 	$json_Object = array();
 
-		// get Project info
-	$projObj      = new DHPressProject($project_id);
-	$rootTaxName  = $projObj->getRootTaxName();
-	$projSettings = $projObj->getAllSettings();
-
-	$audio = $transcript = $transcript2 = $timecode = null;
-
-		// By default, a marker's content is the set of data needed by select modal
-	$selectContent = array();
-	if ($projSettings->views->select->content) {
-		foreach ($projSettings->views->select->content as $theMote) {
-			array_push($selectContent, $theMote);
-		}
-	}
-
-	$eps = $projSettings->eps[$index];
+	$mQuery = new DHPressMarkerQuery($projectID, $index);
+	$projObj = $mQuery->projObj;
+	$eps = $mQuery->projSettings->eps[$index];
 
 		// Prepare for fetching name of markers
 	$nameCF = $eps->settings->label;
@@ -1219,113 +898,22 @@ function createMarkerTree($project_id, $index)
 			trigger_error("Tree view color assigned to unknown mote");
 		}
 			// Create a legend for the color values
-		$term = get_term_by('name', $colorCF, $rootTaxName);
+		$term = get_term_by('name', $colorCF, $mQuery->rootTaxName);
 		if ($term) {
-			array_push($json_Object, getCategoryValues($term, $rootTaxName));
-		}
-	}
-
-		// If a marker is selected and leads to a transcript in modal, need those values also
-	if ($projObj->selectModalHas("transcript")) {
-		$audio = $projSettings->views->transcript->audio;
-			// Translate from Mote Name to Custom Field name
-		if (!is_null($audio) && ($audio !== '')) {
-			$audio = $projObj->getCustomFieldForMote($audio);
-			$transcript = $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript);
-			$transcript2= $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript2);
-			$timecode   = $projObj->getCustomFieldForMote($projSettings->views->transcript->timecode);
+			array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
 		}
 	}
 
 		// Ensure that any new content requested from markers is not redundant
-	$selectContent = array_unique($selectContent);
-
-		// Link parent enables linking to either the Post page for this Marker,
-		//	or to the category/taxonomy which includes this Marker
-	$link_parent = $projSettings->views->select->link;
-	if($link_parent) {
-		if($link_parent=='marker') {
-		//$parent_id = get_term_by('name', $link_parent, $rootTaxName);
-			$child_terms = 'marker';
-		}
-		elseif($link_parent=='disable') {
-			$term_links = 'disable';
-			$child_terms = 'disable';
-		}
-			// Link to mote value
-		elseif(strpos($link_parent, '(Mote)') !== FALSE) {
-			$linkMoteName = str_replace(' (Mote)', '', $link_parent);
-			$child_terms = $projObj->getMoteByName($linkMoteName);
-		}
-		else {
-				// translate into category/term ID
-			$parent_id = get_term_by('name', $link_parent, $rootTaxName);
-				// find all category terms
-			$child_terms = get_term_children($parent_id->term_id, $rootTaxName);
-		}
-	}
-
-	$link_parent2 = $projSettings->views->select->link2;
-	if($link_parent2) {
-		if($link_parent2=='marker') {
-		//$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
-			$child_terms2 = 'marker';
-		}
-		elseif($link_parent2=='disable') {
-			$term_links2 = 'disable';
-			$child_terms2 = 'disable';
-		}
-			// Link to mote value
-		elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
-			$link2MoteName = str_replace(' (Mote)', '', $link_parent2);
-			$child_terms2 = $projObj->getMoteByName($link2MoteName);
-		} else {
-			$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
-			$child_terms2 = get_term_children($parent_id2->term_id, $rootTaxName);
-		}
-	}
-
-		// Determine whether title is default title of marker post or another (custom) field
-	$title_mote = $projSettings->views->select->title;
-	if ($title_mote != 'the_title') {
-		$temp_mote = $projObj->getMoteByName($title_mote);
-		if (is_null($temp_mote)) {
-			trigger_error("Modal view title assigned to unknown mote");
-		}
-		$title_mote = $temp_mote->cf;
-	}
+	$mQuery->selectContent = array_unique($mQuery->selectContent);
 
 		// Begin with head node
-	$markers = createTreeNode($eps->settings->head, $project_id, $projObj, $rootTaxName, $nameCF,
-					$childrenCF, $childrenDelim, $selectContent,
-					$audio, $transcript, $transcript2, $timecode,
-					$title_mote, $link_parent, $child_terms, $link_parent2, $child_terms2);
+	$markers = createTreeNode($eps->settings->head, $mQuery, $childrenCF, $childrenDelim, $nameCF);
 
 	array_push($json_Object, $markers);
-	return $json_Object;
+
+	die(json_encode($json_Object));
 } // createMarkerTree()
-
-
-// Enable for both editing and viewing
-
-add_action('wp_ajax_dhpGetMarkerTree', 'dhpGetMarkerTree' );
-add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkerTree');
-
-// dhpGetMarkers()
-// PURPOSE:	Handle Ajax call to get all markers for a Project
-// INPUT:	$_POST['project'] is ID of Project
-// RETURNS:	JSON object of marker values in tree form (see createMarkerTree above)
-// ASSUMES: Current Entry Point (at index) is a Tree view
-
-function dhpGetMarkerTree()
-{
-	$dhp_project = $_POST['project'];
-	$index =		$_POST['index'];
-
-	$mArray = createMarkerTree($dhp_project, $index);
-
-	die(json_encode($mArray));
-} // dhpGetMarkerTree()
 
 
 // ====================== AJAX Functions ======================
