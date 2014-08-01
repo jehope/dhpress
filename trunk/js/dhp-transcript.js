@@ -24,7 +24,7 @@ var dhpTranscript = {
     {
         var appendPos;
         var playingNow = false;
-        var primeAudio = true;
+        var primeAudio = true;      // This is for quirk/bug in SoundCloud -- it has to be playing before seek can be done
         var fullTranscript = (transParams.timecode == -1);
 
             // Initialize this object's variables
@@ -87,10 +87,14 @@ var dhpTranscript = {
         jQuery('.transcript-ep').on('click', function(evt) {
             if(jQuery(evt.target).hasClass('type-timecode')) {
                 var seekToTime = jQuery(evt.target).closest('.type-timecode').data('timecode');
-                scWidget.seekTo(seekToTime);
-                if(!playingNow) {
+
+                    // seekTo doesn't work unless sound is already playing
+                if (!playingNow) {
                     playingNow = true;
                     scWidget.play();
+                    scWidget.seekTo(seekToTime);
+                } else {
+                    scWidget.seekTo(seekToTime);                    
                 }
             }
         });
