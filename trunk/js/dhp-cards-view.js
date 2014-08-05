@@ -473,11 +473,6 @@ var dhpCardsView = {
 
             // Markers are last array in data
         _.each(dhpCardsView.rawData[dhpCardsView.rawData.length-1]['features'], function(theFeature, index) {
-                // little error-check
-            if (theFeature.type !== 'Feature') {
-                throw new Error("Error in marker array");
-            }
-
                 // If there is no data specifically about card, data will not be sent
             if (theFeature.card && theFeature.card.title && theFeature.card.title != 'disable') {
                 theTitle = theFeature.card.title;

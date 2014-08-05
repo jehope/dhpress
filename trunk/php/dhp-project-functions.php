@@ -610,6 +610,8 @@ function dhpGetMarkers()
 	$projObj = $mQuery->projObj;
 	$eps = $mQuery->projSettings->eps[$index];
 
+	$addFeature = false;
+
 	switch ($eps->type) {
 	case "map":
 			// Which field used to encode Lat-Long on map?
@@ -623,6 +625,7 @@ function dhpGetMarkers()
 				array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
 			}
 		}
+		$addFeature = true;
 		break;
 
 	case "pinboard":
@@ -699,7 +702,11 @@ function dhpGetMarkers()
 
 			// Feature will hold properties and some other values for each marker
 		$thisFeature = array();
-		$thisFeature['type']    = 'Feature';
+
+			// Only add property if necessary
+		if ($addFeature) {
+			$thisFeature['type']    = 'Feature';
+		}
 
 			// Most data goes into properties field
 		$thisFeaturesProperties = $mQuery->getMarkerProperties($markerID);
