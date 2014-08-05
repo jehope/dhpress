@@ -25,10 +25,10 @@
 		    ],
 		    "eps": [										// contents of settings depends on type of entry point
 		    	{
-		            "type": String ("map" | "cards" | "pinboard" ),
+		            "type": String ("map" | "cards" | "pinboard" | "tree" | "time"),
 		            "label" : String (short and unique across entry points),
-
-		            "settings": {									// Map settings are as follows
+									// Map settings are as follows
+		            "settings": {
 		                "lat": Number,
 		                "lon": Number,
 		                "zoom": Number,
@@ -47,8 +47,8 @@
 		                    String (name of mote), ...
 		                ]
 		            }
-
-		            "settings" : {									// Topic Cards settings are as follows
+									// Topic Cards settings are as follows
+		            "settings" : {
 						"title": String (name of mote),				// to display on top of card
 		            	"width" : String,							// card width: "auto", thin", "med-width", "wide"
 		            	"height" : String,							// card height: "auto", "short", "med-height", "tall"
@@ -65,8 +65,8 @@
 							// Array of mote names to use to sort cards (Short Text, Number types)
 						]
 		            }
-
-		            "settings" : {									// Pinboard settings are as follows
+									// Pinboard settings are as follows
+		            "settings" : {
 		                "imageURL" : String,						// complete URL to background image
 		            	"width" : Number,							// Pixel width of background image
 		            	"height" : Number,							// Pixel height of background image
@@ -82,8 +82,8 @@
 		                	} , ...
 		                ]
 		            }
-
-		            "settings" : {									// Tree settings are as follows
+									// Tree settings are as follows
+		            "settings" : {
 		            	"form" : String,							// Tree form: flat, radial, segment
 		            	"width" : Number,							// Pixel width of tree visualization
 		            	"height" : Number,							// Pixel height of tree visualization
@@ -95,6 +95,22 @@
 		            	"padding" : Number,							// Size of padding (in pixels - form dependent)
 		                "color": String (name of mote)				// For color of mote
 		            }
+									// Timeline settings are as follows
+		            "settings" : {
+						 "date" : String (name of mote),			// mote which provides date range
+		                 "color" : String (name of mote),           // mote to determine color of card
+		                 "label" : String (name of mote),           // mote to display on hover
+		                 "width" : Integer,							// pixel width of timeline chart
+		                 "height" : Integer,						// pixel height of timeline chart
+		                 "bandHt" : Integer,                        // pixel height of top band rows (also used for fontSize)
+		                 "wAxisLbl" : Integer,                      // pixel width of min/max labels on axis
+		                 "rows" : Integer,                          // Number of rows (tracks) of time events
+		                 "from" : Date,                             // Earliest date to show in timeline
+		                 "to"   : Date,                             // Latest date to show in timeline
+		                 "openFrom": Date,                          // Initial window's start (begin date)
+		                 "openTo": Date                             // Initial window's start (end date)
+             		}
+
 		        }
 		    },
 		    "views": {

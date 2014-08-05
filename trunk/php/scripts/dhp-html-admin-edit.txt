@@ -30,6 +30,7 @@
                     <option value="Long Text">Long Text</option>
                     <option value="Lat/Lon Coordinates">Lat/Lon Coordinates</option>
                     <option value="X-Y Coordinates">X-Y Coordinates</option>
+                    <option value="Date">Date Range</option>
                     <option value="Pointer">Pointer</option>
                     <option value="Image">Image</option>
                     <option value="Link To">Link To</option>
@@ -53,6 +54,7 @@
             <button data-bind="jqButton, click: createCardsEP">New Cards</button>
             <button data-bind="jqButton, click: createPinEP">New Pinboard</button>
             <button data-bind="jqButton, click: createTreeEP">New Tree</button>
+            <button data-bind="jqButton, click: createTimeEP">New Timeline</button>
           </p>
           <div data-bind="template: { name: calcEPTemplate, foreach: entryPoints, as: 'theEP' }"></div>
       </div>
@@ -244,7 +246,7 @@
     <ul>
         <li>Card short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Card Title <select data-bind="value: theEP.settings.title, options: $root.anyTxtDMoteNames"></select></li>
-        <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Values must be configured for colors)</li>
+        <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Must be configured for colors)</li>
         <li>Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="9"/>&nbsp;
         Width <select data-bind="value: theEP.settings.width">
                               <option value="auto">Automatic</option>
@@ -310,8 +312,8 @@
             <input data-bind="value: theEP.settings.imageURL" type="text" size="48"/>
         </li>
         <li>Background Image Size: Width (in pixels)
-            <input data-bind="value: theEP.settings.width" type="text" size="4"/>
-            Height (in pixels) <input data-bind="value: theEP.settings.height" type="text" size="4"/>
+            <input data-bind="value: theEP.settings.width" type="number" size="4"/>
+            Height (in pixels) <input data-bind="value: theEP.settings.height" type="number" size="4"/>
         </li>
         <li>Pin marker: Size (circle and diamond only) <select data-bind="value: theEP.settings.size">
                 <option value="s">Small</option>
@@ -365,24 +367,59 @@
     <ul>
         <li>Tree short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Tree Panel Size: Width (in pixels)
-            <input data-bind="value: theEP.settings.width" type="text" size="4"/>
-            Height (in pixels) <input data-bind="value: theEP.settings.height" type="text" size="4"/>
+            <input data-bind="value: theEP.settings.width" type="number" size="4"/>
+            Height (in pixels) <input data-bind="value: theEP.settings.height" type="number" size="4"/>
         </li>
         <li>Type of Tree <select data-bind="value: theEP.settings.form">
                 <option value="flat">Flat Tree</option>
                 <option value="radial">Radial Tree</option>
                 <option value="segment">Segmented Wheel</option>
             </select>&nbsp;
-            Padding (meaning depends on tree type) <input data-bind="value: theEP.settings.padding" type="text" size="3"/>
+            Padding (meaning depends on tree type) <input data-bind="value: theEP.settings.padding" type="number" size="3"/>
         </li>
         <li>Head/Top Marker of Tree <input data-bind="value: theEP.settings.head" type="text" size="24"/>
             Children stored in <select data-bind="value: theEP.settings.children, options: $root.pointerMoteNames"></select>
         </li>
         <li>Marker label <select data-bind="value: theEP.settings.label, options: $root.anyTxtMoteNames"></select>
-            Font size (pixels) <input data-bind="value: theEP.settings.fSize" type="text" size="2"/>
-            Marker radius (pixels) <input data-bind="value: theEP.settings.radius" type="text" size="2"/>
+            Font size (pixels) <input data-bind="value: theEP.settings.fSize" type="number" size="2"/>
+            Marker radius (pixels) <input data-bind="value: theEP.settings.radius" type="number" size="2"/>
         </li>
-        <li>Marker Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Values must be configured for colors)</li>
+        <li>Marker Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Must be configured for colors)</li>
+    </ul>
+</script>
+
+
+<!-- Timeline Entry Point Templates -->
+<script type="text/html" id="ep-time-template">
+    <h2><b>Timeline Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Timeline</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
+    <ul>
+        <li>Timeline short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
+        <li>Timeline Total Chart Size: Width (in pixels)
+            <input data-bind="value: theEP.settings.width" type="number" size="4"/>
+            Height (in pixels) <input data-bind="value: theEP.settings.height" type="number" size="4"/>
+        </li>
+        <li>Date range <select data-bind="value: theEP.settings.date, options: $root.dateMoteNames"></select>
+          Label <select data-bind="value: theEP.settings.label, options: $root.anyTxtMoteNames"></select>
+          Marker Color <select data-bind="value: theEP.settings.color, options: $root.stMoteNames"></select> (Must be configured for colors)
+        </li>
+        <li>Height of each band (in pixels) <input data-bind="value: theEP.settings.bandHt" type="number" size="4"/>
+          Total number of bands <input data-bind="value: theEP.settings.rows" type="number" size="3"/>
+        </li>
+        <li>Width of start/end axis labels <input data-bind="value: theEP.settings.wAxisLbl" type="number" size="3"/></li>
+        <li>Timeline start date <input data-bind="value: theEP.settings.from" type="text" size="12"/>
+          to end date <input data-bind="value: theEP.settings.to" type="text" size="12"/>
+        </li>
+        <li>Zoom window start date <input data-bind="value: theEP.settings.openFrom" type="text" size="12"/>
+          to end date <input data-bind="value: theEP.settings.openTo" type="text" size="12"/>
+        </li>
     </ul>
 </script>
 
@@ -445,6 +482,7 @@
             <option value="Long Text">Long Text</option>
             <option value="Lat/Lon Coordinates">Lat/Lon Coordinates</option>
             <option value="X-Y Coordinates">X-Y Coordinates</option>
+            <option value="Date">Date Range</option>
             <option value="Pointer">Pointer</option>
             <option value="Image">Image</option>
             <option value="Link To">Link To</option>

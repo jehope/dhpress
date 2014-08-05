@@ -221,7 +221,29 @@ jQuery(document).ready(function($) {
     self.settings.radius = ko.observable(epSettings.settings.radius);
     self.settings.padding = ko.observable(epSettings.settings.padding);
     self.settings.color = ko.observable(epSettings.settings.color);
-  } // PinboardEntryPoint()
+  } // TreeEntryPoint()
+
+
+    // Class constructor for Timeline Entry Point
+  var TimeEntryPoint = function(epSettings) {
+    var self = this;
+
+    self.type = 'time';
+    self.label= ko.observable(epSettings.label || 'name me');
+    self.settings = { };
+    self.settings.date = ko.observable(epSettings.settings.date);
+    self.settings.color = ko.observable(epSettings.settings.color);
+    self.settings.label = ko.observable(epSettings.settings.label);
+    self.settings.width = ko.observable(epSettings.settings.width);
+    self.settings.height = ko.observable(epSettings.settings.height);
+    self.settings.bandHt = ko.observable(epSettings.settings.bandHt);
+    self.settings.wAxisLbl = ko.observable(epSettings.settings.wAxisLbl);
+    self.settings.rows = ko.observable(epSettings.settings.rows);
+    self.settings.from = ko.observable(epSettings.settings.from);
+    self.settings.to = ko.observable(epSettings.settings.to);
+    self.settings.openFrom = ko.observable(epSettings.settings.openFrom);
+    self.settings.openTo = ko.observable(epSettings.settings.openTo);
+  } // TimeEntryPoint()
 
     // Create new "blank" layer to store in Map entry point
     // NOTES: opacity is the only property that needs double binding
@@ -424,6 +446,21 @@ jQuery(document).ready(function($) {
           savedEP.settings.padding = theEP.settings.padding();
           savedEP.settings.color = theEP.settings.color();
           break;
+
+        case 'time':
+          savedEP.settings.date  = theEP.settings.date();
+          savedEP.settings.color = theEP.settings.color();
+          savedEP.settings.label = theEP.settings.label();
+          savedEP.settings.width = theEP.settings.width();
+          savedEP.settings.height = theEP.settings.height();
+          savedEP.settings.bandHt = theEP.settings.bandHt();
+          savedEP.settings.wAxisLbl = theEP.settings.wAxisLbl();
+          savedEP.settings.rows = theEP.settings.rows();
+          savedEP.settings.from = theEP.settings.from();
+          savedEP.settings.to = theEP.settings.to();
+          savedEP.settings.openFrom = theEP.settings.openFrom();
+          savedEP.settings.openTo = theEP.settings.openTo();
+          break;
         } // switch ep type
         projSettings.eps.push(savedEP);
       }); // for each EP
@@ -537,6 +574,9 @@ jQuery(document).ready(function($) {
     }, self);
     self.pointerMoteNames = ko.computed(function() {
       return doGetMoteNames(['Pointer']);
+    }, self);
+    self.dateMoteNames = ko.computed(function() {
+      return doGetMoteNames(['Date']);
     }, self);
     self.stMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text']);
@@ -1286,6 +1326,30 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new pinboard entry point
+    self.createTimeEP = function() {
+      var _blankTreeEP = {
+        type: 'time',
+        label: 'name me',
+        settings: {
+          date: '',
+          color: '',
+          label: '',
+          width: 1000,
+          height: 1000,
+          bandHt: '13',
+          wAxisLbl: '32',
+          rows: '25',
+          from: '',
+          to: '',
+          openFrom: '',
+          openTo: ''
+        }
+      };
+      self.setEP(_blankTreeEP);
+      self.settingsDirty(true);
+    };
+
       // PURPOSE: Programmatically add an entry point to the settings (not via user interface)
     self.setEP = function(theEP) {
       var newEP;
@@ -1301,6 +1365,9 @@ jQuery(document).ready(function($) {
         break;
       case 'tree':
         newEP = new TreeEntryPoint(theEP);
+        break;
+      case 'time':
+        newEP = new TimeEntryPoint(theEP);
         break;
       }
       self.entryPoints.push(newEP);
@@ -1338,6 +1405,8 @@ jQuery(document).ready(function($) {
         return 'ep-pin-template';
       case 'tree':
         return 'ep-tree-template';
+      case 'time':
+        return 'ep-time-template';
       }
     }; // calcEPTemplate()
 
@@ -1550,8 +1619,9 @@ jQuery(document).ready(function($) {
             }
           });
           break;
-        case 'tree':
         case 'cards':
+        case 'tree':
+        case 'time':
           var colorName = theEP.settings.color();
           if (colorName && colorName !== '' && colorName !== 'disable') {
             if (linkList.indexOf(colorName) == -1) {

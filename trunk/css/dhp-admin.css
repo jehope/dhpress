@@ -7,10 +7,12 @@
 body {
 	background: none;
 }
+
 /* Fixes menu spacing that bootstrap overrides */
 ul.wp-submenu {
 	margin-left: 0;
 }
+
 /* Fixes spacing that bootstrap overrides */
 .submitbox label {
 	display: inline;
