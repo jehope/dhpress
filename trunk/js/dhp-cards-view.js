@@ -474,8 +474,8 @@ var dhpCardsView = {
             // Markers are last array in data
         _.each(dhpCardsView.rawData[dhpCardsView.rawData.length-1]['features'], function(theFeature, index) {
                 // If there is no data specifically about card, data will not be sent
-            if (theFeature.card && theFeature.card.title && theFeature.card.title != 'disable') {
-                theTitle = theFeature.card.title;
+            if (theFeature.title && theFeature.title != 'disable') {
+                theTitle = theFeature.title;
             } else {
                 theTitle = null;
             }

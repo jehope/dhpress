@@ -15,9 +15,11 @@ define( 'DHP_SCRIPT_PROJ_VIEW',  'dhp-script-proj-view.txt' );
 define( 'DHP_SCRIPT_MAP_VIEW',   'dhp-script-map-view.txt' );
 define( 'DHP_SCRIPT_CARDS_VIEW',   'dhp-script-cards-view.txt' );
 define( 'DHP_SCRIPT_PINBOARD_VIEW',   'dhp-script-pin-view.txt' );
-define( 'DHP_SCRIPT_TREE_VIEW',   'dhp-script-tree-view.txt' );
 
-// define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unused
+// define( 'DHP_SCRIPT_TREE_VIEW',   'dhp-script-tree-view.txt' );   // currently unneeded
+// define( 'DHP_SCRIPT_TIME_VIEW',   'dhp-script-time-view.txt' );   // currently unneeded
+
+// define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unneeded
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
 
 
@@ -558,16 +560,14 @@ function getCategoryValues($parent_term, $taxonomy)
 			// {	"type": "FeatureCollection",
 			// 	 	"features" :
 			// 		[
-			// 			{ "type" : "Feature",
+			// 			{ "type" : "Feature",	// Only added to FeatureCollections created for Maps
 			//							// Only if map or pinboard
 			// 			  "geometry" : {
 			//					"type" : "Point",
 			//					"coordinates" : LongLat (or X-Y)
 			//			  },
-			//							// Only if topic card
-			//			  "card" : {
-			//					"title": String
-			//			  },
+			//			  "date" : String, 	// Only if Timeline
+			// 			  "title" : String, // Only if Timeline or Topic Card
 			// 			  "properties" :
 			// 				[
 			//							// All data corresponding to categories/legends associated with marker
@@ -616,6 +616,7 @@ function dhpGetMarkers()
 	case "map":
 			// Which field used to encode Lat-Long on map?
 		$mapPointsMote = $projObj->getMoteByName($eps->settings->coordMote);
+		$mapCF = $mapPointsMote->cf;
 			// Find all possible legends/filters for this map -- each marker needs these fields
 		$filters = $eps->settings->legends;
 			// Collect all possible category values/tax names for each mote in all filters
@@ -630,7 +631,8 @@ function dhpGetMarkers()
 
 	case "pinboard":
 			// Which field used to encode Lat-Long on map?
-		$pinPointsMote = $mQuery->projObj->getMoteByName($eps->settings->coordMote);
+		$pinPointsMote = $projObj->getMoteByName($eps->settings->coordMote);
+		$pinCF = $pinPointsMote->cf;
 			// Find all possible legends/filters for this pinboard -- each marker needs these fields
 		$filters = $eps->settings->legends;
 			// Collect all possible category values/tax names for each mote in all filters
@@ -645,12 +647,12 @@ function dhpGetMarkers()
 	case "cards":
 			// Convert title mote to custom field --
 			// If no title, no need (currently) to create cards property for markers
-		$cardTitle = $eps->settings->title;
-		if ($cardTitle == null || $cardTitle == '' || $cardTitle == 'disable') {
-			$cardTitle = null;
-		} else if ($cardTitle != 'the_title') {
-			$cardTitle = $projObj->getCustomFieldForMote($cardTitle);
-			if (is_null($cardTitle)) {
+		$titleMote = $eps->settings->title;
+		if ($titleMote == null || $titleMote == '' || $titleMote == 'disable') {
+			$titleMote = null;
+		} else if ($titleMote != 'the_title') {
+			$titleMote = $projObj->getCustomFieldForMote($titleMote);
+			if (is_null($titleMote)) {
 				trigger_error("Card view title assigned to unknown mote");
 			}
 		}
@@ -684,6 +686,20 @@ function dhpGetMarkers()
 			array_push($mQuery->selectContent, $theContent);
 		}
 		break;
+
+	case "time":
+		$dateMote = $projObj->getMoteByName($eps->settings->date);
+		$dateCF = $dateMote->cf;
+		$titleMote = $eps->settings->label;
+		if ($titleMote == null || $titleMote == '' || $titleMote == 'disable') {
+			$titleMote = null;
+		} else if ($titleMote != 'the_title') {
+			$titleMote = $projObj->getCustomFieldForMote($titleMote);
+			if (is_null($titleMote)) {
+				trigger_error("Timeline view title assigned to unknown mote");
+			}
+		}
+		break;
 	} // switch
 
 		// Ensure that any new content requested from markers is not redundant
@@ -715,8 +731,8 @@ function dhpGetMarkers()
 
 			// Map visualization features?
 			// Skip marker if missing necessary LatLong data or not valid numbers
-		if (!is_null($mapPointsMote)) {
-			$latlon = get_post_meta($markerID, $mapPointsMote->cf, true);
+		if ($mapCF != null) {
+			$latlon = get_post_meta($markerID, $mapCF, true);
 			if (empty($latlon)) {
 				continue;
 			}
@@ -725,28 +741,35 @@ function dhpGetMarkers()
 											"coordinates"=> array((float)$split[1],(float)$split[0]));
 		}
 
-			// Pinboard visualization features?
+			// Pinboard visualization features
 			// Skip marker if missing necessary LatLong data or not valid numbers
-		if (!is_null($pinPointsMote)) {
-			$xycoord = get_post_meta($markerID, $pinPointsMote->cf, true);
+		if ($pinCF != null) {
+			$xycoord = get_post_meta($markerID, $pinCF, true);
 			if (empty($xycoord)) {
 				continue;
 			}
 			$split = split(',', $xycoord);
 			$thisFeature['geometry'] = array("type"=>"Point",
-											"coordinates"=> array((float)$split[0],(float)$split[1]));
+											"coordinates"=> array((float)$split[0], (float)$split[1]));
 		}
 
-			// NOTE: $cardTitle is currently only card-specific field
-		if ($cardTitle != null) {
-			$cardValues = array();
-			if ($cardTitle=='the_title') {
+			// Timeline visualization features
+			// Skip marker if missing necessary Date
+		if ($dateMote != null) {
+			$date = get_post_meta($markerID, $dateMote, true);
+			if (empty($date)) {
+				continue;
+			}
+			$thisFeature['date'] = $date;
+		}
+
+		if ($titleMote != null) {
+			if ($titleMote=='the_title') {
 				$title = get_the_title();
 			} else {
-				$title = get_post_meta($markerID, $cardTitle, true);
+				$title = get_post_meta($markerID, $titleMote, true);
 			}
-			$cardValues['title'] = $title;
-			$thisFeature['card'] = $cardValues;
+			$thisFeature['title'] = $title;
 		}
 
 			// Store all of the properties
@@ -2221,6 +2244,10 @@ function dhp_mod_page_content($content) {
 				// currently nothing is used
 	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_TREE_VIEW);
 			break;
+		case 'time':
+				// currently nothing is used
+	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_TREE_VIEW);
+			break;
 		}
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
 		break;
@@ -2343,10 +2370,18 @@ function dhp_page_template( $page_template )
 			wp_enqueue_style('dhp-tree-css', plugins_url('/css/dhp-tree.css',  dirname(__FILE__)) );
 
 			wp_enqueue_script('d3', plugins_url('/lib/d3.min.js', dirname(__FILE__)));
-			wp_enqueue_script('dhp-tree-view', plugins_url('/js/dhp-tree-view.js', dirname(__FILE__)), 
-				'd3' );
+			wp_enqueue_script('dhp-tree-view', plugins_url('/js/dhp-tree-view.js', dirname(__FILE__)), 'd3' );
 
 	    	array_push($dependencies, 'd3', 'dhp-tree-view');
+	    	break;
+
+	    case 'time':
+			wp_enqueue_style('dhp-time-css', plugins_url('/css/dhp-time.css',  dirname(__FILE__)) );
+
+			wp_enqueue_script('d3', plugins_url('/lib/d3.min.js', dirname(__FILE__)));
+			wp_enqueue_script('dhp-time-view', plugins_url('/js/dhp-time-view.js', dirname(__FILE__)), 'd3' );
+
+	    	array_push($dependencies, 'd3', 'dhp-time-view');
 	    	break;
 
 	    default:

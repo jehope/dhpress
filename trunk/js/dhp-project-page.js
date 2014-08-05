@@ -253,6 +253,12 @@ jQuery(document).ready(function($) {
 
         updateVizSpace = dhpTreeView.dhpUpdateSize;
         break;
+
+    case 'time':
+        dhpTimeView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, callBacks);
+
+        updateVizSpace = dhpTimeView.dhpUpdateSize;
+        break;
     }
 
         // Transcription widget
