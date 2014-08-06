@@ -9,7 +9,7 @@
 
 var dhpCardsView = {
 
-        // Contains fields: ajaxURL, projectID, vizIndex, cardsEP, callBacks
+        // Contains fields: cardsEP, callBacks
         //                  rawData
         //                  colorValues   = array of { id, icon_url }
         //                  defTextColor  = default text color
@@ -32,9 +32,6 @@ var dhpCardsView = {
         var menuHTML, active;
 
             // Save reset data for later
-        dhpCardsView.ajaxURL        = ajaxURL;
-        dhpCardsView.projectID      = projectID;
-        dhpCardsView.vizIndex       = vizIndex;
         dhpCardsView.moteDefs       = moteDefs;
         dhpCardsView.cardsEP        = cardsEP;
         dhpCardsView.callBacks      = callBacks;
@@ -140,17 +137,17 @@ var dhpCardsView = {
 
         jQuery.ajax({
             type: 'POST',
-            url: dhpCardsView.ajaxURL,
+            url: ajaxURL,
             data: {
                 action: 'dhpGetMarkers',
-                project: dhpCardsView.projectID,
-                index: dhpCardsView.vizIndex
+                project: projectID,
+                index: vizIndex
             },
             success: function(data, textStatus, XMLHttpRequest)
             {
                 dhpCardsView.rawData = JSON.parse(data);
                 dhpCardsView.createCards();
-                dhpCardsView.callBacks.remLoadingModal();
+                callBacks.remLoadingModal();
             },
             error: function(XMLHttpRequest, textStatus, errorThrown)
             {

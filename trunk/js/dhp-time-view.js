@@ -4,13 +4,17 @@
 // ASSUMES: A view area for the timeline has been marked with HTML div as "dhp-visual"
 // USES:    JavaScript libraries D3, jQuery
 
-// Contains fields: ajaxURL, projectID, vizIndex, tlEP, callBacks
+// Contains fields: tlEP, callBacks
 //                  rawData = raw time marker data
 //                  colorValues = Legend filter
 //                  features = FeatureCollection array
 
 //                  events = array { start[Date], end[Date], instant[Boolean], track[Integer], index[Integer] }
 //                  bands = array for each view of events: [0] = zoom view, [1] = entire timeline
+
+//                  fromDate, toDate = total time frame
+//                  openFromDate, openToDate = time frame in zoom window
+//                  instantOffset = amount of time added to start date for display purposes (proportional)
 
 var dhpTimeline = {
 
@@ -22,23 +26,32 @@ var dhpTimeline = {
         //          callBacks    = object loaded with project-page callback functions
     initialize: function(ajaxURL, projectID, vizIndex, tlEP, vizParams, callBacks)
     {
-        dhpTimeline.ajaxURL     = ajaxURL;
-        dhpTimeline.projectID   = projectID;
-        dhpTimeline.vizIndex    = vizIndex;
         dhpTimeline.tlEP        = tlEP;
         dhpTimeline.callBacks   = callBacks;
 
         dhpTimeline.maxTracks   = typeof(tlEP.rows)  === 'number' ? tlEP.rows  : parseInt(tlEP.rows);
-        dhpTimeline.fromDate    = dhpTimeline.parseADate(tlEP.from, true);
-        dhpTimeline.toDate      = dhpTimeline.parseADate(tlEP.to, false);
-        dhpTimeline.openFromDate= dhpTimeline.parseADate(tlEP.openFrom, true);
-        dhpTimeline.openToDate  = dhpTimeline.parseADate(tlEP.openTo, false);
+        if (tlEP.from == null || tlEP.from == '') {
+            dhpTimeline.fromDate = null;
+        } else {
+            dhpTimeline.fromDate = dhpTimeline.parseADate(tlEP.from, true);
+        }
+        if (tlEP.to == null || tlEP.to == '') {
+            dhpTimeline.toDate = null;
+        } else {
+            dhpTimeline.toDate = dhpTimeline.parseADate(tlEP.to, true);
+        }
+        if (tlEP.openFrom == null || tlEP.openFrom == '') {
+            dhpTimeline.openFromDate = null;
+        } else {
+            dhpTimeline.openFromDate = dhpTimeline.parseADate(tlEP.openFrom, true);
+        }
+        if (tlEP.openTo == null || tlEP.openTo == '') {
+            dhpTimeline.openToDate = null;
+        } else {
+            dhpTimeline.openToDate = dhpTimeline.parseADate(tlEP.openTo, true);
+        }
 
             // Make calculations based on timespan
-
-            // make size of instananeous event 5% of total time period space
-            // Make this an Entry Point parameter?
-        dhpTimeline.instantOffset = (dhpTimeline.toDate - dhpTimeline.fromDate) * .03;
 
             // Prepare GUI data and components
         dhpTimeline.bandHt      = typeof(tlEP.bandHt)  === 'number' ? tlEP.bandHt  : parseInt(tlEP.bandHt);
@@ -48,12 +61,20 @@ var dhpTimeline = {
         dhpTimeline.bands       = new Array(2);
         dhpTimeline.components  = [];   // All the components of the timeline for redrawing
 
+            // Create control div for Legend Key
+        jQuery("#dhp-visual").append('<div id="dhp-controls"></div>');
+
+            // Create placeholder for Legend menu
+        jQuery('#dhp-controls').append(Handlebars.compile(jQuery("#dhp-script-legend-head").html()));
+
+        jQuery(document).foundation();
+
             // Append div for timeline into visualization space
         jQuery('#dhp-visual').append('<div id="dhp-timeline"><div>');
 
             // Total width and eight
-        dhpTimeline.tWidth      = typeof(tlEP.width)  === 'number' ? tlEP.width  : parseInt(tlEP.width);
-        dhpTimeline.tHeight     = typeof(tlEP.height) === 'number' ? tlEP.height : parseInt(tlEP.height);
+        dhpTimeline.tWidth     = typeof(tlEP.width)  === 'number' ? tlEP.width  : parseInt(tlEP.width);
+        dhpTimeline.tHeight    = typeof(tlEP.height) === 'number' ? tlEP.height : parseInt(tlEP.height);
         dhpTimeline.labelW     = typeof(tlEP.wAxisLbl) === 'number' ? tlEP.wAxisLbl : parseInt(tlEP.wAxisLbl);
 
             // Create SVG and frame for graphics
@@ -84,48 +105,44 @@ var dhpTimeline = {
                 .attr("class", "chart")
                 .attr("clip-path", "url(#chart-area)" );
 
-        // dhpTimeline.loadEvents();
+        jQuery.ajax({
+            type: 'POST',
+            url: ajaxURL,
+            data: {
+                action: 'dhpGetMarkers',
+                project: projectID,
+                index: vizIndex
+            },
+            success: function(data, textStatus, XMLHttpRequest)
+            {
+                dhpTimeline.rawData = JSON.parse(data);
 
-            // For testing purposes we will take the ajaxURL as the JSON array
-        dhpTimeline.rawData = ajaxURL;
+                    // First deal with Legend
+                dhpTimeline.legendTerms = dhpTimeline.rawData[0];
+                dhpTimeline.legendTerms = dhpTimeline.legendTerms.terms;
+                callBacks.create1Legend(tlEP.color, dhpTimeline.legendTerms);
 
-        dhpTimeline.processEvents();
-        dhpTimeline.createBand(0);
-        dhpTimeline.createBand(1);
-        dhpTimeline.createXAxis(0);
-        dhpTimeline.createXAxis(1);
-        dhpTimeline.createLabels(0);
-        dhpTimeline.createLabels(1);
-        dhpTimeline.createBrush();
+                    // Now handle the actual events and create timeline
+                dhpTimeline.processEvents();
+                dhpTimeline.createBand(0);
+                dhpTimeline.createBand(1);
+                dhpTimeline.createXAxis(0);
+                dhpTimeline.createXAxis(1);
+                dhpTimeline.createLabels(0);
+                dhpTimeline.createLabels(1);
+                dhpTimeline.createBrush();
 
-        dhpTimeline.components.forEach(function (component) {
-            component.redraw();
+                dhpTimeline.components.forEach(function (component) {
+                    component.redraw();
+                });
+                callBacks.remLoadingModal();
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown)
+            {
+               alert(errorThrown);
+            }
         });
     }, // initialize()
-
-        // RETURNS: A hex color for the background of data item
-    getItemColor: function(d)
-    {
-        var colors = ['#8A2BE2', '#A52A2A', '#7FFF00', '#6495ED'];
-
-        return colors[d.index % 4];
-    },
-
-    getTextColor: function(bColor)
-    {
-            // Prepare var for float value (? needed)
-        var brightness = 1.1;
-
-        brightness = ((parseInt(bColor.substr(1,2), 16) * 299.0) +
-                    (parseInt(bColor.substr(3,2), 16) * 587.0) +
-                    (parseInt(bColor.substr(5,2), 16) * 114.0)) / 255000.0;
-
-        if (brightness >= 0.5) {
-            return "black";
-        } else {
-            return "white";
-        }
-    }, // getTextColor()
 
 
         // PURPOSE: Parse a text string as a single Date
@@ -196,27 +213,6 @@ var dhpTimeline = {
         // ASSUMES: dhpTimeline.rawData contains all time data
     processEvents: function()
     {
-            // Find which filter array contains color values
-            // Set dhpTimeline.colorValues to array of color values in AJAX data
-        dhpTimeline.colorValues = null;
-        if (dhpTimeline.tlEP.color && dhpTimeline.tlEP.color !== '' && dhpTimeline.tlEP.color !== 'disable') {
-            dhpTimeline.rawData.find(function(theArray, index) {
-                    // Last array is markers -- if we got here, it doesn't exist
-                if (index == (dhpTimeline.rawData.length-1)) {
-                    dhpTimeline.colorValues = null;
-                    return false;
-                }
-                if (theArray.type !== 'filter') {
-                    throw new Error("Error in filter array at "+index);
-                }
-                if (theArray.name === dhpTimeline.tlEP.color) {
-                    dhpTimeline.colorValues = theArray.terms;
-                    return true;
-                }
-                return false;
-            });
-        }
-
         var today = new Date();
 
             // PURPOSE: Define how to compare dates
@@ -274,6 +270,20 @@ var dhpTimeline = {
 
             // Put events in order
         dhpTimeline.events.sort(compareDescending);
+
+            // If no end date given in EP, get them from data
+            // If no start date given in EP, get them from data
+        if (dhpTimeline.fromDate == null) {
+            var firstDate = dhpTimeline.events[dhpTimeline.events.length-1];
+            dhpTimeline.fromDate = firstDate.start;
+        }
+        if (dhpTimeline.lastDate == null) {
+            var lastDate = dhpTimeline.events[0];
+            dhpTimeline.toDate = lastDate.end;
+        }
+
+            // from and to dates are now set, can set size of instananeous event: 5% of total time period space
+        dhpTimeline.instantOffset = (dhpTimeline.toDate - dhpTimeline.fromDate) * .03;
 
             // Won't need to keep this array
         var tracks = new Array(dhpTimeline.maxTracks);
@@ -378,8 +388,8 @@ var dhpTimeline = {
             .attr("class", function (d) { return d.instant ? "part instant" : "part interval"; })
             .on("click", function(d) {
               var eventData = dhpTimeline.features[d.index];
-                // ## Change
-              console.log("Selected node name "+eventData.name+" which is index "+d.index);
+              dhpTimeline.callBacks.showMarkerModal(eventData);
+              // console.log("Selected node name "+eventData.name+" which is index "+d.index);
             });
 
             // Finish specifying data for date ranges
@@ -388,7 +398,9 @@ var dhpTimeline = {
         intervals.append("rect")
             .attr("width", "100%")
             .attr("height", "100%")
-            .style("fill", function(d) { return dhpTimeline.getItemColor(d); });
+            .style("fill", function(d) {
+                return dhpTimeline.callBacks.getItemColor(d.properties.categories, dhpTimeline.legendTerms);
+            });
 
             // Label for interval -- only for top band
         if (index == 0) {
@@ -397,7 +409,7 @@ var dhpTimeline = {
                 .attr("x", 1)
                 .attr("y", 10)
                 .style("fill", function(d) {
-                  return dhpTimeline.getTextColor(dhpTimeline.getItemColor(d));
+                  return dhpTimeline.callBacks.getTextColor(dhpTimeline.callBacks.getItemColor(d.properties.categories, dhpTimeline.legendTerms));
                 })
                 .text(function (d) {
                     var feature = dhpTimeline.features[d.index];
@@ -412,7 +424,9 @@ var dhpTimeline = {
             .attr("cx", band.itemHeight / 2)
             .attr("cy", band.itemHeight / 2)
             .attr("r", 5)
-            .style("fill", function(d) { return dhpTimeline.getItemColor(d); });
+            .style("fill", function(d) {
+                return dhpTimeline.callBacks.getItemColor(d.properties.categories, dhpTimeline.legendTerms);
+            });
 
         if (index == 0) {
                 // Create label
@@ -566,6 +580,16 @@ var dhpTimeline = {
     {
         var band = dhpTimeline.bands[1];
 
+        var timeSpan = dhpTimeline.toDate - dhpTimeline.fromDate;
+
+            // If no zoom range provided, set to 20% of total in the middle
+        if (dhpTimeline.openFromDate == null) {
+            dhpTimeline.openFromDate = dhpTimeline.fromDate + (timeSpan/2) - (timeSpan*.1);
+        }
+        if (dhpTimeline.openToDate == null) {
+            dhpTimeline.openToDate = dhpTimeline.ToDate - (timeSpan/2) + (timeSpan*.1);
+        }
+
             // Create logical controller
         var brush = d3.svg.brush()
             .x(band.xScale.range([0, band.w]))
@@ -585,8 +609,6 @@ var dhpTimeline = {
         var xBrush = band.g.append("svg")
             .attr("class", "brush")
             .call(brush);
-
-        var lArrow = 
 
             // Container is opaque rectangle with black arrow handles
         xBrush.selectAll("rect")

@@ -737,6 +737,7 @@ function dhpGetMarkers()
 				continue;
 			}
 			$split = split(',', $latlon);
+				// Have to reverse order for GeoJSON
 			$thisFeature['geometry'] = array("type"=>"Point",
 											"coordinates"=> array((float)$split[1],(float)$split[0]));
 		}
@@ -1945,7 +1946,7 @@ function dhpPerformTests()
 					// Tree legends currently only support color
 				$results .= verifyLegend($projObj, $ep->settings->color, 1);
 				break;
-			}
+			} // switch()
 		}
 
 			// Go through markers and ensure all values are valid:

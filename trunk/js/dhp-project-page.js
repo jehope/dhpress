@@ -255,9 +255,9 @@ jQuery(document).ready(function($) {
         break;
 
     case 'time':
-        dhpTimeView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, callBacks);
+        dhpTimeline.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, callBacks);
 
-        updateVizSpace = dhpTimeView.dhpUpdateSize;
+        updateVizSpace = dhpTimeline.dhpUpdateSize;
         break;
     }
 

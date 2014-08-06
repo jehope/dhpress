@@ -48,9 +48,6 @@ var dhpPinboardView = {
         dhpPinboardView.controlHeight   = 49;  // max(navButtonHeight[30], LegendHeight[45]) + 4
 
             // Save visualization data for later
-        dhpPinboardView.ajaxURL        = ajaxURL;
-        dhpPinboardView.projectID      = projectID;
-        dhpPinboardView.vizIndex       = vizIndex;
         dhpPinboardView.pinboardEP     = pinboardEP;
         dhpPinboardView.viewParams     = viewParams;
         dhpPinboardView.callBacks      = callBacks;
@@ -148,17 +145,17 @@ var dhpPinboardView = {
                 // dhpPinboardView.loadMarkers();
                 jQuery.ajax({
                     type: 'POST',
-                    url: dhpPinboardView.ajaxURL,
+                    url: ajaxURL,
                     data: {
                         action: 'dhpGetMarkers',
-                        project: dhpPinboardView.projectID,
-                        index: dhpPinboardView.vizIndex
+                        project: projectID,
+                        index: vizIndex
                     },
                     success: function(data, textStatus, XMLHttpRequest)
                     {
                         dhpPinboardView.createDataObjects(JSON.parse(data));
                             // Remove Loading modal
-                        dhpPinboardView.callBacks.remLoadingModal();
+                        callBacks.remLoadingModal();
                         jQuery('.reveal-modal-bg').remove();
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown)

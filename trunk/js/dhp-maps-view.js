@@ -46,9 +46,6 @@ var dhpMapsView = {
         dhpMapsView.checkboxHeight = 12; // default checkbox height
 
             // Save reset data for later
-        dhpMapsView.ajaxURL        = ajaxURL;
-        dhpMapsView.projectID      = projectID;
-        dhpMapsView.vizIndex       = vizIndex;
         dhpMapsView.mapEP          = mapEP;
         dhpMapsView.viewParams     = viewParams;
         dhpMapsView.callBacks      = callBacks;
@@ -81,11 +78,11 @@ var dhpMapsView = {
 
         jQuery.ajax({
             type: 'POST',
-            url: dhpMapsView.ajaxURL,
+            url: ajaxURL,
             data: {
                 action: 'dhpGetMarkers',
-                project: dhpMapsView.projectID,
-                index: dhpMapsView.vizIndex
+                project: projectID,
+                index: vizIndex
             },
             success: function(data, textStatus, XMLHttpRequest)
             {

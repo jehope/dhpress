@@ -7,7 +7,7 @@
 
 var dhpTreeView = {
 
-        // Contains fields: ajaxURL, projectID, treeEP, viewParams, vizIndex
+        // Contains fields: treeEP, viewParams
         //                  callBacks = object containing callback functions to dhp-project-page
 
         //					rawAjaxData = raw data returned from AJAX
@@ -45,9 +45,6 @@ var dhpTreeView = {
         dhpTreeView.controlHeight   = 49;  // LegendHeight[45] + 4
 
             // Save visualization data for later
-        dhpTreeView.ajaxURL        = ajaxURL;
-        dhpTreeView.projectID      = projectID;
-        dhpTreeView.vizIndex       = vizIndex;
         dhpTreeView.treeEP         = treeEP;
         dhpTreeView.callBacks      = callBacks;
 
@@ -162,7 +159,7 @@ var dhpTreeView = {
 
                 dhpTreeView.createLegend();
                 dhpTreeView.createGraph();
-                dhpTreeView.callBacks.remLoadingModal();
+                callBacks.remLoadingModal();
             },
             error: function(XMLHttpRequest, textStatus, errorThrown)
             {
