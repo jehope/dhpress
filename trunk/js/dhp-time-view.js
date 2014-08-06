@@ -29,31 +29,32 @@ var dhpTimeline = {
         dhpTimeline.tlEP        = tlEP;
         dhpTimeline.callBacks   = callBacks;
 
-        dhpTimeline.maxTracks   = typeof(tlEP.rows)  === 'number' ? tlEP.rows  : parseInt(tlEP.rows);
-        if (tlEP.from == null || tlEP.from == '') {
-            dhpTimeline.fromDate = null;
-        } else {
+            // For now, from/to dates are required, so leave this commented
+        // if (tlEP.from == null || tlEP.from == '') {
+        //     dhpTimeline.fromDate = null;
+        // } else {
             dhpTimeline.fromDate = dhpTimeline.parseADate(tlEP.from, true);
-        }
-        if (tlEP.to == null || tlEP.to == '') {
-            dhpTimeline.toDate = null;
-        } else {
+        // }
+        // if (tlEP.to == null || tlEP.to == '') {
+        //     dhpTimeline.toDate = null;
+        // } else {
             dhpTimeline.toDate = dhpTimeline.parseADate(tlEP.to, true);
-        }
-        if (tlEP.openFrom == null || tlEP.openFrom == '') {
-            dhpTimeline.openFromDate = null;
-        } else {
+        // }
+        // if (tlEP.openFrom == null || tlEP.openFrom == '') {
+        //     dhpTimeline.openFromDate = null;
+        // } else {
             dhpTimeline.openFromDate = dhpTimeline.parseADate(tlEP.openFrom, true);
-        }
-        if (tlEP.openTo == null || tlEP.openTo == '') {
-            dhpTimeline.openToDate = null;
-        } else {
+        // }
+        // if (tlEP.openTo == null || tlEP.openTo == '') {
+        //     dhpTimeline.openToDate = null;
+        // } else {
             dhpTimeline.openToDate = dhpTimeline.parseADate(tlEP.openTo, true);
-        }
+        // }
 
             // Make calculations based on timespan
 
             // Prepare GUI data and components
+        dhpTimeline.maxTracks   = typeof(tlEP.rows)  === 'number' ? tlEP.rows  : parseInt(tlEP.rows);
         dhpTimeline.bandHt      = typeof(tlEP.bandHt)  === 'number' ? tlEP.bandHt  : parseInt(tlEP.bandHt);
         dhpTimeline.bandGap     = 22;           // pixels between one band and the next
         dhpTimeline.trackGap    = 1;            // pixels between one track and another
@@ -271,16 +272,21 @@ var dhpTimeline = {
             // Put events in order
         dhpTimeline.events.sort(compareDescending);
 
-            // If no end date given in EP, get it from data
-        if (dhpTimeline.fromDate == null) {
-            var firstDate = dhpTimeline.events[dhpTimeline.events.length-1];
-            dhpTimeline.fromDate = JSON.parse(JSON.stringify(firstDate.start));
-        }
-            // If no start date given in EP, get it from data
-        if (dhpTimeline.toDate == null) {
-            var lastDate = dhpTimeline.events[0];
-            dhpTimeline.toDate = JSON.parse(JSON.stringify(lastDate.end));
-        }
+            // Since zoom window open must be set, so must this -- leave this for now
+        //     // If no end date given in EP, get it from data
+        // if (dhpTimeline.fromDate == null) {
+        //     var firstDate = dhpTimeline.events[dhpTimeline.events.length-1];
+        //     dhpTimeline.fromDate = new Date(firstDate.start.getUTCFullYear(),
+        //                                     firstDate.start.getMonth(),
+        //                                     firstDate.start.getDate());
+        // }
+        //     // If no start date given in EP, get it from data
+        // if (dhpTimeline.toDate == null) {
+        //     var lastDate = dhpTimeline.events[0];
+        //     dhpTimeline.toDate = new Date(lastDate.end.getUTCFullYear(),
+        //                                   lastDate.end.getMonth(),
+        //                                   lastDate.end.getDate());
+        // }
 
             // from and to dates are now set, can set size of instananeous event: 5% of total time period space
         dhpTimeline.instantOffset = (dhpTimeline.toDate - dhpTimeline.fromDate) * .03;
@@ -582,15 +588,19 @@ var dhpTimeline = {
     {
         var band = dhpTimeline.bands[1];
 
-        var timeSpan = dhpTimeline.toDate - dhpTimeline.fromDate;
+            // This calculation is not well supported by current JS Date
+        // var openTime = dhpTimeline.fromDate.getTime();
+        // var timeSpan = dhpTimeline.toDate - dhpTimeline.fromDate;
 
-            // If no zoom range provided, set to 20% of total in the middle
-        if (dhpTimeline.openFromDate == null) {
-            dhpTimeline.openFromDate = dhpTimeline.fromDate + (timeSpan/2) - (timeSpan*.1);
-        }
-        if (dhpTimeline.openToDate == null) {
-            dhpTimeline.openToDate = dhpTimeline.toDate - (timeSpan/2) + (timeSpan*.1);
-        }
+        //     // If no zoom range provided, set to 20% of total in the middle
+        // if (dhpTimeline.openFromDate == null) {
+        //     // dhpTimeline.openFromDate = dhpTimeline.fromDate + (timeSpan/2) - (timeSpan*.1);
+        //     dhpTimeline.openFromDate = new Date(openTime + (timeSpan*.4));
+        // }
+        // if (dhpTimeline.openToDate == null) {
+        //     // dhpTimeline.openToDate = dhpTimeline.toDate - (timeSpan/2) + (timeSpan*.1);
+        //     dhpTimeline.openToDate = new Date(openTime + (timeSpan*.6));
+        // }
 
             // Create logical controller
         var brush = d3.svg.brush()
