@@ -367,9 +367,11 @@ var dhpTimeline = {
             .attr("id", "band"+band.id)
             .attr("transform", "translate(0," + band.t +  ")");
 
-            // Only top band will have text labels
+            // Only top band will have text labels -- compute relative size and position
+        var fontSize, fontPos;
         if (index == 0) {
-            band.g.style("font-size", band.itemHeight+'px');
+            fontSize = '' + (band.itemHeight*.75) +'px';
+            fontPos = band.itemHeight*.80;
         }
 
             // Create enclosing container for the band
@@ -389,7 +391,6 @@ var dhpTimeline = {
             .on("click", function(d) {
                 var eventData = dhpTimeline.features[d.index];
                 dhpTimeline.callBacks.showMarkerModal(eventData);
-              // console.log("Selected node name "+eventData.name+" which is index "+d.index);
             });
 
             // Finish specifying data for date ranges
@@ -407,12 +408,13 @@ var dhpTimeline = {
         if (index == 0) {
             intervals.append("text")
                 .attr("class", "intervalLabel")
-                .attr("x", 1)
-                .attr("y", 10)
+                .attr("x", 2)
+                .attr("y", fontPos)
                 .style("fill", function(d) {
                     var eventData = dhpTimeline.features[d.index];
                   return dhpTimeline.callBacks.getTextColor(dhpTimeline.callBacks.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms));
                 })
+                .style("font-size", fontSize)
                 .text(function (d) {
                     var feature = dhpTimeline.features[d.index];
                     return feature.title;
@@ -436,7 +438,7 @@ var dhpTimeline = {
             instants.append("text")
                 .attr("class", "instantLabel")
                 .attr("x", 15)
-                .attr("y", 10)
+                .attr("y", fontPos)
                 .text(function (d) {
                     var feature = dhpTimeline.features[d.index];
                     return feature.name;
