@@ -688,8 +688,15 @@ function dhpGetMarkers()
 		break;
 
 	case "time":
+			// Create a legend for the color values
+		$term = get_term_by('name', $eps->settings->color, $mQuery->rootTaxName);
+		if ($term) {
+			array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
+		}
+
 		$dateMote = $projObj->getMoteByName($eps->settings->date);
 		$dateCF = $dateMote->cf;
+
 		$titleMote = $eps->settings->label;
 		if ($titleMote == null || $titleMote == '' || $titleMote == 'disable') {
 			$titleMote = null;
@@ -756,8 +763,8 @@ function dhpGetMarkers()
 
 			// Timeline visualization features
 			// Skip marker if missing necessary Date
-		if ($dateMote != null) {
-			$date = get_post_meta($markerID, $dateMote, true);
+		if ($dateCF != null) {
+			$date = get_post_meta($markerID, $dateCF, true);
 			if (empty($date)) {
 				continue;
 			}
@@ -929,7 +936,7 @@ function dhpGetMarkerTree()
 			trigger_error("Tree view color assigned to unknown mote");
 		}
 			// Create a legend for the color values
-		$term = get_term_by('name', $colorCF, $mQuery->rootTaxName);
+		$term = get_term_by('name', $eps->settings->color, $mQuery->rootTaxName);
 		if ($term) {
 			array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
 		}

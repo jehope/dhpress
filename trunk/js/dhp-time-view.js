@@ -24,7 +24,7 @@ var dhpTimeline = {
         //          vizIndex     = index of this visualization
         //			tlEP      	 = settings for timeline entry point (from project settings)
         //          callBacks    = object loaded with project-page callback functions
-    initialize: function(ajaxURL, projectID, vizIndex, tlEP, vizParams, callBacks)
+    initialize: function(ajaxURL, projectID, vizIndex, tlEP, callBacks)
     {
         dhpTimeline.tlEP        = tlEP;
         dhpTimeline.callBacks   = callBacks;
@@ -241,7 +241,7 @@ var dhpTimeline = {
             var newEvent = { };
             newEvent.index = index;
 
-            var dates = item.dates.split('/');
+            var dates = item.date.split('/');
 
                 // TO DO: Handle "open" as start date
             dates[0] = dates[0].trim();
@@ -271,15 +271,15 @@ var dhpTimeline = {
             // Put events in order
         dhpTimeline.events.sort(compareDescending);
 
-            // If no end date given in EP, get them from data
-            // If no start date given in EP, get them from data
+            // If no end date given in EP, get it from data
         if (dhpTimeline.fromDate == null) {
             var firstDate = dhpTimeline.events[dhpTimeline.events.length-1];
-            dhpTimeline.fromDate = firstDate.start;
+            dhpTimeline.fromDate = JSON.parse(JSON.stringify(firstDate.start));
         }
-        if (dhpTimeline.lastDate == null) {
+            // If no start date given in EP, get it from data
+        if (dhpTimeline.toDate == null) {
             var lastDate = dhpTimeline.events[0];
-            dhpTimeline.toDate = lastDate.end;
+            dhpTimeline.toDate = JSON.parse(JSON.stringify(lastDate.end));
         }
 
             // from and to dates are now set, can set size of instananeous event: 5% of total time period space
@@ -387,8 +387,8 @@ var dhpTimeline = {
             .attr("height", band.itemHeight)
             .attr("class", function (d) { return d.instant ? "part instant" : "part interval"; })
             .on("click", function(d) {
-              var eventData = dhpTimeline.features[d.index];
-              dhpTimeline.callBacks.showMarkerModal(eventData);
+                var eventData = dhpTimeline.features[d.index];
+                dhpTimeline.callBacks.showMarkerModal(eventData);
               // console.log("Selected node name "+eventData.name+" which is index "+d.index);
             });
 
@@ -399,7 +399,8 @@ var dhpTimeline = {
             .attr("width", "100%")
             .attr("height", "100%")
             .style("fill", function(d) {
-                return dhpTimeline.callBacks.getItemColor(d.properties.categories, dhpTimeline.legendTerms);
+                var eventData = dhpTimeline.features[d.index];
+                return dhpTimeline.callBacks.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms);
             });
 
             // Label for interval -- only for top band
@@ -409,11 +410,12 @@ var dhpTimeline = {
                 .attr("x", 1)
                 .attr("y", 10)
                 .style("fill", function(d) {
-                  return dhpTimeline.callBacks.getTextColor(dhpTimeline.callBacks.getItemColor(d.properties.categories, dhpTimeline.legendTerms));
+                    var eventData = dhpTimeline.features[d.index];
+                  return dhpTimeline.callBacks.getTextColor(dhpTimeline.callBacks.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms));
                 })
                 .text(function (d) {
                     var feature = dhpTimeline.features[d.index];
-                    return feature.name;
+                    return feature.title;
                 });
         }
 
@@ -425,7 +427,8 @@ var dhpTimeline = {
             .attr("cy", band.itemHeight / 2)
             .attr("r", 5)
             .style("fill", function(d) {
-                return dhpTimeline.callBacks.getItemColor(d.properties.categories, dhpTimeline.legendTerms);
+                var eventData = dhpTimeline.features[d.index];
+                return dhpTimeline.callBacks.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms);
             });
 
         if (index == 0) {
@@ -480,10 +483,7 @@ var dhpTimeline = {
                             anchor: 'end',
                             whichDate: function(min, max) { return max; }
                         };
-        var labelDefs = [];
-
-            // Multi-year span?
-        labelDefs.push(startLabel, endLabel);
+        var labelDefs = [startLabel, endLabel];
 
             // Create graphic container for labels just below main chart space
         var bandLabels = dhpTimeline.chart.append("g")
@@ -587,7 +587,7 @@ var dhpTimeline = {
             dhpTimeline.openFromDate = dhpTimeline.fromDate + (timeSpan/2) - (timeSpan*.1);
         }
         if (dhpTimeline.openToDate == null) {
-            dhpTimeline.openToDate = dhpTimeline.ToDate - (timeSpan/2) + (timeSpan*.1);
+            dhpTimeline.openToDate = dhpTimeline.toDate - (timeSpan/2) + (timeSpan*.1);
         }
 
             // Create logical controller

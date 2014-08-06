@@ -292,6 +292,7 @@ var dhpTreeView = {
             paths = dhpTreeView.vis.selectAll("path")
                 .data(dhpTreeView.partition.nodes(nodeData))
                 .enter().append("path")
+                .attr("class", "wheel")
                 .attr("d", dhpTreeView.arc)
                 .style("fill", function(d) {
                   return dhpTreeView.getItemColor(d.properties.categories);

@@ -59,3 +59,8 @@ path.arc {
   cursor: move;
   fill: #fff;
 }
+
+.wheel {
+  stroke: black;
+  stroke-width: 1px;
+}
