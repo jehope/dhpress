@@ -23,13 +23,6 @@ p {
     overflow: auto;
 }
 
-    /* Take over full screen but leave room for Nav bar */
-.fullscreen #dhp-visual {
-    width: 100%;
-    height: 100%;
-    top: 45px;
-}
-
     /* move top down to make room for head of nav bar */
     /* bottom padding necessary to compensate for top nav bar */
 .fullscreen #card-container {

@@ -12,20 +12,11 @@ body {
 
     /* MAJOR DIV CONTAINERS ======================= */
 
-#dhp-visual {
-/*	z-index: 1000; */
-}
-
-    /* Take over full screen but leave room for Nav bar */
-.fullscreen #dhp-visual {
-    width: 100%;
-    height: 100%;
-    top: 45px;
-}
-
     /* Enable scroll bar in case background image is too large */
 #svg-container {
 /*    z-index: 1000; */
+    position: relative;
+    top: 50px;
     border: 2px solid #000;
     overflow-x: auto;
     overflow-y: auto;
