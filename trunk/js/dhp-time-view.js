@@ -56,7 +56,8 @@ var dhpTimeline = {
             // Prepare GUI data and components
         dhpTimeline.maxTracks   = typeof(tlEP.rows)  === 'number' ? tlEP.rows  : parseInt(tlEP.rows);
         dhpTimeline.bandHt      = typeof(tlEP.bandHt)  === 'number' ? tlEP.bandHt  : parseInt(tlEP.bandHt);
-        dhpTimeline.bandGap     = 22;           // pixels between one band and the next
+        dhpTimeline.instRad     = (dhpTimeline.bandHt / 2) -1; // pixel radius of instantaneous circle
+        dhpTimeline.bandGap     = 25;           // pixels between one band and the next
         dhpTimeline.trackGap    = 1;            // pixels between one track and another
         dhpTimeline.labelH      = 16;           // pixel height of axis labels (font = labelH-3)
         dhpTimeline.bands       = new Array(2);
@@ -73,9 +74,10 @@ var dhpTimeline = {
             // Append div for timeline into visualization space
         jQuery('#dhp-visual').append('<div id="dhp-timeline"><div>');
 
-            // Total width and eight
+            // Total width and height of timeline area
         dhpTimeline.tWidth     = typeof(tlEP.width)  === 'number' ? tlEP.width  : parseInt(tlEP.width);
         dhpTimeline.tHeight    = typeof(tlEP.height) === 'number' ? tlEP.height : parseInt(tlEP.height);
+
         dhpTimeline.labelW     = typeof(tlEP.wAxisLbl) === 'number' ? tlEP.wAxisLbl : parseInt(tlEP.wAxisLbl);
 
             // Create SVG and frame for graphics
@@ -331,6 +333,9 @@ var dhpTimeline = {
         //          itemHeight = pixel height used by visible components in track
     createBand: function(index)
     {
+            // Band specific parameters for instantaneous events
+        var instCX, instCY, instR, instLabelX;
+
             // Create record about band
         var band = {};
         band.id = index;
@@ -345,12 +350,16 @@ var dhpTimeline = {
             band.trackHeight = dhpTimeline.bandHt;
             band.itemHeight = dhpTimeline.bandHt-1;
 
+            instCX = instCX = instR = dhpTimeline.instRad;
+            instLabelX = (dhpTimeline.instRad*2)+3
             // Bottom macro view?
         } else {
             band.t = (dhpTimeline.maxTracks * (dhpTimeline.bandHt + dhpTimeline.trackGap)) + dhpTimeline.bandGap;
             band.h = dhpTimeline.maxTracks * 2;
             band.trackHeight = 2;
             band.itemHeight = 1;
+            instCX = instCX = 0;
+            instR = 1;
         }
 
         band.parts = [];
@@ -418,7 +427,7 @@ var dhpTimeline = {
                 .attr("y", fontPos)
                 .style("fill", function(d) {
                     var eventData = dhpTimeline.features[d.index];
-                  return dhpTimeline.callBacks.getTextColor(dhpTimeline.callBacks.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms));
+                    return dhpTimeline.callBacks.getTextColor(dhpTimeline.callBacks.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms));
                 })
                 .style("font-size", fontSize)
                 .text(function (d) {
@@ -431,19 +440,20 @@ var dhpTimeline = {
         var instants = d3.select("#band" + band.id).selectAll(".instant");
             // Create circle for these
         instants.append("circle")
-            .attr("cx", band.itemHeight / 2)
-            .attr("cy", band.itemHeight / 2)
-            .attr("r", 5)
+            .attr("cx", instCX)
+            .attr("cy", instCY)
+            .attr("r", instR)
             .style("fill", function(d) {
                 var eventData = dhpTimeline.features[d.index];
                 return dhpTimeline.callBacks.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms);
             });
 
+            // Labels only on top zoom frame
         if (index == 0) {
                 // Create label
             instants.append("text")
                 .attr("class", "instantLabel")
-                .attr("x", 15)
+                .attr("x", instLabelX)
                 .attr("y", fontPos)
                 .text(function (d) {
                     var feature = dhpTimeline.features[d.index];
@@ -482,6 +492,7 @@ var dhpTimeline = {
                             x: 0,
                             left: 0,
                             anchor: 'start',
+                            textDelta: 2,
                             whichDate: function(min, max) { return min; }
                         };
         var endLabel = {
@@ -489,6 +500,7 @@ var dhpTimeline = {
                             x: band.l + band.w,
                             left: band.l + band.w - dhpTimeline.labelW,
                             anchor: 'end',
+                            textDelta: -3,
                             whichDate: function(min, max) { return max; }
                         };
         var labelDefs = [startLabel, endLabel];
@@ -497,7 +509,6 @@ var dhpTimeline = {
         var bandLabels = dhpTimeline.chart.append("g")
             .attr("id", "bandLabels"+index)
             .attr("transform", "translate(0," + (band.t + band.h + 1) +  ")")
-            .style("font-size", (dhpTimeline.labelH-5)+'px')
             .selectAll("#" + "bandLabels"+index)
                 // Create "g" for each of the start & end labels
             .data(labelDefs)
@@ -508,15 +519,15 @@ var dhpTimeline = {
             .attr("class", "bandLabel")
             .attr("x", function(label) { return label.left; })
             .attr("width", dhpTimeline.labelW)
-            .attr("height", dhpTimeline.labelH)
-            .style("opacity", 1);
+            .attr("height", dhpTimeline.labelH);
+            // .style("opacity", 1);
 
             // Add textual features for labels
         var labels = bandLabels.append("text")
             .attr("class", 'bandMinMaxLabel')
             .attr("id", function(label) { return label.name; } )
-            .attr("x", function(label) { return label.x; } )
-            .attr("y", dhpTimeline.labelH-3)
+            .attr("x", function(label) { return label.x+label.textDelta; } )
+            .attr("y", dhpTimeline.labelH-4)
             .attr("text-anchor", function(label) { return label.anchor; });
 
             // Needs to know how to draw itself

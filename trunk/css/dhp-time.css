@@ -85,13 +85,11 @@
 /* ---- Labels ---- */
 
 .bandLabel {
-    fill: #F0F0F0;
-    font: 10px sans-serif;
-    font-weight: bold;
+    fill: #99CCCC;
 }
 
 .bandMinMaxLabel {
-    fill: blue;
+    fill: #000066;
     font: 10px sans-serif;
     font-weight: bold;
 }
