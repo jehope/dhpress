@@ -92,8 +92,7 @@ var dhpTimeline = {
 
             // Threshold is used to determine at what point years, months or days should be displayed
             // It needs to be determined by proportion of screen space and label width
-        dhpTimeline.threshold  = (dhpTimeline.iWidth / (dhpTimeline.labelW*6));
-console.log("Threshold: "+dhpTimeline.threshold);
+        dhpTimeline.threshold  = (dhpTimeline.iWidth / (dhpTimeline.labelW*6.25));
 
             // Create svg element for rendering
         dhpTimeline.svg = d3.select('#dhp-timeline').append("svg")
@@ -548,8 +547,9 @@ console.log("Threshold: "+dhpTimeline.threshold);
             // Needs to know how to draw itself
         labels.redraw = function ()
         {
-            var min = band.xScale.domain()[0],
-                max = band.xScale.domain()[1];
+            var domainVals = band.xScale.domain();
+            var min = domainVals[0],
+                max = domainVals[1];
 
                 // This will be called for each label in turn
                 // What to print on label depends on scale of time periods
