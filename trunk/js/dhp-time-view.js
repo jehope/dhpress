@@ -2,6 +2,8 @@
 // Based initially on http://bl.ocks.org/rengel-de/5603464
 //      See also https://github.com/rengel-de/timeline
 // ASSUMES: A view area for the timeline has been marked with HTML div as "dhp-visual"
+// TO DO:   Handle case when from/to, openFrom/openTo are not provided by user by extracting
+//              them from data
 // USES:    JavaScript libraries D3, jQuery
 
 // Contains fields: tlEP, callBacks
@@ -63,6 +65,8 @@ var dhpTimeline = {
         dhpTimeline.bands       = new Array(2);
         dhpTimeline.components  = [];   // All the components of the timeline for redrawing
 
+        dhpTimeline.months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
             // Create control div for Legend Key
         jQuery("#dhp-visual").append('<div id="dhp-controls"></div>');
 
@@ -85,6 +89,11 @@ var dhpTimeline = {
             // Inner width and height
         dhpTimeline.iWidth = dhpTimeline.tWidth - margin.left - margin.right,
         dhpTimeline.iHeight = dhpTimeline.tHeight - margin.top - margin.bottom;
+
+            // Threshold is used to determine at what point years, months or days should be displayed
+            // It needs to be determined by proportion of screen space and label width
+        dhpTimeline.threshold  = (dhpTimeline.iWidth / (dhpTimeline.labelW*6));
+console.log("Threshold: "+dhpTimeline.threshold);
 
             // Create svg element for rendering
         dhpTimeline.svg = d3.select('#dhp-timeline').append("svg")
@@ -214,6 +223,7 @@ var dhpTimeline = {
         // PURPOSE: Handle loading time events -- create all visuals from them
         //          Converts raw event data into usable data in events array
         // ASSUMES: dhpTimeline.rawData contains all time data
+        //          fromDate/toDate is set for "open" date value to work properly
     processEvents: function()
     {
         var today = new Date();
@@ -246,16 +256,19 @@ var dhpTimeline = {
 
             var dates = item.date.split('/');
 
-                // TO DO: Handle "open" as start date
             dates[0] = dates[0].trim();
-            newEvent.start = dhpTimeline.parseADate(dates[0], true);
+            if (dates[0] == 'open') {
+                newEvent.start = dhpTimeline.fromDate;
+            } else {
+                newEvent.start = dhpTimeline.parseADate(dates[0], true);
+            }
 
                 // Is it a range of from/to?
             if (dates.length == 2) {
                 newEvent.instant = false;
                 dates[1] = dates[1].trim();
                 if (dates[1] === 'open') {
-                    newEvent.end = today;
+                    newEvent.end = dhpTimeline.toDate;
                 } else {
                     newEvent.end = dhpTimeline.parseADate(dates[1], false);
                 }
@@ -290,7 +303,7 @@ var dhpTimeline = {
         //                                   lastDate.end.getDate());
         // }
 
-            // from and to dates are now set, can set size of instananeous event: 5% of total time period space
+            // from and to dates are now set, can set size of instananeous event: 3% of total time period space
         dhpTimeline.instantOffset = (dhpTimeline.toDate - dhpTimeline.fromDate) * .03;
 
             // Won't need to keep this array
@@ -345,21 +358,23 @@ var dhpTimeline = {
             // Top zoom band?
         if (index == 0) {
             band.t = 0;
+            instCX = instCX = instR = dhpTimeline.instRad;
+            instLabelX = (dhpTimeline.instRad*2)+3
+
                 // 1 pixel space between bands
             band.h = dhpTimeline.maxTracks * (dhpTimeline.bandHt + dhpTimeline.trackGap);
             band.trackHeight = dhpTimeline.bandHt;
             band.itemHeight = dhpTimeline.bandHt-1;
 
-            instCX = instCX = instR = dhpTimeline.instRad;
-            instLabelX = (dhpTimeline.instRad*2)+3
             // Bottom macro view?
         } else {
-            band.t = (dhpTimeline.maxTracks * (dhpTimeline.bandHt + dhpTimeline.trackGap)) + dhpTimeline.bandGap;
-            band.h = dhpTimeline.maxTracks * 2;
-            band.trackHeight = 2;
-            band.itemHeight = 1;
-            instCX = instCX = 0;
+            band.trackHeight = 3;
+            band.itemHeight = 2;
+            instCX = instCX = 1;
             instR = 1;
+
+            band.t = (dhpTimeline.maxTracks * (dhpTimeline.bandHt + dhpTimeline.trackGap)) + dhpTimeline.bandGap;
+            band.h = (dhpTimeline.maxTracks * band.trackHeight) + 2;
         }
 
         band.parts = [];
@@ -538,15 +553,18 @@ var dhpTimeline = {
 
                 // This will be called for each label in turn
                 // What to print on label depends on scale of time periods
+                // Have tried to use reasonable heuristic
             labels.text(function (label) {
-                if (max.getUTCFullYear() > min.getUTCFullYear()) {
+                var timeDiff = max.getUTCFullYear() - min.getUTCFullYear();
+                if (timeDiff > dhpTimeline.threshold) {
                     return label.whichDate(min,max).getUTCFullYear();
-                    // Span of months within same year?
-                } else if (max.getMonth() > min.getMonth()) {
-                    return label.whichDate(min,max).getMonth();
-                    // Just days within same month?
                 } else {
-                    return label.whichDate(min,max).getDate();
+                    timeDiff = (timeDiff*12)+(max.getMonth() - min.getMonth());
+                    if (timeDiff > dhpTimeline.threshold) {
+                        return dhpTimeline.months[label.whichDate(min,max).getMonth()];
+                    } else {
+                        return label.whichDate(min,max).getDate();
+                    }
                 }
             })
         }; // redraw()
@@ -569,12 +587,17 @@ var dhpTimeline = {
             .tickSize(6, 0)
             .tickFormat(function (d) {
                 var dates = band.xScale.domain();
-                if (dates[1].getFullYear() > dates[0].getFullYear()) {
+                var timeDiff = dates[1].getFullYear() - dates[0].getFullYear();
+
+                if (timeDiff > dhpTimeline.threshold) {
                     return d.getUTCFullYear();
-                } else if (dates[1].getMonth() > dates[0].getMonth()) {
-                    return d.getMonth();
                 } else {
-                    return d.getDate();
+                    timeDiff = (timeDiff*12)+(dates[1].getMonth() - dates[0].getMonth());
+                    if (timeDiff > dhpTimeline.threshold) {
+                        return dhpTimeline.months[d.getMonth()];
+                    } else {
+                        return d.getDate();
+                    }
                 }
             } );
 

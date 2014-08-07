@@ -30,7 +30,7 @@
                     <option value="Long Text">Long Text</option>
                     <option value="Lat/Lon Coordinates">Lat/Lon Coordinates</option>
                     <option value="X-Y Coordinates">X-Y Coordinates</option>
-                    <option value="Date">Date Range</option>
+                    <option value="Date">Date</option>
                     <option value="Pointer">Pointer</option>
                     <option value="Image">Image</option>
                     <option value="Link To">Link To</option>
@@ -482,7 +482,7 @@
             <option value="Long Text">Long Text</option>
             <option value="Lat/Lon Coordinates">Lat/Lon Coordinates</option>
             <option value="X-Y Coordinates">X-Y Coordinates</option>
-            <option value="Date">Date Range</option>
+            <option value="Date">Date</option>
             <option value="Pointer">Pointer</option>
             <option value="Image">Image</option>
             <option value="Link To">Link To</option>

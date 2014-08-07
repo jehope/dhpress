@@ -98,4 +98,5 @@ svg {
 #layers-panel a.value {
     line-height: 15px !important;
     overflow: hidden;
+    margin-left: 4px;
 }
