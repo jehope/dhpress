@@ -1906,6 +1906,8 @@ jQuery(document).ready(function($) {
       $('#runTests').button({ disabled: true });
       $('#testResults').empty();
 
+        // Check global-level settings --------------
+
         // Home URL but no label, or vice-versa?
       if ((self.edHomeBtnLbl() && self.edHomeBtnLbl() != '') || (self.edHomeURL() && self.edHomeURL() != '')) {
         if (self.edHomeBtnLbl() == '' || self.edHomeURL() == '') {
@@ -1922,93 +1924,137 @@ jQuery(document).ready(function($) {
           $('#testResults').append('<p>Your project will not work until you import Markers which are associated with this Project (by using this Project ID).</p>');
       }
 
+        // Check the settings of Mote definitions ---------
+
       if (self.allMotes().length == 0) {
           $('#testResults').append('<p>Your project will not work until you define some motes.</p>');
       }
+
+      ko.utils.arrayForEach(self.allMotes(), function(theMote) {
+        switch(theMote.type) {
+        case 'Pointer':
+          if (theMote.delim == '') {
+            $('#testResults').append('<p>Motes of type Pointer require a delimiter character; the Mote named '+
+                                  theMote.name+' has not yet been assigned a delimiter.</p>');
+          }
+          break;
+        } // switch()
+      }); // forEach(motes)
+
+        // Check the settings of Entry Points -----------
 
       if (self.entryPoints().length == 0) {
           $('#testResults').append('<p>Your project will not work until you create at least one entry point.</p>');
       }
 
-        // Have necessary settings been set for all entry points?
       ko.utils.arrayForEach(self.entryPoints(), function(theEP) {
+          // Report errors with help of this utility function
+        function epErrorMessage(errString) {
+          $('#testResults').append('<p>'+errString+' (entry point "'+theEP.label()+'").</p>');
+        }
           // Ensure that all EPs have labels if multiple EPs
         if (theEP.label() == '' && self.entryPoints().length > 1) {
-          $('#testResults').append('<p>You have an labeled entry point. If you have multiple entry points, they must all be named.</p>');
+          $('#testResults').append('<p>You have an unlabeled entry point. All multiple entry points must be named.</p>');
         }
         switch(theEP.type) {
         case 'map':
             // Do maps have at least one legend?
           if (theEP.settings.legends().length == 0) {
-            $('#testResults').append('<p>You have not yet added a legend to the Map entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You have not yet added a legend to the Map');
           }
           if (theEP.settings.coordMote() == '') {
-            $('#testResults').append('<p>You must specify the mote that will provide the coordinate for the Map entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify the mote that will provide the coordinate for the Map');
           }
           break;
         case 'cards':
           var colorName = theEP.settings.color();
           if (!colorName || colorName === 'disable') {
-            $('#testResults').append('<p>We recommend specifying a color legend for the Cards visualization, but none is provided (for the Cards given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('We recommend specifying a color legend for the Cards visualization, but none is provided');
           }
             // Do cards have at least one content mote?
           if (theEP.settings.content().length == 0) {
-            $('#testResults').append('<p>You haven\'t yet specified content for the Cards visualization (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You haven\'t yet specified content for the Cards visualization');
           }
           break;
         case 'pinboard':
             // Do pinboards have at least one legend?
           if (theEP.settings.legends().length == 0) {
-            $('#testResults').append('<p>You have not yet added a legend to the Pinboard entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You have not yet added a legend to the Pinboard');
           }
           if (theEP.settings.coordMote() == '') {
-            $('#testResults').append('<p>You must specify the mote that will provide the coordinate for the Pinboard entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify the mote that will provide the coordinate for the Pinboard');
           }
           var w;
           if (theEP.settings.width() == '' || isNaN(w=parseInt(theEP.settings.width(),10)) || w <= 0) {
-            $('#testResults').append('<p>You must specify a valid background image width for the Pinboard entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify a valid background image width for the Pinboard');
           }
           var h;
           if (theEP.settings.height() == '' || isNaN(h=parseInt(theEP.settings.height(),10)) || h <= 0) {
-            $('#testResults').append('<p>You must specify a valid background image height for the Pinboard entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify a valid background image height for the Pinboard');
           }
           break;
         case 'tree':
           if (theEP.settings.head() == '') {
-            $('#testResults').append('<p>You must specify the head marker for the Tree entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify the head marker for the Tree');
           }
           if (theEP.settings.children() == '') {
-            $('#testResults').append('<p>You must specify the Pointer mote which indicates descending generations for the Tree entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify the Pointer mote which indicates descending generations for the Tree');
           }
           if (theEP.settings.label() == '') {
-            $('#testResults').append('<p>You must specify the mote which provides node labels for the Tree entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify the mote which provides node labels for the Tree');
           }
           var i;
           if (theEP.settings.fSize() == '' || isNaN(i=parseInt(theEP.settings.fSize(),10)) || i <= 8) {
-            $('#testResults').append('<p>You must specify a valid font size for the Tree entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify a valid font size for the Tree');
           }
           if (theEP.settings.width() == '' || isNaN(i=parseInt(theEP.settings.width(),10)) || i <= 20) {
-            $('#testResults').append('<p>You must specify a valid image width for the Tree entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify a valid image width for the Tree');
           }
           if (theEP.settings.height() == '' || isNaN(i=parseInt(theEP.settings.height(),10)) || i <= 20) {
-            $('#testResults').append('<p>You must specify a valid image height for the Tree entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify a valid image height for the Tree');
           }
           break;
-
+        case 'time':
+          if (theEP.settings.date() == '') {
+            epErrorMessage('You must specify the Date mote for the Timeline');
+          }
+          if (theEP.settings.color() == '') {
+            epErrorMessage('You must specify a color legend for the Timeline');
+          }
+          if (theEP.settings.label() == '') {
+            epErrorMessage('You must specify a color legend for the Timeline');
+          }
+          var i;
+          if (theEP.settings.width() == '' || isNaN(i=parseInt(theEP.settings.width(),10)) || i <= 20) {
+            epErrorMessage('You must specify a valid image width for the Timeline');
+          }
+          if (theEP.settings.height() == '' || isNaN(i=parseInt(theEP.settings.height(),10)) || i <= 20) {
+            epErrorMessage('You must specify a valid image height for the Timeline');
+          }
+          if (theEP.settings.bandHt() == '' || isNaN(i=parseInt(theEP.settings.bandHt(),10)) || i <= 8) {
+            epErrorMessage('You must specify a valid band height for the Timeline');
+          }
+          if (theEP.settings.wAxisLbl() == '' || isNaN(i=parseInt(theEP.settings.wAxisLbl(),10)) || i <= 10) {
+            epErrorMessage('You must specify a valid x axis label width for the Timeline');
+          }
+          if (theEP.settings.rows() == '' || isNaN(i=parseInt(theEP.settings.rows(),10)) || i <= 4) {
+            epErrorMessage('You must specify a valid number of bands for the Timeline');
+          }
+            // Check Dates and their formats
+          var dateRegEx = /^-?\d+(-(\d)+)?(-(\d)+)?$/;
+          if (!dateRegEx.test(theEP.settings.from())) {
+            epErrorMessage('You must specify a valid Date for the start frame of the Timeline');
+          }
+          if (!dateRegEx.test(theEP.settings.to())) {
+            epErrorMessage('You must specify a valid Date for the end frame of the Timeline');
+          }
+          if (!dateRegEx.test(theEP.settings.openFrom())) {
+            epErrorMessage('You must specify a valid Date for the start zoom of the Timeline');
+          }
+          if (!dateRegEx.test(theEP.settings.openTo())) {
+            epErrorMessage('You must specify a valid Date for the end zoom of the Timeline');
+          }
+          break;
         } // switch
       });
 

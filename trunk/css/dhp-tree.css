@@ -17,14 +17,14 @@ body {
 /*    z-index: 1000; */
     position: relative;
     top: 50px;
-    border: 2px solid #000;
     overflow-x: auto;
     overflow-y: auto;
 }
 
-svg {
+#svg-container svg {
 /*    z-index: 1000; */
     background: #C0C0C0;
+    border: 1px solid #000;
 }
 
     /* SVG MARKER ELEMENTS ============================ */
