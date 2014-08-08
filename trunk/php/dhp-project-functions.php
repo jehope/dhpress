@@ -1989,8 +1989,7 @@ function dhpPerformTests()
 					case 'Link To':
 					case 'Image':
 							// Just look at beginning and end of URL
-						if (preg_match("!^(https?|ftp)://[^\s]*!i",
-								$moteValue) === 0) {
+						if (preg_match("!^(https?|ftp)://[^\s]*!i", $moteValue) === 0) {
 							$results .= '<p>Invalid URL';
 							$error = true;
 						}
@@ -2013,6 +2012,12 @@ function dhpPerformTests()
 					case 'Pointer':
 							// Only way to check would be to explode string and check existence of each
 							// marker, but this would likely break the WP Query loop -- so ignore for now
+						break;
+					case 'Date':
+						if (preg_match("/^-?\d+(-(\d)+)?(-(\d)+)?(\/-?\d+(-(\d)+)?(-(\d)+)?)?$/", $moteValue) === 0) {
+							$results .= '<p>Invalid Date range';
+							$error = true;
+						}
 						break;
 					} // switch
 						// Add rest of error information
