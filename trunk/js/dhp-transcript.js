@@ -90,7 +90,7 @@ var dhpTranscript = {
             jQuery('#trans-widget').append('<div id="ytapiplayer">You need Flash player 8+ and JavaScript enabled to view this video.</div>');
             var params = { allowScriptAccess: 'always' };
             var atts = { id: 'myytplayer' };
-            swfobject.embedSWF('http://www.youtube.com/v/'++'?enablejsapi=1&playerapiid=ytplayer&version=3',
+            swfobject.embedSWF('http://www.youtube.com/v/'+transParams.video+'?enablejsapi=1&playerapiid=ytplayer&version=3',
                                    'ytapiplayer', '425', '356', '8', null, null, params, atts);
         }
 

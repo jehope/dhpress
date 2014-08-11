@@ -55,6 +55,9 @@ var dhpTimeline = {
 
             // Make calculations based on timespan
 
+            // from and to dates are now set, can set size of instananeous event: 3% of total time period space
+        dhpTimeline.instantOffset = (dhpTimeline.toDate - dhpTimeline.fromDate) * .03;
+
             // Prepare GUI data and components
         dhpTimeline.maxTracks   = typeof(tlEP.rows)  === 'number' ? tlEP.rows  : parseInt(tlEP.rows);
         dhpTimeline.bandHt      = typeof(tlEP.bandHt)  === 'number' ? tlEP.bandHt  : parseInt(tlEP.bandHt);
@@ -301,9 +304,7 @@ var dhpTimeline = {
         //                                   lastDate.end.getMonth(),
         //                                   lastDate.end.getDate());
         // }
-
-            // from and to dates are now set, can set size of instananeous event: 3% of total time period space
-        dhpTimeline.instantOffset = (dhpTimeline.toDate - dhpTimeline.fromDate) * .03;
+        //      // Would need to add a calculation of instantOffset
 
             // Won't need to keep this array
         var tracks = new Array(dhpTimeline.maxTracks);
@@ -357,7 +358,7 @@ var dhpTimeline = {
             // Top zoom band?
         if (index == 0) {
             band.t = 0;
-            instCX = instCX = instR = dhpTimeline.instRad;
+            instCX = instCY = instR = dhpTimeline.instRad;
             instLabelX = (dhpTimeline.instRad*2)+3
 
                 // 1 pixel space between bands
@@ -369,7 +370,7 @@ var dhpTimeline = {
         } else {
             band.trackHeight = 3;
             band.itemHeight = 2;
-            instCX = instCX = 1;
+            instCX = instCY = 1;
             instR = 1;
 
             band.t = (dhpTimeline.maxTracks * (dhpTimeline.bandHt + dhpTimeline.trackGap)) + dhpTimeline.bandGap;
@@ -469,9 +470,11 @@ var dhpTimeline = {
                 .attr("class", "instantLabel")
                 .attr("x", instLabelX)
                 .attr("y", fontPos)
+                .style("font-size", fontSize)
+                .style("fill", '#000')
                 .text(function (d) {
                     var feature = dhpTimeline.features[d.index];
-                    return feature.name;
+                    return feature.title;
                 });
         }
 
