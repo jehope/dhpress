@@ -36,6 +36,7 @@ jQuery(document).ready(function($) {
           },
           transcript: {
             audio: 'disable',
+            video: 'disable',
             transcript: 'disable',
             transcript2: 'disable',
             timecode: 'disable',
@@ -498,7 +499,7 @@ jQuery(document).ready(function($) {
 
       projSettings.views.transcript = {};
       projSettings.views.transcript.audio = self.edTrnsAudio();
-      projSettings.views.transcript.audio = self.edTrnsVideo();
+      projSettings.views.transcript.video = self.edTrnsVideo();
       projSettings.views.transcript.transcript = self.edTrnsTransc();
       projSettings.views.transcript.transcript2 = self.edTrnsTransc2();
       projSettings.views.transcript.timecode = self.edTrnsTime();

@@ -489,6 +489,7 @@ class DHPressMarkerQuery
     public $rootTaxName;
 
     public $audio;
+    public $video;
     public $transcript;
     public $transcript2;
     public $timecode;
@@ -512,9 +513,9 @@ class DHPressMarkerQuery
     	$this->vizIndex = $index;
 
     		// Get Project related settings
-    	$this->projObj = new DHPressProject($projectID);
-		$this->rootTaxName  = $this->projObj->getRootTaxName();
-		$this->projSettings = $this->projObj->getAllSettings();
+    	$projObj = $this->projObj = new DHPressProject($projectID);
+		$projSettings = $this->projSettings = $projObj->getAllSettings();
+		$this->rootTaxName  = $projObj->getRootTaxName();
 
 			// Initialize placeholders for various feature variables
 		$this->filters = null;
@@ -527,40 +528,46 @@ class DHPressMarkerQuery
 			// By default, a marker's content is the set of data needed by select modal, but some
 			//	views may need to augment this
 		$this->selectContent = array();
-		if ($this->projSettings->views->select->content) {
-			foreach ($this->projSettings->views->select->content as $theMote) {
+		if ($projSettings->views->select->content) {
+			foreach ($projSettings->views->select->content as $theMote) {
 				array_push($this->selectContent, $theMote);
 			}
 		}
 
 			// If a marker is selected and leads to a transcript in modal, need those values also
-		if ($this->projObj->selectModalHas("transcript")) {
+		if ($projObj->selectModalHas("transcript")) {
 			$this->audio = $this->projSettings->views->transcript->audio;
 				// Translate from Mote Name to Custom Field name
 			if (!is_null($this->audio) && ($this->audio !== '')) {
-				$this->audio = $this->projObj->getCustomFieldForMote($this->audio);
+				$this->audio = $projObj->getCustomFieldForMote($this->audio);
 			} else {
 				$this->audio = null;
 			}
 		}
-		if ($this->projObj->selectModalHas("youtube")) {
-			$this->video = $this->projSettings->views->transcript->video;
+		if ($projObj->selectModalHas("youtube")) {
+			$this->video = $projSettings->views->transcript->video;
 				// Translate from Mote Name to Custom Field name
 			if (!is_null($this->video) && ($this->video !== '')) {
-				$this->video = $this->projObj->getCustomFieldForMote($this->video);
+				$this->video = $projObj->getCustomFieldForMote($this->video);
 			} else {
 				$this->video = null;
 			}
 		}
 		if ($this->audio || $this->video) {
-			$this->transcript = $this->projObj->getCustomFieldForMote($this->projSettings->views->transcript->transcript);
-			$this->transcript2= $this->projObj->getCustomFieldForMote($this->projSettings->views->transcript->transcript2);
-			$this->timecode   = $this->projObj->getCustomFieldForMote($this->projSettings->views->transcript->timecode);
+			if ($projSettings->views->transcript->transcript !== '') {
+				$this->transcript = $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript);
+			}
+			if ($projSettings->views->transcript->transcripts2 !== '') {
+				$this->transcript2= $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript2);
+			}
+			if ($projSettings->views->transcript->timecode !== '') {
+				$this->timecode   = $projObj->getCustomFieldForMote($projSettings->views->transcript->timecode);
+			}
 		}
 
 			// Link parent enables linking to either the Post page for this Marker,
 			//	or to the category/taxonomy which includes this Marker
-		$this->linkParent = $this->projSettings->views->select->link;
+		$this->linkParent = $projSettings->views->select->link;
 		if ($this->linkParent) {
 			if ($this->linkParent=='marker') {
 				$this->childTerms = 'marker';
@@ -570,7 +577,7 @@ class DHPressMarkerQuery
 				// Link to mote value
 			elseif (strpos($this->linkParent, '(Mote)') !== FALSE) {
 				$linkMoteName = str_replace(' (Mote)', '', $this->linkParent);
-				$this->childTerms = $this->projObj->getMoteByName($linkMoteName);
+				$this->childTerms = $projObj->getMoteByName($linkMoteName);
 			} else {
 					// translate into category/term ID
 				$parent_id = get_term_by('name', $this->linkParent, $this->rootTaxName);
@@ -589,7 +596,7 @@ class DHPressMarkerQuery
 				// Link to mote value
 			elseif (strpos($this->linkParent2, '(Mote)') !== FALSE) {
 				$link2MoteName = str_replace(' (Mote)', '', $this->linkParent2);
-				$this->childTerms2 = $this->projObj->getMoteByName($link2MoteName);
+				$this->childTerms2 = $projObj->getMoteByName($link2MoteName);
 			} else {
 				$parent_id2 = get_term_by('name', $this->linkParent2, $this->rootTaxName);
 				$this->childTerms2 = get_term_children($parent_id2->term_id, $this->rootTaxName);
@@ -597,9 +604,9 @@ class DHPressMarkerQuery
 		}
 
 			// Determine whether title is default title of marker post or another (custom) field
-		$this->titleMote = $this->projSettings->views->select->title;
+		$this->titleMote = $projSettings->views->select->title;
 		if ($this->titleMote != 'the_title') {
-			$temp_mote = $this->projObj->getMoteByName($this->titleMote);
+			$temp_mote = $projObj->getMoteByName($this->titleMote);
 			if (is_null($temp_mote)) {
 				trigger_error("Modal view title assigned to unknown mote");
 			}

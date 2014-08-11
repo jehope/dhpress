@@ -1,6 +1,12 @@
 /** CSS styles specific to rendering transcriptions in DH Press
  **/
 
+/*
+#ytapiplayer {
+	width: 425px;
+	height: 356px;
+} */
+
 .transcript-list {
 	max-height: 300px;
 	overflow-y: scroll;

@@ -38,10 +38,10 @@ var dhpTranscript = {
             throw new Error("Cannot find HTML DIV at which to append transcript.");
         }
             // Create transcript-ep div regardless of audio or video
-        jQuery(appendPos).append('<div id="trans-widget"></div>');
+        jQuery(appendPos).append('<div id="player-widget"></div>');
             // Audio player?
         if (transParams.audio) {
-            jQuery('#trans-widget').append('<p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p>');
+            jQuery('#player-widget').append('<p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p>');
 
                 // Must set these variables after HTML appended above
             playWidget = SC.Widget(document.getElementById('scPlayer'));
@@ -85,13 +85,27 @@ var dhpTranscript = {
                 });
             });
 
+                // Silence SoundCloud if modal closed in another way
+            jQuery('#markerModal').on('closed', function () {
+                var scWidget = SC.Widget(document.getElementById('scPlayer'));
+                scWidget.pause();
+            });
+
             // or Video player?
         } else if (transParams.video) {
-            jQuery('#trans-widget').append('<div id="ytapiplayer">You need Flash player 8+ and JavaScript enabled to view this video.</div>');
+            jQuery('#player-widget').append('<div id="ytapiplayer">You need Flash player 8+ and JavaScript enabled to view this video.</div>');
             var params = { allowScriptAccess: 'always' };
             var atts = { id: 'myytplayer' };
+            jQuery("#player-widget").width(425).height(356);
             swfobject.embedSWF('http://www.youtube.com/v/'+transParams.video+'?enablejsapi=1&playerapiid=ytplayer&version=3',
                                    'ytapiplayer', '425', '356', '8', null, null, params, atts);
+
+                // Silence SWFplayer if modal closed in another way
+            jQuery('#markerModal').on('closed', function () {
+                var ytplayer = document.getElementById('myytplayer');
+                ytplayer.stopVideo();
+            });
+
         }
 
         jQuery(appendPos).append('<div style="padding-top:5px"><input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript</div><br>');
@@ -110,12 +124,6 @@ var dhpTranscript = {
                     scWidget.seekTo(seekToTime);                    
                 }
             }
-        });
-
-            // Silence SoundCloud if modal closed in another way
-        jQuery('#markerModal').on('closed', function () {
-            var scWidget = SC.Widget(document.getElementById('scPlayer'));
-            scWidget.pause();
         });
 
             // Is there any primary transcript data?
@@ -150,12 +158,13 @@ var dhpTranscript = {
     handleSWFPlayer: function(playerID)
     {
         ytplayer = document.getElementById('myytplayer');
-        // if (ytplayer) {
-        //     ytplayer.playVideo();
-        // }
-        // ytplayer.addEventListener(YT.PlayerState.PLAYING, function() {
+        if (ytplayer) {
+            ytplayer.playVideo();
 
-        // });
+            ytplayer.addEventListener(YT.PlayerState.PLAYING, function() {
+
+            });
+        }
     }, // handleSWFPlayer()
 
 
@@ -227,7 +236,7 @@ var dhpTranscript = {
     {
         var match;
 
-        _.find(dhpTranscript.tcArray, function(timecode, index){
+        _.find(dhpTranscript.tcArray, function(timecode, index) {
             match = (millisecond<timecode);
             if (match) {
                 if(dhpTranscript.rowIndex!==index) {
