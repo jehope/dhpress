@@ -792,13 +792,14 @@ jQuery(document).ready(function($) {
             // Remove anything currently in body -- will rebuild from scratch
         jQuery('#markerModal .modal-body').empty();
 
-            // Should Select Modal show transcript?
-        if (modalViewHas("transcript"))
+            // Should Select Modal show SoundCloud or YouTube transcript?
+        if (modalViewHas("transcript") || modalViewHas("youtube"))
         {
             jQuery('#markerModal').addClass('transcript');
 
             var transcriptSettings = {
                 'audio'         : feature.properties.audio,
+                'video'         : feature.properties.video,
                 'transcript'    : feature.properties.transcript,
                 'transcript2'   : feature.properties.transcript2,
                 'timecode'      : feature.properties.timecode,

@@ -125,7 +125,7 @@
 			        "title": String (name of mote),
 			        "width": "tiny" | "small" | "medium" | "large" | "x-large",
 			        "widgets": [							// List of 'widgets' to display in selected Marker modal
-			        	'transcript'
+			        	'transcript' | 'youtube'			// Note: Transcript refers to SoundCloud
 			        ],
 			        "content": [							// Motes to show when Marker selected in visualization
 			            String (mote name || "the_content"), ...
@@ -519,6 +519,7 @@ class DHPressMarkerQuery
 			// Initialize placeholders for various feature variables
 		$this->filters = null;
 		$this->audio = null;
+		$this->video = null;
 		$this->transcript = null;
 		$this->transcript2 = null;
 		$this->timecode = null;
@@ -538,10 +539,23 @@ class DHPressMarkerQuery
 				// Translate from Mote Name to Custom Field name
 			if (!is_null($this->audio) && ($this->audio !== '')) {
 				$this->audio = $this->projObj->getCustomFieldForMote($this->audio);
-				$this->transcript = $this->projObj->getCustomFieldForMote($this->projSettings->views->transcript->transcript);
-				$this->transcript2= $this->projObj->getCustomFieldForMote($this->projSettings->views->transcript->transcript2);
-				$this->timecode   = $this->projObj->getCustomFieldForMote($this->projSettings->views->transcript->timecode);
+			} else {
+				$this->audio = null;
 			}
+		}
+		if ($this->projObj->selectModalHas("youtube")) {
+			$this->video = $this->projSettings->views->transcript->video;
+				// Translate from Mote Name to Custom Field name
+			if (!is_null($this->video) && ($this->video !== '')) {
+				$this->video = $this->projObj->getCustomFieldForMote($this->video);
+			} else {
+				$this->video = null;
+			}
+		}
+		if ($this->audio || $this->video) {
+			$this->transcript = $this->projObj->getCustomFieldForMote($this->projSettings->views->transcript->transcript);
+			$this->transcript2= $this->projObj->getCustomFieldForMote($this->projSettings->views->transcript->transcript2);
+			$this->timecode   = $this->projObj->getCustomFieldForMote($this->projSettings->views->transcript->timecode);
 		}
 
 			// Link parent enables linking to either the Post page for this Marker,
@@ -623,6 +637,10 @@ class DHPressMarkerQuery
 		if (!is_null($this->audio)) {
 			$audio_val = get_post_meta($markerID, $this->audio, true);
 			$thisFeaturesProperties["audio"] = $audio_val;
+		}
+		if (!is_null($this->video)) {
+			$video_val = get_post_meta($markerID, $this->video, true);
+			$thisFeaturesProperties["video"] = $video_val;
 		}
 		if (!is_null($this->transcript)) {
 			$transcript_val = get_post_meta($markerID, $this->transcript, true);

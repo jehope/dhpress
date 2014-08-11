@@ -582,6 +582,7 @@ function getCategoryValues($parent_term, $taxonomy)
 			// 					"link2" : URL
 			//							// Those below only in the case of transcript markers
 			// 					"audio" : String,
+			//					"video" : String,
 			// 					"transcript" : String,
 			// 					"transcript2" : String,
 			// 					"timecode" : String,
@@ -593,9 +594,10 @@ function getCategoryValues($parent_term, $taxonomy)
 add_action('wp_ajax_dhpGetMarkers', 'dhpGetMarkers' );
 add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkers');
 
-// PURPOSE:	Handle Ajax call to get all markers for a Project for a Tree view
-// ASSUMED: A Tree view Entry Point is the current 
+// PURPOSE:	Handle Ajax call to get all markers for a Project for a non-Tree view
+// ASSUMED: The current Entry Point is not a Tree!
 // INPUT:	$_POST['project'] is ID of Project
+//			$_POST['index'] is the 0-based index of the current Entry Point
 // RETURNS:	JSON object of array of marker values
 
 function dhpGetMarkers()
@@ -867,11 +869,11 @@ add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkerTree');
 
 // PURPOSE:	Handle Ajax call to get all markers for a Project
 // 			Similar to createMarkerArray() but creates tree of marker data not flat array
-// INPUT:	$project_id = ID of Project to view
-//			$index = index of entry-point to display
+// INPUT:	$_POST['project'] = ID of Project to view
+//			$_POST['index'] = index of entry-point to display
 // RETURNS: JSON object describing all markers associated with Project
-//			[0..n-1] contains results from getCategoryValues() defined above;
-//			[n] is a Nested tree
+//			[0] contains results from getCategoryValues() defined above;
+//			[1] is a Nested tree
 //				{
 // 					"name": String,
 //					"properties" :
@@ -925,6 +927,7 @@ function dhpGetMarkerTree()
 	$childrenCF = $childrenMote->cf;
 	if (is_null($childrenCF)) {
 		trigger_error("Tree view children assigned to unknown mote");
+		die("Tree view children assigned to unknown mote");
 	}
 
 		// Get the Legend info for this Tree view's Legend data
@@ -934,6 +937,7 @@ function dhpGetMarkerTree()
 		$colorCF = $projObj->getCustomFieldForMote($colorCF);
 		if (is_null($colorCF)) {
 			trigger_error("Tree view color assigned to unknown mote");
+			die("Tree view color assigned to unknown mote");
 		}
 			// Create a legend for the color values
 		$term = get_term_by('name', $eps->settings->color, $mQuery->rootTaxName);
@@ -1296,7 +1300,7 @@ function dhpDeleteHeadTerm()
 
 // Enable for both editing and viewing
 
-add_action( 'wp_ajax_dhpGetMoteContent', 'dhpGetMoteContent' );
+add_action('wp_ajax_dhpGetMoteContent', 'dhpGetMoteContent');
 add_action('wp_ajax_nopriv_dhpGetMoteContent', 'dhpGetMoteContent');
 
 // PURPOSE: Handle Ajax call to fetch the Project-specific data for a specific marker
@@ -1386,7 +1390,7 @@ add_action( 'wp_ajax_nopriv_dhpGetTaxTranscript', 'dhpGetTaxTranscript');
 //			$_POST['transcript'] = (end of URL) to file containing contents of transcript; slug based on mote value
 //			$_POST['tax_term'] = the root taxonomic term that marker must match (based on Project ID)
 // RETURNS:	null if not found, or if not associated with transcript; otherwise, JSON-encoded complete transcript with fields:
-//				audio = data from custom field
+//				audio, video = data from custom fields
 //				settings = entry-point settings for transcript
 //				transcript, transcript2 = transcript data itself for each of 2 possible transcripts
 
@@ -1409,11 +1413,11 @@ function dhpGetTaxTranscript()
 		)
 	);
 		// Get the result and its metadata (fail if not found)
-	$first_marker = get_posts( $args );
+	$first_marker = get_posts($args);
 	if (is_null($first_marker) || (count($first_marker) == 0)) {
 		return null;
 	}
-	$marker_meta = get_post_meta( $first_marker[0]->ID );
+	$marker_meta = get_post_meta($first_marker[0]->ID);
 
 	$projObj      = new DHPressProject($projectID);
 	$rootTaxName  = $projObj->getRootTaxName();
@@ -1422,29 +1426,38 @@ function dhpGetTaxTranscript()
 		// Store results to return here
 	$dhp_object = array();
 
-		// What custom field holds appropriate data? Fetch it from Marker
-	$dhp_audio_mote = $projObj->getMoteByName($proj_settings->views->transcript->audio);
-	$dhp_transcript_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript);
-
-	$dhp_transcript_cfield = $dhp_transcript_mote->cf;
-	$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
-	if($dhp_transcript!='none') {
-		$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
+		// What custom fields holds appropriate data? Fetch from Marker
+	$dhp_audio_mote = null;
+	if ($proj_settings->views->transcript->audio && $proj_settings->views->transcript->audio != '') {
+		$dhp_audio_mote = $projObj->getMoteByName($proj_settings->views->transcript->audio);
+		$dhp_object['audio'] = $marker_meta[$dhp_audio_mote->cf][0];
+	}
+	$dhp_video_mote = null;
+	if ($proj_settings->views->transcript->video && $proj_settings->views->transcript->video != '') {
+		$dhp_video_mote = $projObj->getMoteByName($proj_settings->views->transcript->video);
+		$dhp_object['video'] = $marker_meta[$dhp_video_mote->cf][0];
 	}
 
-		//if project has two transcripts
-	if($proj_settings->views->transcript->transcript2) {
-		$dhp_transcript2_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript2);
-		$dhp_transcript2_cfield = $dhp_transcript2_mote->cf;
-		$dhp_transcript2 = $marker_meta[$dhp_transcript2_cfield][0];
-		if ($dhp_transcript2 != 'none') {
-			$dhp_object['transcript2'] = loadTranscriptFromFile($dhp_transcript2);
+	if ($proj_settings->views->transcript->transcript && $proj_settings->views->transcript->transcript != '') {
+		$dhp_transcript_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript);
+		$dhp_transcript_cfield = $dhp_transcript_mote->cf;
+		$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
+		if ($dhp_transcript != 'none') {
+			$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
+			$dhp_object['transcript'] = $dhp_transcript;
 		}
 	}
 
-	$dhp_object['settings'] = $dhp_transcript_ep;
-	$dhp_object['audio'] = $marker_meta[$dhp_audio_mote->cf][0];
-	$dhp_object['transcript'] = $dhp_transcript;
+		// if project has 2nd transcripts
+	if ($proj_settings->views->transcript->transcript2 && $proj_settings->views->transcript->transcript2 != '') {
+		$dhp_transcript_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript2);
+		$dhp_transcript_cfield = $dhp_transcript_mote->cf;
+		$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
+		if ($dhp_transcript != 'none') {
+			$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
+			$dhp_object['transcript2'] = $dhp_transcript;
+		}
+	}
 
 	die(json_encode($dhp_object));
 } // dhpGetTaxTranscript()
@@ -1986,6 +1999,9 @@ function dhpPerformTests()
 							$error = true;
 						}
 						break;
+					case 'YouTube':
+							// TO DO
+						break;
 					case 'Link To':
 					case 'Image':
 							// Just look at beginning and end of URL
@@ -2219,7 +2235,7 @@ function dhp_get_script_text($scriptname)
 } // dhp_get_script_text()
 
 
-add_filter( 'the_content', 'dhp_mod_page_content' );
+add_filter('the_content', 'dhp_mod_page_content');
 
 // PURPOSE:	Called by WP to modify content to be rendered for a post page
 // INPUT:	$content = material to show on page
@@ -2403,11 +2419,18 @@ function dhp_page_template( $page_template )
 	    }
 
 	    	// Transcript specific
-	    if ($projObj->selectModalHas('transcript')) {
+	    if ($projObj->selectModalHas('transcript') || $projObj->selectModalHas('youtube')) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-	        wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
 			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
-				 array('jquery', 'underscore', 'soundcloud-api'), DHP_PLUGIN_VERSION);
+				 array('jquery', 'underscore'), DHP_PLUGIN_VERSION);
+			if ($projObj->selectModalHas('transcript')) {
+	        	wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js');
+	    		array_push($dependencies, 'soundcloud-api');
+	        }
+			if ($projObj->selectModalHas('youtube')) {
+	        	wp_enqueue_script('swfobject', plugins_url('/lib/swfobject.js', dirname(__FILE__)));
+	    		array_push($dependencies, 'swfobject');
+	        }
 	    	array_push($dependencies, 'dhp-transcript');
 	    }
 
@@ -2497,9 +2520,16 @@ function dhp_tax_template( $page_template )
 
 	    if ($isTranscript) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-		    wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
+			if ($projObj->selectModalHas('transcript')) {
+	        	wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js');
+		    	array_push($dependencies, 'soundcloud-api');
+	        }
+			if ($projObj->selectModalHas('youtube')) {
+	        	wp_enqueue_script('swfobject', plugins_url('/lib/swfobject.js', dirname(__FILE__)));
+		    	array_push($dependencies, 'swfobject');
+	        }
 			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
-				 array('jquery', 'underscore', 'soundcloud-api'), DHP_PLUGIN_VERSION);
+				 array('jquery', 'underscore'), DHP_PLUGIN_VERSION);
 		    array_push($dependencies, 'dhp-transcript');
 		}
 

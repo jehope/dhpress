@@ -1,11 +1,11 @@
 // DHPressTranscript -- contains all data and functions dealing with transcriptions using SoundCloud
 // ASSUMES: Transcript modal is closed with button of class close-reveal-modal
-// USES:    JavaScript libraries jQuery, Underscore, SoundCloud
+// USES:    JavaScript libraries jQuery, Underscore, SoundCloud [optional], YouTube [optional]
+// NOTE:    Use of SWFPlayer requires a function named onYouTubePlayerReady
 
 var dhpTranscript = {
-        // Fields created by this object:
-    // tcArray, rowIndex, transcriptData, parseTimeCode, readyFor2nd
-
+    // Fields created by this object:
+    //      tcArray, rowIndex, transcriptData, parseTimeCode, readyFor2nd
 
         // PURPOSE: Initialize transcript mechanisms
     initialize: function()
@@ -13,12 +13,12 @@ var dhpTranscript = {
         this.parseTimeCode = /(\d\d)\:(\d\d)\:(\d\d)\.(\d\d?)/;         // a more exact parsing of time
     }, // initialize()
 
-
         // PURPOSE: Build all HTML and initialize controls for a specific transcript associated with a Marker
         // INPUT:   ajaxURL = URL to use for loading data (or null if already loaded)
         //          htmlID = jQuery selector to specify where resulting HTML should be appended
         //          transParams = object whose fields specify data about transcription:
-        //              audio (URL), transcript (URL), transcript2 (URL), timecode (from-to), startTime (in milliseconds), endTime (in milliseconds)
+        //              audio (URL), video (URL), transcript (URL), transcript2 (URL),
+        //              timecode (from-to), startTime (in milliseconds), endTime (in milliseconds)
         //              timecode = -1 if full transcript (not excerpt), transcript and transcript2 already loaded
     prepareOneTranscript: function (ajaxURL, projectID, htmlID, transParams)
     {
@@ -26,6 +26,7 @@ var dhpTranscript = {
         var playingNow = false;
         var primeAudio = true;      // This is for quirk/bug in SoundCloud -- it has to be playing before seek can be done
         var fullTranscript = (transParams.timecode == -1);
+        var playWidget;
 
             // Initialize this object's variables
         dhpTranscript.rowIndex = null;
@@ -36,56 +37,68 @@ var dhpTranscript = {
         if (appendPos == null) {
             throw new Error("Cannot find HTML DIV at which to append transcript.");
         }
-        jQuery(appendPos).append('<div class="transcript-ep"><p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p></div>');
-        jQuery(appendPos).append('<div style="padding-top:5px"><input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript</div><br>');
+            // Create transcript-ep div regardless of audio or video
+        jQuery(appendPos).append('<div id="trans-widget"></div>');
+            // Audio player?
+        if (transParams.audio) {
+            jQuery('#trans-widget').append('<p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+transParams.audio+'"></iframe></p>');
 
-            // Must set these variables after HTML appended above
-        var scWidget = SC.Widget(document.getElementById('scPlayer'));
+                // Must set these variables after HTML appended above
+            playWidget = SC.Widget(document.getElementById('scPlayer'));
 
-            // Setup audio/transcript SoundCloud player after entire sound clip loaded
-        scWidget.bind(SC.Widget.Events.READY, function() {
-                // Prime the audio (seekTo won't work until sound loaded and playing)
-            scWidget.play();
-
-            scWidget.bind(SC.Widget.Events.PLAY, function() {
-                playingNow = true;
-            });
-
-            scWidget.bind(SC.Widget.Events.PAUSE, function() {
-                playingNow = false;
-            });
-
-            scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(params) {
-                    // Pauses audio after it primes so seekTo will work properly
-                if (primeAudio) {
-                    scWidget.pause();
-                    primeAudio = false;
+                // Setup audio/transcript SoundCloud player after entire sound clip loaded
+            playWidget.bind(SC.Widget.Events.READY, function() {
+                    // Prime the audio (seekTo won't work until sound loaded and playing)
+                playWidget.play();
+                playWidget.bind(SC.Widget.Events.PLAY, function() {
+                    playingNow = true;
+                });
+                playWidget.bind(SC.Widget.Events.PAUSE, function() {
                     playingNow = false;
-                }
-                    // Keep within bounds if only excerpt of longer transcript
-                if (!fullTranscript) {
-                    if (params.currentPosition < transParams.startTime) {
-                        scWidget.seekTo(transParams.startTime);
-                    } else if (params.currentPosition > transParams.endTime) {
-                        scWidget.pause();
+                });
+
+                playWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(params) {
+                        // Pauses audio after it primes so seekTo will work properly
+                    if (primeAudio) {
+                        playWidget.pause();
+                        primeAudio = false;
                         playingNow = false;
                     }
-                }
-                if (playingNow) {
-                    dhpTranscript.hightlightTranscriptLine(params.currentPosition);
-                }
+                        // Keep within bounds if only excerpt of longer transcript
+                    if (!fullTranscript) {
+                        if (params.currentPosition < transParams.startTime) {
+                            playWidget.seekTo(transParams.startTime);
+                        } else if (params.currentPosition > transParams.endTime) {
+                            playWidget.pause();
+                            playingNow = false;
+                        }
+                    }
+                    if (playingNow) {
+                        dhpTranscript.hightlightTranscriptLine(params.currentPosition);
+                    }
+                });
+
+                    // Can't seek within the SEEK event because it causes infinite recursion
+
+                playWidget.bind(SC.Widget.Events.FINISH, function() {
+                    playingNow = false;
+                });
             });
 
-                // Can't seek within the SEEK event because it causes infinite recursion
+            // or Video player?
+        } else if (transParams.video) {
+            jQuery('#trans-widget').append('<div id="ytapiplayer">You need Flash player 8+ and JavaScript enabled to view this video.</div>');
+            var params = { allowScriptAccess: 'always' };
+            var atts = { id: 'myytplayer' };
+            swfobject.embedSWF('http://www.youtube.com/v/'++'?enablejsapi=1&playerapiid=ytplayer&version=3',
+                                   'ytapiplayer', '425', '356', '8', null, null, params, atts);
+        }
 
-            scWidget.bind(SC.Widget.Events.FINISH, function() {
-                playingNow = false;
-            });
-        });
+        jQuery(appendPos).append('<div style="padding-top:5px"><input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript</div><br>');
 
             // Allow user to click anywhere in set of timecodes to go to corresponding time
-        jQuery('.transcript-ep').on('click', function(evt) {
-            if(jQuery(evt.target).hasClass('type-timecode')) {
+        jQuery('.transcript-ep').click(function(evt) {
+            if (jQuery(evt.target).hasClass('type-timecode')) {
                 var seekToTime = jQuery(evt.target).closest('.type-timecode').data('timecode');
 
                     // seekTo doesn't work unless sound is already playing
@@ -106,7 +119,7 @@ var dhpTranscript = {
         });
 
             // Is there any primary transcript data?
-        if(transParams.transcript && transParams.transcript!=='') {
+        if (transParams.transcript && transParams.transcript!=='') {
             if (fullTranscript) {
                 dhpTranscript.attachTranscript(transParams.transcript, 0);
             } else {
@@ -114,7 +127,7 @@ var dhpTranscript = {
             }
         }
             // Is there 2ndary transcript data? If only 2nd, treat as 1st
-        if(transParams.transcript==='' && transParams.transcript2 && transParams.transcript2!=='') {
+        if (transParams.transcript==='' && transParams.transcript2 && transParams.transcript2!=='') {
             if (fullTranscript) {
                 dhpTranscript.attachTranscript(transParams.transcript2, 0);
             } else {
@@ -122,7 +135,7 @@ var dhpTranscript = {
             }
         }
             // Otherwise, add 2nd to 1st
-        else if(transParams.transcript!=='' && transParams.transcript2 && transParams.transcript2!=='') {
+        else if (transParams.transcript!=='' && transParams.transcript2 && transParams.transcript2!=='') {
             if (fullTranscript) {
                 dhpTranscript.attachTranscript(transParams.transcript2, 1);
             } else {
@@ -130,6 +143,20 @@ var dhpTranscript = {
             }
         }
     }, // prepareOneTranscript()
+
+
+        // PURPOSE: Called from external hook once SWFPlayer is loaded and ready
+        // NOTES:   see https://developers.google.com/youtube/js_api_reference
+    handleSWFPlayer: function(playerID)
+    {
+        ytplayer = document.getElementById('myytplayer');
+        // if (ytplayer) {
+        //     ytplayer.playVideo();
+        // }
+        // ytplayer.addEventListener(YT.PlayerState.PLAYING, function() {
+
+        // });
+    }, // handleSWFPlayer()
 
 
         // PURPOSE: Build all HTML and initialize controls for transcript associated with a Taxonomic Term
@@ -363,5 +390,10 @@ var dhpTranscript = {
             }
         }
     } // attachTranscript()
+}; // dhpTranscript
 
-};
+    // Interface between SWFPlayer and dhpTranscript
+    // This is called once player is ready
+function onYouTubePlayerReady(playerId) {
+    dhpTranscript.handleSWFPlayer(playerId);
+}

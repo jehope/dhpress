@@ -150,6 +150,9 @@ var dhpTreeView = {
             {
                     // Prepare the data for use
                 dhpTreeView.rawData = JSON.parse(data);
+                if (data == undefined || dhpTreeView.rawData == undefined || dhpTreeView.rawData[0] == undefined) {
+                    console.log("Error with data; "+data);
+                }
                 dhpTreeView.legendTerms = dhpTreeView.rawData[0];
                 if (dhpTreeView.legendTerms.type !== 'filter') {
                     dhpTreeView.legendTerms = null;
@@ -166,7 +169,7 @@ var dhpTreeView = {
                alert(errorThrown);
             }
         });
-    }, // initPinboard()
+    }, // initialize()
 
 
         // PURPOSE: Resizes pinboard-specific elements initially and when browser size changes

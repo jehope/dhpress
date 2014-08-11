@@ -498,6 +498,7 @@ jQuery(document).ready(function($) {
 
       projSettings.views.transcript = {};
       projSettings.views.transcript.audio = self.edTrnsAudio();
+      projSettings.views.transcript.audio = self.edTrnsVideo();
       projSettings.views.transcript.transcript = self.edTrnsTransc();
       projSettings.views.transcript.transcript2 = self.edTrnsTransc2();
       projSettings.views.transcript.timecode = self.edTrnsTime();
@@ -587,6 +588,9 @@ jQuery(document).ready(function($) {
     self.transcMoteNames = ko.computed(function() {
       return doGetMoteNames(['Transcript'], true);
     }, self);
+    self.ytMoteNames = ko.computed(function() {
+      return doGetMoteNames(['YouTube'], true);
+    }, self);    
     self.tstMoteNames = ko.computed(function() {
       return doGetMoteNames(['Timestamp']);
     }, self);
@@ -727,6 +731,7 @@ jQuery(document).ready(function($) {
             self.taxMoteList.remove(function(mote) { return mote.name() === moteName; });
 
             if (self.edTrnsAudio()  == moteName)  { self.edTrnsAudio('disable'); }
+            if (self.edTrnsVideo()  == moteName)  { self.edTrnsVideo('disable'); }
             if (self.edTrnsTransc() == moteName)  { self.edTrnsTransc('disable'); }
             if (self.edTrnsTransc2() == moteName) { self.edTrnsTransc2('disable'); }
             if (self.edTrnsTime()  == moteName)   { self.edTrnsTime(''); }
@@ -1548,6 +1553,7 @@ jQuery(document).ready(function($) {
     self.taxMoteList = ko.observableArray([]);
 
     self.edTrnsAudio = ko.observable('');
+    self.edTrnsVideo = ko.observable('');
     self.edTrnsTransc = ko.observable('');
     self.edTrnsTransc2 = ko.observable('');
     self.edTrnsTime = ko.observable('');
@@ -1584,6 +1590,7 @@ jQuery(document).ready(function($) {
       });
 
       self.edTrnsAudio(disableByDefault(viewSettings.transcript.audio));
+      self.edTrnsVideo(disableByDefault(viewSettings.transcript.video));
       self.edTrnsTransc(disableByDefault(viewSettings.transcript.transcript));
       self.edTrnsTransc2(disableByDefault(viewSettings.transcript.transcript2));
       self.edTrnsTime(viewSettings.transcript.timecode);
@@ -2063,7 +2070,7 @@ jQuery(document).ready(function($) {
           $('#testResults').append('<p>Your list of motes for the select modal is empty. We suggest you add at least one content mote.</p>');
       }
 
-        // If Audio Source is not disable, ensure Transcript and Timecode are set at minimum
+        // If Audio Source is not disabled, ensure Transcript and Timecode are set at minimum
       if (self.edTrnsAudio() !== 'disable') {
         if (self.edTrnsTransc() === 'disable') {
           $('#testResults').append('<p>Although you have enabled audio transcripts via the "Audio Source" selection, you have not yet made a selection from the Transcript list.</p>');
@@ -2073,10 +2080,14 @@ jQuery(document).ready(function($) {
         }
       }
 
+        // For now allow video player to work without specifying transcript or timecode
+      if (self.edTrnsVideo() !== 'disable') {
+      }        
+
         // If Transcript Source mote selected, ensure other settings are as well
       if (self.edTrnsSrc() !== 'disable') {
-        if (self.edTrnsAudio() === 'disable' || self.edTrnsTransc() === 'disable' || self.edTrnsTime() === 'disable') {
-          $('#testResults').append('<p>Although you have enabled full audio transcripts on archive pages via the "Source" selection, you have not yet specified the other necessary transcript settings.</p>');
+        if ((self.edTrnsAudio() === 'disable' && self.edTrnsVideo() === 'disable') || self.edTrnsTransc() === 'disable' || self.edTrnsTime() === 'disable') {
+          $('#testResults').append('<p>Although you have enabled transcripts on archive pages via the "Source" selection, you have not yet specified the other necessary transcript settings.</p>');
         }
       }
 
