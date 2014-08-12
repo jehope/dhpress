@@ -43,7 +43,7 @@ var dhpWidget = {
     prepareOneTranscript: function (ajaxURL, projectID, htmlID, transParams)
     {
         var appendPos, appendSyncBtn = false;
-        var fullTranscript = (dhpWidget.transcriptData.length > 1 && transParams.timecode == -1);
+        var fullTranscript = (transParams.timecode == -1);
 
             // Initialize this object's variables
         dhpWidget.transParams = transParams;
@@ -100,7 +100,7 @@ var dhpWidget = {
             }
         }
         if (appendSyncBtn) {
-            jQuery(appendPos).append('<div style="padding-top:5px"><input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Sychronize audio and transcript</div><br>');
+            jQuery(appendPos).append('<div style="padding-top:5px"><input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Scroll transcript to follow playback</div><br>');
         }
     }, // prepareOneTranscript()
 
@@ -108,7 +108,7 @@ var dhpWidget = {
         // PURPOSE: Bind code to widget to handle play, seek, close, etc.
     bindPlayerHandlers: function()
     {
-        var fullTranscript = (dhpWidget.transcriptData.length > 1 && transParams.timecode == -1);
+        var fullTranscript = dhpWidget.transParams.timecode == -1;
         var playWidget;
 
         switch (dhpWidget.transParams.playerType)
@@ -117,7 +117,7 @@ var dhpWidget = {
             playWidget = dhpWidget.playWidget;
                 // Setup audio/transcript SoundCloud player after entire sound clip loaded
             playWidget.bind(SC.Widget.Events.READY, function() {
-                    // Prime the audio (seekTo won't work until sound loaded and playing)
+                    // Prime the audio -- must initially play (seekTo won't work until sound loaded and playing)
                 playWidget.play();
                 playWidget.bind(SC.Widget.Events.PLAY, function() {
                     dhpWidget.playingNow = true;
@@ -133,19 +133,17 @@ var dhpWidget = {
                         dhpWidget.primeAudio = false;
                         dhpWidget.playingNow = false;
                     }
-                    if (dhpWidget.transcriptData.length > 1) {
-                            // Keep within bounds if only excerpt of longer transcript
-                        if (!fullTranscript) {
-                            if (params.currentPosition < dhpWidget.transParams.startTime) {
-                                playWidget.seekTo(dhpWidget.transParams.startTime);
-                            } else if (params.currentPosition > dhpWidget.transParams.endTime) {
-                                playWidget.pause();
-                                dhpWidget.playingNow = false;
-                            }
+                        // Keep within bounds if only excerpt of longer transcript
+                    if (!fullTranscript) {
+                        if (params.currentPosition < dhpWidget.transParams.startTime) {
+                            playWidget.seekTo(dhpWidget.transParams.startTime);
+                        } else if (params.currentPosition > dhpWidget.transParams.endTime) {
+                            playWidget.pause();
+                            dhpWidget.playingNow = false;
                         }
-                        if (dhpWidget.playingNow) {
-                            dhpWidget.hightlightTranscriptLine(params.currentPosition);
-                        }
+                    }
+                    if (dhpWidget.playingNow && dhpWidget.transcriptData.length > 0) {
+                        dhpWidget.hightlightTranscriptLine(params.currentPosition);
                     }
                 });
                     // Can't seek within the SEEK event because it causes infinite recursion
