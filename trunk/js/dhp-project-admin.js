@@ -2071,19 +2071,12 @@ jQuery(document).ready(function($) {
           $('#testResults').append('<p>Your list of motes for the select modal is empty. We suggest you add at least one content mote.</p>');
       }
 
-        // If Audio Source is not disabled, ensure Transcript and Timecode are set at minimum
-      if (self.edTrnsAudio() !== 'disable') {
-        if (self.edTrnsTransc() === 'disable') {
-          $('#testResults').append('<p>Although you have enabled audio transcripts via the "Audio Source" selection, you have not yet made a selection from the Transcript list.</p>');
-        }
-        if (self.edTrnsTime() === 'disable') {
-          $('#testResults').append('<p>Although you have enabled audio transcripts via the "Audio Source" selection, you have not yet made a selection from the Timecode list.</p>');
+        // If configured for transcripts, must have supplied an audio or video source
+      if (self.edTrnsTransc() !== 'disable' || self.edTrnsTime() !== 'disable') {
+        if (self.edTrnsAudio() === 'disable' && self.edTrnsVideo() === 'disable') {
+          $('#testResults').append('<p>Although you have enabled transcripts, you have not selected an audio or video URL mote.</p>');
         }
       }
-
-        // For now allow video player to work without specifying transcript or timecode
-      if (self.edTrnsVideo() !== 'disable') {
-      }        
 
         // If Transcript Source mote selected, ensure other settings are as well
       if (self.edTrnsSrc() !== 'disable') {

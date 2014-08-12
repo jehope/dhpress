@@ -86,7 +86,7 @@
               Link 2: <select data-bind="value: edSelLink2Mt, options: getModalLinkNames"></select> Label: <input type="text" size="12" data-bind="value: edSelLink2Lbl"/> Open new tab: <input type="checkbox" data-bind="checked: edSelLink2NewTab"><br/>
               Widgets to show: <button data-bind="jqButton, click: addWidget">Add</button> this widget:
               	<select id="selModalWidget">
-              		<option value="transcript">Transcript</option>
+              		<option value="scloud">SoundCloud</option>
                   <option value="youtube">YouTube</option>
               	</select><br/>
               <div data-bind="template: { name: 'widget-template', foreach: widgetList }"></div>

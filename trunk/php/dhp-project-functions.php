@@ -2419,19 +2419,17 @@ function dhp_page_template( $page_template )
 	    }
 
 	    	// Transcript specific
-	    if ($projObj->selectModalHas('transcript') || $projObj->selectModalHas('youtube')) {
+	    if ($projObj->selectModalHas('scloud') || $projObj->selectModalHas('youtube')) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
-				 array('jquery', 'underscore'), DHP_PLUGIN_VERSION);
-			if ($projObj->selectModalHas('transcript')) {
+			wp_enqueue_script('dhp-widget', plugins_url('/js/dhp-widget.js',  dirname(__FILE__)),
+				 array('jquery', 'underscore') );
+			if ($projObj->selectModalHas('scloud')) {
 	        	wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js');
 	    		array_push($dependencies, 'soundcloud-api');
 	        }
-			if ($projObj->selectModalHas('youtube')) {
-	        	wp_enqueue_script('swfobject', plugins_url('/lib/swfobject.js', dirname(__FILE__)));
-	    		array_push($dependencies, 'swfobject');
-	        }
-	    	array_push($dependencies, 'dhp-transcript');
+			// elseif ($projObj->selectModalHas('youtube')) {
+	        // }
+	    	array_push($dependencies, 'dhp-widget');
 	    }
 
 	    	// Enqueue page JS last, after we've determine what dependencies might be

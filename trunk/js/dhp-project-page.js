@@ -108,8 +108,6 @@ jQuery(document).ready(function($) {
     var browserMobile = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
     var legendHeight;
 
-    // var checkboxHeight;
-
         // For reaching functions in this file used by various visualization modules
     var callBacks;
         // Visualization-specific callbacks
@@ -262,8 +260,8 @@ jQuery(document).ready(function($) {
     }
 
         // Transcription widget
-    if (modalViewHas("transcript")) {
-        dhpTranscript.initialize();
+    if (modalViewHas('scloud') || modalViewHas('youtube')) {
+        dhpWidget.initialize();
     }
 
     // ========================= FUNCTIONS
@@ -782,38 +780,58 @@ jQuery(document).ready(function($) {
         link1  = feature.properties.link;
         link2  = feature.properties.link2;
             // Open in new tab?
-        if(selectParams.linkNewTab) {
+        if (selectParams.linkNewTab) {
             link1Target = 'target="_blank"';
         }
-        if(selectParams.link2NewTab) {
+        if (selectParams.link2NewTab) {
             link2Target = 'target="_blank"';
         }
 
             // Remove anything currently in body -- will rebuild from scratch
         jQuery('#markerModal .modal-body').empty();
 
-            // Should Select Modal show SoundCloud or YouTube transcript?
-        if (modalViewHas("transcript") || modalViewHas("youtube"))
+            // Should Select Modal show SoundCloud or YouTube widgets?
+        if (modalViewHas("scloud") || modalViewHas("youtube"))
         {
             jQuery('#markerModal').addClass('transcript');
 
-            var transcriptSettings = {
-                'audio'         : feature.properties.audio,
-                'video'         : feature.properties.video,
-                'transcript'    : feature.properties.transcript,
-                'transcript2'   : feature.properties.transcript2,
-                'timecode'      : feature.properties.timecode,
-                'startTime'     : -1,
-                'endTime'       : -1
+                // Clear out all widget settings
+            var widgetSettings = {
+                playerType: null,
+                stream: null,
+                transcript: null,
+                transcript2: null,
+                timecode: null,
+                startTime: -1,
+                endTime: -1
             };
 
-            if (transcriptSettings.timecode) {
-                var time_codes = transcriptSettings.timecode.split('-');
-                transcriptSettings.startTime = dhpTranscript.convertToMilliSeconds(time_codes[0]);
-                transcriptSettings.endTime   = dhpTranscript.convertToMilliSeconds(time_codes[1]);
+                // Configure player-specific data
+            if (modalViewHas('scloud'))
+            {
+                widgetSettings.stream = feature.properties.audio;
+                widgetSettings.playerType = 'scloud';
+            } else if (modalViewHas('youtube'))
+            {
+                widgetSettings.stream = feature.properties.video;
+                widgetSettings.playerType = 'youtube';
             }
 
-            dhpTranscript.prepareOneTranscript(ajaxURL, projectID, '#markerModal .modal-body', transcriptSettings);
+                // Configure transcript data
+            if (feature.properties.timecode && feature.properties.timecode !== '') {
+                widgetSettings.timecode = feature.properties.timecode;
+                var time_codes = widgetSettings.timecode.split('-');
+                widgetSettings.startTime = dhpWidget.convertToMilliSeconds(time_codes[0]);
+                widgetSettings.endTime   = dhpWidget.convertToMilliSeconds(time_codes[1]);
+            }
+            if (feature.properties.transcript && feature.properties.transcript !== '') {
+                widgetSettings.transcript  = feature.properties.transcript;
+            }
+            if (feature.properties.transcript2 && feature.properties.transcript2 !== '') {
+                widgetSettings.transcript2 = feature.properties.transcript2;
+            }
+
+            dhpWidget.prepareOneTranscript(ajaxURL, projectID, '#markerModal .modal-body', widgetSettings);
          }
 
             // Create HTML for all of the data related to the Marker

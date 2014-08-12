@@ -125,7 +125,7 @@
 			        "title": String (name of mote),
 			        "width": "tiny" | "small" | "medium" | "large" | "x-large",
 			        "widgets": [							// List of 'widgets' to display in selected Marker modal
-			        	'transcript' | 'youtube'			// Note: Transcript refers to SoundCloud
+			        	'scloud' | 'youtube'
 			        ],
 			        "content": [							// Motes to show when Marker selected in visualization
 			            String (mote name || "the_content"), ...
@@ -535,8 +535,8 @@ class DHPressMarkerQuery
 		}
 
 			// If a marker is selected and leads to a transcript in modal, need those values also
-		if ($projObj->selectModalHas("transcript")) {
-			$this->audio = $this->projSettings->views->transcript->audio;
+		if ($projObj->selectModalHas("scloud")) {
+			$this->audio = $projSettings->views->transcript->audio;
 				// Translate from Mote Name to Custom Field name
 			if (!is_null($this->audio) && ($this->audio !== '')) {
 				$this->audio = $projObj->getCustomFieldForMote($this->audio);
@@ -553,6 +553,7 @@ class DHPressMarkerQuery
 				$this->video = null;
 			}
 		}
+			// Only check for transcript data if there is audio or video
 		if ($this->audio || $this->video) {
 			if ($projSettings->views->transcript->transcript !== '') {
 				$this->transcript = $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript);
@@ -723,7 +724,7 @@ class DHPressMarkerQuery
 			} elseif (strpos($link_parent, '(Mote)') !== FALSE) {
 				$term_links = get_post_meta($markerID, $this->childTerms->cf, true);
 			} else {
-				$term_links = $this->getTermByParent($this->childTerms, $post_terms, $this->rootTaxName);
+				$term_links = $this->getTermByParent($this->childTerms, $post_terms);
 			}
 			if ($term_links) {
 				$thisFeaturesProperties["link"] = addslashes($term_links);
@@ -736,7 +737,7 @@ class DHPressMarkerQuery
 			} elseif (strpos($this->linkParent2, '(Mote)') !== FALSE) {
 				$term_links = get_post_meta($markerID, $this->childTerms2->cf, true);
 			} else {
-				$term_links = $this->getTermByParent($this->childTerms2, $post_terms, $rootTaxName);
+				$term_links = $this->getTermByParent($this->childTerms2, $post_terms);
 			}
 			if ($term_links) {
 				$thisFeaturesProperties["link2"] = addslashes($term_links);

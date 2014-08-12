@@ -7,6 +7,11 @@
 	height: 356px;
 } */
 
+.video-player {
+	width: 425px;
+	height: 356px;
+}
+
 .transcript-list {
 	max-height: 300px;
 	overflow-y: scroll;
