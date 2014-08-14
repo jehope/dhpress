@@ -546,8 +546,6 @@ var dhpTimeline = {
                 max = domainVals[1];
 
                 // This will be called for each label in turn
-                // What to print on label depends on scale of time periods
-                // Have tried to use reasonable heuristic
             yLabels.text(function (label) {
                 return label.whichDate(min,max).getUTCFullYear();
             })
@@ -600,11 +598,11 @@ var dhpTimeline = {
             .scale(band.xScale)
             .orient("bottom")
             .tickSize(6, 0)
-                // For now, let D3 determine what label to show -- this is alternative DIY logic
+                // For now, let D3 determine what label to show -- below is alternative DIY logic
+                // This version (below) *does* look better for dates < 1000 CE
             // .tickFormat(function (d) {
             //     var dates = band.xScale.domain();
             //     var timeDiff = dates[1].getFullYear() - dates[0].getFullYear();
-
             //         // What to print on label depends on scale of time periods
             //         // Have tried to use reasonable heuristic
             //     if (timeDiff > dhpTimeline.threshold) {
