@@ -1415,7 +1415,7 @@ function dhpGetTaxTranscript()
 		// Get the result and its metadata (fail if not found)
 	$first_marker = get_posts($args);
 	if (is_null($first_marker) || (count($first_marker) == 0)) {
-		return null;
+		die('');
 	}
 	$marker_meta = get_post_meta($first_marker[0]->ID);
 
@@ -1425,6 +1425,9 @@ function dhpGetTaxTranscript()
 
 		// Store results to return here
 	$dhp_object = array();
+
+		// set defaults
+	$dhp_object['audio'] = $dhp_object['video'] = $dhp_object['transcript'] = $dhp_object['transcript2'] = null;
 
 		// What custom fields holds appropriate data? Fetch from Marker
 	$dhp_audio_mote = null;
@@ -2000,7 +2003,7 @@ function dhpPerformTests()
 						}
 						break;
 					case 'YouTube':
-							// TO DO
+							// Cannot verify because it is just a raw code
 						break;
 					case 'Link To':
 					case 'Image':
@@ -2420,20 +2423,21 @@ function dhp_page_template( $page_template )
 
 	    	// Transcript specific
 	    if ($projObj->selectModalHas('scloud') || $projObj->selectModalHas('youtube')) {
-			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+			wp_enqueue_style('dhp-transcript-css', plugins_url('/css/transcriptions.css',  dirname(__FILE__)) );
 			wp_enqueue_script('dhp-widget', plugins_url('/js/dhp-widget.js',  dirname(__FILE__)),
 				 array('jquery', 'underscore') );
 			if ($projObj->selectModalHas('scloud')) {
 	        	wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js');
 	    		array_push($dependencies, 'soundcloud-api');
 	        }
-			// elseif ($projObj->selectModalHas('youtube')) {
-	        // }
+			// if ($projObj->selectModalHas('youtube')) {
+			// }
 	    	array_push($dependencies, 'dhp-widget');
 	    }
 
 	    	// Enqueue page JS last, after we've determine what dependencies might be
-		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
+		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__)), $dependencies );
+		// wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
 
 		wp_localize_script('dhp-public-project-script', 'dhpData', array(
 			'ajax_url'   => $dev_url,
@@ -2518,17 +2522,15 @@ function dhp_tax_template( $page_template )
 
 	    if ($isTranscript) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-			if ($projObj->selectModalHas('transcript')) {
+			if ($projObj->selectModalHas('scloud')) {
 	        	wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js');
 		    	array_push($dependencies, 'soundcloud-api');
 	        }
-			if ($projObj->selectModalHas('youtube')) {
-	        	wp_enqueue_script('swfobject', plugins_url('/lib/swfobject.js', dirname(__FILE__)));
-		    	array_push($dependencies, 'swfobject');
-	        }
-			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
+			// if ($projObj->selectModalHas('youtube')) {
+			// }
+			wp_enqueue_script('dhp-widget', plugins_url('/js/dhp-widget.js',  dirname(__FILE__)),
 				 array('jquery', 'underscore'), DHP_PLUGIN_VERSION);
-		    array_push($dependencies, 'dhp-transcript');
+		    array_push($dependencies, 'dhp-widget');
 		}
 
 			// Enqueue last, after dependencies have been determined

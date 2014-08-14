@@ -186,7 +186,7 @@ var dhpPinboardView = {
             // Width of svg-container is same as visual space
         jQuery('#svg-container').width(jQuery('#dhp-visual').width()-2);
             // Height of svg-container will be total viz space minus height of navbar, margins, border & scroll bar itself
-        var svgHeight = jQuery('#dhp-visual').height() - (dhpPinboardView.controlHeight+40);
+        var svgHeight = jQuery('#dhp-visual').height() - (dhpPinboardView.controlHeight+5);
         jQuery('#svg-container').height(svgHeight);
     }, // dhpUpdateSize()
 

@@ -215,7 +215,8 @@ var dhpWidget = {
     {
         if (!dhpWidget.seekBound) {
             dhpWidget.seekBound = true;
-console.log("Binding seek function");
+            // console.log("Binding seek function");
+
                 // Allow user to click anywhere in player area; check if timecode, go to corresponding time
             jQuery('#player-widget').click(function(evt) {
                 if (jQuery(evt.target).hasClass('type-timecode') && dhpWidget.playWidget) {
@@ -248,11 +249,15 @@ console.log("Binding seek function");
         }
     }, // bindTranscSeek()
 
+
         // PURPOSE: Build all HTML and initialize controls for transcript associated with a Taxonomic Term
         // INPUT:   ajaxURL = URL to use for loading data
         //          htmlID = jQuery selector to specify where resulting HTML should be appended
         //          taxTerm = root taxonomic term (based on Project ID)
         //          transcript = end of URL for specific transcript / slug based on mote value
+        // TO DO:   Currently, as SoundCloud and YouTube are the only playback widgets, the presence of
+        //              an audio or video feature from dhpGetTaxTranscript() indicates which of these two
+        //              to use. If other options become available, distinguishing widgets will become harder.
     prepareTaxTranscript: function (ajaxURL, projectID, htmlID, taxTerm, transcript)
     {
         jQuery.ajax({
@@ -265,17 +270,27 @@ console.log("Binding seek function");
                 tax_term: taxTerm
             },
             success: function(data, textStatus, XMLHttpRequest){
-                if (data != null) {
+                if (data != null && data !== '') {
                     var results = JSON.parse(data);
                     var transParams = {
-                        'audio'         : results.audio,
-                        'transcript'    : results.transcript,
-                        'transcript2'   : results.transcript2,
-                        'timecode'      : -1,
-                        'startTime'     : -1,
-                        'endTime'       : -1
+                        stream: null,
+                        playerType: null,
+                        transcript: results.transcript,
+                        transcript2: results.transcript2,
+                        timecode: -1,
+                        startTime: -1,
+                        endTime: -1
                     };
-                    dhpWidget.prepareOneTranscript(null, projectID, htmlID, transParams);
+                    if (results.audio && results.audio !== '') {
+                        transParams.stream = results.audio;
+                        transParams.playerType = 'scloud';
+                    } else if (results.video && results.video !== '') {
+                        transParams.stream = results.video;
+                        transParams.playerType = 'youtube';
+                    }
+                    if (transParams.playerType) {
+                        dhpWidget.prepareOneTranscript(null, projectID, htmlID, transParams);
+                    }
                 }
             },
             error: function(XMLHttpRequest, textStatus, errorThrown){
@@ -317,7 +332,7 @@ console.log("Binding seek function");
         _.find(dhpWidget.tcArray, function(timecode, index) {
             match = (millisecond<timecode);
             if (match) {
-                if(dhpWidget.rowIndex!==index) {
+                if (dhpWidget.rowIndex != index) {
                     dhpWidget.rowIndex = index;
                         // Should we synchronize audio and text transcript?
                     if (document.getElementById("transcSyncOn").checked) {
@@ -451,7 +466,7 @@ console.log("Binding seek function");
             // Loop thru HTML for left-side transcript and add right-side text
          _.each(textArray, function(val, index) {
             lineClass = '';
-            if(jQuery(firstTranscriptHTML).eq(index).hasClass('odd-line')) {
+            if (jQuery(firstTranscriptHTML).eq(index).hasClass('odd-line')) {
                 lineClass = 'odd-line';
             }
             jQuery(firstTranscriptHTML).eq(index).after('<div class="type-text '+lineClass+'">'+val+'</div>')
