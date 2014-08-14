@@ -600,37 +600,39 @@ var dhpTimeline = {
             .scale(band.xScale)
             .orient("bottom")
             .tickSize(6, 0)
-            .tickFormat(function (d) {
-                var dates = band.xScale.domain();
-                var timeDiff = dates[1].getFullYear() - dates[0].getFullYear();
+                // For now, let D3 determine what label to show -- this is alternative DIY logic
+            // .tickFormat(function (d) {
+            //     var dates = band.xScale.domain();
+            //     var timeDiff = dates[1].getFullYear() - dates[0].getFullYear();
 
-                    // What to print on label depends on scale of time periods
-                    // Have tried to use reasonable heuristic
-                if (timeDiff > dhpTimeline.threshold) {
-                    return d.getUTCFullYear();
-                } else {
-                    timeDiff = (timeDiff*12)+(dates[1].getMonth() - dates[0].getMonth());
-                    if (timeDiff > dhpTimeline.threshold) {
-                        return dhpTimeline.months[d.getMonth()];
-                    } else {
-                        return d.getDate();
-                    }
-                }
-            } );
+            //         // What to print on label depends on scale of time periods
+            //         // Have tried to use reasonable heuristic
+            //     if (timeDiff > dhpTimeline.threshold) {
+            //         return d.getUTCFullYear();
+            //     } else {
+            //         timeDiff = (timeDiff*12)+(dates[1].getMonth() - dates[0].getMonth());
+            //         if (timeDiff > dhpTimeline.threshold) {
+            //             return dhpTimeline.months[d.getMonth()];
+            //         } else {
+            //             return d.getDate();
+            //         }
+            //     }
+            // } )
+            ;
 
             // Create SVG components
-        var xAxis = dhpTimeline.chart.append("g")
+        var axisSVG = dhpTimeline.chart.append("g")
             .style("font-size", (dhpTimeline.labelH-6)+'px')
             .attr("class", "axis")
             .attr("transform", "translate(0," + (band.t + band.h)  + ")");
 
             // PURPOSE: Draw itself when called
-        xAxis.redraw = function () {
-            xAxis.call(axis);
+        axisSVG.redraw = function () {
+            axisSVG.call(axis);
         };
 
-        band.parts.push(xAxis); // for brush.redraw
-        dhpTimeline.components.push(xAxis); // for timeline.redraw
+        band.parts.push(axisSVG); // for brush.redraw
+        dhpTimeline.components.push(axisSVG); // for timeline.redraw
     }, // createXAxis()
 
 
