@@ -658,25 +658,46 @@ var dhpTimeline = {
             // Create logical controller
         var brush = d3.svg.brush()
             .x(band.xScale.range([0, band.w]))
+                // Start with default zoom position
             .extent([dhpTimeline.openFromDate, dhpTimeline.openToDate])
                 // Code to bind when brush moves
-            .on("brush", function() {
-                var domain = brush.empty()
-                    ? band.xScale.domain()
-                    : brush.extent();
+            .on('brush', function() {
+                var extent0 = brush.extent(); // "original" default value
+                var extent1;                  // new recomputed value
+
+                  // if dragging, preserve the width of the extent, rounding by days
+                if (d3.event.mode === "move") {
+                    var d0 = d3.time.day.round(extent0[0]),
+                        d1 = d3.time.day.offset(d0, Math.round((extent0[1] - extent0[0]) / 864e5));
+                    extent1 = [d0, d1];
+
+                    // otherwise, if new position, round both dates
+                } else {
+                    extent1 = extent0.map(d3.time.day.round);
+
+                        // if empty when rounded, create minimal sized lens -- at least 1 day long
+                    if (extent1[0] >= extent1[1]) {
+                        extent1[0] = d3.time.day.floor(extent0[0]);
+                        extent1[1] = d3.time.day.ceil( d3.time.day.offset(extent1[0], Math.round(dhpTimeline.instantOffset / 864e5) ) );
+                    }
+                }
+
+                    // "this" will actually point to the brushSVG object
+                    // This inserts new brush SVG data
+                d3.select(this).call(brush.extent(extent1));
 
                     // Rescale top timeline(s) according to bottom brush
-                dhpTimeline.bands[0].xScale.domain(domain);
+                dhpTimeline.bands[0].xScale.domain(extent1);
                 dhpTimeline.bands[0].redraw();
             });
 
             // Create SVG component and connect to controller
-        var xBrush = band.g.append("svg")
+        var brushSVG = band.g.append("svg")
             .attr("class", "brush")
             .call(brush);
 
-            // Container is opaque rectangle with black arrow handles
-        xBrush.selectAll("rect")
+            // Container is opaque rectangle
+        brushSVG.selectAll("rect")
             .attr("y", 0)
             .attr("height", band.h);
     } // createBrush()
