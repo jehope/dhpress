@@ -238,6 +238,12 @@ var dhpCardsView = {
                 jQuery('input:radio[name=filter-type]')[0].checked = true;
             }
             break;
+        case 'Date':
+            jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-dates').html()));
+                // if previously set, use last selection as default
+            if (dhpCardsView.curFilterVal) {
+            }
+            break;
         default:
             alert('There is currently no way to use a filter of type '+moteDef.type);
             break;
@@ -321,6 +327,8 @@ var dhpCardsView = {
         case 'Long Text':
             dhpCardsView.curFilterVal = jQuery('#filter-text-input').val();
             dhpCardsView.doTextFilter();
+            break;
+        case 'Date':
             break;
         }
     }, // doFilter()

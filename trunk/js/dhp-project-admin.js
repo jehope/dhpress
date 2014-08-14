@@ -595,23 +595,27 @@ jQuery(document).ready(function($) {
     self.tstMoteNames = ko.computed(function() {
       return doGetMoteNames(['Timestamp']);
     }, self);
-    // self.link2MoteNames = ko.computed(function() {
-    //   return doGetMoteNames(['Link To']. true);
-    // }, self);
     self.imageMoteNames = ko.computed(function() {
       return doGetMoteNames(['Image'], true);
     }, self);
     self.soundMoteNames = ko.computed(function() {
       return doGetMoteNames(['SoundCloud'], true);
     }, self);
+      // Any textual value, including the_title and the_content (but not 'disable')
     self.anyTxtMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text', 'Long Text'], false, true, true);
     }, self);
+      // Any textual value, including the_title, the_content and 'disable'
     self.anyTxtDMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text', 'Long Text'], true, true, true);
     }, self);
+      // Any value that can be displayed as content
     self.contentMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text', 'Long Text', 'Image'], false, true, true);
+    }, self);
+      // Any mote value that can be processed via sorting and filtering
+    self.compMoteNames = ko.computed(function() {
+      return doGetMoteNames(['Short Text', 'Long Text', 'Date'], false, false, false);
     }, self);
 
       // Methods

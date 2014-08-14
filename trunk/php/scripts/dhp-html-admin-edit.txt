@@ -285,14 +285,14 @@
 
 <script type="text/html" id="cards-filter-template">
     <li>
-        Cards filter mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.anyTxtMoteNames"></select>
+        Cards filter mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.compMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delCardFilter($data, theEP, $index()); }">Delete</button>
     </li>
 </script>
 
 <script type="text/html" id="cards-sort-template">
     <li>
-        Cards sort mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.anyTxtMoteNames"></select>
+        Cards sort mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.compMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delCardSort($data, theEP, $index()); }">Delete</button>
     </li>
 </script>

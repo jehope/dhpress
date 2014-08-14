@@ -131,3 +131,13 @@ p {
     width: auto;
     height: 1.1em;
 }
+
+.date-boxes {
+    padding: 0;
+    display: inline-block;
+}
+
+.date-boxes input {
+    margin: 2px 5px 2px 0px;
+    display: inline-block;
+}
