@@ -718,6 +718,11 @@ jQuery(document).ready(function($) {
                 if (theEP.settings.label() == moteName) {  theEP.settings.label(''); }
                 if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
                 break;
+              case 'time':
+                if (theEP.settings.date() == moteName) {  theEP.settings.date(''); }
+                if (theEP.settings.label() == moteName) {  theEP.settings.label(''); }
+                if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
+                break;
               }
             });
 
