@@ -3,7 +3,7 @@
 //      See also https://github.com/rengel-de/timeline
 // ASSUMES: A view area for the timeline has been marked with HTML div as "dhp-visual"
 // TO DO:   Handle case when from/to, openFrom/openTo are not provided by user by extracting
-//              them from data
+//              them from data. This is complicated by other calculations based on these dates.
 // USES:    JavaScript libraries D3, jQuery
 
 // Contains fields: tlEP, callBacks
@@ -31,27 +31,10 @@ var dhpTimeline = {
         dhpTimeline.tlEP        = tlEP;
         dhpTimeline.callBacks   = callBacks;
 
-            // For now, from/to dates are required, so leave this commented
-        // if (tlEP.from == null || tlEP.from == '') {
-        //     dhpTimeline.fromDate = null;
-        // } else {
-            dhpTimeline.fromDate = dhpTimeline.parseADate(tlEP.from, true);
-        // }
-        // if (tlEP.to == null || tlEP.to == '') {
-        //     dhpTimeline.toDate = null;
-        // } else {
-            dhpTimeline.toDate = dhpTimeline.parseADate(tlEP.to, true);
-        // }
-        // if (tlEP.openFrom == null || tlEP.openFrom == '') {
-        //     dhpTimeline.openFromDate = null;
-        // } else {
-            dhpTimeline.openFromDate = dhpTimeline.parseADate(tlEP.openFrom, true);
-        // }
-        // if (tlEP.openTo == null || tlEP.openTo == '') {
-        //     dhpTimeline.openToDate = null;
-        // } else {
-            dhpTimeline.openToDate = dhpTimeline.parseADate(tlEP.openTo, true);
-        // }
+        dhpTimeline.fromDate = dhpTimeline.parseADate(tlEP.from, true);
+        dhpTimeline.toDate = dhpTimeline.parseADate(tlEP.to, true);
+        dhpTimeline.openFromDate = dhpTimeline.parseADate(tlEP.openFrom, true);
+        dhpTimeline.openToDate = dhpTimeline.parseADate(tlEP.openTo, true);
 
             // Make calculations based on timespan
 
@@ -62,7 +45,7 @@ var dhpTimeline = {
         dhpTimeline.maxTracks   = typeof(tlEP.rows)  === 'number' ? tlEP.rows  : parseInt(tlEP.rows);
         dhpTimeline.bandHt      = typeof(tlEP.bandHt)  === 'number' ? tlEP.bandHt  : parseInt(tlEP.bandHt);
         dhpTimeline.instRad     = (dhpTimeline.bandHt / 2) -1; // pixel radius of instantaneous circle
-        dhpTimeline.bandGap     = 25;           // pixels between one band and the next
+        dhpTimeline.bandGap     = 37;           // pixels between one band and the next
         dhpTimeline.trackGap    = 1;            // pixels between one track and another
         dhpTimeline.labelH      = 16;           // pixel height of axis labels (font = labelH-3)
         dhpTimeline.bands       = new Array(2);
@@ -495,13 +478,21 @@ var dhpTimeline = {
 
         // PURPOSE: Create text labels for min & max ranges of x-axes
         // NOTES:   The values to display will depend on the scale of difference between fromDate and toDate
+        //          The labels for zoom band are twice the height than macro band, as may need two readings
     createLabels: function(index)
     {
         var band = dhpTimeline.bands[index];
 
             // Calculated positions
         var labelTop = band.t + band.h - dhpTimeline.labelH;
-        var y = band.t + band.h + 1;
+        var y = band.t + band.h;
+        var labelH;
+
+        if (index == 0) {
+            labelH = dhpTimeline.labelH*2;
+        } else {
+            labelH = dhpTimeline.labelH;
+        }
 
             // The data associated with Labels
         var startLabel = {
@@ -536,19 +527,19 @@ var dhpTimeline = {
             .attr("class", "bandLabel")
             .attr("x", function(label) { return label.left; })
             .attr("width", dhpTimeline.labelW)
-            .attr("height", dhpTimeline.labelH);
+            .attr("height", labelH);
             // .style("opacity", 1);
 
             // Add textual features for labels
-        var labels = bandLabels.append("text")
+        var yLabels = bandLabels.append("text")
             .attr("class", 'bandMinMaxLabel')
-            .attr("id", function(label) { return label.name; } )
+            .attr("id", function(label) { return label.name+index; } )
             .attr("x", function(label) { return label.x+label.textDelta; } )
             .attr("y", dhpTimeline.labelH-4)
             .attr("text-anchor", function(label) { return label.anchor; });
 
             // Needs to know how to draw itself
-        labels.redraw = function ()
+        yLabels.redraw = function ()
         {
             var domainVals = band.xScale.domain();
             var min = domainVals[0],
@@ -557,24 +548,45 @@ var dhpTimeline = {
                 // This will be called for each label in turn
                 // What to print on label depends on scale of time periods
                 // Have tried to use reasonable heuristic
-            labels.text(function (label) {
-                var timeDiff = max.getUTCFullYear() - min.getUTCFullYear();
-                if (timeDiff > dhpTimeline.threshold) {
-                    return label.whichDate(min,max).getUTCFullYear();
-                } else {
-                    timeDiff = (timeDiff*12)+(max.getMonth() - min.getMonth());
-                    if (timeDiff > dhpTimeline.threshold) {
-                        return dhpTimeline.months[label.whichDate(min,max).getMonth()];
-                    } else {
-                        return label.whichDate(min,max).getDate();
-                    }
-                }
+            yLabels.text(function (label) {
+                return label.whichDate(min,max).getUTCFullYear();
             })
         }; // redraw()
 
             // Add to items needed to be drawn
-        band.parts.push(labels);
-        dhpTimeline.components.push(labels);
+        band.parts.push(yLabels);
+        dhpTimeline.components.push(yLabels);
+
+        if (index == 0) {
+                // If creating zoom band, need to add text features for months
+            var mLabels = bandLabels.append("text")
+                .attr("class", 'bandMinMaxLabel')
+                .attr("id", function(label) { return 'm'+label.name+index; } )
+                .attr("x", function(label) { return label.x+label.textDelta; } )
+                .attr("y", labelH-4)
+                .attr("text-anchor", function(label) { return label.anchor; });
+
+                // Needs to know how to draw itself
+            mLabels.redraw = function ()
+            {
+                var domainVals = band.xScale.domain();
+                var min = domainVals[0],
+                    max = domainVals[1];
+
+                mLabels.text(function (label) {
+                    var timeDiff = max.getUTCFullYear() - min.getUTCFullYear();
+                    if (timeDiff > dhpTimeline.threshold) {
+                        return '';
+                    } else {
+                        return dhpTimeline.months[label.whichDate(min,max).getMonth()];
+                    }
+                })
+            }; // redraw()
+
+                // Add to items needed to be drawn
+            band.parts.push(mLabels);
+            dhpTimeline.components.push(mLabels);
+        } // if zoom
     }, // createLabels()
 
 
@@ -592,6 +604,8 @@ var dhpTimeline = {
                 var dates = band.xScale.domain();
                 var timeDiff = dates[1].getFullYear() - dates[0].getFullYear();
 
+                    // What to print on label depends on scale of time periods
+                    // Have tried to use reasonable heuristic
                 if (timeDiff > dhpTimeline.threshold) {
                     return d.getUTCFullYear();
                 } else {
