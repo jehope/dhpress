@@ -6,7 +6,7 @@
 //              them from data. This is complicated by other calculations based on these dates.
 // USES:    JavaScript libraries D3, jQuery
 
-// Contains fields: tlEP, callBacks
+// Contains fields: tlEP
 //                  rawData = raw time marker data
 //                  colorValues = Legend filter
 //                  features = FeatureCollection array
@@ -25,11 +25,9 @@ var dhpTimeline = {
         //			projectID    = ID of project
         //          vizIndex     = index of this visualization
         //			tlEP      	 = settings for timeline entry point (from project settings)
-        //          callBacks    = object loaded with project-page callback functions
-    initialize: function(ajaxURL, projectID, vizIndex, tlEP, callBacks)
+    initialize: function(ajaxURL, projectID, vizIndex, tlEP)
     {
         dhpTimeline.tlEP        = tlEP;
-        dhpTimeline.callBacks   = callBacks;
 
         dhpTimeline.fromDate = dhpTimeline.parseADate(tlEP.from, true);
         dhpTimeline.toDate = dhpTimeline.parseADate(tlEP.to, true);
@@ -117,7 +115,7 @@ var dhpTimeline = {
                     // First deal with Legend
                 dhpTimeline.legendTerms = dhpTimeline.rawData[0];
                 dhpTimeline.legendTerms = dhpTimeline.legendTerms.terms;
-                callBacks.create1Legend(tlEP.color, dhpTimeline.legendTerms);
+                dhpServices.create1Legend(tlEP.color, dhpTimeline.legendTerms);
 
                     // Now handle the actual events and create timeline
                 dhpTimeline.processEvents();
@@ -132,7 +130,7 @@ var dhpTimeline = {
                 dhpTimeline.components.forEach(function (component) {
                     component.redraw();
                 });
-                callBacks.remLoadingModal();
+                dhpServices.remLoadingModal();
             },
             error: function(XMLHttpRequest, textStatus, errorThrown)
             {
@@ -403,7 +401,7 @@ var dhpTimeline = {
             .attr("class", function (d) { return d.instant ? "part instant" : "part interval"; })
             .on("click", function(d) {
                 var eventData = dhpTimeline.features[d.index];
-                dhpTimeline.callBacks.showMarkerModal(eventData);
+                dhpServices.showMarkerModal(eventData);
             });
 
             // Finish specifying data for date ranges
@@ -414,7 +412,7 @@ var dhpTimeline = {
             .attr("height", "100%")
             .style("fill", function(d) {
                 var eventData = dhpTimeline.features[d.index];
-                return dhpTimeline.callBacks.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms);
+                return dhpServices.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms);
             });
 
             // Label for interval -- only for top band
@@ -425,7 +423,7 @@ var dhpTimeline = {
                 .attr("y", fontPos)
                 .style("fill", function(d) {
                     var eventData = dhpTimeline.features[d.index];
-                    return dhpTimeline.callBacks.getTextColor(dhpTimeline.callBacks.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms));
+                    return dhpServices.getTextColor(dhpServices.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms));
                 })
                 .style("font-size", fontSize)
                 .text(function (d) {
@@ -443,7 +441,7 @@ var dhpTimeline = {
             .attr("r", instR)
             .style("fill", function(d) {
                 var eventData = dhpTimeline.features[d.index];
-                return dhpTimeline.callBacks.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms);
+                return dhpServices.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms);
             });
 
             // Labels only on top zoom frame

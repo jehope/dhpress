@@ -221,7 +221,6 @@ var dhpWidget = {
             jQuery('#player-widget').click(function(evt) {
                 if (jQuery(evt.target).hasClass('type-timecode') && dhpWidget.playWidget) {
                     var seekToTime = jQuery(evt.target).closest('.type-timecode').data('timecode');
-
                         // seekTo doesn't work unless sound is already playing
                     if (!dhpWidget.playingNow) {
                         dhpWidget.playingNow = true;

@@ -9,7 +9,6 @@
 var dhpPinboardView = {
 
         // Contains fields: ajaxURL, projectID, pinboardEP, viewParams, vizIndex
-        //                  callBacks = object containing callback functions to dhp-project-page
 
         //					rawAjaxData = raw data returned from AJAX
         //					allMarkers = All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
@@ -40,8 +39,7 @@ var dhpPinboardView = {
         //          projectID    = ID of project
         //          mapEP        = settings for map entry point (from project settings)
         //          viewParams   = array of data about map layers (see dhpGetMapLayerData() in dhp-project-functions)
-        //          callBacks    = set of callback functions back to dhp-project-page functions
-    initialize: function(ajaxURL, projectID, vizIndex, pinboardEP, viewParams, callBacks) {
+    initialize: function(ajaxURL, projectID, vizIndex, pinboardEP, viewParams) {
              // Constants
         dhpPinboardView.checkboxHeight  = 12; // default checkbox height
         dhpPinboardView.minWidth        = 182; // 182px for horizontal + 260px for Legend key
@@ -50,7 +48,6 @@ var dhpPinboardView = {
             // Save visualization data for later
         dhpPinboardView.pinboardEP     = pinboardEP;
         dhpPinboardView.viewParams     = viewParams;
-        dhpPinboardView.callBacks      = callBacks;
 
             // Expand to show/hide child terms and use their colors
         dhpPinboardView.useParent = true;
@@ -155,7 +152,7 @@ var dhpPinboardView = {
                     {
                         dhpPinboardView.createDataObjects(JSON.parse(data));
                             // Remove Loading modal
-                        callBacks.remLoadingModal();
+                        dhpServices.remLoadingModal();
                         jQuery('.reveal-modal-bg').remove();
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown)
@@ -304,7 +301,7 @@ var dhpPinboardView = {
         _.each(dhpPinboardView.rawAjaxData, function(dataSet) {
             switch(dataSet.type) {
             case 'filter':
-                dhpPinboardView.filters.push(dhpPinboardView.callBacks.flattenTerms(dataSet));
+                dhpPinboardView.filters.push(dhpServices.flattenTerms(dataSet));
                 break;
             case 'FeatureCollection':
                 dhpPinboardView.allMarkers = dataSet.features;
@@ -418,7 +415,7 @@ var dhpPinboardView = {
                                 // Get index to marker
                             var index = parseInt(this.data("i"));
                             var clicked = dhpPinboardView.allMarkers[index];
-                            dhpPinboardView.callBacks.showMarkerModal(clicked);
+                            dhpServices.showMarkerModal(clicked);
                         });
                         lgdHeadVal.add(shape);
                     }); // each marker
@@ -524,7 +521,7 @@ var dhpPinboardView = {
         // PURPOSE: Create HTML for all of the legends for this visualization
     createLegends: function() 
     {
-        dhpPinboardView.callBacks.createLegends(dhpPinboardView.filters, 'Layer Buttons');
+        dhpServices.createLegends(dhpPinboardView.filters, 'Layer Buttons');
 
             // Handle user selection of value name from current Legend
         jQuery('#legends div.terms .row a').click(function(event) {

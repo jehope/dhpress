@@ -21,6 +21,19 @@
   <li class="active"><a id="dhp-filter-reset" href="#">No Filter</a></li>
 </script>
 
+<script id="dhp-script-fltrErrorModal" type="text/x-handlebars-template">
+  <div id="filterErrModal" class="reveal-modal small" data-reveal>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="errorModalLabel"></h3>
+      </div>
+      <div class="modal-body clearfix">
+      </div>
+    </div> <!-- modal-content -->
+    <a class="close-reveal-modal close-select-modal">&#215;</a>
+  </div>
+</script>
+
 <script id="dhp-script-filterModal" type="text/x-handlebars-template">
   <div id="filterModal" class="reveal-modal large" data-reveal>
     <div class="modal-content">
@@ -52,7 +65,7 @@
   <div class="date-boxes">Date <input id="filter-date1Y-input" type="text" size="5" placeholder="Year"/> <input id="filter-date1M-input" type="text" size="2" placeholder="Month#"/> <input id="filter-date1D-input" type="text" size="2" placeholder="Date"/></div>
   <input type="radio" name="date1Order" value="before"/>Before or <input type="radio" name="date1Order" value="after"/> After<br/>
 
-  and <input type="checkbox" name="date2"/><br/>
+  and <input type="checkbox" id="dateAnd"/><br/>
   <div class="date-boxes">Date <input id="filter-date2Y-input" type="text" size="5" placeholder="Year"/> <input id="filter-date2M-input" type="text" size="2" placeholder="Month#"/> <input id="filter-date2D-input" type="text" size="2" placeholder="Date"/></div>
   <input type="radio" name="date2Order" value="before"/>Before or <input type="radio" name="date2Order" value="after"/> After<br/>  
 </script>

@@ -8,7 +8,6 @@
 var dhpTreeView = {
 
         // Contains fields: treeEP, viewParams
-        //                  callBacks = object containing callback functions to dhp-project-page
 
         //					rawAjaxData = raw data returned from AJAX
         //                  legendTerms = terms array of Legend
@@ -39,14 +38,12 @@ var dhpTreeView = {
         // INPUT:   ajaxURL      = URL to WP
         //          projectID    = ID of project
         //          treeEP       = settings for tree entry point (from project settings)
-        //          callBacks    = set of callback functions back to dhp-project-page functions
-    initialize: function(ajaxURL, projectID, vizIndex, treeEP, callBacks) {
+    initialize: function(ajaxURL, projectID, vizIndex, treeEP) {
              // Constants
         dhpTreeView.controlHeight   = 49;  // LegendHeight[45] + 4
 
             // Save visualization data for later
         dhpTreeView.treeEP         = treeEP;
-        dhpTreeView.callBacks      = callBacks;
 
             // ensure that EP parameters are integers, not strings
         dhpTreeView.iWidth  = typeof(treeEP.width)  === 'number' ? treeEP.width  : parseInt(treeEP.width);
@@ -162,7 +159,7 @@ var dhpTreeView = {
 
                 dhpTreeView.createLegend();
                 dhpTreeView.createGraph();
-                callBacks.remLoadingModal();
+                dhpServices.remLoadingModal();
             },
             error: function(XMLHttpRequest, textStatus, errorThrown)
             {
@@ -185,7 +182,7 @@ var dhpTreeView = {
 
     createLegend: function() {
         if (dhpTreeView.legendTerms != null) {
-            dhpTreeView.callBacks.create1Legend(dhpTreeView.treeEP.color, dhpTreeView.legendTerms);
+            dhpServices.create1Legend(dhpTreeView.treeEP.color, dhpTreeView.legendTerms);
         }
     }, // createLegend()
 
@@ -200,7 +197,7 @@ var dhpTreeView = {
         if (dhpTreeView.legendTerms == null) {
             return '#3333FF';
         }
-        var color = dhpTreeView.callBacks.getItemColor(featureVals, dhpTreeView.legendTerms);
+        var color = dhpServices.getItemColor(featureVals, dhpTreeView.legendTerms);
         return (color == null) ? '#3333FF' : color;
     }, // getItemColor()
 
@@ -234,7 +231,7 @@ var dhpTreeView = {
                         .attr("class", "node")
                         .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
                         .on("click", function(d) {
-                            dhpTreeView.callBacks.showMarkerModal(d);
+                            dhpServices.showMarkerModal(d);
                         });
 
             node.append("circle")
@@ -270,7 +267,7 @@ var dhpTreeView = {
                 .attr("class", "node")
                 .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
                 .on("click", function(d) {
-                    dhpTreeView.callBacks.showMarkerModal(d);
+                    dhpServices.showMarkerModal(d);
                 });
 
                 // Create the actual circle element
@@ -301,7 +298,7 @@ var dhpTreeView = {
                   return dhpTreeView.getItemColor(d.properties.categories);
                 })
                 .on("click", function(d) {
-                    dhpTreeView.callBacks.showMarkerModal(d);
+                    dhpServices.showMarkerModal(d);
                 } );
 
             labels = dhpTreeView.vis.selectAll(".label")
@@ -310,11 +307,11 @@ var dhpTreeView = {
             aLabel = labels.enter().append("text")
                 .attr("class", "label")
                 .on("click", function(d) {
-                    dhpTreeView.callBacks.showMarkerModal(d);
+                    dhpServices.showMarkerModal(d);
                 } )
                 .style("fill", function(d) {
                   var color = dhpTreeView.getItemColor(d.properties.categories);
-                  return dhpTreeView.callBacks.getTextColor(color);
+                  return dhpServices.getTextColor(color);
                 })
                     // Does the text point belong on the left or right side?
                 .attr("text-anchor", function(d) {

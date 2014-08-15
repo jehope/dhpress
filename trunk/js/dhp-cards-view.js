@@ -9,7 +9,7 @@
 
 var dhpCardsView = {
 
-        // Contains fields: cardsEP, callBacks
+        // Contains fields: cardsEP
         //                  rawData
         //                  colorValues   = array of { id, icon_url }
         //                  defTextColor  = default text color
@@ -26,15 +26,13 @@ var dhpCardsView = {
         //          vizIndex     = index of this visualization
         //			cardsEP      = settings for cards entry point (from project settings)
         //          moteDefs     = mote definitions
-        //          callBacks    = object loaded with project-page callback functions
-    initialize: function(ajaxURL, projectID, vizIndex, cardsEP, moteDefs, callBacks)
+    initialize: function(ajaxURL, projectID, vizIndex, cardsEP, moteDefs)
     {
         var menuHTML, active;
 
             // Save reset data for later
         dhpCardsView.moteDefs       = moteDefs;
         dhpCardsView.cardsEP        = cardsEP;
-        dhpCardsView.callBacks      = callBacks;
 
         dhpCardsView.currentSort    = null;
         dhpCardsView.currentFilter  = null;
@@ -48,7 +46,6 @@ var dhpCardsView = {
             jQuery('#dhp-visual').attr('style','background-color:'+dhpCardsView.cardsEP.bckGrd);
         }
 
-            // Insert Legend area as first thing in viz space -- Joe had "after" but menu off map above if not "append"
         jQuery('#dhp-visual').prepend(Handlebars.compile(jQuery("#dhp-script-legend-head").html()));
 
             // Create nav bar menus --------------------
@@ -118,6 +115,8 @@ var dhpCardsView = {
 
                 // Insert Marker modal window HTML
             jQuery('body').append(Handlebars.compile(jQuery('#dhp-script-filterModal').html()));
+                // Insert Filter Error modal HTML
+            jQuery('body').append(Handlebars.compile(jQuery('#dhp-script-fltrErrorModal').html()));
 
         } // if filterMotes
 
@@ -147,7 +146,7 @@ var dhpCardsView = {
             {
                 dhpCardsView.rawData = JSON.parse(data);
                 dhpCardsView.createCards();
-                callBacks.remLoadingModal();
+                dhpServices.remLoadingModal();
             },
             error: function(XMLHttpRequest, textStatus, errorThrown)
             {
@@ -156,13 +155,6 @@ var dhpCardsView = {
         });
      }, // initialize()
 
-        // RETURNS: Mote definition for mote whose name is moteName
-    findMoteByName: function(moteName)
-    {
-        return _.find(dhpCardsView.moteDefs, function(theMote) {
-            return (theMote.name === moteName);
-        });
-    }, // findMoteByName()
 
         // PURPOSE: Find the category array corresponding to moteName
         // RETURNS: The category array, or null
@@ -201,7 +193,7 @@ var dhpCardsView = {
 
             // Insert material into modal body depending on type of mote
             // Use last selection as default
-        var moteDef = dhpCardsView.findMoteByName(dhpCardsView.currentFilter);
+        var moteDef = dhpServices.findMoteByName(dhpCardsView.currentFilter);
         switch (moteDef.type) {
         case 'Long Text':
             jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-ltext').html()));
@@ -242,6 +234,15 @@ var dhpCardsView = {
             jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-dates').html()));
                 // if previously set, use last selection as default
             if (dhpCardsView.curFilterVal) {
+                jQuery('#filter-date1Y-input').val(dhpCardsView.curFilterVal.date1Y);
+                jQuery('#filter-date1M-input').val(dhpCardsView.curFilterVal.date1M);
+                jQuery('#filter-date1D-input').val(dhpCardsView.curFilterVal.date1D);
+                jQuery('input:radio[name=date1Order][value="'+dhpCardsView.curFilterVal.date1Order+'"]').prop('checked', true);
+                jQuery("#dateAnd").prop('checked', dhpCardsView.curFilterVal.and);
+                jQuery('#filter-date2Y-input').val(dhpCardsView.curFilterVal.date2Y);
+                jQuery('#filter-date2M-input').val(dhpCardsView.curFilterVal.date2M);
+                jQuery('#filter-date2D-input').val(dhpCardsView.curFilterVal.date2D);
+                jQuery('input:radio[name=date2Order][value="'+dhpCardsView.curFilterVal.date2Order+'"]').prop('checked', true);
             }
             break;
         default:
@@ -259,6 +260,7 @@ var dhpCardsView = {
           }
         });
     }, // setFilter()
+
 
         // PURPOSE: Handle doing filter by reading user text entry in form
     doTextFilter: function()
@@ -283,6 +285,132 @@ var dhpCardsView = {
             dhpCardsView.resetFilter();
         }
     }, // doTextFilter()
+
+
+        // PURPOSE: Attempt filtering by date -- check values first
+    doDateFilter: function()
+    {
+        var date1Y, date1M, date1D, date1;
+        var date2Y, date2M, date2D, date2=null;
+
+        function popUpErrModal(str)
+        {
+                // Reset modal title
+            jQuery('#filterErrModal #errorModalLabel').text('Date Filter Error');
+
+                // Clear out modal body contents
+            jQuery('#filterErrModal .modal-body').empty();
+            jQuery('#filterErrModal .modal-body').append('<p>'+str+'</p>');
+
+            jQuery('#filterErrModal').foundation('reveal', 'open');
+            jQuery('#filterErrModal a.close-select-modal').click(function() {
+                jQuery('#filterErrModal').foundation('reveal', 'close');
+            });
+        } // popUpErrModal
+
+            // PURPOSE: Utility function to make sure text is valid number; displays error modal if problem
+            // RETURNS: number if no problem with format, null if error, or '' if no value
+        function getNumber(val, req, min, max, numType)
+        {
+            var num;
+
+                // Has no value been supplied? Check if it is required
+            if (val === '') {
+                if (req) {
+                    popUpErrModal('The value for '+numType+' is required but you left it blank.');
+                    return null;
+                }
+                return '';
+            }
+            if (typeof(val) === 'number') {
+                num = val;
+            } else {
+                num = parseInt(val, 10);
+            }
+            if (isNaN(num)) {
+                popUpErrModal('The value you entered for '+numType+' is not a valid number.');
+                return null;
+            }
+            if (min && num < min) {
+                popUpErrModal('The value you entered for '+numType+' is too small.');
+                return null;
+            }
+            if (max && num > max) {
+                popUpErrModal('The value you entered for '+numType+' is too large.');
+                return null;
+            }
+            return num;
+        } // badNumber()
+
+            // Abort if there are any errors with first date
+        if ((date1Y=getNumber(dhpCardsView.curFilterVal.date1Y, true, null, null, 'first year') == null) ||
+            (date1M=getNumber(dhpCardsView.curFilterVal.date1M, false, 1, 12, 'first month') == null) ||
+            (date1D=getNumber(dhpCardsView.curFilterVal.date1D, false, 1, 31, 'first date') == null))
+        {
+            return;
+        }
+
+            // determine how to construct the Date -- how to handle missing values depends on whether
+            //  order is "before" or "after"
+        if (date1M == '') {
+            if (dhpCardsView.curFilterVal.date1Order == 'before')
+            {
+                date1M = 1; date1D = 1;
+            } else {
+                date1M = 12; date1D = 31;
+            }
+        } else if (date1D === '') {
+            if (dhpCardsView.curFilterVal.date1Order == 'before')
+            {
+                date1D = 1;
+            } else {
+                date1D = 31;
+            }
+        }
+        date1 = new Date(date1Y, date1M-1, date1D);
+
+            // Only check second date if checked
+        if (dhpCardsView.curFilterVal.and)
+        {
+            if ((date2Y=getNumber(dhpCardsView.curFilterVal.date2Y, true, null, null, 'second year') == null) ||
+                (date2M=getNumber(dhpCardsView.curFilterVal.date2M, false, 1, 12, 'second month') == null) ||
+                (date2D=getNumber(dhpCardsView.curFilterVal.date2M, false, 1, 31, 'second date') == null))
+            {
+            return;
+            }
+            if (date2M == '') {
+                if (dhpCardsView.curFilterVal.date2Order == 'before')
+                {
+                    date2M = 1; date2D = 1;
+                } else {
+                    date2M = 12; date2D = 31;
+                }
+            } else if (date2D === '') {
+                if (dhpCardsView.curFilterVal.date2Order == 'before')
+                {
+                    date2D = 1;
+                } else {
+                    date2D = 31;
+                }
+            }
+            date2 = new Date(date2Y, date2M-1, date2D);
+        } // if and
+
+            // Date paramters are now computed -- just need to do the calculations!
+        var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
+        var text;
+
+            // Get the text for each item and check against date range
+            // This is complex because we may have two dates, and the item itself may be a Date range
+        jQuery('#card-container').isotope({
+          filter: function() {
+            text = jQuery(this).find(className).text();
+            return true; // passes text
+          }
+        });
+
+    }, // doDateFilter()
+
 
         // PURPOSE: Actually perform filter action by reading values in form
         // INPUT:   moteDef is the mote used for filtering
@@ -329,15 +457,29 @@ var dhpCardsView = {
             dhpCardsView.doTextFilter();
             break;
         case 'Date':
+            dhpCardsView.curFilterVal = { };
+            dhpCardsView.curFilterVal.date1Y = jQuery('#filter-date1Y-input').val();
+            dhpCardsView.curFilterVal.date1M = jQuery('#filter-date1M-input').val();
+            dhpCardsView.curFilterVal.date1D = jQuery('#filter-date1D-input').val();
+            dhpCardsView.curFilterVal.date1Order = jQuery('input:radio[name=date1Order]:checked').val();
+            dhpCardsView.curFilterVal.and = jQuery("#dateAnd").is(':checked');
+            dhpCardsView.curFilterVal.date2Y = jQuery('#filter-date2Y-input').val();
+            dhpCardsView.curFilterVal.date2M = jQuery('#filter-date2M-input').val();
+            dhpCardsView.curFilterVal.date2D = jQuery('#filter-date2D-input').val();
+            dhpCardsView.curFilterVal.date2Order = jQuery('input:radio[name=date2Order]:checked').val();
+
+            dhpCardsView.doDateFilter();
             break;
         }
     }, // doFilter()
+
 
         // PURPOSE: Resizes dhp elements when browser size changes
     dhpUpdateSize: function()
     {
         jQuery("#card-container").isotope();
     }, // dhpUpdateSize()
+
 
         // PURPOSE: To determine color to use for marker
         // INPUT:   featureVals = array of category IDs (integers) associated with a feature/marker
@@ -369,7 +511,7 @@ var dhpCardsView = {
                 if (thisCatID===thisMarkerID) {
                     if(thisCat.icon_url.substring(0,1) == '#') {
                         if (thisCat.txtColor == undefined) {
-                            thisCat.txtColor = dhpCardsView.callBacks.getTextColor(thisCat.icon_url);
+                            thisCat.txtColor = dhpServices.getTextColor(thisCat.icon_url);
                         }
                         return thisCat.icon_url+'; color:'+thisCat.txtColor;
                     } else {
@@ -383,7 +525,7 @@ var dhpCardsView = {
                             if(catChildren[k].term_id==thisMarkerID) {
                                if(thisCat.icon_url.substring(0,1) == '#') {
                                     if (thisCat.txtColor == undefined) {
-                                        thisCat.txtColor = dhpCardsView.callBacks.getTextColor(thisCat.icon_url);
+                                        thisCat.txtColor = dhpServices.getTextColor(thisCat.icon_url);
                                     }
                                     return thisCat.icon_url+'; color:'+thisCat.txtColor;
                                 } else {
@@ -396,6 +538,7 @@ var dhpCardsView = {
            }
         }
     }, // getItemColor()
+
 
         // PURPOSE: Handle selection in "card space"
     selectCard: function(evt)
@@ -419,8 +562,9 @@ var dhpCardsView = {
         selectedFeature = dhpCardsView.rawData[dhpCardsView.rawData.length-1]['features'][index];
 
             // Open modal for feature
-        dhpCardsView.callBacks.showMarkerModal(selectedFeature);
+        dhpServices.showMarkerModal(selectedFeature);
     }, // selectCard()
+
 
         // PURPOSE: Create marker objects for map visualization; called by loadMapMarkers()
         // ASSUMES: rawdata assigned to JSON object (as outlined in createMarkerArray() in dhp-project-functions.php)
@@ -448,7 +592,7 @@ var dhpCardsView = {
 
             // Create Legend for colors (if colors exist)
         if (dhpCardsView.colorValues.length > 1) {
-            dhpCardsView.callBacks.create1Legend(dhpCardsView.cardsEP.color, dhpCardsView.colorValues);
+            dhpServices.create1Legend(dhpCardsView.cardsEP.color, dhpCardsView.colorValues);
         } // if colorValues
 
             // Create cards --------------------
@@ -460,7 +604,7 @@ var dhpCardsView = {
             // set default background and text colors
         var match = dhpCardsView.cardsEP.defColor.match(/^#([0-9a-f]{6})$/i);
         if (match) {
-            defTextColor = dhpCardsView.callBacks.getTextColor(dhpCardsView.cardsEP.defColor);
+            defTextColor = dhpServices.getTextColor(dhpCardsView.cardsEP.defColor);
             colorStr = dhpCardsView.cardsEP.defColor+'; color:'+defTextColor;
         } else {
             colorStr = dhpCardsView.cardsEP.defColor+'; color:#000000';

@@ -11,7 +11,6 @@
 var dhpMapsView = {
 
         // Contains fields: ajaxURL, projectID, mapEP, viewParams, vizIndex
-        //                  callBacks = object containing callback functions to dhp-project-page
 
         //					rawAjaxData = raw data returned from AJAX
         //					allMarkers = All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
@@ -40,17 +39,15 @@ var dhpMapsView = {
         //          projectID    = ID of project
         //          mapEP        = settings for map entry point (from project settings)
         //          viewParams   = array of data about map layers (see dhpGetMapLayerData() in dhp-project-functions)
-        //          callBacks    = set of callback functions back to dhp-project-page functions
-    initialize: function(ajaxURL, projectID, vizIndex, mapEP, viewParams, callBacks) {
+    initialize: function(ajaxURL, projectID, vizIndex, mapEP, viewParams) {
              // Constants
         dhpMapsView.checkboxHeight = 12; // default checkbox height
 
             // Save reset data for later
         dhpMapsView.mapEP          = mapEP;
         dhpMapsView.viewParams     = viewParams;
-        dhpMapsView.callBacks      = callBacks;
 
-        dhpMapsView.isTouch        = callBacks.isTouchDevice();
+        dhpMapsView.isTouch        = dhpServices.isTouchDevice();
 
         dhpMapsView.markerOpacity  = 1;     // default marker opacity
         dhpMapsView.makiSize       = mapEP.size;
@@ -88,7 +85,7 @@ var dhpMapsView = {
             {
                 dhpMapsView.createDataObjects(JSON.parse(data));
                     // Remove Loading modal
-                callBacks.remLoadingModal();
+                dhpServices.remLoadingModal();
                 jQuery('.reveal-modal-bg').remove();
             },
             error: function(XMLHttpRequest, textStatus, errorThrown)
@@ -269,7 +266,7 @@ var dhpMapsView = {
         // RETURNS: Object with 2 properties: terms and all
     formatTerms: function(oldTerms)
     {
-        var newTerms = dhpMapsView.callBacks.flattenTerms(oldTerms);
+        var newTerms = dhpServices.flattenTerms(oldTerms);
         var allTerms = [];
 
             // use array of just IDs for speedy intersection checks
@@ -539,7 +536,7 @@ var dhpMapsView = {
         // INPUT:   legendList = array of legends to display; each element has field "name" and array "terms" of [id, name, icon_url ]
     createLegends: function(legendList) 
     {
-        dhpMapsView.callBacks.createLegends(legendList, 'Layer Controls');
+        dhpServices.createLegends(legendList, 'Layer Controls');
 
             // Handle user selection of value name from current Legend
         jQuery('#legends div.terms .row a').click(function(event) {
@@ -710,7 +707,7 @@ var dhpMapsView = {
         // ASSUMES: currentFeature is set for reason noted above
     onFeatureSelect: function(e)
     {
-        dhpMapsView.callBacks.showMarkerModal(dhpMapsView.currentFeature);
+        dhpServices.showMarkerModal(dhpMapsView.currentFeature);
     }, // onFeatureSelect()
 
         // PURPOSE: Resizes map-specific elements when browser size changes
