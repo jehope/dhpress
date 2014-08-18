@@ -25,13 +25,11 @@ var dhpCardsView = {
         //			projectID    = ID of project
         //          vizIndex     = index of this visualization
         //			cardsEP      = settings for cards entry point (from project settings)
-        //          moteDefs     = mote definitions
-    initialize: function(ajaxURL, projectID, vizIndex, cardsEP, moteDefs)
+    initialize: function(ajaxURL, projectID, vizIndex, cardsEP)
     {
         var menuHTML, active;
 
             // Save reset data for later
-        dhpCardsView.moteDefs       = moteDefs;
         dhpCardsView.cardsEP        = cardsEP;
 
         dhpCardsView.currentSort    = null;
@@ -682,20 +680,38 @@ var dhpCardsView = {
             jQuery(cardHolder).append(theCard);
         }); // _.each()
 
-        var sortObj, moteIDs = [];
+        var sortObj, moteIDs = [], moteDef;
 
         if (dhpCardsView.cardsEP.sortMotes.length > 0) {
                 // Create Object that describes sort options for Isotope by
                 //   associating names of sort motes with the class names that mark the data
+                // Only Short Text and Long Text can be treated as plain text objects --
+                //  must parse Date, Number, etc.
             _.each(dhpCardsView.cardsEP.sortMotes, function(moteName) {
+                moteDef = dhpServices.findMoteByName(moteName);
                 moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
-                    // Just name by itself results in case-sensitive comparison
-                // moteIDs.push('.datamote'+moteIndex);
-                    // Create a curried function which has the mote index and does case-insensitive comparison
-                moteIDs.push((function(index) { 
-                    return function(itemElem) {
-                        return jQuery(itemElem).find('.datamote'+index).text().toLowerCase();
-                    } } )(moteIndex) );
+
+                switch (moteDef.type) {
+                case 'Short Text':
+                case 'Long Text':
+                        // Create a curried function which has the mote index and does case-insensitive comparison
+                    moteIDs.push((function(index) {
+                        return function(itemElem) {
+                            return jQuery(itemElem).find('.datamote'+index).text().toLowerCase();
+                        } } )(moteIndex) );
+                    break;
+                case 'Date':
+                    var today = new Date(), dateStr, thisEvent;
+
+                        // Create a curried function which has the mote index and returns Date (from)
+                    moteIDs.push((function(index) {
+                        return function(itemElem) {
+                            dateStr = jQuery(itemElem).find('.datamote'+index).text();
+                            thisEvent = dhpServices.eventFromDateStr(dateStr, today, today);
+                            return thisEvent.start;
+                        } } )(moteIndex) );
+                    break;
+                } // switch mote type
             });
             sortObj = _.object(dhpCardsView.cardsEP.sortMotes, moteIDs);
 

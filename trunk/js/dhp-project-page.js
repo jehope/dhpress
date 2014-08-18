@@ -838,7 +838,7 @@ jQuery(document).ready(function($) {
         break;
 
     case 'cards':
-        dhpCardsView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, dhpSettings.motes);
+        dhpCardsView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings);
 
         updateVizSpace = dhpCardsView.dhpUpdateSize;
         break;
