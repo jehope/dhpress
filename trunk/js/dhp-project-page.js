@@ -545,12 +545,32 @@ var dhpServices = {
         return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
     }, // isTouchDevice()
 
+
+        // PURPOSE: Create a single Date from three numbers
+        // INPUT:   year, month, day must be definite numbers
+        // NOTE:    month is 0-based (not 1-based: 0=January)
+    createDate3Nums: function(year, month, day)
+    {
+        var date;
+
+        if (year < 0 || year > 99) { // 'Normal' dates
+            date = new Date(year, month, day);
+        } else if (year == 0) { // Year 0 is '1 BC'
+            date = new Date (-1, month, day);
+        } else {
+            // Create arbitrary year and then set the correct year
+            date = new Date(year, month, day);
+            date.setUTCFullYear(("0000" + year).slice(-4));
+        }
+        return date;
+    }, // createDate3Nums
+
+
         // PURPOSE: Create a single Date from three strings
-    createADate3Strings: function(yStr, mStr, dStr, from)
+    createDate3Strings: function(yStr, mStr, dStr, from)
     {
         var yearBCE;
         var year, month, day;
-        var date;
 
             // First check for negative year
         if (yStr.charAt(0) == '-') {
@@ -587,17 +607,8 @@ var dhpServices = {
             day = parseInt(dStr);
         }
 
-        if (year < 0 || year > 99) { // 'Normal' dates
-            date = new Date(year, month, day);
-        } else if (year == 0) { // Year 0 is '1 BC'
-            date = new Date (-1, month, day);
-        } else {
-            // Create arbitrary year and then set the correct year
-            date = new Date(year, month, day);
-            date.setUTCFullYear(("0000" + year).slice(-4));
-        }
-        return date;
-    }, // createADate3Strings()
+        return dhpServices.createDate3Nums(year, month, day);
+    }, // createDate3Strings()
 
 
         // PURPOSE: Parse a text string as a single Date
@@ -611,7 +622,6 @@ var dhpServices = {
         var strComponents;
         var yearBCE;
         var year, month, day;
-        var date;
 
             // First check for negative year
         if (dateString.charAt(0) == '-') {
@@ -651,17 +661,45 @@ var dhpServices = {
             break;
         } // switch
 
-        if (year < 0 || year > 99) { // 'Normal' dates
-            date = new Date(year, month, day);
-        } else if (year == 0) { // Year 0 is '1 BC'
-            date = new Date (-1, month, day);
+        return dhpServices.createDate3Nums(year, month, day);
+    }, // parseADate()
+
+
+        // PURPOSE: Create an event object by parsing Date string (which can have from & to)
+        // INPUT:   dStr = text string representing a Date (range)
+        //          minBound = minimum Date in range
+        //          maxBound = maximum Date in range
+    eventFromDateStr: function(dStr, minBound, maxBound)
+    {
+        var newEvent = { };
+
+        var dateSegs = dStr.split('/');
+
+        dateSegs[0] = dateSegs[0].trim();
+        if (dateSegs[0] == 'open') {
+            newEvent.start = minBound;
         } else {
-            // Create arbitrary year and then set the correct year
-            date = new Date(year, month, day);
-            date.setUTCFullYear(("0000" + year).slice(-4));
+            newEvent.start = dhpServices.parseADate(dateSegs[0], true);
         }
-        return date;
-    } // parseADate()
+
+            // Is it a range of from/to?
+        if (dateSegs.length == 2) {
+            newEvent.instant = false;
+            dateSegs[1] = dateSegs[1].trim();
+            if (dateSegs[1] === 'open') {
+                newEvent.end = maxBound;
+            } else {
+                newEvent.end = dhpServices.parseADate(dateSegs[1], false);
+            }
+
+            // Otherwise an instantaneous event -- just set to start Date
+        } else {
+            newEvent.instant = true;
+            newEvent.end = newEvent.start;
+        }
+
+        return newEvent;
+    } // eventFromDateStr
 
 }; // dhpServices
 

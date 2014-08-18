@@ -116,7 +116,8 @@ var dhpCardsView = {
                 // Insert Marker modal window HTML
             jQuery('body').append(Handlebars.compile(jQuery('#dhp-script-filterModal').html()));
 
-                // Must bind handler to filter modal just once -- here
+                // Must bind handlers to modals just once -- here
+
                 // Don't know why this is needed -- but Select Modal Close button won't work without it
             jQuery('#filterModal a.close-select-modal').click(function() {
               jQuery('#filterModal').foundation('reveal', 'close');
@@ -193,7 +194,7 @@ var dhpCardsView = {
     }, // resetFilter()
 
 
-        // PURPOSE: Prepare modal for filter options
+        // PURPOSE: Prepare modal for filter options -- set defaults from previous selection
         //              If Long Text type, user must enter text pattern
         //              If Short Text type, user can enter text pattern or choose value
         // TO DO:   Handle different mote types
@@ -261,7 +262,6 @@ var dhpCardsView = {
                 jQuery('#filter-date2Y-input').val(dhpCardsView.curFilterVal.date2Y);
                 jQuery('#filter-date2M-input').val(dhpCardsView.curFilterVal.date2M);
                 jQuery('#filter-date2D-input').val(dhpCardsView.curFilterVal.date2D);
-                jQuery('input:radio[name=date2Order][value="'+dhpCardsView.curFilterVal.date2Order+'"]').prop('checked', true);
             }
             break;
         default:
@@ -348,19 +348,19 @@ var dhpCardsView = {
                 return null;
             }
             return num;
-        } // badNumber()
+        } // getNumber()
 
             // Abort if there are any errors with first date
-        if ((date1Y=getNumber(dhpCardsView.curFilterVal.date1Y, true, null, null, 'first year') == null) ||
-            (date1M=getNumber(dhpCardsView.curFilterVal.date1M, false, 1, 12, 'first month') == null) ||
-            (date1D=getNumber(dhpCardsView.curFilterVal.date1D, false, 1, 31, 'first date') == null))
+        if ((date1Y=getNumber(dhpCardsView.curFilterVal.date1Y, true, null, null, 'the first Date year')) == null ||
+            (date1M=getNumber(dhpCardsView.curFilterVal.date1M, false, 1, 12, 'the first Date month')) == null ||
+            (date1D=getNumber(dhpCardsView.curFilterVal.date1D, false, 1, 31, 'the first Date day')) == null)
         {
             return;
         }
 
             // determine how to construct the Date -- how to handle missing values depends on whether
             //  order is "before" or "after"
-        if (date1M == '') {
+        if (date1M === '') {
             if (dhpCardsView.curFilterVal.date1Order == 'before')
             {
                 date1M = 1; date1D = 1;
@@ -375,45 +375,47 @@ var dhpCardsView = {
                 date1D = 31;
             }
         }
-        date1 = new Date(date1Y, date1M-1, date1D);
+
+        date1 = dhpServices.createDate3Nums(date1Y, date1M-1, date1D);
 
             // Only check second date if checked
         if (dhpCardsView.curFilterVal.and)
         {
-            if ((date2Y=getNumber(dhpCardsView.curFilterVal.date2Y, true, null, null, 'second year') == null) ||
-                (date2M=getNumber(dhpCardsView.curFilterVal.date2M, false, 1, 12, 'second month') == null) ||
-                (date2D=getNumber(dhpCardsView.curFilterVal.date2M, false, 1, 31, 'second date') == null))
+            if ((date2Y=getNumber(dhpCardsView.curFilterVal.date2Y, true, null, null, 'the second Date year')) == null ||
+                (date2M=getNumber(dhpCardsView.curFilterVal.date2M, false, 1, 12, 'the second Date month')) == null ||
+                (date2D=getNumber(dhpCardsView.curFilterVal.date2D, false, 1, 31, 'the second Date day')) == null)
             {
-            return;
+                return;
             }
             if (date2M == '') {
-                if (dhpCardsView.curFilterVal.date2Order == 'before')
-                {
                     date2M = 1; date2D = 1;
-                } else {
-                    date2M = 12; date2D = 31;
-                }
             } else if (date2D === '') {
-                if (dhpCardsView.curFilterVal.date2Order == 'before')
-                {
-                    date2D = 1;
-                } else {
-                    date2D = 31;
-                }
+                date2D = 1;
             }
-            date2 = new Date(date2Y, date2M-1, date2D);
+            date2 = dhpServices.createDate3Nums(date2Y, date2M-1, date2D);
         } // if and
 
-            // Date paramters are now computed -- just need to do the calculations!
+            // Date parameters are now computed -- just need to do the calculations!
         var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
         var text;
+        var today = new Date();
 
             // Get the text for each item and check against date range
-            // This is complex because we may have two dates, and the item itself may be a Date range
+            // TO DO: This test will not work properly if "open" is used for parts of Dates
         jQuery('#card-container').isotope({
           filter: function() {
             text = jQuery(this).find(className).text();
-            return true; // passes text
+            theEvent = dhpServices.eventFromDateStr(text, today, today);
+
+            if (date2) {
+                return (date1 <= theEvent.start) && (theEvent.end <= date2);
+            } else {
+                if (dhpCardsView.curFilterVal.date1Order === 'before') {
+                    return theEvent.end <= date1;
+                } else {
+                    return date1 <= theEvent.start;
+                }
+            }
           }
         });
 
@@ -480,7 +482,6 @@ var dhpCardsView = {
             dhpCardsView.curFilterVal.date2Y = jQuery('#filter-date2Y-input').val();
             dhpCardsView.curFilterVal.date2M = jQuery('#filter-date2M-input').val();
             dhpCardsView.curFilterVal.date2D = jQuery('#filter-date2D-input').val();
-            dhpCardsView.curFilterVal.date2Order = jQuery('input:radio[name=date2Order]:checked').val();
 
             dhpCardsView.doDateFilter();
             break;

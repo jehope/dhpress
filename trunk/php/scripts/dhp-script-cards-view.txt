@@ -63,9 +63,8 @@
 
 <script id="dhp-script-filter-dates" type="text/x-handlebars-template">
   <div class="date-boxes">Date <input id="filter-date1Y-input" type="text" size="5" placeholder="Year"/> <input id="filter-date1M-input" type="text" size="2" placeholder="Month#"/> <input id="filter-date1D-input" type="text" size="2" placeholder="Date"/></div>
-  <input type="radio" name="date1Order" value="before"/>Before or <input type="radio" name="date1Order" value="after"/> After<br/>
+  <input type="radio" name="date1Order" value="before"/>Before or <input type="radio" name="date1Order" value="after" checked="checked"/> After<br/>
 
-  and <input type="checkbox" id="dateAnd"/><br/>
+  <input type="checkbox" id="dateAnd"/> (override) After date above and before date below <br/>
   <div class="date-boxes">Date <input id="filter-date2Y-input" type="text" size="5" placeholder="Year"/> <input id="filter-date2M-input" type="text" size="2" placeholder="Month#"/> <input id="filter-date2D-input" type="text" size="2" placeholder="Date"/></div>
-  <input type="radio" name="date2Order" value="before"/>Before or <input type="radio" name="date2Order" value="after"/> After<br/>  
 </script>

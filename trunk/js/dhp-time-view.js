@@ -146,8 +146,6 @@ var dhpTimeline = {
         //          fromDate/toDate is set for "open" date value to work properly
     processEvents: function()
     {
-        var today = new Date();
-
             // PURPOSE: Define how to compare dates
             // ASSUMES: All elements have start and end fields
         function compareDescending(item1, item2) {
@@ -171,35 +169,43 @@ var dhpTimeline = {
 
             // Process Event info
         eventData.forEach(function(item, index) {
-            var newEvent = { };
+            var newEvent = dhpServices.eventFromDateStr(item.date);
             newEvent.index = index;
 
-            var dates = item.date.split('/');
-
-            dates[0] = dates[0].trim();
-            if (dates[0] == 'open') {
-                newEvent.start = dhpTimeline.fromDate;
-            } else {
-                newEvent.start = dhpServices.parseADate(dates[0], true);
-            }
-
-                // Is it a range of from/to?
-            if (dates.length == 2) {
-                newEvent.instant = false;
-                dates[1] = dates[1].trim();
-                if (dates[1] === 'open') {
-                    newEvent.end = dhpTimeline.toDate;
-                } else {
-                    newEvent.end = dhpServices.parseADate(dates[1], false);
-                }
-
-                // Otherwise an instantaneous event
-            } else {
-                newEvent.instant = true;
+                // If an instantaneous event, need to create "placeholder" endpoint
+            if (newEvent.instant) {
                 newEvent.end = new Date(newEvent.start.getTime() + dhpTimeline.instantOffset);
             }
-                // Don't allow dates to go beyond today in future
-            if (item.end > today) { item.end = today; };
+
+            // var newEvent = { };
+            // newEvent.index = index;
+
+            // var dates = item.date.split('/');
+
+            // dates[0] = dates[0].trim();
+            // if (dates[0] == 'open') {
+            //     newEvent.start = dhpTimeline.fromDate;
+            // } else {
+            //     newEvent.start = dhpServices.parseADate(dates[0], true);
+            // }
+
+            //     // Is it a range of from/to?
+            // if (dates.length == 2) {
+            //     newEvent.instant = false;
+            //     dates[1] = dates[1].trim();
+            //     if (dates[1] === 'open') {
+            //         newEvent.end = dhpTimeline.toDate;
+            //     } else {
+            //         newEvent.end = dhpServices.parseADate(dates[1], false);
+            //     }
+
+            //     // Otherwise an instantaneous event
+            // } else {
+            //     newEvent.instant = true;
+            //     newEvent.end = new Date(newEvent.start.getTime() + dhpTimeline.instantOffset);
+            // }
+            //     // Don't allow dates to go beyond today in future
+            // if (item.end > today) { item.end = today; };
 
             dhpTimeline.events.push(newEvent);
         });
