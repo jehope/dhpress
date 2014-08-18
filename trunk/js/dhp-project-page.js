@@ -2,7 +2,7 @@
 // NOTES:   Format of project settings is documented in dhp-class-project.php
 //          This file contains:
 //              dhpProjServices: a special object data serving common needs of DHPress projects
-//              run-time code that coordinates between DHPress objects
+//              Bootstrapper: initialization code that gets visualization prepared & running
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //          vizParams.layerData = array with all data needed for dhp-custom-maps
 //          vizParams.current = index of current visualization in entry points
@@ -543,7 +543,125 @@ var dhpServices = {
         // }
         // return false;
         return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
-    }
+    }, // isTouchDevice()
+
+        // PURPOSE: Create a single Date from three strings
+    createADate3Strings: function(yStr, mStr, dStr, from)
+    {
+        var yearBCE;
+        var year, month, day;
+        var date;
+
+            // First check for negative year
+        if (yStr.charAt(0) == '-') {
+            yearBCE = true;
+            yStr = yStr.substring(1);
+        } else {
+            yearBCE = false;
+        }
+
+        year = parseInt(yStr);
+        if (yearBCE) {
+            year = -year;
+        }
+
+            // If it's a start date, defaulted data must be early as possible
+
+        if (dStr == null || dStr === '') {
+            if (mStr == null || mStr ==='') {
+                if (from) {
+                    month = 0; day = 1;
+                } else {
+                    month = 11; day = 31;
+                }
+            } else {
+                month = parseInt(mStr) - 1;
+                if (from) {
+                    day = 1;
+                } else {
+                    day = 31;
+                }
+            }
+        } else {
+            month = parseInt(mStr) - 1;
+            day = parseInt(dStr);
+        }
+
+        if (year < 0 || year > 99) { // 'Normal' dates
+            date = new Date(year, month, day);
+        } else if (year == 0) { // Year 0 is '1 BC'
+            date = new Date (-1, month, day);
+        } else {
+            // Create arbitrary year and then set the correct year
+            date = new Date(year, month, day);
+            date.setUTCFullYear(("0000" + year).slice(-4));
+        }
+        return date;
+    }, // createADate3Strings()
+
+
+        // PURPOSE: Parse a text string as a single Date
+        // RETURNS: Date object or null if error
+        // INPUT:   dateString = string itself containing Date
+        //          from = true if it is the from Date, false if it is the to Date
+        // ASSUMES: dateString has been trimmed
+        // NOTE:    month # is 0-based!!
+    parseADate: function(dateString, from)
+    {
+        var strComponents;
+        var yearBCE;
+        var year, month, day;
+        var date;
+
+            // First check for negative year
+        if (dateString.charAt(0) == '-') {
+            yearBCE = true;
+            dateString = dateString.substring(1);
+        } else {
+            yearBCE = false;
+        }
+
+        strComponents = dateString.split('-');
+
+            // Year must be supplied at very least
+        year = parseInt(strComponents[0]);
+        if (yearBCE) {
+            year = -year;
+        }
+            // If it's a start date, we want defaulted data to be early as possible
+        switch (strComponents.length) {
+        case 3:
+            month = parseInt(strComponents[1]) - 1;
+            day = parseInt(strComponents[2]);
+            break;
+        case 2:
+            month = parseInt(strComponents[1]) - 1;
+            if (from) {
+                day = 1;
+            } else {
+                day = 31;
+            }
+            break;
+        case 1:
+            if (from) {
+                month = 0; day = 1;
+            } else {
+                month = 11; day = 31;
+            }
+            break;
+        } // switch
+
+        if (year < 0 || year > 99) { // 'Normal' dates
+            date = new Date(year, month, day);
+        } else if (year == 0) { // Year 0 is '1 BC'
+            date = new Date (-1, month, day);
+        } else {
+            // Create arbitrary year and then set the correct year
+            date = new Date(year, month, day);
+            date.setUTCFullYear(("0000" + year).slice(-4));
+        }
+        return date;
+    } // parseADate()
 
 }; // dhpServices
 

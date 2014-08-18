@@ -29,10 +29,10 @@ var dhpTimeline = {
     {
         dhpTimeline.tlEP        = tlEP;
 
-        dhpTimeline.fromDate = dhpTimeline.parseADate(tlEP.from, true);
-        dhpTimeline.toDate = dhpTimeline.parseADate(tlEP.to, true);
-        dhpTimeline.openFromDate = dhpTimeline.parseADate(tlEP.openFrom, true);
-        dhpTimeline.openToDate = dhpTimeline.parseADate(tlEP.openTo, true);
+        dhpTimeline.fromDate = dhpServices.parseADate(tlEP.from, true);
+        dhpTimeline.toDate = dhpServices.parseADate(tlEP.to, true);
+        dhpTimeline.openFromDate = dhpServices.parseADate(tlEP.openFrom, true);
+        dhpTimeline.openToDate = dhpServices.parseADate(tlEP.openTo, true);
 
             // Make calculations based on timespan
 
@@ -140,69 +140,6 @@ var dhpTimeline = {
     }, // initialize()
 
 
-        // PURPOSE: Parse a text string as a single Date
-        // INPUT:   dateString = string itself containing Date
-        //          from = true if it is the from Date, false if it is the to Date
-        // ASSUMES: dateString has been trimmed
-        // NOTE:    month # is 0-based!!
-        // TO DO:   Handle from/to bounds when missing m or d
-    parseADate: function(dateString, from)
-    {
-        var strComponents;
-        var yearBCE;
-        var year, month, day;
-        var date;
-
-            // First check for negative year
-        if (dateString.charAt(0) == '-') {
-            yearBCE = true;
-            dateString = dateString.substring(1);
-        } else {
-            yearBCE = false;
-        }
-
-        strComponents = dateString.split('-');
-            // Year must be supplied at very least
-        year = parseInt(strComponents[0]);
-        if (yearBCE) {
-            year = -year;
-        }
-            // If it's a start date, we want defaulted data to be early as possible
-        switch (strComponents.length) {
-        case 3:
-            month = parseInt(strComponents[1]) - 1;
-            day = parseInt(strComponents[2]);
-            break;
-        case 2:
-            month = parseInt(strComponents[1]) - 1;
-            if (from) {
-                day = 1;
-            } else {
-                day = 31;
-            }
-            break;
-        case 1:
-            if (from) {
-                month = 0; day = 1;
-            } else {
-                month = 11; day = 31;
-            }
-            break;
-        } // switch
-
-        if (year < 0 || year > 99) { // 'Normal' dates
-            date = new Date(year, month, day);
-        } else if (year == 0) { // Year 0 is '1 BC'
-            date = new Date (-1, month, day);
-        } else {
-            // Create arbitrary year and then set the correct year
-            date = new Date(year, month, day);
-            date.setUTCFullYear(("0000" + year).slice(-4));
-        }
-        return date;
-    }, // parseADate()
-
-
         // PURPOSE: Handle loading time events -- create all visuals from them
         //          Converts raw event data into usable data in events array
         // ASSUMES: dhpTimeline.rawData contains all time data
@@ -243,7 +180,7 @@ var dhpTimeline = {
             if (dates[0] == 'open') {
                 newEvent.start = dhpTimeline.fromDate;
             } else {
-                newEvent.start = dhpTimeline.parseADate(dates[0], true);
+                newEvent.start = dhpServices.parseADate(dates[0], true);
             }
 
                 // Is it a range of from/to?
@@ -253,7 +190,7 @@ var dhpTimeline = {
                 if (dates[1] === 'open') {
                     newEvent.end = dhpTimeline.toDate;
                 } else {
-                    newEvent.end = dhpTimeline.parseADate(dates[1], false);
+                    newEvent.end = dhpServices.parseADate(dates[1], false);
                 }
 
                 // Otherwise an instantaneous event
@@ -473,6 +410,7 @@ var dhpTimeline = {
         dhpTimeline.bands[index] = band;
         dhpTimeline.components.push(band);
     }, // createBand()
+
 
         // PURPOSE: Create text labels for min & max ranges of x-axes
         // NOTES:   The values to display will depend on the scale of difference between fromDate and toDate
