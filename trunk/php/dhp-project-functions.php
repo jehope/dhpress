@@ -865,7 +865,7 @@ function createTreeNode($nodeName, $mQuery, $childrenCF, $childrenDelim, $nameCF
 // Enable for both editing and viewing
 
 add_action('wp_ajax_dhpGetMarkerTree', 'dhpGetMarkerTree' );
-add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkerTree');
+add_action('wp_ajax_nopriv_dhpGetMarkerTree', 'dhpGetMarkerTree');
 
 // PURPOSE:	Handle Ajax call to get all markers for a Project
 // 			Similar to createMarkerArray() but creates tree of marker data not flat array

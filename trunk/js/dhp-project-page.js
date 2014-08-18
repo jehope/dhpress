@@ -548,6 +548,11 @@ var dhpServices = {
 }; // dhpServices
 
 
+    // The code in the next section bootstraps the DH Press visualization
+    //      Loads resources
+    //      Creates windows and common navigational elements
+    //      Initializes and prepares the active visualization
+
 jQuery(document).ready(function($) {
         // Project variables
     var dhpSettings,            // all project settings
