@@ -115,10 +115,24 @@ var dhpCardsView = {
 
                 // Insert Marker modal window HTML
             jQuery('body').append(Handlebars.compile(jQuery('#dhp-script-filterModal').html()));
+
+                // Must bind handler to filter modal just once -- here
+                // Don't know why this is needed -- but Select Modal Close button won't work without it
+            jQuery('#filterModal a.close-select-modal').click(function() {
+              jQuery('#filterModal').foundation('reveal', 'close');
+              if (jQuery(this).text() === 'Apply') {
+                dhpCardsView.doFilter(dhpServices.findMoteByName(dhpCardsView.currentFilter));
+              }
+            });
+
                 // Insert Filter Error modal HTML
             jQuery('body').append(Handlebars.compile(jQuery('#dhp-script-fltrErrorModal').html()));
 
+            jQuery('#filterErrModal a.close-select-modal').click(function() {
+                jQuery('#filterErrModal').foundation('reveal', 'close');
+            });
         } // if filterMotes
+
 
         jQuery(document).foundation();
 
@@ -166,6 +180,7 @@ var dhpCardsView = {
         return result;
     }, // findFilterByMoteName()
 
+
         // PURPOSE: Reset filter criteria to allow all cards to pass
     resetFilter: function()
     {
@@ -177,11 +192,11 @@ var dhpCardsView = {
         });
     }, // resetFilter()
 
-        // PURPOSE: Handle user selection of Set Filter button
+
+        // PURPOSE: Prepare modal for filter options
         //              If Long Text type, user must enter text pattern
         //              If Short Text type, user can enter text pattern or choose value
         // TO DO:   Handle different mote types
-        //              If Date, user can enter start and stop dates
         //              If Number, user can enter min and max values
     setFilter: function()
     {
@@ -194,13 +209,16 @@ var dhpCardsView = {
             // Insert material into modal body depending on type of mote
             // Use last selection as default
         var moteDef = dhpServices.findMoteByName(dhpCardsView.currentFilter);
+
         switch (moteDef.type) {
         case 'Long Text':
+                // Insert Long Text-specific HTML into filter modal
             jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-ltext').html()));
                 // Give current filter value (if any) as default
             jQuery('#filter-text-input').val(dhpCardsView.curFilterVal || '');
             break;
         case 'Short Text':
+                // Insert Short Text-specific HTML into filter modal
             jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-stext').html()));
                 // create the set of choices from category filter
             var filterMote = dhpCardsView.findFilterByMoteName(dhpCardsView.currentFilter);
@@ -231,6 +249,7 @@ var dhpCardsView = {
             }
             break;
         case 'Date':
+                // Insert Date-specific HTML into modal
             jQuery('#filterModal .modal-body').append(Handlebars.compile(jQuery('#dhp-script-filter-dates').html()));
                 // if previously set, use last selection as default
             if (dhpCardsView.curFilterVal) {
@@ -251,14 +270,6 @@ var dhpCardsView = {
         }
 
         jQuery('#filterModal').foundation('reveal', 'open');
-
-            // Don't know why this is needed -- but Select Modal Close button won't work without it
-        jQuery('#filterModal a.close-select-modal').click(function() {
-          jQuery('#filterModal').foundation('reveal', 'close');
-          if (jQuery(this).text() === 'Apply') {
-            dhpCardsView.doFilter(moteDef);
-          }
-        });
     }, // setFilter()
 
 
@@ -303,9 +314,6 @@ var dhpCardsView = {
             jQuery('#filterErrModal .modal-body').append('<p>'+str+'</p>');
 
             jQuery('#filterErrModal').foundation('reveal', 'open');
-            jQuery('#filterErrModal a.close-select-modal').click(function() {
-                jQuery('#filterErrModal').foundation('reveal', 'close');
-            });
         } // popUpErrModal
 
             // PURPOSE: Utility function to make sure text is valid number; displays error modal if problem
@@ -412,7 +420,7 @@ var dhpCardsView = {
     }, // doDateFilter()
 
 
-        // PURPOSE: Actually perform filter action by reading values in form
+        // PURPOSE: User has provided filter params and hit "Apply," now we must read params & do filter
         // INPUT:   moteDef is the mote used for filtering
     doFilter: function(moteDef)
     {
@@ -426,18 +434,24 @@ var dhpCardsView = {
                 dhpCardsView.curFilterVal.text = jQuery('#filter-text-input').val();
                 dhpCardsView.doTextFilter();
             } else {
+                var regTexts = [];
+
                 dhpCardsView.curFilterVal.index = 0;
                 dhpCardsView.curFilterVal.values = [];
                     // Gather the values chosen
                 jQuery('#st-filter-vals input:checked').each(function(index, item) {
-                    dhpCardsView.curFilterVal.values.push(jQuery(item).attr('name'));
+                    var oneItem = jQuery(item).attr('name');
+                        // We have to store plain text values separate from Reg Exp strings because former
+                        //  used to remember selection for later, while latter need to ensure exact match
+                    dhpCardsView.curFilterVal.values.push(oneItem);
+                    regTexts.push('^'+oneItem+'$');
                 });
 
-                if (dhpCardsView.curFilterVal.values.length) {
+                if (regTexts.length) {
                         // A match on any of the values will qualify a card
                         // TO DO: If hierarchical filter categories are to be supported, will need
                         //      to deal with parent values here
-                    var filterText = dhpCardsView.curFilterVal.values.join('|');
+                    var filterText = regTexts.join('|');
                     var regExp = new RegExp(filterText, "i");
                     var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
                     var text;
