@@ -363,16 +363,16 @@ var dhpCardsView = {
         if (date1M === '') {
             if (dhpCardsView.curFilterVal.date1Order == 'before')
             {
-                date1M = 1; date1D = 1;
-            } else {
                 date1M = 12; date1D = 31;
+            } else {
+                date1M = 1; date1D = 1;
             }
         } else if (date1D === '') {
             if (dhpCardsView.curFilterVal.date1Order == 'before')
             {
-                date1D = 1;
-            } else {
                 date1D = 31;
+            } else {
+                date1D = 1;
             }
         }
 
@@ -388,9 +388,9 @@ var dhpCardsView = {
                 return;
             }
             if (date2M == '') {
-                    date2M = 1; date2D = 1;
+                date2M = 12; date2D = 31;
             } else if (date2D === '') {
-                date2D = 1;
+                date2D = 31;
             }
             date2 = dhpServices.createDate3Nums(date2Y, date2M-1, date2D);
         } // if and
