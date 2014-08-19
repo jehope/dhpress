@@ -1955,6 +1955,12 @@ jQuery(document).ready(function($) {
                                   theMote.name+' has not yet been assigned a delimiter.</p>');
           }
           break;
+        case 'Lat/Lon Coordinates':
+          if (theMote.delim == ',') {
+            $('#testResults').append('<p>The comma has been assigned as the delimiter character for the Lat-Lon Coordinate Mote named '+
+                                  theMote.name+'; its use is reserved for separating Lat from Lon and cannot be used to form Polygons.</p>');
+          }
+          break;
         } // switch()
       }); // forEach(motes)
 
@@ -2080,8 +2086,10 @@ jQuery(document).ready(function($) {
           $('#testResults').append('<p>Your list of motes for the select modal is empty. We suggest you add at least one content mote.</p>');
       }
 
+        // Anamoly: If no selection possible, edTrnsTime() == undefined; added '' for extra protection
+
         // If configured for transcripts, must have supplied an audio or video source
-      if (self.edTrnsTransc() !== 'disable' || self.edTrnsTime() !== 'disable') {
+      if (self.edTrnsTransc() !== 'disable' || (self.edTrnsTime() != undefined && self.edTrnsTime() !== '')) {
         if (self.edTrnsAudio() === 'disable' && self.edTrnsVideo() === 'disable') {
           $('#testResults').append('<p>Although you have enabled transcripts, you have not selected an audio or video URL mote.</p>');
         }
@@ -2089,7 +2097,7 @@ jQuery(document).ready(function($) {
 
         // If Transcript Source mote selected, ensure other settings are as well
       if (self.edTrnsSrc() !== 'disable') {
-        if ((self.edTrnsAudio() === 'disable' && self.edTrnsVideo() === 'disable') || self.edTrnsTransc() === 'disable' || self.edTrnsTime() === 'disable') {
+        if ((self.edTrnsAudio() === 'disable' && self.edTrnsVideo() === 'disable') || self.edTrnsTransc() === 'disable' || (self.edTrnsTime() == undefined || self.edTrnsTime() === '')) {
           $('#testResults').append('<p>Although you have enabled transcripts on archive pages via the "Source" selection, you have not yet specified the other necessary transcript settings.</p>');
         }
       }

@@ -114,7 +114,7 @@
               Video Source: <select data-bind="value: edTrnsVideo, options: ytMoteNames"></select><br/>
               Transcript: <select data-bind="value: edTrnsTransc, options: transcMoteNames"></select><br/>
               Transcript 2: <select data-bind="value: edTrnsTransc2, options: transcMoteNames"></select><br/>
-              Timecode: <select data-bind="value: edTrnsTime, , options: tstMoteNames"></select><br/>
+              Timecode: <select data-bind="value: edTrnsTime, options: tstMoteNames"></select><br/>
               Source: <select data-bind="value: edTrnsSrc, options: stdMoteNames"></select><br/>
             </div>
           </div> <!-- subaccordion -->
