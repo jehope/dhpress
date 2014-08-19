@@ -293,7 +293,7 @@ class DHPressProject
 			$moteValue = get_post_meta($marker_id, $custom_name, true);
 
 			if ($delim && $delim != '') {
-				$valueArray = split($delim, $moteValue);
+				$valueArray = explode($delim, $moteValue);
 				foreach ($valueArray as $value) {
 		   		 	array_push($moteArray, $value);
 				}

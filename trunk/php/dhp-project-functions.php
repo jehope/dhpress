@@ -619,6 +619,11 @@ function dhpGetMarkers()
 			// Which field used to encode Lat-Long on map?
 		$mapPointsMote = $projObj->getMoteByName($eps->settings->coordMote);
 		$mapCF = $mapPointsMote->cf;
+		if ($mapPointsMote->delim != '') {
+			$mapDelim = $mapPointsMote->delim;
+		} else {
+			$mapDelim = null;
+		}
 			// Find all possible legends/filters for this map -- each marker needs these fields
 		$filters = $eps->settings->legends;
 			// Collect all possible category values/tax names for each mote in all filters
@@ -745,10 +750,28 @@ function dhpGetMarkers()
 			if (empty($latlon)) {
 				continue;
 			}
-			$split = split(',', $latlon);
-				// Have to reverse order for GeoJSON
-			$thisFeature['geometry'] = array("type"=>"Point",
-											"coordinates"=> array((float)$split[1],(float)$split[0]));
+				// Create Polygons? Only if delim given
+			if ($mapDelim) {
+				$split = explode($mapDelim, $latlon);
+					// Just treat as Point if only one data item
+				if (count($split) == 1) {
+					$split = explode(',', $latlon);
+					$thisFeature['geometry'] = array("type"=>"Point",
+													"coordinates"=> array((float)$split[1], (float)$split[0]));
+				} else {
+					$poly = array();
+					foreach ($split as $thisPt) {
+						$pts = explode(',', $thisPt);
+						array_push($poly, array((float)$pts[1], (float)$pts[0]));
+					}
+					$thisFeature['geometry'] = array("type" => "Polygon", "coordinates" => array($poly));
+				}
+			} else {
+				$split = explode(',', $latlon);
+					// Have to reverse order for GeoJSON
+				$thisFeature['geometry'] = array("type"=>"Point",
+												"coordinates"=> array((float)$split[1],(float)$split[0]));
+			}
 		}
 
 			// Pinboard visualization features
@@ -758,7 +781,7 @@ function dhpGetMarkers()
 			if (empty($xycoord)) {
 				continue;
 			}
-			$split = split(',', $xycoord);
+			$split = explode(',', $xycoord);
 			$thisFeature['geometry'] = array("type"=>"Point",
 											"coordinates"=> array((float)$split[0], (float)$split[1]));
 		}
@@ -1023,7 +1046,7 @@ function dhpBindTaxonomyToMarkers($projObj, $custom_field, $parent_id, $rootTaxN
 		if (!is_null($tempMoteValue) && $tempMoteValue != '') {
 			$tempMoteArray = array();
 			if ($mote_delim) {
-				$tempMoteArray = split($mote_delim, $tempMoteValue );
+				$tempMoteArray = explode($mote_delim, $tempMoteValue );
 			} else {
 				$tempMoteArray = array($tempMoteValue);
 			}
@@ -1330,7 +1353,7 @@ add_action('wp_ajax_nopriv_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 function getTranscriptClip($transcript, $clip)
 {
 	$codedTranscript  = utf8_encode($transcript);
-	$clipArray        = split("-", $clip);
+	$clipArray        = explode("-", $clip);
 	$clipStart        = mb_strpos($codedTranscript, $clipArray[0]);
 	$clipEnd          = mb_strpos($codedTranscript, $clipArray[1]);
 		// length must include start and end timestamps
@@ -1809,7 +1832,7 @@ function verifyTranscription($projObj, $projSettings, $transcMoteName)
 						$error = true;
 					} else {
 						$content  = utf8_encode($content);
-						$stamps	  = split("-", $timecode);
+						$stamps	  = explode("-", $timecode);
 						$clipStart= mb_strpos($content, $stamps[0]);
 						if ($clipStart == false) {
 							$result .= '<p> Cannot find timestamp '.$stamps[0].' in file '.$transFile.'</p>';

@@ -3,7 +3,10 @@
 //          That the custom maps "library" has already been loaded with corresponding map entries
 // NOTES:   Format of Marker and Legend data (GeoJSON) is documented in dhp-project-functions.php
 //          Once size of Marker array increases, may need to make filter more efficient
-//          The class active-legend is added to whichever legend is currently visible and selected
+//          FeatureCollections can now consist of both Points and Polygons; however, mixing makes it
+//              difficult to pass as GeoJSON to Leaflet, as markerStyle() does redundant work. A better
+//              solution would be to create and pass separate GeoJSON arrays for Points and Polygons
+//              but this is not conducive to current architecture. Better support in next Leaflet?
 
 // USES:    JavaScript libraries jQuery, Underscore, Zurb Foundation, Leaflet
 
@@ -285,7 +288,8 @@ var dhpMapsView = {
         dhpMapsView.markerLayer = L.geoJson(dhpMapsView.allMarkers, { 
             onEachFeature: dhpMapsView.onEachFeature,
             pointToLayer: dhpMapsView.pointToLayer,
-            filter: dhpMapsView.filterMapMarkers 
+            // style: dhpMapsView.markerStyle,
+            filter: dhpMapsView.filterMapMarkers
         });
         dhpMapsView.markerLayer.addTo(dhpMapsView.mapLeaflet);
         dhpMapsView.markerLayer.options.layerName = 'Markers';
@@ -336,6 +340,34 @@ var dhpMapsView = {
 
         return returnColor;
     }, // getActiveTermColor()
+
+
+        // PURPOSE: Return style of Markers
+        // NOTES:   This is needed because otherwise Polygons not given any style; however, since it
+        //              is also called for Circle markers, creates much redundant work
+    // markerStyle: function(feature)
+    // {
+    //     var fColor = dhpMapsView.getActiveTermColor(feature.properties.categories);
+    //     switch (feature.geometry.type) {
+    //     case 'Point':
+    //         return {
+    //             fillColor: fColor,
+    //             color: "#000",
+    //             weight: 1,
+    //             opacity: 1
+    //         };
+    //     case 'Polygon':
+    //         return {
+    //             fillColor: fColor,
+    //             fill: true,
+    //             color: "#000",
+    //             weight: 1,
+    //             opacity: 0.8
+    //         };
+    //     default:
+    //         return { color: fColor };
+    //     }
+    // }, // markerStyle()
 
 
         // PURPOSE: Create the Leaflet feature associated with this entry
