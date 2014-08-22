@@ -405,10 +405,6 @@
     </h2>
     <ul>
         <li>Timeline short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
-        <li>Timeline Total Chart Size: Width (in pixels)
-            <input data-bind="value: theEP.settings.width" type="number" size="4"/>
-            Height (in pixels) <input data-bind="value: theEP.settings.height" type="number" size="4"/>
-        </li>
         <li>Date range <select data-bind="value: theEP.settings.date, options: $root.dateMoteNames"></select>
           Label <select data-bind="value: theEP.settings.label, options: $root.anyTxtMoteNames"></select>
           Marker Color <select data-bind="value: theEP.settings.color, options: $root.stMoteNames"></select> (Must be configured for colors)

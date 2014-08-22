@@ -66,8 +66,8 @@ var dhpTreeView = {
         jQuery(document).foundation();
 
             // Create SVG for D3
-        jQuery("#dhp-visual").append('<div id="svg-container"></div>');
-        dhpTreeView.svg = d3.select("#svg-container").append("svg");
+        jQuery("#dhp-visual").append('<div id="dhp-tree"></div>');
+        dhpTreeView.svg = d3.select("#dhp-tree").append("svg");
         dhpTreeView.svg.attr("width", dhpTreeView.iWidth).attr("height", dhpTreeView.iHeight);
 
             // Other initialization will depend on form of tree
@@ -169,14 +169,14 @@ var dhpTreeView = {
     }, // initialize()
 
 
-        // PURPOSE: Resizes pinboard-specific elements initially and when browser size changes
+        // PURPOSE: Resizes tree-specific elements initially and when browser size changes
     dhpUpdateSize: function()
     {
-            // Width of svg-container is same as visual space
-        jQuery('#svg-container').width(jQuery('#dhp-visual').width()-2);
-            // Height of svg-container will be total viz space minus height of navbar, margins, border & scroll bar itself
+            // Width of dhp-tree is same as visual space
+        jQuery('#dhp-tree').width(jQuery('#dhp-visual').width()-2);
+            // Height of dhp-tree will be total viz space minus height of navbar, margins, border & scroll bar itself
         var svgHeight = jQuery('#dhp-visual').height() - (dhpTreeView.controlHeight+10);
-        jQuery('#svg-container').height(svgHeight);
+        jQuery('#dhp-tree').height(svgHeight);
     }, // dhpUpdateSize()
 
 

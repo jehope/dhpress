@@ -9,24 +9,29 @@
 
     /* MAJOR DIV CONTAINERS ======================= */
 
+    /* Invisible outer div that adds vertical scroll bar when needed */
 #dhp-timeline {
     position: relative;
     top: 50px;
     left: 6px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-.svg-container {
+    /* Bordered container that leaves outer margins */
+#svg-container {
     border-style: solid;
     border-width: 1px;
     border-color: black;
     background-color: #F0F0F0;
 }
 
+    /* Inner space containing chart */
 .chart {
     fill: #EEEEEE;
 }
 
-/* ---- Axis ---- */
+    /* AXES ======================= */
 
   /* axis labels */
 .axis {
@@ -49,7 +54,7 @@
     shape-rendering: crispEdges;
 }
 
-/* ---- Timeline Band ---- */
+    /* TIME EVENT BANDS ======================= */
 
   /* band background */
 .band {
@@ -82,7 +87,7 @@
     shape-rendering: crispEdges;
 }
 
-/* ---- Labels ---- */
+    /* START/END LABELS ======================= */
 
 .bandLabel {
     fill: #99CCCC;
@@ -94,7 +99,7 @@
     font-weight: bold;
 }
 
-/* ---- Brush ---- */
+    /* BRUSHES ======================= */
 
 .brush .extent {
     stroke: midnightblue;

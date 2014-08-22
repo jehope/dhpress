@@ -92,6 +92,7 @@ html.fullscreen {
 	background: #fff;
 }
 
+	/* Must position below upper nav-bar */
 .fullscreen #dhp-visual {
 	width:100%;
 	min-width: 100%;
