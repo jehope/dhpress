@@ -235,8 +235,6 @@ jQuery(document).ready(function($) {
     self.settings.date = ko.observable(epSettings.settings.date);
     self.settings.color = ko.observable(epSettings.settings.color);
     self.settings.label = ko.observable(epSettings.settings.label);
-    self.settings.width = ko.observable(epSettings.settings.width);
-    self.settings.height = ko.observable(epSettings.settings.height);
     self.settings.bandHt = ko.observable(epSettings.settings.bandHt);
     self.settings.wAxisLbl = ko.observable(epSettings.settings.wAxisLbl);
     self.settings.rows = ko.observable(epSettings.settings.rows);
@@ -452,8 +450,6 @@ jQuery(document).ready(function($) {
           savedEP.settings.date  = theEP.settings.date();
           savedEP.settings.color = theEP.settings.color();
           savedEP.settings.label = theEP.settings.label();
-          savedEP.settings.width = theEP.settings.width();
-          savedEP.settings.height = theEP.settings.height();
           savedEP.settings.bandHt = theEP.settings.bandHt();
           savedEP.settings.wAxisLbl = theEP.settings.wAxisLbl();
           savedEP.settings.rows = theEP.settings.rows();
@@ -1350,8 +1346,6 @@ jQuery(document).ready(function($) {
           date: '',
           color: '',
           label: '',
-          width: 1000,
-          height: 1000,
           bandHt: '13',
           wAxisLbl: '32',
           rows: '25',
@@ -2048,12 +2042,6 @@ jQuery(document).ready(function($) {
             epErrorMessage('You must specify a color legend for the Timeline');
           }
           var i;
-          if (theEP.settings.width() == '' || isNaN(i=parseInt(theEP.settings.width(),10)) || i <= 20) {
-            epErrorMessage('You must specify a valid image width for the Timeline');
-          }
-          if (theEP.settings.height() == '' || isNaN(i=parseInt(theEP.settings.height(),10)) || i <= 20) {
-            epErrorMessage('You must specify a valid image height for the Timeline');
-          }
           if (theEP.settings.bandHt() == '' || isNaN(i=parseInt(theEP.settings.bandHt(),10)) || i <= 8) {
             epErrorMessage('You must specify a valid band height for the Timeline');
           }

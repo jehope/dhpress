@@ -40,6 +40,7 @@ var dhpTimeline = {
         dhpTimeline.instantOffset = (dhpTimeline.toDate - dhpTimeline.fromDate) * .03;
 
             // Prepare GUI data and components
+        dhpTimeline.controlHeight= 49;  // LegendHeight[45] + 4
         dhpTimeline.maxTracks   = typeof(tlEP.rows)  === 'number' ? tlEP.rows  : parseInt(tlEP.rows);
         dhpTimeline.bandHt      = typeof(tlEP.bandHt)  === 'number' ? tlEP.bandHt  : parseInt(tlEP.bandHt);
         dhpTimeline.instRad     = (dhpTimeline.bandHt / 2) -1; // pixel radius of instantaneous circle
@@ -59,41 +60,37 @@ var dhpTimeline = {
 
         jQuery(document).foundation();
 
+            // Create SVG and frame for graphics
+            // svgMargin is for space inside of dhp-timeline occupied by #svg-container
+        dhpTimeline.svgMargin = { top: 6, right: 22, bottom: 6, left: 6 };
+            // chartMargin is for space inside of #svg-container occupied by timeline chart
+        dhpTimeline.chartMargin = { top: 4, right: 9, bottom: 4, left: 4 };
+        var widths = dhpTimeline.getWidths();
+
             // Append div for timeline into visualization space
         jQuery('#dhp-visual').append('<div id="dhp-timeline"><div>');
-
-            // Total width and height of timeline area
-        dhpTimeline.tWidth     = typeof(tlEP.width)  === 'number' ? tlEP.width  : parseInt(tlEP.width);
-        dhpTimeline.tHeight    = typeof(tlEP.height) === 'number' ? tlEP.height : parseInt(tlEP.height);
+        jQuery('#dhp-timeline').width(widths[0]);
 
         dhpTimeline.labelW     = typeof(tlEP.wAxisLbl) === 'number' ? tlEP.wAxisLbl : parseInt(tlEP.wAxisLbl);
 
-            // Create SVG and frame for graphics
-        var margin = { top: 6, right: 6, bottom: 6, left: 6 };
-            // Inner width and height
-        dhpTimeline.iWidth = dhpTimeline.tWidth - margin.left - margin.right,
-        dhpTimeline.iHeight = dhpTimeline.tHeight - margin.top - margin.bottom;
-
             // Threshold is used to determine at what point years, months or days should be displayed
             // It needs to be determined by proportion of screen space and label width
-        dhpTimeline.threshold  = (dhpTimeline.iWidth / (dhpTimeline.labelW*6.25));
+        dhpTimeline.threshold  = (widths[2] / (dhpTimeline.labelW*6.25));
 
             // Create svg element for rendering
         dhpTimeline.svg = d3.select('#dhp-timeline').append("svg")
             .attr("class", "svg-container")
             .attr("id", "svg-container")
-            .attr("width", dhpTimeline.tWidth)
-            .attr("height", dhpTimeline.tHeight)
+            .attr("width", widths[1])
                 // Create inset frame
             .append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top +  ")");
+            .attr("transform", "translate(" + dhpTimeline.svgMargin.left + "," + dhpTimeline.svgMargin.top +  ")");
 
             // Clip all graphics to inner area of chart
         dhpTimeline.svg.append("clipPath")
             .attr("id", "chart-area")
             .append("rect")
-            .attr("width", dhpTimeline.iWidth)
-            .attr("height", dhpTimeline.iHeight);
+            .attr("width", widths[2]);
 
             // Insert chart inside of clipping area
         dhpTimeline.chart = dhpTimeline.svg.append("g")
@@ -140,6 +137,74 @@ var dhpTimeline = {
     }, // initialize()
 
 
+        // RETURNS: Pixel width available for the various containers:
+        //              0 = total width (#dhp-timeline), 1 = svg-container, 2 = inner chart
+        // NOTES:   Must account for margins of outer #dhp-timeline (inc. scrollbar)
+        //              as well as margins of inner container
+    getWidths: function()
+    {
+        var widths = [];
+        var svgWidth;
+
+        var curWidth = jQuery('#dhp-visual').width();
+            // Total width of window
+        widths.push(curWidth);
+            // Width of svg-container
+        svgWidth = curWidth-(dhpTimeline.svgMargin.left + dhpTimeline.svgMargin.right);
+        widths.push(svgWidth);
+            // Width of chart itself
+        widths.push(svgWidth-(dhpTimeline.chartMargin.left + dhpTimeline.chartMargin.right));
+
+        return widths;
+    }, // getWidths()
+
+
+        // PURPOSE: Resizes timeline-specific elements initially and when browser size changes
+    dhpUpdateSize: function()
+    {
+            // Height of timeline chart itself will not change, but container will (enable scroll bars)
+            // Height = total viz space minus height of navbar, margins, border & scroll bar itself
+        var newHeight = jQuery('#dhp-visual').height() - (dhpTimeline.controlHeight+10);
+        jQuery('#dhp-timeline').height(newHeight);
+
+            // Expand width of containers for visual space
+        var newWidths = dhpTimeline.getWidths();
+
+        jQuery('#dhp-timeline').width(newWidths[0]);
+        jQuery('#svg-container').width(newWidths[1]);
+
+        dhpTimeline.threshold  = (newWidths[2] / (dhpTimeline.labelW*6.25));
+
+            // Clip all graphics to inner area of chart
+        d3.select("#chart-area rect").attr("width", newWidths[2]);
+
+            // Now update each band
+        _.each(dhpTimeline.bands, function(theBand, index) {
+            theBand.w = newWidths[2];
+            theBand.g.select(".band").attr("width", newWidths[2]);
+            theBand.xScale.range([0, newWidths[2]]);
+
+                // Need to update position of end labels (rect and text)
+            var toLabel = theBand.labels[1];
+            var txtLeft = toLabel.x()+toLabel.textDelta;
+            theBand.labelSVGs.select('#rect-to-'+index).attr("x", toLabel.left() );
+            theBand.labelSVGs.select('#txt-to-'+index).attr("x", txtLeft);
+            if (index == 0) {
+                theBand.labelSVGs.select('#m-txt-to-'+index).attr("x", txtLeft);
+            }
+        });
+
+            // Now redraw everything!
+        dhpTimeline.components.forEach(function(component) {
+            component.redraw();
+        });
+
+            // Update brush by reinstating its extent
+        var extent = dhpTimeline.brush.extent();
+        d3.select('.brush').call(dhpTimeline.brush.extent(extent));
+    }, // dhpUpdateSize()
+
+
         // PURPOSE: Handle loading time events -- create all visuals from them
         //          Converts raw event data into usable data in events array
         // ASSUMES: dhpTimeline.rawData contains all time data
@@ -177,43 +242,13 @@ var dhpTimeline = {
                 newEvent.end = new Date(newEvent.start.getTime() + dhpTimeline.instantOffset);
             }
 
-            // var newEvent = { };
-            // newEvent.index = index;
-
-            // var dates = item.date.split('/');
-
-            // dates[0] = dates[0].trim();
-            // if (dates[0] == 'open') {
-            //     newEvent.start = dhpTimeline.fromDate;
-            // } else {
-            //     newEvent.start = dhpServices.parseADate(dates[0], true);
-            // }
-
-            //     // Is it a range of from/to?
-            // if (dates.length == 2) {
-            //     newEvent.instant = false;
-            //     dates[1] = dates[1].trim();
-            //     if (dates[1] === 'open') {
-            //         newEvent.end = dhpTimeline.toDate;
-            //     } else {
-            //         newEvent.end = dhpServices.parseADate(dates[1], false);
-            //     }
-
-            //     // Otherwise an instantaneous event
-            // } else {
-            //     newEvent.instant = true;
-            //     newEvent.end = new Date(newEvent.start.getTime() + dhpTimeline.instantOffset);
-            // }
-            //     // Don't allow dates to go beyond today in future
-            // if (item.end > today) { item.end = today; };
-
             dhpTimeline.events.push(newEvent);
         });
 
             // Put events in order
         dhpTimeline.events.sort(compareDescending);
 
-            // Since zoom window open must be set, so must this -- leave this for now
+            // Since zoom window open dates must be configured, must leave this for now
         //     // If no end date given in EP, get it from data
         // if (dhpTimeline.fromDate == null) {
         //     var firstDate = dhpTimeline.events[dhpTimeline.events.length-1];
@@ -272,12 +307,15 @@ var dhpTimeline = {
     {
             // Band specific parameters for instantaneous events
         var instCX, instCY, instR, instLabelX;
+        var widths;
 
             // Create record about band
         var band = {};
         band.id = index;
         band.l = 0;
-        band.w = dhpTimeline.iWidth;
+
+        widths = dhpTimeline.getWidths();
+        band.w = widths[2];
 
             // Top zoom band?
         if (index == 0) {
@@ -328,7 +366,7 @@ var dhpTimeline = {
             fontPos = band.itemHeight*.80;
         }
 
-            // Create enclosing container for the band
+            // Create enclosing container for the entire band
         band.g.append("rect")
             .attr("class", "band")
             .attr("width", band.w)
@@ -400,6 +438,15 @@ var dhpTimeline = {
                     var feature = dhpTimeline.features[d.index];
                     return feature.title;
                 });
+
+            // If we've just created the lower band, we can now fix the vertical height of entire chart
+        } else {
+            var totalHt = band.t + band.h + dhpTimeline.labelH + 20;
+
+                // Set total height of chart container
+            d3.select('#svg-container').attr("height", totalHt);
+                // And of clipping area
+            d3.select("#chart-area rect").attr("height", totalHt);
         }
 
             // Item needs to know how to draw itself (will be called)
@@ -438,17 +485,17 @@ var dhpTimeline = {
 
             // The data associated with Labels
         var startLabel = {
-                            name: 'from',
-                            x: 0,
-                            left: 0,
+                            name: 'from-',
+                            x: function() { return 0; },
+                            left: function() { return 0; },
                             anchor: 'start',
                             textDelta: 2,
                             whichDate: function(min, max) { return min; }
                         };
         var endLabel = {
-                            name: 'to',
-                            x: band.l + band.w,
-                            left: band.l + band.w - dhpTimeline.labelW,
+                            name: 'to-',
+                            x: function() { return band.l + band.w; },
+                            left: function() { return band.l + band.w - dhpTimeline.labelW; },
                             anchor: 'end',
                             textDelta: -3,
                             whichDate: function(min, max) { return max; }
@@ -456,7 +503,8 @@ var dhpTimeline = {
         var labelDefs = [startLabel, endLabel];
 
             // Create graphic container for labels just below main chart space
-        var bandLabels = dhpTimeline.chart.append("g")
+            // These only specify vertical dimension -- essentially take entire width
+        var bandLabelSVGs = dhpTimeline.chart.append("g")
             .attr("id", "bandLabels"+index)
             .attr("transform", "translate(0," + (band.t + band.h + 1) +  ")")
             .selectAll("#" + "bandLabels"+index)
@@ -465,18 +513,19 @@ var dhpTimeline = {
             .enter().append("g");
 
             // Create containing rects for labels
-        bandLabels.append("rect")
+        bandLabelSVGs.append("rect")
             .attr("class", "bandLabel")
-            .attr("x", function(label) { return label.left; })
+            .attr("id", function(label) { return "rect-"+label.name+index; } )
+            .attr("x", function(label) { return label.left(); })
             .attr("width", dhpTimeline.labelW)
             .attr("height", labelH);
             // .style("opacity", 1);
 
             // Add textual features for labels
-        var yLabels = bandLabels.append("text")
+        var yLabels = bandLabelSVGs.append("text")
             .attr("class", 'bandMinMaxLabel')
-            .attr("id", function(label) { return label.name+index; } )
-            .attr("x", function(label) { return label.x+label.textDelta; } )
+            .attr("id", function(label) { return "txt-"+label.name+index; } )
+            .attr("x", function(label) { return label.x()+label.textDelta; } )
             .attr("y", dhpTimeline.labelH-4)
             .attr("text-anchor", function(label) { return label.anchor; });
 
@@ -493,16 +542,16 @@ var dhpTimeline = {
             })
         }; // redraw()
 
-            // Add to items needed to be drawn
+            // Add initial labels to components needed to be drawn
         band.parts.push(yLabels);
         dhpTimeline.components.push(yLabels);
 
         if (index == 0) {
                 // If creating zoom band, need to add text features for months
-            var mLabels = bandLabels.append("text")
+            var mLabels = bandLabelSVGs.append("text")
                 .attr("class", 'bandMinMaxLabel')
-                .attr("id", function(label) { return 'm'+label.name+index; } )
-                .attr("x", function(label) { return label.x+label.textDelta; } )
+                .attr("id", function(label) { return 'm-txt-'+label.name+index; } )
+                .attr("x", function(label) { return label.x()+label.textDelta; } )
                 .attr("y", labelH-4)
                 .attr("text-anchor", function(label) { return label.anchor; });
 
@@ -523,10 +572,14 @@ var dhpTimeline = {
                 })
             }; // redraw()
 
-                // Add to items needed to be drawn
+                // Add additional labels to components needed to be drawn
             band.parts.push(mLabels);
             dhpTimeline.components.push(mLabels);
         } // if zoom
+
+            // Need to store these labels in the band for redrawing on resize
+        band.labels = labelDefs;
+        band.labelSVGs = bandLabelSVGs;
     }, // createLabels()
 
 
@@ -596,13 +649,13 @@ var dhpTimeline = {
         // }
 
             // Create logical controller
-        var brush = d3.svg.brush()
+        dhpTimeline.brush = d3.svg.brush()
             .x(band.xScale.range([0, band.w]))
                 // Start with default zoom position
             .extent([dhpTimeline.openFromDate, dhpTimeline.openToDate])
                 // Code to bind when brush moves
             .on('brush', function() {
-                var extent0 = brush.extent(); // "original" default value
+                var extent0 = dhpTimeline.brush.extent(); // "original" default value
                 var extent1;                  // new recomputed value
 
                   // if dragging, preserve the width of the extent, rounding by days
@@ -623,8 +676,8 @@ var dhpTimeline = {
                 }
 
                     // "this" will actually point to the brushSVG object
-                    // This inserts new brush SVG data
-                d3.select(this).call(brush.extent(extent1));
+                    // Replaces SVG data to correspond to new brush params
+                d3.select(this).call(dhpTimeline.brush.extent(extent1));
 
                     // Rescale top timeline(s) according to bottom brush
                 dhpTimeline.bands[0].xScale.domain(extent1);
@@ -632,12 +685,12 @@ var dhpTimeline = {
             });
 
             // Create SVG component and connect to controller
-        var brushSVG = band.g.append("svg")
+        dhpTimeline.brushSVG = band.g.append("svg")
             .attr("class", "brush")
-            .call(brush);
+            .call(dhpTimeline.brush);
 
             // Container is opaque rectangle
-        brushSVG.selectAll("rect")
+        dhpTimeline.brushSVG.selectAll("rect")
             .attr("y", 0)
             .attr("height", band.h);
     } // createBrush()
