@@ -1,7 +1,7 @@
 
 <div id="ko-dhp">
     <p data-bind="visible: optionsCF.length == 0" style="color: red">
-      Reminder: You cannot configure your Project until you import Markers associated with this Project by using the Project ID above. Be sure to Publish this project if you have just selected <b>Add New</b>.
+      NOTE: You cannot configure your Project until you import Markers associated with this Project (by using the Project ID above). Make sure to click the Publish button on the right if you have just created your project with the <b>Add New</b> button.
     </p>
 
     <div data-bind="visible: optionsCF.length > 0">
@@ -410,9 +410,8 @@
           Marker Color <select data-bind="value: theEP.settings.color, options: $root.stMoteNames"></select> (Must be configured for colors)
         </li>
         <li>Height of each band (in pixels) <input data-bind="value: theEP.settings.bandHt" type="number" size="4"/>
-          Total number of bands <input data-bind="value: theEP.settings.rows" type="number" size="3"/>
+          Width of start/end axis labels (in pixels) <input data-bind="value: theEP.settings.wAxisLbl" type="number" size="3"/>
         </li>
-        <li>Width of start/end axis labels <input data-bind="value: theEP.settings.wAxisLbl" type="number" size="3"/></li>
         <li>Timeline start date <input data-bind="value: theEP.settings.from" type="text" size="12"/>
           to end date <input data-bind="value: theEP.settings.to" type="text" size="12"/>
         </li>

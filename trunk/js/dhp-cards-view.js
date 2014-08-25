@@ -395,23 +395,50 @@ var dhpCardsView = {
 
             // Date parameters are now computed -- just need to do the calculations!
         var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
-        var text;
-        var today = new Date();
+        var text, dateSegs, evStart, evEnd;
 
             // Get the text for each item and check against date range
-            // TO DO: This test will not work properly if "open" is used for parts of Dates
+            // NOTE: "open" is essentially infinite in one direction, so is always before or after any date
         jQuery('#card-container').isotope({
           filter: function() {
             text = jQuery(this).find(className).text();
-            theEvent = dhpServices.eventFromDateStr(text, today, today);
 
+            dateSegs = text.split('/');
+
+            dateSegs[0] = dateSegs[0].trim();
+            if (dateSegs.length == 2) {
+                if (dateSegs[0] !== 'open') {
+                    evStart = dhpServices.parseADate(dateSegs[0], true);
+                }
+                dateSegs[1] = dateSegs[1].trim();
+                if (dateSegs[1] !== 'open') {
+                    evEnd = dhpServices.parseADate(dateSegs[1], false);
+                }
+            } else {
+                evStart = dhpServices.parseADate(dateSegs[0], true);
+                evEnd = dhpServices.parseADate(dateSegs[0], false);
+            }
+
+                // Is there a min and max?
             if (date2) {
-                return (date1 <= theEvent.start) && (theEvent.end <= date2);
+                    // as "open" can never be bound, it will always fail
+                if (dateSegs[0] === 'open' || dateSegs[1] === 'open') {
+                    return false;
+                }
+                return (date1 <= evStart) && (evEnd <= date2);
+
+                // Only min or max -- "open" always fails these
             } else {
                 if (dhpCardsView.curFilterVal.date1Order === 'before') {
-                    return theEvent.end <= date1;
+                    if (dateSegs[1] === 'open') {
+                        return false;
+                    }
+                    return evEnd <= date1;
                 } else {
-                    return date1 <= theEvent.start;
+                    if (dateSegs[0] === 'open') {
+                        return false;
+                    }
+                    return date1 <= evStart;
                 }
             }
           }

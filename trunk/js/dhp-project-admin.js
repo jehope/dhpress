@@ -237,7 +237,6 @@ jQuery(document).ready(function($) {
     self.settings.label = ko.observable(epSettings.settings.label);
     self.settings.bandHt = ko.observable(epSettings.settings.bandHt);
     self.settings.wAxisLbl = ko.observable(epSettings.settings.wAxisLbl);
-    self.settings.rows = ko.observable(epSettings.settings.rows);
     self.settings.from = ko.observable(epSettings.settings.from);
     self.settings.to = ko.observable(epSettings.settings.to);
     self.settings.openFrom = ko.observable(epSettings.settings.openFrom);
@@ -452,7 +451,6 @@ jQuery(document).ready(function($) {
           savedEP.settings.label = theEP.settings.label();
           savedEP.settings.bandHt = theEP.settings.bandHt();
           savedEP.settings.wAxisLbl = theEP.settings.wAxisLbl();
-          savedEP.settings.rows = theEP.settings.rows();
           savedEP.settings.from = theEP.settings.from();
           savedEP.settings.to = theEP.settings.to();
           savedEP.settings.openFrom = theEP.settings.openFrom();
@@ -1348,7 +1346,6 @@ jQuery(document).ready(function($) {
           label: '',
           bandHt: '13',
           wAxisLbl: '32',
-          rows: '25',
           from: '',
           to: '',
           openFrom: '',
@@ -2047,9 +2044,6 @@ jQuery(document).ready(function($) {
           }
           if (theEP.settings.wAxisLbl() == '' || isNaN(i=parseInt(theEP.settings.wAxisLbl(),10)) || i <= 10) {
             epErrorMessage('You must specify a valid x axis label width for the Timeline');
-          }
-          if (theEP.settings.rows() == '' || isNaN(i=parseInt(theEP.settings.rows(),10)) || i <= 4) {
-            epErrorMessage('You must specify a valid number of bands for the Timeline');
           }
             // Check Dates and their formats
           var dateRegEx = /^-?\d+(-(\d)+)?(-(\d)+)?$/;

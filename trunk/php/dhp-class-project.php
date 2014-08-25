@@ -100,11 +100,8 @@
 						 "date" : String (name of mote),			// mote which provides date range
 		                 "color" : String (name of mote),           // mote to determine color of card
 		                 "label" : String (name of mote),           // mote to display on hover
-		                 "width" : Integer,							// pixel width of timeline chart
-		                 "height" : Integer,						// pixel height of timeline chart
 		                 "bandHt" : Integer,                        // pixel height of top band rows (also used for fontSize)
 		                 "wAxisLbl" : Integer,                      // pixel width of min/max labels on axis
-		                 "rows" : Integer,                          // Number of rows (tracks) of time events
 		                 "from" : Date,                             // Earliest date to show in timeline
 		                 "to"   : Date,                             // Latest date to show in timeline
 		                 "openFrom": Date,                          // Initial window's start (begin date)

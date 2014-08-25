@@ -41,7 +41,6 @@ var dhpTimeline = {
 
             // Prepare GUI data and components
         dhpTimeline.controlHeight= 49;  // LegendHeight[45] + 4
-        dhpTimeline.maxTracks   = typeof(tlEP.rows)  === 'number' ? tlEP.rows  : parseInt(tlEP.rows);
         dhpTimeline.bandHt      = typeof(tlEP.bandHt)  === 'number' ? tlEP.bandHt  : parseInt(tlEP.bandHt);
         dhpTimeline.instRad     = (dhpTimeline.bandHt / 2) -1; // pixel radius of instantaneous circle
         dhpTimeline.bandGap     = 37;           // pixels between one band and the next
@@ -266,13 +265,13 @@ var dhpTimeline = {
         //      // Would need to add a calculation of instantOffset
 
             // Won't need to keep this array
-        var tracks = new Array(dhpTimeline.maxTracks);
+        var tracks = [];
         var trackNum;
 
             // Lay events out on tracks: older items end deeper
         dhpTimeline.events.forEach(function (theEvent) {
                 // Find the first track where it fits
-            for (trackNum = 0; trackNum < dhpTimeline.maxTracks; trackNum++) {
+            for (trackNum = 0; trackNum < tracks.length; trackNum++) {
                     // First check to see if track has any value
                 if (tracks[trackNum]) {
                     if (theEvent.end < tracks[trackNum]) {
@@ -283,18 +282,13 @@ var dhpTimeline = {
                     break;
                 }
             }
-
-                // Did it run out of available tracks?
-            if (trackNum == dhpTimeline.maxTracks) {
-                console.log("Your tracks are full; add more.");
-                theEvent.track = -1;
-            } else {
-                    // Record track that event "fits" into
-                theEvent.track = trackNum;
-                    // Record relevant time period in track -- this will append to array if at end
-                tracks[trackNum] = theEvent.start;
-            }
+                // Record track that event "fits" into -- this will append to array if at end
+            theEvent.track = trackNum;
+                // Record relevant time period in track -- this will append to array if at end
+            tracks[trackNum] = theEvent.start;
         });
+            // need to know # tracks required
+        dhpTimeline.maxTracks = tracks.length;
     }, // processEvents()
 
 
