@@ -681,7 +681,7 @@ var dhpTimeline = {
             // Container is opaque rectangle
         dhpTimeline.brushSVG.selectAll("rect")
             .attr("y", 0)
-            .attr("height", band.h);
+            .attr("height", band.h-1);
     } // createBrush()
 
 }; // dhpTimeline
