@@ -2046,7 +2046,7 @@ jQuery(document).ready(function($) {
             epErrorMessage('You must specify a valid x axis label width for the Timeline');
           }
             // Check Dates and their formats
-          var dateRegEx = /^-?\d+(-(\d)+)?(-(\d)+)?$/;
+          var dateRegEx = /^(open|-?\d+(-(\d)+)?(-(\d)+)?)$/;
           if (!dateRegEx.test(theEP.settings.from())) {
             epErrorMessage('You must specify a valid Date for the start frame of the Timeline');
           }
