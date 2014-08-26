@@ -273,12 +273,7 @@ var dhpTimeline = {
                 // Find the first track where it fits
             for (trackNum = 0; trackNum < tracks.length; trackNum++) {
                     // First check to see if track has any value
-                if (tracks[trackNum]) {
-                    if (theEvent.end < tracks[trackNum]) {
-                        break;
-                    }
-                    // if nothing is stored in track at all yet, this date can be stored
-                } else {
+                if (theEvent.end < tracks[trackNum]) {
                     break;
                 }
             }
