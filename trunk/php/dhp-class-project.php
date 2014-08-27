@@ -535,7 +535,7 @@ class DHPressMarkerQuery
 		if ($projObj->selectModalHas("scloud")) {
 			$this->audio = $projSettings->views->transcript->audio;
 				// Translate from Mote Name to Custom Field name
-			if (!is_null($this->audio) && ($this->audio !== '')) {
+			if (!is_null($this->audio) && ($this->audio !== '') && ($this->audio !== 'disable')) {
 				$this->audio = $projObj->getCustomFieldForMote($this->audio);
 			} else {
 				$this->audio = null;
@@ -544,7 +544,7 @@ class DHPressMarkerQuery
 		if ($projObj->selectModalHas("youtube")) {
 			$this->video = $projSettings->views->transcript->video;
 				// Translate from Mote Name to Custom Field name
-			if (!is_null($this->video) && ($this->video !== '')) {
+			if (!is_null($this->video) && ($this->video !== '') && ($this->video !== 'disable')) {
 				$this->video = $projObj->getCustomFieldForMote($this->video);
 			} else {
 				$this->video = null;
