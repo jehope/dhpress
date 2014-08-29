@@ -2324,7 +2324,7 @@ function dhp_viz_query_var($vars) {
 
 add_filter( 'single_template', 'dhp_page_template' );
 
-// PURPOSE:	Called by WP to modify output for rendering page, inc template to be used, acc to Project
+// PURPOSE:	Called by WP to modify output when viewing a page of any type
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
 
@@ -2421,6 +2421,7 @@ function dhp_page_template( $page_template )
 	    	break;
 
 	    case 'pinboard':
+			wp_enqueue_style('foundation-icons-css', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 			wp_enqueue_style('dhp-pinboard-css', plugins_url('/css/dhp-pinboard.css',  dirname(__FILE__)) );
 
 			wp_enqueue_script('snap', plugins_url('/lib/snap.svg-min.js', dirname(__FILE__)));
@@ -2485,14 +2486,9 @@ function dhp_page_template( $page_template )
 		$project_id = get_post_meta($post->ID, 'project_id',true);
 		$projObj = new DHPressProject($project_id);
 
-			//foundation styles
-		wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
-		wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
-
-		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		wp_enqueue_style('dhp-style-css', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('jquery');
-		wp_enqueue_script('dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('underscore');
 

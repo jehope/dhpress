@@ -77,7 +77,7 @@ var dhpPinboardView = {
         jQuery('#dhp-controls').append(Handlebars.compile(jQuery("#dhp-script-legend-head").html()));
 
             // Create buttons for navigating & zooming background image
-        jQuery('#dhp-controls').append('<div id="dhp-image-controls"><div id="pin-left"></div><div id="pin-right"></div><div id="pin-down"></div><div id="pin-up"></div><div id="pin-reduce"></div><div id="pin-zoom"></div><div id="pin-refresh"></div></div>');
+        jQuery('#dhp-controls').append('<div id="dhp-pin-controls"><div class="pin-fndn-icon"><i class="fi-arrow-left" id="pin-left"></i> <i class="fi-arrow-right" id="pin-right"></i> <i class="fi-arrow-down" id="pin-down"></i> <i class="fi-arrow-up" id="pin-up"></i> <i class="fi-arrows-in" id="pin-reduce"></i> <i class="fi-arrows-out" id="pin-zoom"></i> <i class="fi-x-circle" id="pin-refresh"></i> </div></div>');
         jQuery("#pin-refresh").click(dhpPinboardView.resetView);
         jQuery("#pin-zoom").click(dhpPinboardView.zoomIn);
         jQuery("#pin-reduce").click(dhpPinboardView.zoomOut);
