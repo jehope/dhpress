@@ -135,6 +135,7 @@ var dhpPinboardView = {
         var loadArray = pinboardEP.layers || [];
         dhpPinboardView.loadedLayers = dhpPinboardView.paper.group();
 
+            // NOTES: Must be a recursive function in order for layers to load in set order
         function loadHandler(lIndex)
         {
                 // All layers have been loaded -- go on to markers

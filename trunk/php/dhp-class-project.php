@@ -73,6 +73,9 @@
 		                "size": Character,							// relative size of markers: "s" | "m" | "l"
 		                "icon": String,								// Name of icon marker to use or "disable"
 						"coordMote": String (name of mote),			// mote which supplies X-Y coordinate
+						"animscript": String,						// URL to animation script
+						"animSVG": String,							// URL to SVG file for animation
+						"ytvcode": String,							// YouTube video code for animation (if any)
 		                "legends": [								// List of mote Legends/categories
 		                    String (name of mote), ...
 		                ],

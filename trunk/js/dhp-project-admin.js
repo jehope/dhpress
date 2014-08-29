@@ -194,6 +194,10 @@ jQuery(document).ready(function($) {
     self.settings.size = ko.observable(epSettings.settings.size);
     self.settings.icon = ko.observable(epSettings.settings.icon);
     self.settings.coordMote = ko.observable(epSettings.settings.coordMote);
+    self.settings.animscript = ko.observable(epSettings.settings.animscript);
+    self.settings.animSVG = ko.observable(epSettings.settings.animSVG);
+    self.settings.ytvcode = ko.observable(epSettings.settings.ytvcode);
+
     self.settings.legends = ko.observableArray();
     ko.utils.arrayForEach(normalizeArray(epSettings.settings.legends), function(theLegend) {
       self.settings.legends.push(new ArrayString(theLegend));
@@ -418,6 +422,10 @@ jQuery(document).ready(function($) {
           savedEP.settings.size = theEP.settings.size();
           savedEP.settings.icon = theEP.settings.icon();
           savedEP.settings.coordMote = theEP.settings.coordMote();
+          savedEP.settings.animscript = theEP.settings.animscript();
+          savedEP.settings.animSVG = theEP.settings.animSVG();
+          savedEP.settings.ytvcode = theEP.settings.ytvcode();
+
           savedEP.settings.legends = [];
           ko.utils.arrayForEach(theEP.settings.legends(), function(theLegend) {
             savedEP.settings.legends.push(theLegend.name());
@@ -1305,6 +1313,9 @@ jQuery(document).ready(function($) {
           icon: 'circle',
           size: 'm',
           coordMote: '',
+          animscript: '',
+          animSVG: '',
+          ytvcode: '',
           legends: [ ],
           layers: [ ]
         }
