@@ -2404,7 +2404,7 @@ function dhp_page_template( $page_template )
 
 				// Get any DHP custom map parameters
 			$layerData = dhpGetMapLayerData($thisEP->settings->layers);
-			$vizParams["layerData"] = $layerData;
+			$vizParams['layerData'] = $layerData;
 
 	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps',
 	    							'dhp-jquery-ui-slider');
@@ -2427,6 +2427,14 @@ function dhp_page_template( $page_template )
 			wp_enqueue_script('snap', plugins_url('/lib/snap.svg-min.js', dirname(__FILE__)));
 			wp_enqueue_script('dhp-pinboard-view', plugins_url('/js/dhp-pinboard-view.js', dirname(__FILE__)), 
 				'snap' );
+
+			if ($thisEP->settings->animscript && $thisEP->settings->animscript !== '') {
+				$content = @file_get_contents($thisEP->settings->animscript);
+				if ($content === false) {
+					trigger_error("Cannot load animation script file ".$thisEP->settings->animscript);
+				}
+				$vizParams['animscript'] = $content;
+			}
 
 	    	array_push($dependencies, 'snap', 'dhp-pinboard-view');
 	    	break;

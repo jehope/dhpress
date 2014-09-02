@@ -113,6 +113,7 @@ var dhpServices = {
         ajaxURL = theAjaxURL;
         projectID = theProjID;
         projSettings = theSettings;
+        dhpServices.parseTimeCode = /(\d\d)\:(\d\d)\:(\d\d)\.(\d\d?)/;         // a more exact parsing of time
     }, // initialize()
 
         // PURPOSE: Create multi-legend Legend key for the visualization
@@ -699,7 +700,33 @@ var dhpServices = {
         }
 
         return newEvent;
-    } // eventFromDateStr
+    }, // eventFromDateStr
+
+        // PURPOSE: Convert timecode string into # of milliseconds
+        // INPUT:   timecode must be in format [HH:MM:SS] or [HH:MM:SS.ss]
+        // ASSUMES: timecode in correct format, parseTimeCode contains compiled RegEx
+    tcToMilliSeconds: function (timecode)
+    {
+        var milliSecondsCode = new Number();
+        var matchResults;
+
+        matchResults = dhpServices.parseTimeCode.exec(timecode);
+        if (matchResults !== null) {
+            // console.log("Parsed " + matchResults[1] + ":" + matchResults[2] + ":" + matchResults[3]);
+            milliSecondsCode = (parseInt(matchResults[1])*3600 + parseInt(matchResults[2])*60 + parseFloat(matchResults[3])) * 1000;
+                // The multiplier to use for last digits depends on if it is 1 or 2 digits long
+            if (matchResults[4].length == 1) {
+                milliSecondsCode += parseInt(matchResults[4])*100;
+            } else {
+                milliSecondsCode += parseInt(matchResults[4])*10;
+            }
+        } else {
+            throw new Error("Error in transcript file: Cannot parse " + timecode + " as timecode.");
+            milliSecondsCode = 0;
+        }
+        return milliSecondsCode;
+    } // tcToMilliSeconds()
+
 
 }; // dhpServices
 
@@ -1070,4 +1097,16 @@ jQuery(document).ready(function($) {
         $('#loading').foundation('reveal', 'open');
         // $('.loading-reveal-modal-bg').remove();
     } // createLoadingMessage()
-});
+}); // project page bootstrap
+
+
+    // Interface between embedded YouTube player and code that uses it
+    // This is called once iFrame and API code is ready
+    // Need to determine whether this calls dhpWidget or dhpPinboard animation...
+function onYouTubeIframeAPIReady() {
+    if (dhpPinboardView && (dhpPinboardView.playState==dhpPinboardView.STATE_LOADING) && (dhpPinboardView.vidPlayer==null)) {
+        dhpPinboardView.onYouTubeIframeAPIReady();
+    } else {
+        dhpWidget.bindPlayerHandlers();
+    }
+}

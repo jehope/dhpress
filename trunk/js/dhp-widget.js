@@ -20,7 +20,6 @@ var dhpWidget = {
         // PURPOSE: Initialize transcript mechanisms
     initialize: function()
     {
-        dhpWidget.parseTimeCode = /(\d\d)\:(\d\d)\:(\d\d)\.(\d\d?)/;         // a more exact parsing of time
         dhpWidget.rowIndex = null;
         dhpWidget.transcriptData = [];
         dhpWidget.readyFor2nd = false;
@@ -348,32 +347,6 @@ var dhpWidget = {
     }, // hightlightTranscriptLine()
 
 
-        // PURPOSE: Convert timecode string into # of milliseconds
-        // INPUT:   timecode must be in format [HH:MM:SS] or [HH:MM:SS.ss]
-        // ASSUMES: timecode in correct format, parseTimeCode contains compiled RegEx
-    convertToMilliSeconds: function (timecode)
-    {
-        var milliSecondsCode = new Number();
-        var matchResults;
-
-        matchResults = dhpWidget.parseTimeCode.exec(timecode);
-        if (matchResults !== null) {
-            // console.log("Parsed " + matchResults[1] + ":" + matchResults[2] + ":" + matchResults[3]);
-            milliSecondsCode = (parseInt(matchResults[1])*3600 + parseInt(matchResults[2])*60 + parseFloat(matchResults[3])) * 1000;
-                // The multiplier to use for last digits depends on if it is 1 or 2 digits long
-            if (matchResults[4].length == 1) {
-                milliSecondsCode += parseInt(matchResults[4])*100;
-            } else {
-                milliSecondsCode += parseInt(matchResults[4])*10;
-            }
-        } else {
-            throw new Error("Error in transcript file: Cannot parse " + timecode + " as timecode.");
-            milliSecondsCode = 0;
-        }
-        return milliSecondsCode;
-    }, // convertToMilliSeconds()
-
-
         // PURPOSE: Clean up quicktime text, format transcript (left-side specific) and put it in a list
         // INPUT:   transcriptData = quicktime text format: timestamps on separate lines, [HH:MM:SS.m]
         // RETURNS: HTML for transcription 
@@ -407,7 +380,7 @@ var dhpWidget = {
                         }
                         index++;
                         textBlock = ''; 
-                        timecode = dhpWidget.convertToMilliSeconds(val);
+                        timecode = dhpServices.tcToMilliSeconds(val);
                         transcriptHtml.append('<div class="row '+lineClass[oddEven]+'"><div class="type-timecode" data-timecode="'+timecode+'">'+val+'</div></div>');
                         dhpWidget.tcArray.push(timecode);
                     }
@@ -496,9 +469,3 @@ var dhpWidget = {
     } // attachTranscript()
 }; // dhpWidget
 
-
-    // Interface between embedded YouTube player and dhpWidget object
-    // This is called once iFrame and API code is ready
-function onYouTubeIframeAPIReady() {
-    dhpWidget.bindPlayerHandlers();
-}
