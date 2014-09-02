@@ -332,6 +332,9 @@
             </select>&nbsp;
           Mote (for X-Y) <select data-bind="value: theEP.settings.coordMote, options: $root.xyMoteNames"></select>
         </li>
+        <li>Animation Script URL <input data-bind="value: theEP.settings.animscript" type="text" size="48"  placeholder="Leave blank for none"/><li>
+        <li>Animation SVG URL <input data-bind="value: theEP.settings.animSVG" type="text" size="48"  placeholder="Leave blank for none"/><li>
+        <li>Animation YouTube <input data-bind="value: theEP.settings.ytvcode" type="text" size="48" placeholder="YT code only - Leave blank for none"/><li>
         <div data-bind="template: { name: 'pin-layer-template', foreach: theEP.settings.layers, as: 'theLayer' }"></div>
         <button data-bind="jqButton, click: $root.addPinLayer.bind(theEP)">Add SVG Layer File</button>
         <div data-bind="template: { name: 'pin-legend-template', foreach: theEP.settings.legends }"></div>

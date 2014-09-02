@@ -40,9 +40,7 @@ var dhpPinboardView = {
         //          mapEP        = settings for map entry point (from project settings)
         //          viewParams   = array of data about map layers (see dhpGetMapLayerData() in dhp-project-functions)
     initialize: function(ajaxURL, projectID, vizIndex, pinboardEP, viewParams) {
-             // Constants
-        dhpPinboardView.checkboxHeight  = 12; // default checkbox height
-        dhpPinboardView.minWidth        = 182; // 182px for horizontal + 260px for Legend key
+             // GUI Constants
         dhpPinboardView.controlHeight   = 49;  // max(navButtonHeight[30], LegendHeight[45]) + 4
 
             // Save visualization data for later
@@ -77,7 +75,7 @@ var dhpPinboardView = {
         jQuery('#dhp-controls').append(Handlebars.compile(jQuery("#dhp-script-legend-head").html()));
 
             // Create buttons for navigating & zooming background image
-        jQuery('#dhp-controls').append('<div id="dhp-image-controls"><div id="pin-left"></div><div id="pin-right"></div><div id="pin-down"></div><div id="pin-up"></div><div id="pin-reduce"></div><div id="pin-zoom"></div><div id="pin-refresh"></div></div>');
+        jQuery('#dhp-controls').append('<div id="dhp-pin-controls"><div class="pin-fndn-icon"><i class="fi-arrow-left" id="pin-left"></i> <i class="fi-arrow-right" id="pin-right"></i> <i class="fi-arrow-down" id="pin-down"></i> <i class="fi-arrow-up" id="pin-up"></i> <i class="fi-arrows-in" id="pin-reduce"></i> <i class="fi-arrows-out" id="pin-zoom"></i> <i class="fi-x-circle" id="pin-refresh"></i> </div></div>');
         jQuery("#pin-refresh").click(dhpPinboardView.resetView);
         jQuery("#pin-zoom").click(dhpPinboardView.zoomIn);
         jQuery("#pin-reduce").click(dhpPinboardView.zoomOut);
@@ -130,37 +128,75 @@ var dhpPinboardView = {
         dhpPinboardView.icons.thumbtack = dhpPinboardView.paper.path(pathThumbtack);
         dhpPinboardView.icons.thumbtack.toDefs();
 
+            // Initialize animation variables
+        dhpPinboardView.STATE_LOADING = 0;
+        dhpPinboardView.STATE_PLAYING = 1;
+        dhpPinboardView.STATE_PAUSED = 2;
+        dhpPinboardView.STATE_END = 3;
+
+        dhpPinboardView.playState=dhpPinboardView.STATE_END;
+        dhpPinboardView.scriptEvents=[];            // Array of {start:Number, to:Number, actions: [string] }
+        dhpPinboardView.playIndex=0;                // the index of script instruction
+        dhpPinboardView.playLastIndex=-1;           // the index of the last script set played
+        dhpPinboardView.vidPlayer=null;             // No video player by default
+
+        dhpPinboardView.playIntervMS=150;           // Millisecond interval: 1/10 second
+        dhpPinboardView.playTimer=null;             // The interval timer for playback
+        dhpPinboardView.playTimeMS=0;               // Current time in playback from beginning
+        dhpPinboardView.lastTimeMS=0;               // Millisecond time from last "heartbeat"
+
+        dhpPinboardView.animLayers=null;            // SVG layer containing animation elements
+
             // Create SVG overlay layers --
             // Must be loaded recursively (due to asynchronous calls) to ensure correct order
         var loadArray = pinboardEP.layers || [];
         dhpPinboardView.loadedLayers = dhpPinboardView.paper.group();
 
+        function loadMarkers()
+        {
+            jQuery.ajax({
+                type: 'POST',
+                url: ajaxURL,
+                data: {
+                    action: 'dhpGetMarkers',
+                    project: projectID,
+                    index: vizIndex
+                },
+                success: function(data, textStatus, XMLHttpRequest)
+                {
+                    dhpPinboardView.createDataObjects(JSON.parse(data));
+                        // Remove Loading modal
+                    dhpServices.remLoadingModal();
+                    jQuery('.reveal-modal-bg').remove();
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown)
+                {
+                   alert(errorThrown);
+                }
+            });
+        } // loadMarkers()
+
+            // NOTES: Must be a recursive function in order for layers to load in set order
         function loadHandler(lIndex)
         {
-                // All layers have been loaded -- go on to markers
+                // All SVG layer files have been loaded
             if (lIndex >= loadArray.length) {
-                // dhpPinboardView.loadMarkers();
-                jQuery.ajax({
-                    type: 'POST',
-                    url: ajaxURL,
-                    data: {
-                        action: 'dhpGetMarkers',
-                        project: projectID,
-                        index: vizIndex
-                    },
-                    success: function(data, textStatus, XMLHttpRequest)
-                    {
-                        dhpPinboardView.createDataObjects(JSON.parse(data));
-                            // Remove Loading modal
-                        dhpServices.remLoadingModal();
-                        jQuery('.reveal-modal-bg').remove();
-                    },
-                    error: function(XMLHttpRequest, textStatus, errorThrown)
-                    {
-                       alert(errorThrown);
-                    }
-                });
+                    // If there is an SVG animation layer, load that next
+                if (pinboardEP.animSVG !== '') {
+                        // Create group where layers will be placed
+                    dhpPinboardView.animLayers = dhpPinboardView.paper.group();
+                    Snap.load(pinboardEP.animSVG, function(thisLayer) {
+                            // Add this svg data to the document
+                        dhpPinboardView.animLayers.append(thisLayer);
+                        dhpPinboardView.animOffAll();
+                        loadMarkers();
+                    });
 
+                } else {
+                    loadMarkers();
+                }
+
+                // Load the next SVG layer from file
             } else {
                 var layerInfo = loadArray[lIndex];
                     // After layer loaded, add it to SVG and request next layer
@@ -172,8 +208,78 @@ var dhpPinboardView = {
                     loadHandler(lIndex+1);
                 }); // load()
             } // else
-        }
+        } // loadHandler()
+
+            // Initiate the loading of SVG layer files
         loadHandler(0);
+
+            // Is there an animation script?
+        if (viewParams.animscript) {
+                // Add animation controls buttons
+            jQuery('#dhp-pin-controls .pin-fndn-icon').append('&nbsp;  <i class="fi-play-circle" id="dhp-ani-play"></i> <i class="fi-stop" id="dhp-ani-stop"></i> <i class="fi-pause" id="dhp-ani-pause"></i> &nbsp;');
+
+                // Parse script: First split transcript text into array by line
+            var splitTranscript = new String(viewParams.animscript);
+            splitTranscript = splitTranscript.trim().split(/\r\n|\r|\n/g);
+            // var splitTranscript = transcriptData.trim().split(/\r\n|\r|\n/g);       // More efficient but not working!
+
+            if (splitTranscript) {
+                var index = 0;
+                var lastStamp=0;
+
+                _.each(splitTranscript, function(val) {
+                        // Get cleaned version of line
+                    val = val.trim();
+                    switch (val.charAt(0)) {
+                        // If it is a timecode, parse and save it for later
+                    case '[':
+                        lastStamp = dhpServices.tcToMilliSeconds(val);
+                        break;
+                        // If it is an instruction, save it with timecode
+                    case '-':
+                    case '+':
+                    case '*':
+                        var thisEvent = {};
+                        thisEvent.start = lastStamp;
+                        thisEvent.end = -1; // Just a placeholder
+                        thisEvent.actions = val;
+                        dhpPinboardView.scriptEvents.push(thisEvent);
+                        break;
+                    default:
+                        throw new Error("Can't parse line: "+val);
+                        break;
+                    } // switch()
+                });
+            }
+                // Retroactively reset end fields
+            for (var i=0; i<dhpPinboardView.scriptEvents.length; i++) {
+                if (i != dhpPinboardView.scriptEvents.length-1) {
+                    dhpPinboardView.scriptEvents[i]['end'] = dhpPinboardView.scriptEvents[i+1]['start'];
+                }
+            }
+
+                // Load YouTube video used by animation, if any
+                // Don't need to wait for video if not available
+            if (pinboardEP.ytvcode !== '') {
+                dhpPinboardView.playState = dhpPinboardView.STATE_LOADING;
+
+                    /// Create DIV where invisible YouTube player will be inserted
+                jQuery('#dhp-visual').append('<div id="ytplayer"></div>');
+
+                    // Create a script DIV that will cause API to be loaded
+                var tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                var firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+            }
+
+                // Set initial state of the animation buttons
+            dhpPinboardView.updatePlayButtons();
+
+            jQuery('#dhp-ani-play').click(dhpPinboardView.hitBtnPlay);
+            jQuery('#dhp-ani-stop').click(dhpPinboardView.hitBtnStop);
+            jQuery('#dhp-ani-pause').click(dhpPinboardView.hitBtnPause);
+        } // if anim.script
     }, // initPinboard()
 
 
@@ -286,6 +392,230 @@ var dhpPinboardView = {
                             dhpPinboardView.viewW.toString()+" "+dhpPinboardView.viewH.toString();
         dhpPinboardView.svgRoot.setAttribute("viewBox", newSettings);
     }, // recalcViewBox()
+
+
+        // PURPOSE: Execute the command in animation playData (a scriptEvent object)
+    execCmd: function(playData)
+    {
+        var cmds, theSVG;
+
+        cmds = playData.actions.split(',');
+        _.each(cmds, function(theCmd) {
+            switch(theCmd.charAt(0)) {
+            case '+':
+                theSVG = dhpPinboardView.animLayers.select(theCmd.substring(1));
+                theSVG.removeClass('hide');
+                break;
+            case '-':
+                theSVG = dhpPinboardView.animLayers.select(theCmd.substring(1));
+                theSVG.addClass('hide');
+                break;
+            case '*':
+                dhpPinboardView.hitBtnStop();
+                break;
+            } // switch
+        });
+    }, // execCmd()
+
+
+        // PURPOSE: This code is the "heartbeat" of the animation interval timer
+        // NOTES:   Assumed that only runs after video is loaded, if it is available at all
+    intervalCode: function()
+    {
+        var playData = dhpPinboardView.scriptEvents[dhpPinboardView.playIndex];
+
+            // If we are coordinating with a YT video, we need to read time from YouTube itself
+        if (dhpPinboardView.vidPlayer) {
+            dhpPinboardView.playTimeMS = dhpPinboardView.vidPlayer.getCurrentTime() * 1000;
+        } else {
+            dhpPinboardView.playTimeMS += (Date.now() - dhpPinboardView.lastTimeMS);
+        }
+
+            // We have entered new event period not played yet??
+        if (dhpPinboardView.playTimeMS >= playData.start && dhpPinboardView.playIndex > dhpPinboardView.playLastIndex) {
+            dhpPinboardView.execCmd(playData);
+            dhpPinboardView.playLastIndex = dhpPinboardView.playIndex;
+        }
+
+            // Do we also need to catch up to next?
+        while (dhpPinboardView.playState == dhpPinboardView.STATE_PLAYING && dhpPinboardView.playTimeMS >= playData.end) {
+            playData = dhpPinboardView.scriptEvents[++dhpPinboardView.playIndex];
+            dhpPinboardView.execCmd(playData);
+            dhpPinboardView.playLastIndex = dhpPinboardView.playIndex;
+        }
+
+            // Update when we were last running to now
+        if (!dhpPinboardView.vidPlayer) {
+            dhpPinboardView.lastTimeMS = Date.now();
+        }
+    }, // intervalCode()
+
+
+        // PURPOSE: Make each section invisible
+    animOffAll: function()
+    {
+        var allGroupings = dhpPinboardView.animLayers.selectAll('.dhp-anim-group');
+        _.each(allGroupings, function(theGrouping, index) {
+            if (!theGrouping.hasClass('hide')) {
+                theGrouping.addClass('hide');
+            }
+        });
+    }, // animOffAll()
+
+
+        // PURPOSE: Handle user click on Play button
+    hitBtnPlay: function()
+    {
+            // If currently paused, then resume
+        if (dhpPinboardView.playState == dhpPinboardView.STATE_PAUSED)
+        {
+            dhpPinboardView.lastTimeMS = Date.now();
+            dhpPinboardView.playState = dhpPinboardView.STATE_PLAYING;
+            dhpPinboardView.updatePlayButtons();
+            if (dhpPinboardView.vidPlayer) {
+                dhpPinboardView.vidPlayer.playVideo();
+            }
+            dhpPinboardView.playTimer = setInterval(dhpPinboardView.intervalCode, dhpPinboardView.playIntervMS);
+
+            // If currently in "end" state, then restart from beginning
+        } else if (dhpPinboardView.playState == dhpPinboardView.STATE_END)
+        {
+            dhpPinboardView.playTimeMS = 0;
+            dhpPinboardView.playIndex = 0;
+            dhpPinboardView.playState = dhpPinboardView.STATE_PLAYING;
+            dhpPinboardView.playLastIndex = -1;         // Indicate that nothing has been played
+            dhpPinboardView.updatePlayButtons();
+            dhpPinboardView.lastTimeMS = Date.now();
+
+            if (dhpPinboardView.vidPlayer) {
+                dhpPinboardView.vidPlayer.playVideo();
+                dhpPinboardView.vidPlayer.seekTo(0);
+            }
+                // Don't wait until heartbeat to start, in case of 0 time event
+            dhpPinboardView.intervalCode();
+
+            dhpPinboardView.playTimer = setInterval(dhpPinboardView.intervalCode, dhpPinboardView.playIntervMS);
+        }
+            // Otherwise ignore it
+    }, // hitBtnPlay()
+
+
+        // PURPOSE: Handle user click on Pause button
+    hitBtnPause: function()
+    {
+            // If currently playing, then pause
+        if (dhpPinboardView.playState == dhpPinboardView.STATE_PLAYING)
+        {
+            window.clearInterval(dhpPinboardView.playTimer);
+            if (dhpPinboardView.vidPlayer) {
+                dhpPinboardView.vidPlayer.pauseVideo();
+            }
+            dhpPinboardView.playState = dhpPinboardView.STATE_PAUSED;
+            dhpPinboardView.updatePlayButtons();
+        }
+    }, // hitBtnPause()
+
+
+        // PURPOSE: Handle user click on Stop button
+    hitBtnStop: function()
+    {
+            // If currently playing or paused, then stop
+        if (dhpPinboardView.playState == dhpPinboardView.STATE_PLAYING || dhpPinboardView.playState == dhpPinboardView.STATE_PAUSED)
+        {
+            window.clearInterval(dhpPinboardView.playTimer);
+            dhpPinboardView.playTimeMS = dhpPinboardView.lastTimeMS = dhpPinboardView.playIndex = 0;
+            dhpPinboardView.animOffAll();
+            if (dhpPinboardView.vidPlayer) {
+                dhpPinboardView.vidPlayer.seekTo(0);
+                dhpPinboardView.vidPlayer.stopVideo();
+            }
+            dhpPinboardView.playState = dhpPinboardView.STATE_END;
+            dhpPinboardView.updatePlayButtons();
+        }
+    }, // hitBtnStop()
+
+
+        // PURPOSE: Change color of buttons to indicate state
+        // NOTES:   CSS colors: ready=#D00000, inactive=#A8A8A8 
+    updatePlayButtons: function()
+    {
+        switch (dhpPinboardView.playState) {
+            // Disable everything
+        case dhpPinboardView.STATE_LOADING:
+            jQuery('#dhp-ani-play').css('color', '#A8A8A8');
+            jQuery('#dhp-ani-stop').css('color', '#A8A8A8');
+            jQuery('#dhp-ani-pause').css('color', '#A8A8A8');
+            // jQuery('#dhp-ani-previous').css('color', '#A8A8A8');
+            // jQuery('#dhp-ani-next').css('color', '#A8A8A8');
+            break;
+            // Disable play, enable rest
+        case dhpPinboardView.STATE_PLAYING:
+            jQuery('#dhp-ani-play').css('color', '#A8A8A8');
+            jQuery('#dhp-ani-stop').css('color', '#D00000');
+            jQuery('#dhp-ani-pause').css('color', '#D00000');
+            // jQuery('#dhp-ani-previous').css('color', '#A8A8A8');
+            // jQuery('#dhp-ani-next').css('color', '#A8A8A8');
+            break;
+            // Disable pause, enable rest
+        case dhpPinboardView.STATE_PAUSED:
+            jQuery('#dhp-ani-play').css('color', '#D00000');
+            jQuery('#dhp-ani-stop').css('color', '#D00000');
+            jQuery('#dhp-ani-pause').css('color', '#A8A8A8');
+            // jQuery('#dhp-ani-previous').css('color', '#D00000');
+            // jQuery('#dhp-ani-next').css('color', '#D00000');
+            break;
+            // Disablbe stop and pause, enable rest
+        case dhpPinboardView.STATE_END:
+            jQuery('#dhp-ani-play').css('color', '#D00000');
+            jQuery('#dhp-ani-stop').css('color', '#A8A8A8');
+            jQuery('#dhp-ani-pause').css('color', '#A8A8A8');
+            // jQuery('#dhp-ani-previous').css('color', '#A8A8A8');
+            // jQuery('#dhp-ani-next').css('color', '#A8A8A8');
+            break;
+        } // switch
+    }, // updatePlayButtons()
+
+
+        // PURPOSE: Handle message that YouTube video state has changed
+    vidStateChange: function(event)
+    {
+        switch(event.data) {
+        case -1:                // Video doing init load
+            break;
+        case 0:                 // Video ended -- force end
+            dhpPinboardView.hitBtnStop();
+            break;
+        case 1:                 // Video playing
+            break;
+        case 2:                 // Video paused
+            break;
+        case 3:                 // Video buffering
+            break;
+        case 5:                 // Video cued (ready to play)
+            dhpPinboardView.playState = dhpPinboardView.STATE_END;
+            dhpPinboardView.updatePlayButtons();
+            break;
+        }
+    }, // vidStateChange()
+
+
+        // PURPOSE: Hook for YouTube called once API is loaded and ready
+    onYouTubeIframeAPIReady: function()
+    {
+        dhpPinboardView.vidPlayer = new YT.Player('ytplayer', {
+            height: '1',
+            width: '1',
+            videoId: dhpPinboardView.pinboardEP.ytvcode,
+            events: {
+                onStateChange: dhpPinboardView.vidStateChange,
+                onReady: function() {
+                    dhpPinboardView.playState=dhpPinboardView.STATE_END;
+                    dhpPinboardView.updatePlayButtons();
+                },
+                onError: function(event) { console.log("YouTube Error: "+event.data)}
+            }
+        });
+    }, // onYouTubeIframeAPIReady()
 
 
         // PURPOSE: Create marker objects for pinboard visualization; called by loadMapMarkers()
@@ -410,12 +740,14 @@ var dhpPinboardView = {
                         } // switch
                         shape.node.id = mIndex;
                         shape.data("i", mIndex);
-                            // Clicking shape must invoke select modal
+                            // Clicking shape must invoke select modal (if no animation showing)
                         shape.click(function() {
-                                // Get index to marker
-                            var index = parseInt(this.data("i"));
-                            var clicked = dhpPinboardView.allMarkers[index];
-                            dhpServices.showMarkerModal(clicked);
+                            if (dhpPinboardView.playState == dhpPinboardView.STATE_END) {
+                                    // Get index to marker
+                                var index = parseInt(this.data("i"));
+                                var clicked = dhpPinboardView.allMarkers[index];
+                                dhpServices.showMarkerModal(clicked);
+                            }
                         });
                         lgdHeadVal.add(shape);
                     }); // each marker

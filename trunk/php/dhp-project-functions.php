@@ -2156,7 +2156,7 @@ function add_dhp_project_admin_scripts( $hook )
 			wp_enqueue_style('jquery-colorpicker-style', plugins_url('/lib/colorpicker/jquery.colorpicker.css',  dirname(__FILE__)),
 					array('jquery-ui-style') );
 			// wp_enqueue_style('wp-jquery-ui-dialog' );
-			wp_enqueue_style('maki-sprite-style', plugins_url('/css/maki-sprite.css',  dirname(__FILE__)) );
+			wp_enqueue_style('maki-sprite-style', plugins_url('/lib/maki/maki-sprite.css',  dirname(__FILE__)) );
 				// Lastly, our plug-in specific styles
 			wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)),
 					array('jquery-ui-style', 'maki-sprite-style') );
@@ -2324,7 +2324,7 @@ function dhp_viz_query_var($vars) {
 
 add_filter( 'single_template', 'dhp_page_template' );
 
-// PURPOSE:	Called by WP to modify output for rendering page, inc template to be used, acc to Project
+// PURPOSE:	Called by WP to modify output when viewing a page of any type
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
 
@@ -2383,7 +2383,7 @@ function dhp_page_template( $page_template )
 
 			wp_enqueue_style('dhp-map-css', plugins_url('/css/dhp-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 			wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.3/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-			wp_enqueue_style('maki-sprite-style', plugins_url('/css/maki-sprite.css',  dirname(__FILE__)) );
+			wp_enqueue_style('maki-sprite-style', plugins_url('/lib/maki/maki-sprite.css',  dirname(__FILE__)) );
 
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
 
@@ -2404,7 +2404,7 @@ function dhp_page_template( $page_template )
 
 				// Get any DHP custom map parameters
 			$layerData = dhpGetMapLayerData($thisEP->settings->layers);
-			$vizParams["layerData"] = $layerData;
+			$vizParams['layerData'] = $layerData;
 
 	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps',
 	    							'dhp-jquery-ui-slider');
@@ -2421,11 +2421,20 @@ function dhp_page_template( $page_template )
 	    	break;
 
 	    case 'pinboard':
+			wp_enqueue_style('foundation-icons-css', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 			wp_enqueue_style('dhp-pinboard-css', plugins_url('/css/dhp-pinboard.css',  dirname(__FILE__)) );
 
 			wp_enqueue_script('snap', plugins_url('/lib/snap.svg-min.js', dirname(__FILE__)));
 			wp_enqueue_script('dhp-pinboard-view', plugins_url('/js/dhp-pinboard-view.js', dirname(__FILE__)), 
 				'snap' );
+
+			if ($thisEP->settings->animscript && $thisEP->settings->animscript !== '') {
+				$content = @file_get_contents($thisEP->settings->animscript);
+				if ($content === false) {
+					trigger_error("Cannot load animation script file ".$thisEP->settings->animscript);
+				}
+				$vizParams['animscript'] = $content;
+			}
 
 	    	array_push($dependencies, 'snap', 'dhp-pinboard-view');
 	    	break;
@@ -2485,14 +2494,9 @@ function dhp_page_template( $page_template )
 		$project_id = get_post_meta($post->ID, 'project_id',true);
 		$projObj = new DHPressProject($project_id);
 
-			//foundation styles
-		wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
-		wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
-
-		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		wp_enqueue_style('dhp-style-css', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('jquery');
-		wp_enqueue_script('dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('underscore');
 
