@@ -6,18 +6,19 @@
 
 var dhpWidget = {
     // Fields created by this object:
-    //      parseTimeCode = regular expression parser for timecodes
-    //      rowIndex
+    //      rowIndex        = index of row currently playing and highlighted
     //      transcriptData
-    //      readyFor2nd = for handling asynchronous loading of transcripts
-    //      playingNow = true if currently playing back
-    //      primeAudio = for handle quirk that widget has to be playing before seek can be done
-    //      playWidget = playback object itself
-    //      playerType = 'youtube' | 'scloud'
-    //      seekBound = true once code has been bound to seek to selected transcript section
-    //      tcArray = time code array used to coordinate time stamps with transcript sections
+    //      readyFor2nd     = for handling asynchronous loading of transcripts
+    //      playingNow      = true if currently playing back
+    //      primeAudio      = for handle quirk that widget has to be playing before seek can be done
+    //      playWidget      = playback object itself
+    //      playerType      = 'youtube' | 'scloud'
+    //      seekBound       = true once code has been bound to seek to selected transcript section
+    //      tcArray         = time code array used to coordinate time stamps with transcript sections
+
 
         // PURPOSE: Initialize transcript mechanisms
+        // NOTES:   This needs to be called each time before a new widget is displayed
     initialize: function()
     {
         dhpWidget.rowIndex = null;
@@ -57,15 +58,15 @@ var dhpWidget = {
         switch (transParams.playerType) {
             // Sound Cloud
         case 'scloud':
-            jQuery('#player-widget').append('<p class="pull-right"><iframe id="scPlayer" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+
+            jQuery('#player-widget').append('<p class="pull-right"><iframe id="scWidget" class="player" width="100%" height="166" src="http://w.soundcloud.com/player/?url='+
                 transParams.stream+'"></iframe></p>');
 
                 // Must set these variables after HTML appended above
-            dhpWidget.playWidget = SC.Widget(document.getElementById('scPlayer'));
+            dhpWidget.playWidget = SC.Widget(document.getElementById('scWidget'));
             dhpWidget.bindPlayerHandlers();
             break;
         case 'youtube':
-            jQuery('#player-widget').append('<p class="pull-right"><iframe id="player" type="text/html" width="425" height="356" src="http://www.youtube.com/embed/'+
+            jQuery('#player-widget').append('<p class="pull-right"><iframe id="ytWidget" type="text/html" width="425" height="356" src="http://www.youtube.com/embed/'+
                 transParams.stream+'?enablejsapi=1" frameborder="0"></iframe></p>');
                 // wait for hook invocation to set playWidget and bind handlers
             break;
@@ -98,6 +99,7 @@ var dhpWidget = {
                 dhpWidget.loadTranscriptClip(ajaxURL, projectID, transParams.transcript2, transParams.timecode, 1);
             }
         }
+
         if (appendSyncBtn) {
             jQuery(appendPos).append('<div style="padding-top:5px"><input type="checkbox" id="transcSyncOn" name="transcSyncOn" checked> Scroll transcript to follow playback</div><br>');
         }
@@ -107,7 +109,6 @@ var dhpWidget = {
         // PURPOSE: Bind code to widget to handle play, seek, close, etc.
     bindPlayerHandlers: function()
     {
-        var fullTranscript = dhpWidget.transParams.timecode == -1;
         var playWidget;
 
         switch (dhpWidget.transParams.playerType)
@@ -133,7 +134,7 @@ var dhpWidget = {
                         dhpWidget.playingNow = false;
                     }
                         // Keep within bounds if only excerpt of longer transcript
-                    if (!fullTranscript) {
+                    if (dhpWidget.transParams.timecode != -1) {
                         if (params.currentPosition < dhpWidget.transParams.startTime) {
                             playWidget.seekTo(dhpWidget.transParams.startTime);
                         } else if (params.currentPosition > dhpWidget.transParams.endTime) {
@@ -154,9 +155,9 @@ var dhpWidget = {
 
                 // Silence SoundCloud if modal closed in another way
             jQuery('#markerModal').on('closed', function () {
-                // var scWidget = SC.Widget(document.getElementById('scPlayer'));
+                // var scWidget = SC.Widget(document.getElementById('scWidget'));
                 // scWidget.pause();
-                playWidget.pause();
+                dhpWidget.playWidget.pause();
             });
             break;
 
@@ -177,7 +178,7 @@ var dhpWidget = {
                 }
             } // YTStateChange()
 
-            playWidget = dhpWidget.playWidget = new YT.Player('player', {
+            playWidget = dhpWidget.playWidget = new YT.Player('ytWidget', {
                 // height: dhpWidget.playerH,
                 // width: dhpWidget.playerW,
                 // videoId: dhpWidget.stream,
@@ -197,7 +198,7 @@ var dhpWidget = {
             //     }
             // }
 
-                // Silence SWFplayer if modal closed in another way
+                // Silence YouTube player if modal closed in another way
             jQuery('#markerModal').on('closed', function () {
                 // var ytplayer = document.getElementById('myytplayer');
                 // ytplayer.stopVideo();

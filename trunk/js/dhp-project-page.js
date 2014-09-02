@@ -113,7 +113,7 @@ var dhpServices = {
         ajaxURL = theAjaxURL;
         projectID = theProjID;
         projSettings = theSettings;
-        dhpServices.parseTimeCode = /(\d\d)\:(\d\d)\:(\d\d)\.(\d\d?)/;         // a more exact parsing of time
+        dhpServices.parseTimeCode = /(\d\d)\:(\d\d)\:(\d\d)\.(\d\d?)/;         // an exacting regular expression for parsing time
     }, // initialize()
 
         // PURPOSE: Create multi-legend Legend key for the visualization
@@ -453,6 +453,8 @@ var dhpServices = {
         {
             jQuery('#markerModal').addClass('transcript');
 
+            dhpWidget.initialize();
+
                 // Clear out all widget settings
             var widgetSettings = {
                 playerType: null,
@@ -479,8 +481,8 @@ var dhpServices = {
             if (feature.properties.timecode && feature.properties.timecode !== '') {
                 widgetSettings.timecode = feature.properties.timecode;
                 var time_codes = widgetSettings.timecode.split('-');
-                widgetSettings.startTime = dhpWidget.convertToMilliSeconds(time_codes[0]);
-                widgetSettings.endTime   = dhpWidget.convertToMilliSeconds(time_codes[1]);
+                widgetSettings.startTime = dhpServices.tcToMilliSeconds(time_codes[0]);
+                widgetSettings.endTime   = dhpServices.tcToMilliSeconds(time_codes[1]);
             }
             if (feature.properties.transcript && feature.properties.transcript !== '') {
                 widgetSettings.transcript  = feature.properties.transcript;
@@ -727,7 +729,6 @@ var dhpServices = {
         return milliSecondsCode;
     } // tcToMilliSeconds()
 
-
 }; // dhpServices
 
 
@@ -887,11 +888,6 @@ jQuery(document).ready(function($) {
 
         updateVizSpace = dhpTimeline.dhpUpdateSize;
         break;
-    }
-
-        // Transcription widget
-    if (dhpServices.modalViewHas('scloud') || dhpServices.modalViewHas('youtube')) {
-        dhpWidget.initialize();
     }
 
     // ========================= FUNCTIONS
@@ -1103,8 +1099,10 @@ jQuery(document).ready(function($) {
     // Interface between embedded YouTube player and code that uses it
     // This is called once iFrame and API code is ready
     // Need to determine whether this calls dhpWidget or dhpPinboard animation...
-function onYouTubeIframeAPIReady() {
-    if (dhpPinboardView && (dhpPinboardView.playState==dhpPinboardView.STATE_LOADING) && (dhpPinboardView.vidPlayer==null)) {
+function onYouTubeIframeAPIReady()
+{
+        // Viewing pinboard but video player not yet instantiated yet it is loading
+    if (dhpPinboardView && (dhpPinboardView.vidPlayer==null) && (dhpPinboardView.playState==dhpPinboardView.STATE_LOADING)) {
         dhpPinboardView.onYouTubeIframeAPIReady();
     } else {
         dhpWidget.bindPlayerHandlers();

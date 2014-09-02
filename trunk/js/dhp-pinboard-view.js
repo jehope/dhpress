@@ -34,6 +34,19 @@ var dhpPinboardView = {
         //                  loadedLayers = Snap group element for loaded SVG overlay layers
         //                  layerBtnsOn = TRUE if the layer buttons are currently showing on Legend menu
 
+        //                  playState = current state of playback (one of STATE_)
+        //                  scriptEvents = Array of {start:Number, to:Number, actions: [string] }
+        //                  playIndex = current index of script instruction
+        //                  playLastIndex = the index of the last script set played
+        //                  vidPlayer = YouTube object used for animation (none by default)
+
+        //                  playIntervMS = Millisecond interval: 1/10 second
+        //                  playTimer = the interval timer for playback
+        //                  playTimeMS = Current time in playback from beginning
+        //                  lastTimeMS = Millisecond time from last "heartbeat"
+
+        //                  animLayers = SVG layer containing animation elements
+
         // PURPOSE: Initialize new leaflet map, layers, and markers                         
         // INPUT:   ajaxURL      = URL to WP
         //          projectID    = ID of project
@@ -135,17 +148,17 @@ var dhpPinboardView = {
         dhpPinboardView.STATE_END = 3;
 
         dhpPinboardView.playState=dhpPinboardView.STATE_END;
-        dhpPinboardView.scriptEvents=[];            // Array of {start:Number, to:Number, actions: [string] }
-        dhpPinboardView.playIndex=0;                // the index of script instruction
-        dhpPinboardView.playLastIndex=-1;           // the index of the last script set played
-        dhpPinboardView.vidPlayer=null;             // No video player by default
+        dhpPinboardView.scriptEvents=[];
+        dhpPinboardView.playIndex=0;
+        dhpPinboardView.playLastIndex=-1;
+        dhpPinboardView.vidPlayer=null;
 
-        dhpPinboardView.playIntervMS=150;           // Millisecond interval: 1/10 second
-        dhpPinboardView.playTimer=null;             // The interval timer for playback
-        dhpPinboardView.playTimeMS=0;               // Current time in playback from beginning
-        dhpPinboardView.lastTimeMS=0;               // Millisecond time from last "heartbeat"
+        dhpPinboardView.playIntervMS=150;
+        dhpPinboardView.playTimer=null;
+        dhpPinboardView.playTimeMS=0;
+        dhpPinboardView.lastTimeMS=0;
 
-        dhpPinboardView.animLayers=null;            // SVG layer containing animation elements
+        dhpPinboardView.animLayers=null;
 
             // Create SVG overlay layers --
             // Must be loaded recursively (due to asynchronous calls) to ensure correct order
