@@ -453,8 +453,6 @@ var dhpServices = {
         {
             jQuery('#markerModal').addClass('transcript');
 
-            dhpWidget.initialize();
-
                 // Clear out all widget settings
             var widgetSettings = {
                 playerType: null,
@@ -491,7 +489,8 @@ var dhpServices = {
                 widgetSettings.transcript2 = feature.properties.transcript2;
             }
 
-            dhpWidget.prepareOneTranscript(ajaxURL, projectID, '#markerModal .modal-body', widgetSettings);
+            dhpWidget.initialize(widgetSettings);
+            dhpWidget.prepareOneTranscript(ajaxURL, projectID, '#markerModal .modal-body');
          }
 
             // Create HTML for all of the data related to the Marker
@@ -1102,9 +1101,13 @@ jQuery(document).ready(function($) {
 function onYouTubeIframeAPIReady()
 {
         // Viewing pinboard but video player not yet instantiated yet it is loading
-    if (dhpPinboardView && (dhpPinboardView.vidPlayer==null) && (dhpPinboardView.playState==dhpPinboardView.STATE_LOADING)) {
-        dhpPinboardView.onYouTubeIframeAPIReady();
+    if (typeof(dhpPinboardView) === 'undefined') {
+        dhpWidget.bindPlayerHandlers();        
     } else {
-        dhpWidget.bindPlayerHandlers();
+        if (dhpPinboardView.vidPlayer==null && dhpPinboardView.playState==dhpPinboardView.STATE_LOADING) {
+            dhpPinboardView.onYouTubeAPIReady();
+        } else {
+            dhpWidget.bindPlayerHandlers();        
+        }
     }
 }
