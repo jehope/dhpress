@@ -31,13 +31,15 @@ var dhpWidget = {
         // NOTES:   This is called each time a new widget will be displayed
     initialize: function(wParams)
     {
-        dhpWidget.rowIndex = null;
+        dhpWidget.rowIndex       = null;
         dhpWidget.transcriptData = [];
-        dhpWidget.readyFor2nd = false;
-        dhpWidget.playingNow = false;
-        dhpWidget.primeAudio = true;
-        dhpWidget.playWidget = null;
-        dhpWidget.wParams = wParams;
+        dhpWidget.readyFor2nd    = false;
+        dhpWidget.playingNow     = false;
+        dhpWidget.primeAudio     = true;
+        dhpWidget.playWidget     = null;
+        dhpWidget.wParams        = wParams;
+        dhpWidget.seekBound      = false;
+        dhpWidget.playTimer      = null;
 
             // We only want to bind this code once
         if (typeof(dhpWidget.closeBound) === 'undefined') {
@@ -191,20 +193,21 @@ var dhpWidget = {
             function ytStateChange(event)
             {
                 var curPos;
-console.log("YouTube state change: "+event.data);
 
                 switch (event.data) {
                 case 1: // YT.PlayerState.PLAYING
                     dhpWidget.playingNow = true;
                     if (dhpWidget.playTimer == null) {
+                            // YouTube playback heartbeat
                         dhpWidget.playTimer = setInterval(function() {
                                 // Need to convert to milliseconds
                             curPos = playWidget.getCurrentTime() * 1000;
-                                // TO DO: Keep within bounds of excerpt
-                            if (dhpWidget.playingNow) {
+                                // Keep within bounds of excerpt is done automatically by cue function
+                                // If there is a transcript, highlight current section
+                            if (dhpWidget.playingNow && dhpWidget.transcriptData.length > 0) {
                                 dhpWidget.hightlightTranscriptLine(curPos);
                             }
-                        }, 200);
+                        }, 300);    // .3 second heartbeat
                     }
                     break;
                 case 0: // YT.PlayerState.ENDED
@@ -217,14 +220,24 @@ console.log("YouTube state change: "+event.data);
                 case 5: // YT.PlayerState.CUED
                     dhpWidget.playingNow = false;
                     break;
-                }
+                } // switch event
             } // ytStateChange()
 
             playWidget = dhpWidget.playWidget = new YT.Player('ytWidget', {
                 videoId: dhpWidget.wParams.stream,
                 events: {
                     onError: function(event) { console.log("YouTube Error: "+event.data); },
-                    onStateChange: ytStateChange
+                    onStateChange: ytStateChange,
+                    onReady: function() {
+                            // If this is to play an excerpt, specify time bounds now (in seconds)
+                        if (dhpWidget.wParams.timecode != -1) {
+                            dhpWidget.playWidget.cueVideoById(
+                                {   videoId: dhpWidget.wParams.stream,
+                                    startSeconds: (dhpWidget.wParams.startTime/1000),
+                                    endSeconds: (dhpWidget.wParams.endTime/1000)
+                                });
+                        }
+                    }
                 }
             });
             break;
@@ -236,7 +249,7 @@ console.log("YouTube state change: "+event.data);
         // NOTES:   This is called by formatTranscript(), so only bound if a transcription exists
     bindTranscSeek: function()
     {
-            // We only want to bind this code once
+            // We have to bind to this code anew for each building of modal
         if (!dhpWidget.seekBound) {
             dhpWidget.seekBound = true;
 
@@ -244,26 +257,21 @@ console.log("YouTube state change: "+event.data);
             jQuery('#player-widget').click(function(evt) {
                 if (jQuery(evt.target).hasClass('type-timecode') && dhpWidget.playWidget) {
                     var seekToTime = jQuery(evt.target).closest('.type-timecode').data('timecode');
-console.log("Seek to: "+seekToTime);
 
                         // seekTo doesn't work unless sound is already playing
-                    if (!dhpWidget.playingNow) {
-                        dhpWidget.playingNow = true;
-
-                        switch (dhpWidget.wParams.playerType) {
-                        case 'scloud':
-                            dhpWidget.playWidget.play();
-                            break;
-                        case 'youtube':
-                            dhpWidget.playWidget.playVideo();
-                            break;
-                        }
-                    }
                     switch(dhpWidget.wParams.playerType) {
                     case 'scloud':
+                        if (!dhpWidget.playingNow) {
+                            dhpWidget.playingNow = true;
+                            dhpWidget.playWidget.play();
+                        }
                         dhpWidget.playWidget.seekTo(seekToTime);
                         break;
                     case 'youtube':
+                        if (!dhpWidget.playingNow) {
+                            dhpWidget.playingNow = true;
+                            dhpWidget.playWidget.playVideo();
+                        }
                             // YouTube player takes seconds (rather than milliseconds)
                         dhpWidget.playWidget.seekTo(seekToTime/1000);
                         break;

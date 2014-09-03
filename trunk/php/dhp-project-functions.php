@@ -2480,6 +2480,10 @@ function dhp_page_template( $page_template )
 		// wp_enqueue_script('dhp-touch-punch', plugins_url('/lib/jquery.ui.touch-punch.js', dirname(__FILE__)),
 		// 	array('jquery', 'dhp-jquery-ui-widget', 'dhp-jquery-ui-mouse') );
 
+		wp_enqueue_script('dhp-services', plugins_url('/js/dhp-services.js', dirname(__FILE__)),
+						array('jquery', 'underscore'), DHP_PLUGIN_VERSION );
+	    array_push($dependencies, 'dhp-services');
+
 	    	// Enqueue page JS last, after we've determine what dependencies might be
 		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
 
@@ -2571,6 +2575,10 @@ function dhp_tax_template( $page_template )
 				 array('jquery', 'underscore'), DHP_PLUGIN_VERSION);
 		    array_push($dependencies, 'dhp-widget');
 		}
+
+		wp_enqueue_script('dhp-services', plugins_url('/js/dhp-services.js', dirname(__FILE__)),
+						array('jquery', 'underscore'), DHP_PLUGIN_VERSION );
+	    array_push($dependencies, 'dhp-services');
 
 			// Enqueue last, after dependencies have been determined
 		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
