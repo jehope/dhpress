@@ -90,6 +90,7 @@ if (!Array.prototype.forEach) {
   };
 }
 
+
     // PURPOSE: This Object contains methods to service & coordinate common needs of DH Press visualizations
 var dhpServices = {
 
@@ -97,6 +98,7 @@ var dhpServices = {
     ajaxURL: null,
     projectID: null,
     projSettings: null,         // Project Settings
+    pngData: null,
 
     parseTimeCode: /(\d\d)\:(\d\d)\:(\d\d)\.(\d\d?)/,         // an exacting regular expression for parsing time
 
@@ -107,6 +109,28 @@ var dhpServices = {
         projectID = theProjID;
         projSettings = theSettings;
     }, // initialize()
+
+
+    setPNGData: function(thePNGData)
+    {
+        pngData = thePNGData;
+    }, // setPNGData()
+
+        // PURPOSE: Find the URL for a PNG image given its title
+    getPNGurl: function(pngTitle)
+    {
+        if (pngData === null) {
+            throw new Error("PNG data not set");
+        }
+        if (pngData.length == 0) {
+            throw new Error("PNG data array empty");
+        }
+        var pngItem = _.find(pngData, function(thePNG) { return thePNG.title === pngTitle; } );
+        if (pngItem === null) {
+            throw new Error("PNG data item not found by title "+pngTitle);
+        }
+        return pngItem.url;
+    }, // findPNGurl
 
         // PURPOSE: Create multi-legend Legend key for the visualization
         // INPUT:   legendList = array of legends to display; each element has field "name" and array "terms" of [id, name, icon_url ]
@@ -137,7 +161,7 @@ var dhpServices = {
                         throw new Error("Legend value "+theTerm.name+" has not been assigned a color or icon");
                     }
 
-                    var firstIconChar = theTerm.icon_url.substring(0,1);
+                    var firstIconChar = theTerm.icon_url.charAt(0);
                     var htmlStr;
 
                     switch (firstIconChar) {
@@ -149,9 +173,12 @@ var dhpServices = {
                         htmlStr = '<div class="small-1 large-1 columns"><div class="maki-icon '+
                             theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
                         break;
+                    case '@':
+                        htmlStr = '<div class="small-1 large-1 columns"><img class="png" src="'+
+                            dhpServices.getPNGurl(theTerm.icon_url.substring(1))+'"/></div><input type="checkbox" checked="checked">';
+                        break;
                     default:
                             // TO DO: Support uploaded images!
-                        // icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat right; background-size: 50%;';
                         throw new Error('Unknown visual feature: '+theTerm.icon_url);
                     }
 
@@ -247,11 +274,6 @@ var dhpServices = {
                         '<div class="small-2 large-1 columns"><div class="maki-icon '+
                         theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">'+
                         '<div class="small-9 large-10 columns"><a class="value" data-id="'+
-
-                        // '<div class="small-2 large-2 columns"><div class="maki-icon '+
-                        // theTerm.icon_url.substring(1)+'"></div><input type="checkbox" checked="checked"></div>'+
-                        // '<div class="small-10 large-10 columns"><a class="value" data-id="'+
-
                         theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                     break;
                 default:

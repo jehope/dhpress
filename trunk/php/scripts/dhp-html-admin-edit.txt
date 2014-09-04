@@ -505,11 +505,13 @@
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to rebuild this Legend from scratch?</p>
     </div>
 
+
     <div id="mdl-config-cat" title="Configure Legend">
         <h3 id="mdl-config-cat-title"></h3>
         <div>
             <input type="radio" name="viz-type-setting" value="colors"/>Use Colors
             <input type="radio" name="viz-type-setting" value="icons"/>Use Icons
+            <input type="radio" name="viz-type-setting" value="pngs" id="use-png"/>Use PNG images
             <button id="viz-type-reset" data-bind="jqButton">Reset All</button>
             <input type="hidden" id="color-picker"></input>
         </div><br/>
@@ -521,6 +523,7 @@
         </div>
     </div> <!-- Configure Legend Modal -->
 
+
     <div id="mdl-del-cf" title="Delete custom field?">
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete this custom field entirely? This cannot be undone.</p>
     </div>
@@ -531,6 +534,12 @@
 
     <div id="mdl-mote-name-too-long" title="Error">
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>The name of your mote is too long: a mote name cannot be longer than 32 characters.</p>
+    </div>
+
+    <div id="mdl-select-png" title="Select PNG image">
+        <p id="mdl-select-png-title"></p>
+        <ol class="png-list" id="select-png-list">
+        </ol>
     </div>
 
     <div id="mdl-select-icon" title="Select Icon">

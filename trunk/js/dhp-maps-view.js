@@ -76,6 +76,23 @@ var dhpMapsView = {
         dhpMapsView.createLayers();
         dhpMapsView.createMapControls();
 
+            // We must inform services of any PNG images
+        dhpServices.setPNGData(viewParams.pngs);
+
+            // Create Leaflet icons for each defined PNG image
+        for (var i=0; i<viewParams.pngs.length; i++)
+        {
+            var thePNG = viewParams.pngs[i];
+            var pngSize = [ thePNG.w, thePNG.h ];
+            var pngAnchor = [ thePNG.w/2, thePNG.h ];
+            thePNG.icon = L.icon(
+                {   iconUrl: thePNG.url,
+                    iconSize: pngSize,
+                    iconAnchor: pngAnchor
+                } );
+        }
+
+
         jQuery.ajax({
             type: 'POST',
             url: ajaxURL,
@@ -299,7 +316,6 @@ var dhpMapsView = {
         dhpMapsView.mapLayers.push(dhpMapsView.markerLayer);
     }, // createMarkerLayer()
 
-
     checkOpacity: function() {
         return dhpMapsView.markerOpacity;
     },
@@ -372,13 +388,13 @@ var dhpMapsView = {
 
         // PURPOSE: Create the Leaflet feature associated with this entry
     pointToLayer: function(feature, latlng) {
-        var fColor = dhpMapsView.getActiveTermColor(feature.properties.categories);
-        var fType = fColor.substring(0,1);
-        switch (fType) {
+            // get the string associated with Legend ID
+        var fKey = dhpMapsView.getActiveTermColor(feature.properties.categories);
+        switch (fKey.charAt(0)) {
         case '#':
             return L.circleMarker(latlng, {
                 radius: dhpMapsView.radius,
-                fillColor: fColor,
+                fillColor: fKey,
                 color: "#000",
                 weight: 1,
                 opacity: 1,
@@ -386,7 +402,7 @@ var dhpMapsView = {
             });
         case '.':
                 // See if maki-icon has already been created and if not create it
-            var iName = fColor.substring(1);
+            var iName = fKey.substring(1);
             var mIcon = dhpMapsView.makiIcons[iName];
             if (mIcon == undefined || mIcon == null) {
                 mIcon = L.MakiMarkers.icon({
@@ -397,8 +413,15 @@ var dhpMapsView = {
                 dhpMapsView.makiIcons[iName] = mIcon;
             }
             return L.marker(latlng, { icon: mIcon, riseOnHover: true });
+        case '@':
+            var pngTitle = fKey.substring(1);
+            var pngItem = dhpMapsView.viewParams.pngs.find(function(thePNG) { return pngTitle === thePNG.title; } );
+            if (pngItem === null) {
+                throw new Error("Could not find PNG image for: "+pngTitle);
+            }
+            return L.marker(latlng, { icon: pngItem.icon, riseOnHover: true });
         default:
-            throw new Error("Unsupported feature type: "+fColor);
+            throw new Error("Unsupported feature type: "+fKey);
         }
     }, // pointToLayer()
 
@@ -563,6 +586,7 @@ var dhpMapsView = {
         }
         dhpMapsView.catFilterSelect = selCatFilter;
     }, // findSelectedCats()
+
 
         // PURPOSE: Create HTML for all of the legends for this visualization
         // INPUT:   legendList = array of legends to display; each element has field "name" and array "terms" of [id, name, icon_url ]
