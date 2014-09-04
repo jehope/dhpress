@@ -279,6 +279,19 @@ html.fullscreen {
 	display: inline !important;
 }
 
+.legend-div .terms .png {
+	margin: 0;
+	padding: 0;
+
+	margin-left: -5px !important;
+
+	float: left !important;
+	display: inline !important;
+
+	min-width: 20px !important;
+	min-height: 20px !important;
+}
+
 .legend-div .terms a {
 	line-height: 15px;
 	width: 100%;

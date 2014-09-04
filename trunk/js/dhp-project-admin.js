@@ -46,9 +46,11 @@ jQuery(document).ready(function($) {
         }
     };
 
-    // Parameters passed via localization
+    // Parameters passed by WordPress via localization
   var ajax_url     = dhpDataLib.ajax_url;
   var projectID    = dhpDataLib.projectID;
+  var pngImages    = dhpDataLib.pngImages;
+
 
     // Parameters passed via HTML elements
     // Need to ensure encoded as arrays (not Object properties) and handle empty params
@@ -819,7 +821,7 @@ jQuery(document).ready(function($) {
     }; // editMote()
 
 
-      // PURPOSE: Handle user selection to configure associations of legend category: color, Maki icon, or image
+      // PURPOSE: Handle user selection to configure associations of legend category: color, Maki icon, or PNG icon
       // INPUT:   theMote = Mote data structure
       //          event = JS event for button
       // NOTES:   Need to have large fixed width to accommodate category legend data, loaded asynchronously
@@ -837,8 +839,8 @@ jQuery(document).ready(function($) {
       //          Do not store visual data in data- attributes since they cannot be rewritten dynamically:
       //            http://www.learningjquery.com/2011/09/using-jquerys-data-apis/
     self.configCat = function(theMote, event) {
-        // Whether we seem to be using icons or colors in this legend
-      var useIcons=false;
+        // Default visualization type for this Legend #=color, .=maki-icon, @=PNGImage
+      var defVizType='colors';
         // The taxonomic ID of the head term of the Legend
       var headTermID;
 
@@ -847,6 +849,13 @@ jQuery(document).ready(function($) {
         // Make sure wait message is visible
       $('#mdl-config-cat .wait-message').removeClass('hide');
       $('#mdl-config-cat-title').text('Legend configuration for '+theMote.name);
+
+        // Are there any user-defined PNG image icons?
+      if (pngImages.length > 0) {
+        $('#mdl-config-cat #use-png').prop('disabled', false);
+      } else {
+        $('#mdl-config-cat #use-png').prop('disabled', true);
+      }
 
       var newModal = $('#mdl-config-cat');
       newModal.dialog({
@@ -901,13 +910,13 @@ jQuery(document).ready(function($) {
               }
             }
           ]
-      }); // configCat()
+      }); // newModal.dialog
 
         // RETURNS: Color in hex format
         // NOTES:   jQuery converts color values to rgb() even if given as hex
         //          DH Press display code assumes in hex format beginning with '#'
       function formatColor(colorStr) {
-        if (colorStr.substring(0,1)=='#') {
+        if (colorStr.charAt(0)=='#') {
           return colorStr;
         }
           // Error in format -- return black
@@ -952,31 +961,48 @@ jQuery(document).ready(function($) {
           } else if ($(domItem).hasClass('maki-icon')) {
             return getIconClass(domItem);
           } else {
-            return '';
+            return '@'+$(domItem).attr('alt');
           }
-            // newItem.icon_url = $(htmlItem).attr('src');    // if images are added
       } // getVizData()
 
+        // PURPOSE: Find the URL for the icon
+      function getPNGSrc(iconName) {
+        var pngItem;
+        if (iconName === 'null') {
+          return '#';
+        }
+        pngItem = ko.utils.arrayFirst(pngImages, function(thePNG) {
+          return iconName === thePNG.title;
+        });
+        return (pngItem === null) ? '#' : pngItem.url;
+      } // getPNGSrc()
+
           // PURPOSE: Create HTML string for visual data according to format
-          // NOTES:   If setDefault, set useIcons default according to data we're parsing
+          // NOTES:   If setDefault, set defVizType default according to data we're parsing
       function getVizHTML(vizData, setDefault) {
           // Color patch is default
         if (vizData == null || vizData=='') {
-          if (setDefault) { useIcons=false; }
+          if (setDefault) { defVizType='colors'; }
           return '<div class="viz-div color-box" style="background-color: #888888"></div>';
-        } else if (vizData.substring(0,1)=='#') {
-          if (setDefault) { useIcons=false; }
+        }
+
+        switch (vizData.charAt(0)) {
+        case '#':
+          if (setDefault) { defVizType='colors'; }
           return '<div class="viz-div color-box" style="background-color:'+vizData+'"></div>';
-        } else if (vizData.substring(0,1)== '.') {
-          if (setDefault) { useIcons=true; }
+        case '.':
+          if (setDefault) { defVizType='icons'; }
             // We need to ignore the leading '.' of classname
           return '<div class="viz-div maki-icon '+vizData.substring(1)+'"></div>';
+        case '@':
+          if (setDefault) { defVizType='pngs'; }
+          return '<img class="viz-div" alt="'+vizData.substring(1)+'" src="'+getPNGSrc(vizData.substring(1))+'"/>';
 
           // Need to handle no data or incorrectly formatted data -- just make it an empty div
-        } else {
+        default:
+          if (setDefault) { defVizType='colors'; }
           return '<div class="viz-div"></div>';
         }
-          // return '<img class="viz-div" src="'+vizData+'"/>';     // can use for uploaded image selections
       } // getVizHTML()
 
         // FUNCTION: Create default visualization data based on current setting of icons-vs-color radio buttons
@@ -991,6 +1017,15 @@ jQuery(document).ready(function($) {
           break;
         case 'colors':
           vizObj.data = '#888888';
+          break;
+        case 'pngs':
+          var pngName;
+          if (pngImages.length) {
+            pngName = pngImages[0]['title'];
+          } else {
+            pngName = 'null';
+          }
+          vizObj.data = '@'+pngName;
           break;
         }
         vizObj.html=getVizHTML(vizObj.data, false);
@@ -1009,7 +1044,8 @@ jQuery(document).ready(function($) {
           // which modal to use depends on setting of "viz-type-setting" radio button
         var useSetting = $('input[name="viz-type-setting"]:checked').val();
 
-        if (useSetting === 'icons') {
+        switch (useSetting) {
+        case 'icons':
             // Replace current viz type with icon if necessary
           var iconListDiv = $('.maki-icon:first', selLegDiv);
           if (iconListDiv.length == 0) {
@@ -1056,7 +1092,7 @@ jQuery(document).ready(function($) {
           $('#mdl-select-icon #select-icon-list').off('click');
           $('#mdl-select-icon #select-icon-list').click(function(evt) {
               // Did user select an icon?
-            targetIcon = $(evt.target).closest(".maki-icon");
+            var targetIcon = $(evt.target).closest(".maki-icon");
                 // If none found (selected outside one), abort
             if (targetIcon == null || targetIcon == undefined) {
                 return;
@@ -1071,9 +1107,10 @@ jQuery(document).ready(function($) {
           });
 
           newModal.dialog('open');
+          break;
 
-        } else {
-            // Replace icon with color-box if necessary
+        case 'colors':
+            // Replace with color-box if necessary
           var colorBoxDiv = $('.color-box', selLegDiv);
           if (colorBoxDiv.length == 0) {
             $('.viz-div:first', liElement).remove();
@@ -1099,7 +1136,77 @@ jQuery(document).ready(function($) {
 
           colorPickModal.colorpicker('setColor', initColor);
           colorPickModal.colorpicker('open');
-        }
+          break;
+
+        case 'pngs':
+            // Replace with png image if necessary
+          var pngBoxDiv = $('img', selLegDiv);
+          if (pngBoxDiv.length == 0) {
+            $('.viz-div:first', liElement).remove();
+            $('.select-legend:first', liElement).append(getVizHTML(null, false));
+            pngBoxDiv = $('img', selLegDiv);
+          }
+          var initTitle = $(pngBoxDiv).attr('alt');
+
+          $('#mdl-select-png-title').text('Select PNG image for '+moteName);
+          var newModal = $('#mdl-select-png');
+          newModal.dialog({
+              width: 342,
+              height: 300,
+              modal : true,
+              autoOpen: false,
+              dialogClass: 'wp-dialog',
+              draggable: false,
+              buttons: [
+                {
+                  text: 'Cancel',
+                  click: function() { $(this).dialog('close'); }
+                },
+                {
+                  text: 'Save',
+                  click: function() {
+                      // Determine selected icon
+                    var pngTitle = '@'+$('#mdl-select-png #select-png-list .selected').attr('alt');
+                      // Create new HTML indicating selection and replace old
+                    $('.viz-div:first', liElement).remove();
+                    $('.select-legend:first', liElement).append(getVizHTML(pngTitle, false));
+                    $(this).dialog('close');
+                  }
+                }
+              ]
+          });
+
+            // Build list of PNG images and insert into modal
+          $('#mdl-select-png #select-png-list').empty();
+          ko.utils.arrayForEach(pngImages, function(thePNG) {
+            var newHTML = '<li><img alt="'+thePNG.title+'" class="'+thePNG.title+'" src="'+thePNG.url+'"/></li>';
+            $('#select-png-list').append(newHTML);
+          });
+
+          $('#select-png-list .'+initTitle).addClass('selected');
+
+            // Remove any old binding for handling selection, bind this
+          $('#mdl-select-png #select-png-list').off('click');
+          $('#mdl-select-png #select-png-list').click(function(evt) {
+              // Did user select a PNG image?
+            var targetPNG = $(evt.target).closest("img");
+                // If none found (selected outside one), abort
+            if (targetPNG == null || targetPNG == undefined) {
+                return;
+            }
+            targetPNG = $(targetPNG).get(0);
+            if (targetPNG == null || targetPNG == undefined) {
+                return;
+            }
+              // Remove selected class from previous selection, add to new one
+            $('#select-png-list img').removeClass('selected');
+            $(targetPNG).addClass('selected');
+          });
+
+          newModal.dialog('open');
+
+          break;
+        } // switch assign type
       } // handleAssign()
 
 
@@ -1215,8 +1322,9 @@ jQuery(document).ready(function($) {
         $('#category-tree').nestable( { maxDepth: 2 } );
 
           // Set default for icons / color
-        $('input:radio[value="icons"]').prop('checked', useIcons);
-        $('input:radio[value="colors"]').prop('checked', !useIcons);
+        $('input:radio[value="icons"]').prop('checked', defVizType === 'icons');
+        $('input:radio[value="colors"]').prop('checked', defVizType === 'colors');
+        $('input:radio[value="pngs"]').prop('checked', defVizType === 'pngs');
 
           // Remove wait message
         $('#mdl-config-cat .wait-message').addClass('hide');

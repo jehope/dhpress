@@ -1789,6 +1789,29 @@ function dhpGetCustomFields()
 } // dhpGetCustomFields()
 
 
+// PURPOSE: Find all PNG images attached to the given post
+// INPUT:   pID is the ID of the post
+// RETURNS: Array of [ ]
+
+function getAttachedPNGs($pID)
+{
+	$pngs = array();
+
+	$images = get_attached_media('image/png', $post->ID);
+	foreach($images as $image) {
+	    $onePNG = array();
+	    $onePNG['id'] = $image->ID;
+	    $onePNG['title'] = $image->post_title;
+	    $imageData = wp_get_attachment_image_src($image->ID);
+	    $onePNG['url'] = $imageData[0];
+	    $onePNG['w'] = $imageData[1];
+	    $onePNG['h'] = $imageData[2];
+	    array_push($pngs, $onePNG);
+	}
+	return $pngs;
+} // getAttachedPNGs()
+
+
 // PURPOSE:	Verify that all timestamps can be found in transcription file
 // INPUT:	$transcMoteName = name of mote for a transcription setting
 // RETURNS:	Error string or ''
@@ -2193,9 +2216,12 @@ function add_dhp_project_admin_scripts( $hook )
 			$allDepends = array('jquery', 'underscore', 'dhp-jquery-ui-core', 'jquery-nestable', 'jquery-colorpicker',
 								'knockout');
 			wp_enqueue_script('dhp-project-script', plugins_url('/js/dhp-project-admin.js', dirname(__FILE__)), $allDepends );
+
+			$pngs = getAttachedPNGs($postID);
 			wp_localize_script('dhp-project-script', 'dhpDataLib', array(
 				'ajax_url' => $dev_url,
-				'projectID' => $postID
+				'projectID' => $postID,
+				'pngImages' => $pngs
 			) );
 
         } else if ( $post->post_type == 'dhp-markers' ) {
@@ -2405,6 +2431,9 @@ function dhp_page_template( $page_template )
 				// Get any DHP custom map parameters
 			$layerData = dhpGetMapLayerData($thisEP->settings->layers);
 			$vizParams['layerData'] = $layerData;
+
+				// Get any PNG image icons
+			$vizParams['pngs'] = getAttachedPNGs($post->ID);
 
 	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps',
 	    							'dhp-jquery-ui-slider');
