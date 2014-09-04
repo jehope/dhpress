@@ -612,8 +612,8 @@ var dhpPinboardView = {
     }, // vidStateChange()
 
 
-        // PURPOSE: Hook for YouTube called once API is loaded and ready
-    onYouTubeIframeAPIReady: function()
+        // PURPOSE: Called once YouTube API is loaded and ready
+    onYouTubeAPIReady: function()
     {
         dhpPinboardView.vidPlayer = new YT.Player('ytplayer', {
             height: '1',
