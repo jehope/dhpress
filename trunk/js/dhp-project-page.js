@@ -42,6 +42,11 @@ jQuery(document).ready(function($) {
 
     dhpServices.initialize(ajaxURL, projectID, dhpSettings);
 
+        // Inform dhpServices of any PNG images
+    if (typeof(dhpData.vizParams.pngs) !== 'undefined') {
+        dhpServices.setPNGData(dhpData.vizParams.pngs);
+    }
+
     jQuery(document).foundation();
 
         // Add generic project navigation bar

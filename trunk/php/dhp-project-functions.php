@@ -2465,6 +2465,9 @@ function dhp_page_template( $page_template )
 				$vizParams['animscript'] = $content;
 			}
 
+				// Get any PNG image icons
+			$vizParams['pngs'] = getAttachedPNGs($post->ID);
+
 	    	array_push($dependencies, 'snap', 'dhp-pinboard-view');
 	    	break;
 

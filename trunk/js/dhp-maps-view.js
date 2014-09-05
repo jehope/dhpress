@@ -79,9 +79,6 @@ var dhpMapsView = {
         dhpMapsView.createLayers();
         dhpMapsView.createMapControls();
 
-            // We must inform services of any PNG images
-        dhpServices.setPNGData(viewParams.pngs);
-
             // Create Leaflet icons for each defined PNG image
         for (var i=0; i<viewParams.pngs.length; i++)
         {

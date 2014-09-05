@@ -259,7 +259,7 @@ var dhpServices = {
                 if (theTerm.parent) {
                     hasParentClass = 'hasParent';
                 }
-                var firstIconChar = theTerm.icon_url.substring(0,1);
+                var firstIconChar = theTerm.icon_url.charAt(0);
                 switch (firstIconChar) {
                 case '#':
                         // Append new legend value to menu according to type
@@ -270,9 +270,15 @@ var dhpServices = {
                     break;
                 case '.':
                     jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
-
                         '<div class="small-2 large-1 columns"><div class="maki-icon '+
                         theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">'+
+                        '<div class="small-9 large-10 columns"><a class="value" data-id="'+
+                        theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
+                    break;
+                case '@':
+                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+
+                        '<div class="small-1 large-1 columns"><img class="png" src="'+
+                        dhpServices.getPNGurl(theTerm.icon_url.substring(1))+'"/></div><input type="checkbox" checked="checked">'+
                         '<div class="small-9 large-10 columns"><a class="value" data-id="'+
                         theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
                     break;

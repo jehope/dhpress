@@ -101,7 +101,6 @@ var dhpPinboardView = {
         dhpPinboardView.svgRoot = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
         jQuery(dhpPinboardView.svgRoot).width(dhpPinboardView.iWidth+2).height(dhpPinboardView.iHeight+2);
-        // jQuery(dhpPinboardView.svgRoot).css({"border": "1px solid red" });
 
             // Create container for SVG and insert the "paper"
         jQuery("#dhp-visual").append('<div id="svg-container"></div>');
@@ -720,37 +719,54 @@ var dhpPinboardView = {
                         // Create grouping for Legend value
                         // Set color for all items of this value
                     lgdHeadVal = lgdHeadGroup.group();
-                    lgdHeadVal.attr( { class: 'lgd-val',
-                                        id: 'lgd-id'+theTerm.id,
-                                        fill: theTerm.icon_url
-                                    } );
+                    var isPNG=false;
+                        // If Legend value is PNG image, locate its details
+                    if (theTerm.icon_url.charAt(0) === '@') {
+                        isPNG=true;
+                        var pngTitle = theTerm.icon_url.substring(1);
+                        var pngItem = _.find(pngData, function(thePNG) { return thePNG.title === pngTitle; } );
+                        lgdHeadVal.attr( { class: 'lgd-val',
+                                            id: 'lgd-id'+theTerm.id
+                                        } );
+                    } else {
+                        lgdHeadVal.attr( { class: 'lgd-val',
+                                            id: 'lgd-id'+theTerm.id,
+                                            fill: theTerm.icon_url
+                                        } );
+                    }
+                        // Get list of all markers marked with this Legend value
                     markerIndices = dhpPinboardView.getMarkersOfCategory(theTerm.id);
                         // Create each marker in this group
                     _.each(markerIndices, function(mIndex) {
                         theMarker = dhpPinboardView.allMarkers[mIndex];
-                        switch(dhpPinboardView.pinboardEP.icon) {
-                        case 'circle':
-                            shape = dhpPinboardView.paper.circle(theMarker.geometry.coordinates[0],
-                                                                theMarker.geometry.coordinates[1],
-                                                                dhpPinboardView.radius);
-                            break;
-                        case 'diamond':
-                            shape = dhpPinboardView.paper.polygon(dhpPinboardView.diamondPts);
-                            shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
-                            break;
-                        case 'tack':
-                            shape = dhpPinboardView.icons.thumbtack.use();
-                            shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
-                            break;
-                        case 'ballon':
-                            shape = dhpPinboardView.icons.ballon.use();
-                            shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
-                            break;
-                        case 'mag':
-                            shape = dhpPinboardView.icons.magGlass.use();
-                            shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
-                            break;
-                        } // switch
+                        if (isPNG) {
+                            shape = dhpPinboardView.paper.image(pngItem.url, theMarker.geometry.coordinates[0]-(pngItem.w/2),
+                                        theMarker.geometry.coordinates[1]-pngItem.h, pngItem.w, pngItem.h);
+                        } else {
+                            switch(dhpPinboardView.pinboardEP.icon) {
+                            case 'circle':
+                                shape = dhpPinboardView.paper.circle(theMarker.geometry.coordinates[0],
+                                                                    theMarker.geometry.coordinates[1],
+                                                                    dhpPinboardView.radius);
+                                break;
+                            case 'diamond':
+                                shape = dhpPinboardView.paper.polygon(dhpPinboardView.diamondPts);
+                                shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
+                                break;
+                            case 'tack':
+                                shape = dhpPinboardView.icons.thumbtack.use();
+                                shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
+                                break;
+                            case 'ballon':
+                                shape = dhpPinboardView.icons.ballon.use();
+                                shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
+                                break;
+                            case 'mag':
+                                shape = dhpPinboardView.icons.magGlass.use();
+                                shape.transform("t" + theMarker.geometry.coordinates[0] + "," + theMarker.geometry.coordinates[1]);
+                                break;
+                            } // switch
+                        }
                         shape.node.id = mIndex;
                         shape.data("i", mIndex);
                             // Clicking shape must invoke select modal (if no animation showing)
