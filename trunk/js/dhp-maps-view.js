@@ -26,7 +26,8 @@ var dhpMapsView = {
         //                  markerOpacity = opacity of marker layer (for all markers)
         //                  radius = radius of geometric markers
         //                  makiSize = "s" | "m" | "l"
-        //                  makiIcons = array of maki icons
+        //                  makiIcons = array of maki icons, indexed by name
+        //                  pngIcons = array of PNG image icons, indexed by name
 
         //                  mapLayers = array of map overlay data to display (compiled in this code)
         //                  mapLeaflet = Leaflet map object
@@ -65,9 +66,11 @@ var dhpMapsView = {
             dhpMapsView.radius     = 12;
             break;
         }
-        dhpMapsView.makiIcons      = [];    // array of Maki-icons to be used by markers
+        dhpMapsView.makiIcons      = [];    // array of Maki-icons by name
+        dhpMapsView.pngIcons       = [];    // array of PNG image icons by name
 
         dhpMapsView.mapLayers      = [];
+
             // expand to show/hide child terms and use their colors
         dhpMapsView.useParent = true;
 
@@ -85,7 +88,7 @@ var dhpMapsView = {
             var thePNG = viewParams.pngs[i];
             var pngSize = [ thePNG.w, thePNG.h ];
             var pngAnchor = [ thePNG.w/2, thePNG.h ];
-            thePNG.icon = L.icon(
+            dhpMapsView.pngIcons[thePNG.title] = L.icon(
                 {   iconUrl: thePNG.url,
                     iconSize: pngSize,
                     iconAnchor: pngAnchor
@@ -415,11 +418,11 @@ var dhpMapsView = {
             return L.marker(latlng, { icon: mIcon, riseOnHover: true });
         case '@':
             var pngTitle = fKey.substring(1);
-            var pngItem = dhpMapsView.viewParams.pngs.find(function(thePNG) { return pngTitle === thePNG.title; } );
-            if (pngItem === null) {
+            var pngIcon = dhpMapsView.pngIcons[pngTitle];
+            if (pngIcon == undefined || pngIcon === null) {
                 throw new Error("Could not find PNG image for: "+pngTitle);
             }
-            return L.marker(latlng, { icon: pngItem.icon, riseOnHover: true });
+            return L.marker(latlng, { icon: pngIcon, riseOnHover: true });
         default:
             throw new Error("Unsupported feature type: "+fKey);
         }
