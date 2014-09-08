@@ -850,6 +850,9 @@ jQuery(document).ready(function($) {
       $('#mdl-config-cat .wait-message').removeClass('hide');
       $('#mdl-config-cat-title').text('Legend configuration for '+theMote.name);
 
+        // Make sure it is initially enabled
+      $('#add-new-term').button({ disabled: false });
+
         // Are there any user-defined PNG image icons?
       if (pngImages.length > 0) {
         $('#mdl-config-cat #use-png').prop('disabled', false);
@@ -1275,12 +1278,15 @@ jQuery(document).ready(function($) {
           // Bind code for all assignment buttons
         $('#category-tree .select-legend').click(handleAssign);
 
-          // Bind code to handle adding a new term
+          // Bind code to handle adding a new term (only once!)
+        $('#add-new-term').off('click');
         $('#add-new-term').click(function() {
           var newTerm = $('#ed-new-term').val();
+            // Only attempt if a term is given
           if (newTerm != null && newTerm != '') {
             var defaultViz = getDefaultViz();
             function insertNewTerm(newTermID) {
+              $('#add-new-term').button({ disabled: false });
                 // termID 0 is special error code
               if (newTermID) {
                   // Insert new item (without parent) at top of list, binding Assign code to section
@@ -1302,11 +1308,17 @@ jQuery(document).ready(function($) {
                 });
               }
             } // insertNewTerm()
-            dhpCreateTermInTax(newTerm, theMote.name, insertNewTerm);
-          }
+              // abort if the name already exists -- double adds sometimes happen: server hiccups?
+            var candidates=$('.dd-item[data-name="'+newTerm+'"]');
+            if (candidates.length < 1) {
+              $('#add-new-term').button({ disabled: true });
+              dhpCreateTermInTax(newTerm, theMote.name, insertNewTerm);
+            }
+          } // if new term
         });
 
           // Bind code to reset viz data
+        $('#viz-type-reset').off('click');
         $('#viz-type-reset').click(function() {
             // construct new default visualization data
           var defaultViz = getDefaultViz();

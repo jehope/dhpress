@@ -1259,8 +1259,9 @@ function dhpCreateTermInTax()
 	$dhp_term_name		= $_POST['newTerm'];
 	$parent_term_name	= $_POST['legendName'];
 
+		// First get Term/Tax info for the Legend (assoc w/this project)
 	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-	$parent_term = term_exists( $parent_term_name, $projRootTaxName );
+	$parent_term = term_exists($parent_term_name, $projRootTaxName);
 	$parent_term_id = $parent_term['term_id'];
 	$args = array( 'parent' => $parent_term_id );
 
@@ -1269,17 +1270,24 @@ function dhpCreateTermInTax()
 	$results['parent'] = $parent_term;
 	$results['parentID'] = $parent_term_id;
 
-		// create new term
-	$newTerm = wp_insert_term($dhp_term_name, $projRootTaxName, $args);
-	$results['newTerm'] = $newTerm;
-	if ($newTerm == WP_Error) {
-		// trigger_error("WP will not create new term ".$dhp_term_name." in taxonomy".$parent_term_name);
+		// make sure the new term doesn't already exist
+	$testTerm = term_exists($dhp_term_name, $projRootTaxName, $parent_term_id);
+	if ($testTerm !== 0 && $testTerm !== null) {
 		$results['termID'] = 0;
+		$results['debug'] = $testTerm['term_id'];
 	} else {
-		$results['termID'] = $newTerm['term_id'];
+			// create new term
+		$newTerm = wp_insert_term($dhp_term_name, $projRootTaxName, $args);
+		$results['newTerm'] = $newTerm;
+		if ($newTerm == WP_Error) {
+			// trigger_error("WP will not create new term ".$dhp_term_name." in taxonomy".$parent_term_name);
+			$results['termID'] = 0;
+		} else {
+			$results['termID'] = $newTerm['term_id'];
 
-			// Clear term taxonomy
-		delete_option("{$projRootTaxName}_children");
+				// Clear term taxonomy
+			delete_option("{$projRootTaxName}_children");
+		}
 	}
 
 	die(json_encode($results));
