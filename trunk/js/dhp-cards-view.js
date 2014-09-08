@@ -160,6 +160,8 @@ var dhpCardsView = {
                 dhpCardsView.rawData = JSON.parse(data);
                 dhpCardsView.createCards();
                 dhpServices.remLoadingModal();
+
+                jQuery("#card-container").isotope();
             },
             error: function(XMLHttpRequest, textStatus, errorThrown)
             {
