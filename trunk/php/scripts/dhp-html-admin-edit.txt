@@ -1,7 +1,7 @@
 
 <div id="ko-dhp">
     <p data-bind="visible: optionsCF.length == 0" style="color: red">
-      Reminder: You cannot configure your Project until you import Markers associated with this Project by using the Project ID above. Be sure to Publish this project if you have just selected <b>Add New</b>.
+      NOTE: You cannot configure your Project until you import Markers associated with this Project (by using the Project ID above). Make sure to click the Publish button on the right if you have just created your project with the <b>Add New</b> button.
     </p>
 
     <div data-bind="visible: optionsCF.length > 0">
@@ -29,9 +29,13 @@
                     <option value="Short Text">Short Text</option>
                     <option value="Long Text">Long Text</option>
                     <option value="Lat/Lon Coordinates">Lat/Lon Coordinates</option>
+                    <option value="X-Y Coordinates">X-Y Coordinates</option>
+                    <option value="Date">Date</option>
+                    <option value="Pointer">Pointer</option>
                     <option value="Image">Image</option>
                     <option value="Link To">Link To</option>
                     <option value="SoundCloud">SoundCloud</option>
+                    <option value="YouTube">YouTube</option>
                     <option value="Transcript">Transcript</option>
                     <option value="Timestamp">Timestamp</option>
             	</select>
@@ -47,8 +51,11 @@
       <h3>Entry Points</h3>
       <div>
           <p>
-            <button data-bind="jqButton, click: createMapEP">Create Map</button>
-            <button data-bind="jqButton, click: createCardsEP">Create Cards</button>
+            <button data-bind="jqButton, click: createMapEP">New Map</button>
+            <button data-bind="jqButton, click: createCardsEP">New Cards</button>
+            <button data-bind="jqButton, click: createPinEP">New Pinboard</button>
+            <button data-bind="jqButton, click: createTreeEP">New Tree</button>
+            <button data-bind="jqButton, click: createTimeEP">New Timeline</button>
           </p>
           <div data-bind="template: { name: calcEPTemplate, foreach: entryPoints, as: 'theEP' }"></div>
       </div>
@@ -62,7 +69,7 @@
           </p>
 
           <div id="subaccordion">
-            <h3>Modal windows (item selected from visualization)</h3>
+            <h3>Select Modal windows (item selected from visualization)</h3>
             <div>
               Modal title: <select data-bind="options: anyTxtDMoteNames, value: edSelTitle" ></select>
               Modal size:
@@ -79,7 +86,8 @@
               Link 2: <select data-bind="value: edSelLink2Mt, options: getModalLinkNames"></select> Label: <input type="text" size="12" data-bind="value: edSelLink2Lbl"/> Open new tab: <input type="checkbox" data-bind="checked: edSelLink2NewTab"><br/>
               Widgets to show: <button data-bind="jqButton, click: addWidget">Add</button> this widget:
               	<select id="selModalWidget">
-              		<option value="transcript">Transcript</option>
+              		<option value="scloud">SoundCloud</option>
+                  <option value="youtube">YouTube</option>
               	</select><br/>
               <div data-bind="template: { name: 'widget-template', foreach: widgetList }"></div>
 
@@ -103,9 +111,10 @@
             <h3>Transcript view</h3>
             <div>
               Audio Source: <select data-bind="value: edTrnsAudio, options: soundMoteNames"></select><br/>
+              Video Source: <select data-bind="value: edTrnsVideo, options: ytMoteNames"></select><br/>
               Transcript: <select data-bind="value: edTrnsTransc, options: transcMoteNames"></select><br/>
               Transcript 2: <select data-bind="value: edTrnsTransc2, options: transcMoteNames"></select><br/>
-              Timecode: <select data-bind="value: edTrnsTime, , options: tstMoteNames"></select><br/>
+              Timecode: <select data-bind="value: edTrnsTime, options: tstMoteNames"></select><br/>
               Source: <select data-bind="value: edTrnsSrc, options: stdMoteNames"></select><br/>
             </div>
           </div> <!-- subaccordion -->
@@ -196,7 +205,7 @@
           Marker Mote (for Lat/Lon) <select data-bind="value: theEP.settings.coordMote, options: $root.coordMoteNames"></select>
         </li>
         <div data-bind="template: { name: 'map-layer-template', foreach: theEP.settings.layers, as: 'theLayer' }"></div>
-        <button data-bind="jqButton, click: $root.addLayer.bind(theEP)">Add Layer</button>
+        <button data-bind="jqButton, click: $root.addMapLayer.bind(theEP)">Add Layer</button>
         <div data-bind="template: { name: 'map-legend-template', foreach: theEP.settings.legends }"></div>
         <button data-bind="jqButton, click: $root.addMapLegend.bind(theEP)">Add Legend</button>
     </ul>
@@ -211,7 +220,7 @@
         <span data-bind="if: $index() > 0">
             <b>Overlay Layer <span data-bind="text: $index"></span></b>
             <select data-bind="value: theLayer.id, options: $root.overLayers, optionsText: 'name', optionsValue: 'layerID'"></select>
-            <button data-bind="jqButton, click: function() { $root.delLayer($data, theEP, $index()); }">Delete</button>
+            <button data-bind="jqButton, click: function() { $root.delMapLayer($data, theEP, $index()); }">Delete</button>
         </span>
         Opacity <span data-bind="text: theLayer.opacity"></span>
         <div class="opacity-slider"><div data-bind="opacitySlider: theLayer.opacity"></div></div>
@@ -240,7 +249,7 @@
     <ul>
         <li>Card short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Card Title <select data-bind="value: theEP.settings.title, options: $root.anyTxtDMoteNames"></select></li>
-        <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Values must be configured for colors)</li>
+        <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Must be configured for colors)</li>
         <li>Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="9"/>&nbsp;
         Width <select data-bind="value: theEP.settings.width">
                               <option value="auto">Automatic</option>
@@ -276,16 +285,143 @@
 
 <script type="text/html" id="cards-filter-template">
     <li>
-        Cards filter mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.anyTxtMoteNames"></select>
+        Cards filter mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.compMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delCardFilter($data, theEP, $index()); }">Delete</button>
     </li>
 </script>
 
 <script type="text/html" id="cards-sort-template">
     <li>
-        Cards sort mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.anyTxtMoteNames"></select>
+        Cards sort mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.compMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delCardSort($data, theEP, $index()); }">Delete</button>
     </li>
+</script>
+
+
+<!-- Pinboard Point Templates -->
+<script type="text/html" id="ep-pin-template">
+    <h2><b>Pinboard Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Pinboard</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
+    <ul>
+        <li>Pinboard short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
+        <li>Background Image URL
+            <input data-bind="value: theEP.settings.imageURL" type="text" size="48"/>
+        </li>
+        <li>Background Image Size: Width (in pixels)
+            <input data-bind="value: theEP.settings.width" type="number" size="4"/>
+            Height (in pixels) <input data-bind="value: theEP.settings.height" type="number" size="4"/>
+        </li>
+        <li>Pin marker: Size (circle and diamond only) <select data-bind="value: theEP.settings.size">
+                <option value="s">Small</option>
+                <option value="m">Medium</option>
+                <option value="l">Large</option>
+            </select>&nbsp;
+          Shape <select data-bind="value: theEP.settings.icon">
+                <option value="circle">Circle</option>
+                <option value="diamond">Diamond</option>
+                <option value="ballon">Ballon</option>
+                <option value="tack">Tack</option>
+                <option value="mag">Magnifying Glass</option>
+            </select>&nbsp;
+          Mote (for X-Y) <select data-bind="value: theEP.settings.coordMote, options: $root.xyMoteNames"></select>
+        </li>
+        <li>Animation Script URL <input data-bind="value: theEP.settings.animscript" type="text" size="48"  placeholder="Leave blank for none"/><li>
+        <li>Animation SVG URL <input data-bind="value: theEP.settings.animSVG" type="text" size="48"  placeholder="Leave blank for none"/><li>
+        <li>Animation YouTube <input data-bind="value: theEP.settings.ytvcode" type="text" size="48" placeholder="YT code only - Leave blank for none"/><li>
+        <div data-bind="template: { name: 'pin-layer-template', foreach: theEP.settings.layers, as: 'theLayer' }"></div>
+        <button data-bind="jqButton, click: $root.addPinLayer.bind(theEP)">Add SVG Layer File</button>
+        <div data-bind="template: { name: 'pin-legend-template', foreach: theEP.settings.legends }"></div>
+        <button data-bind="jqButton, click: $root.addPinLegend.bind(theEP)">Add Legend</button>
+    </ul>
+</script>
+
+<script type="text/html" id="pin-layer-template">
+    <li>
+      <b>SVG Layer File <span data-bind="text: $index"></span></b>
+      <input data-bind="value: theLayer.label" type="text" size="12" placeholder="Label"/> </input>
+      <input data-bind="value: theLayer.file" type="text" size="48" placeholder="File URL"/> </input>
+      <button data-bind="jqButton, click: function() { $root.delPinLayer($data, theEP, $index()); }">Delete</button>
+    </li>
+</script>
+
+<script type="text/html" id="pin-legend-template">
+    <li>
+        <b>Legend <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.stMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delPinLegend($data, theEP, $index()); }">Delete</button>
+    </li>
+</script>
+
+
+<!-- Tree Entry Point Templates -->
+<script type="text/html" id="ep-tree-template">
+    <h2><b>Tree Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Tree</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
+    <ul>
+        <li>Tree short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
+        <li>Tree Panel Size: Width (in pixels)
+            <input data-bind="value: theEP.settings.width" type="number" size="4"/>
+            Height (in pixels) <input data-bind="value: theEP.settings.height" type="number" size="4"/>
+        </li>
+        <li>Type of Tree <select data-bind="value: theEP.settings.form">
+                <option value="flat">Flat Tree</option>
+                <option value="radial">Radial Tree</option>
+                <option value="segment">Segmented Wheel</option>
+            </select>&nbsp;
+            Padding (meaning depends on tree type) <input data-bind="value: theEP.settings.padding" type="number" size="3"/>
+        </li>
+        <li>Head/Top Marker of Tree <input data-bind="value: theEP.settings.head" type="text" size="24"/>
+            Children stored in <select data-bind="value: theEP.settings.children, options: $root.pointerMoteNames"></select>
+        </li>
+        <li>Marker label <select data-bind="value: theEP.settings.label, options: $root.anyTxtMoteNames"></select>
+            Font size (pixels) <input data-bind="value: theEP.settings.fSize" type="number" size="2"/>
+            Marker radius (pixels) <input data-bind="value: theEP.settings.radius" type="number" size="2"/>
+        </li>
+        <li>Marker Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Must be configured for colors)</li>
+    </ul>
+</script>
+
+
+<!-- Timeline Entry Point Templates -->
+<script type="text/html" id="ep-time-template">
+    <h2><b>Timeline Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Timeline</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
+    <ul>
+        <li>Timeline short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
+        <li>Date range <select data-bind="value: theEP.settings.date, options: $root.dateMoteNames"></select>
+          Label <select data-bind="value: theEP.settings.label, options: $root.anyTxtMoteNames"></select>
+          Marker Color <select data-bind="value: theEP.settings.color, options: $root.stMoteNames"></select> (Must be configured for colors)
+        </li>
+        <li>Height of each band (in pixels) <input data-bind="value: theEP.settings.bandHt" type="number" size="4"/>
+          Width of start/end axis labels (in pixels) <input data-bind="value: theEP.settings.wAxisLbl" type="number" size="3"/>
+        </li>
+        <li>Timeline start date <input data-bind="value: theEP.settings.from" type="text" size="12"/>
+          to end date <input data-bind="value: theEP.settings.to" type="text" size="12"/>
+        </li>
+        <li>Zoom window start date <input data-bind="value: theEP.settings.openFrom" type="text" size="12"/>
+          to end date <input data-bind="value: theEP.settings.openTo" type="text" size="12"/>
+        </li>
+    </ul>
 </script>
 
 
@@ -346,9 +482,13 @@
             <option value="Short Text">Short Text</option>
             <option value="Long Text">Long Text</option>
             <option value="Lat/Lon Coordinates">Lat/Lon Coordinates</option>
+            <option value="X-Y Coordinates">X-Y Coordinates</option>
+            <option value="Date">Date</option>
+            <option value="Pointer">Pointer</option>
             <option value="Image">Image</option>
             <option value="Link To">Link To</option>
             <option value="SoundCloud">SoundCloud</option>
+            <option value="YouTube">YouTube</option>
             <option value="Transcript">Transcript</option>
             <option value="Timestamp">Timestamp</option>
         </select><br/>
@@ -365,11 +505,13 @@
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to rebuild this Legend from scratch?</p>
     </div>
 
+
     <div id="mdl-config-cat" title="Configure Legend">
         <h3 id="mdl-config-cat-title"></h3>
         <div>
             <input type="radio" name="viz-type-setting" value="colors"/>Use Colors
             <input type="radio" name="viz-type-setting" value="icons"/>Use Icons
+            <input type="radio" name="viz-type-setting" value="pngs" id="use-png"/>Use PNG images
             <button id="viz-type-reset" data-bind="jqButton">Reset All</button>
             <input type="hidden" id="color-picker"></input>
         </div><br/>
@@ -381,6 +523,7 @@
         </div>
     </div> <!-- Configure Legend Modal -->
 
+
     <div id="mdl-del-cf" title="Delete custom field?">
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Are you sure you wish to delete this custom field entirely? This cannot be undone.</p>
     </div>
@@ -391,6 +534,12 @@
 
     <div id="mdl-mote-name-too-long" title="Error">
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>The name of your mote is too long: a mote name cannot be longer than 32 characters.</p>
+    </div>
+
+    <div id="mdl-select-png" title="Select PNG image">
+        <p id="mdl-select-png-title"></p>
+        <ol class="png-list" id="select-png-list">
+        </ol>
     </div>
 
     <div id="mdl-select-icon" title="Select Icon">

@@ -1,0 +1,108 @@
+/** CSS styles specific to Timeline visualization in DH Press
+ **/
+
+@charset "UTF-8";
+
+.hide {
+	display: hidden;
+}
+
+    /* MAJOR DIV CONTAINERS ======================= */
+
+    /* Invisible outer div that adds vertical scroll bar when needed */
+#dhp-timeline {
+    position: relative;
+    top: 50px;
+    left: 6px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+    /* Bordered container that leaves outer margins */
+#svg-container {
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    background-color: #F0F0F0;
+}
+
+    /* Inner space containing chart */
+.chart {
+    fill: #EEEEEE;
+}
+
+    /* AXES ======================= */
+
+  /* axis labels */
+.axis {
+    fill: #808080;
+    font-family: sans-serif;
+    font-size: 10px;
+}
+
+  /* axis tick marks */
+.axis line {
+    stroke-width : 1;
+    stroke: gray;
+    shape-rendering: crispEdges;
+}
+
+  /* axis line */
+.axis path {
+    stroke-width : 1;
+    stroke: gray;
+    shape-rendering: crispEdges;
+}
+
+    /* TIME EVENT BANDS ======================= */
+
+  /* band background */
+.band {
+    fill: #FAFAFA;
+}
+
+.interval {
+    fill: #AAFFFF;
+    stroke-width: 6;
+    cursor : default;
+    pointer-events: true;
+}
+
+.instant {
+    fill: #FFAAFF;
+    stroke-width: 6;
+    cursor : default;
+    pointer-events: true;
+}
+
+.instantLabel {
+    fill : blue;
+    font: 10px sans-serif;
+    shape-rendering: crispEdges;
+}
+
+.intervalLabel {
+    fill : black;
+    font: 10px sans-serif;
+    shape-rendering: crispEdges;
+}
+
+    /* START/END LABELS ======================= */
+
+.bandLabel {
+    fill: #99CCCC;
+}
+
+.bandMinMaxLabel {
+    fill: #000066;
+    font: 10px sans-serif;
+    font-weight: bold;
+}
+
+    /* BRUSHES ======================= */
+
+.brush .extent {
+    stroke: midnightblue;
+    fill: blue;
+    fill-opacity: .2;
+}

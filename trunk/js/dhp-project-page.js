@@ -1,11 +1,17 @@
-// PURPOSE: Handle viewing Project content visualizations
+// PURPOSE: initialization code that gets visualization prepared & running
+// NOTES:   Format of project settings is documented in dhp-class-project.php
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //          vizParams.layerData = array with all data needed for dhp-custom-maps
 //          vizParams.current = index of current visualization in entry points
 //          vizParams.menu = array of labels of visualizations
 //          Section for marker modal is marked with HTML div as "markerModal"
 // USES:    JavaScript libraries jQuery, Underscore, (Zurb) Foundation ...
-// NOTES:   Format of project settings is documented in dhp-class-project.php
+//          dhpServices.js
+
+    // The code in the next section bootstraps the DH Press visualization
+    //      Loads resources
+    //      Creates windows and common navigational elements
+    //      Initializes and prepares the active visualization
 
 jQuery(document).ready(function($) {
         // Project variables
@@ -17,6 +23,8 @@ jQuery(document).ready(function($) {
         // modal and GUI support
     var modalSize;
     var browserMobile = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
+    var legendHeight;
+
         // For reaching functions in this file used by various visualization modules
     var callBacks;
         // Visualization-specific callbacks
@@ -32,15 +40,16 @@ jQuery(document).ready(function($) {
 
     vizIndex       = dhpData.vizParams.current;
 
+    dhpServices.initialize(ajaxURL, projectID, dhpSettings);
+
+        // Inform dhpServices of any PNG images
+    if (typeof(dhpData.vizParams.pngs) !== 'undefined') {
+        dhpServices.setPNGData(dhpData.vizParams.pngs);
+    }
+
     jQuery(document).foundation();
 
-        // Create callback object so that visualization modules can access functions in this file
-    callBacks = {
-        remLoadingModal: removeLoadingMessage,
-        showMarkerModal: showMarkerModal
-    };
-
-        //Add project nav bar
+        // Add generic project navigation bar
     createNavBar();
 
         // Insert Marker modal window HTML
@@ -57,7 +66,7 @@ jQuery(document).ready(function($) {
         sizeStr = 'width:'+ String(dhpSettings.views.miniWidth)+'px; ';
     }
     if (dhpSettings.views.miniHeight && dhpSettings.views.miniHeight != '') {
-        sizeStr += 'height:'+ String(dhpSettings.views.miniHeight)+'px;';
+        sizeStr += 'height:'+ String(dhpSettings.views.miniHeight)+'px';
     }
     if (sizeStr !== '') {
         $('<style type="text/css"> @media screen and (min-width: 600px) { #dhp-visual { '+
@@ -132,21 +141,34 @@ jQuery(document).ready(function($) {
         });
 
             // all custom maps must have already been loaded into run-time "library"
-        dhpMapsView.initMapInterface(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams, callBacks);
+        dhpMapsView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams);
 
         updateVizSpace = dhpMapsView.dhpUpdateSize;
         break;
 
     case 'cards':
-        dhpCardsView.initializeCards(ajaxURL, projectID, vizIndex, thisEP.settings, dhpSettings.motes, callBacks);
+        dhpCardsView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings);
 
-        updateVizSpace = dhpCardsView.updateVizSpace;
+        updateVizSpace = dhpCardsView.dhpUpdateSize;
         break;
-    }
 
-        // Transcription widget
-    if (modalViewHas("transcript")) {
-        dhpTranscript.initialize();
+    case 'pinboard':
+        dhpPinboardView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings, dhpData.vizParams);
+
+        updateVizSpace = dhpPinboardView.dhpUpdateSize;
+        break;
+
+    case 'tree':
+        dhpTreeView.initialize(ajaxURL, projectID, vizIndex, thisEP.settings);
+
+        updateVizSpace = dhpTreeView.dhpUpdateSize;
+        break;
+
+    case 'time':
+        dhpTimeline.initialize(ajaxURL, projectID, vizIndex, thisEP.settings);
+
+        updateVizSpace = dhpTimeline.dhpUpdateSize;
+        break;
     }
 
     // ========================= FUNCTIONS
@@ -202,9 +224,35 @@ jQuery(document).ready(function($) {
         if (updateVizSpace) {
             updateVizSpace();
         }
+
+
+            // Ensure that a long Legend title can take two lines w/o overlapping terms below
+            //   by setting top of terms section to bottom of title
+            // Loop through legend-div divs but only operate on those that are not Layer panels!
+        jQuery('.legend-div').each( function(index) {
+            if (jQuery(this).attr('id') !== 'layers-panel') {
+                var height = jQuery('.legend-title', this).height();
+                jQuery('terms', this).css( { top: height } );
+            }
+        });
+
+            // Resize legend items that are two lines and center checkbox
+            // NOTE: This algorithm is buggy -- creating height of 0px and margin-top of negative sizes
+        // jQuery('.legend-div > .terms > .row').each(function(key,value) {
+        //     var newRowHeight, checkboxMargin;
+        //         //height of row containing text(could be multiple lines)
+        //     newRowHeight   = jQuery('.columns', this).eq(1).height();
+        //         // variable to center checkbox in row
+        //     checkboxMargin = (newRowHeight - checkboxHeight) / 2;
+        //         // set elements in rows with new values
+        //     jQuery('.columns', this).eq(0).height(newRowHeight);
+        //     jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
+        // });
+
+            // Resize Layers controls?
     } // windowResized()
 
-
+        // PURPOSE: Create the bones of the top navigation bar; visualizations can further specialize it
     function createNavBar()
     {
         var homeBtnLabel = dhpSettings.general.homeLabel;
@@ -294,13 +342,6 @@ jQuery(document).ready(function($) {
         }
     } // createNavBar()
 
-
-        // RETURNS: true if the Select Modal has a widget whose name is modalName
-    function modalViewHas(modalName) {
-        return (_.find(dhpSettings.views.select.widgets,
-                        function(theName) { return (theName == modalName); }) != undefined);
-    }
-
         // PURPOSE: Bring up Loading pop-box modal dialog
     function createLoadingMessage()
     {
@@ -333,103 +374,22 @@ jQuery(document).ready(function($) {
         $('#loading').foundation('reveal', 'open');
         // $('.loading-reveal-modal-bg').remove();
     } // createLoadingMessage()
+}); // project page bootstrap
 
 
-        // PURPOSE: Remove the Loading pop-up modal dialog
-    function removeLoadingMessage()
-    {
-            // Remove Loading modal
-        $('#loading').foundation('reveal', 'close');
-    } // removeLoadingMessage()
-
-
-        // PURPOSE: Fill out and show modal for marker
-        // INPUT:   feature = the feature selected to show (in same format as generated by createMarkerArray())
-        // SIDE-FX: Modifies DOM to create modal dialog window
-    function showMarkerModal(feature)
-    {
-        var selectParams = dhpSettings.views.select;
-        var titleAtt='';
-        var builtHTML;
-        var link1, link2, link1Target, link2Target;
-
-        if(selectParams.title) {
-            titleAtt =  feature.properties.title;
+    // Interface between embedded YouTube player and code that uses it
+    // This is called once iFrame and API code is ready
+    // Need to determine whether this calls dhpWidget or dhpPinboard animation...
+function onYouTubeIframeAPIReady()
+{
+        // Viewing pinboard but video player not yet instantiated yet it is loading
+    if (typeof(dhpPinboardView) === 'undefined') {
+        dhpWidget.bindPlayerHandlers();        
+    } else {
+        if (dhpPinboardView.vidPlayer==null && dhpPinboardView.playState==dhpPinboardView.STATE_LOADING) {
+            dhpPinboardView.onYouTubeAPIReady();
+        } else {
+            dhpWidget.bindPlayerHandlers();        
         }
-
-        link1  = feature.properties.link;
-        link2  = feature.properties.link2;
-            // Open in new tab?
-        if(selectParams.linkNewTab) {
-            link1Target = 'target="_blank"';
-        }
-        if(selectParams.link2NewTab) {
-            link2Target = 'target="_blank"';
-        }
-
-            // Remove anything currently in body -- will rebuild from scratch
-        jQuery('#markerModal .modal-body').empty();
-
-            // Should Select Modal show transcript?
-        if (modalViewHas("transcript"))
-        {
-            jQuery('#markerModal').addClass('transcript');
-
-            var transcriptSettings = {
-                'audio'         : feature.properties.audio,
-                'transcript'    : feature.properties.transcript,
-                'transcript2'   : feature.properties.transcript2,
-                'timecode'      : feature.properties.timecode,
-                'startTime'     : -1,
-                'endTime'       : -1
-            };
-
-            if (transcriptSettings.timecode) {
-                var time_codes = transcriptSettings.timecode.split('-');
-                transcriptSettings.startTime = dhpTranscript.convertToMilliSeconds(time_codes[0]);
-                transcriptSettings.endTime   = dhpTranscript.convertToMilliSeconds(time_codes[1]);
-            }
-
-            dhpTranscript.prepareOneTranscript(ajaxURL, projectID, '#markerModal .modal-body', transcriptSettings);
-         }
-
-            // Create HTML for all of the data related to the Marker
-         if (selectParams.content) {
-            builtHTML = '<div><h3>Details:</h3></div>';
-                // Go through each of the motes specified to be shown in select modal
-            _.each(selectParams.content, function(cMote) {
-                var mVal = feature.properties.content[cMote];
-                if (mVal) {
-                    if (cMote==='Thumbnail Right') {
-                        builtHTML += '<div class="thumb-right">'+mVal+'</div>';
-                    } else if (cMote==='Thumbnail Left') {
-                        builtHTML += '<div class="thumb-left">'+mVal+'</div>';
-                    } else if (cMote == 'the_content') {
-                        builtHTML += '<div>'+mVal+'</div>';
-                    } else {
-                        builtHTML += '<div><span class="key-title">'+cMote+'</span>: '+mVal+'</div>';
-                    }
-                }
-            }); // _.each()
-        }
-
-        jQuery('#markerModal .modal-body').append(builtHTML);
-
-            // clear previous marker links
-        jQuery('#markerModal .reveal-modal-footer .marker-link').remove();
-            // Change title
-        jQuery('#markerModal #markerModalLabel').empty().append(titleAtt);
-
-            // setup links
-        if (link1 && link1!='disable') {
-            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link1Target+
-                ' class="button success marker-link" href="'+link1+'">'+selectParams.linkLabel+'</a></li>');
-        }
-        if (link2 && link2 !='disable') {
-            jQuery('#markerModal .reveal-modal-footer .button-group').prepend('<li><a '+link2Target+
-                ' class="button success marker-link" href="'+link2+'">'+selectParams.link2Label+'</a></li>');
-        }
-            //Open modal
-        jQuery('#markerModal').foundation('reveal', 'open');
-    } // showMarkerModal()
-});
+    }
+}

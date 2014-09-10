@@ -1,6 +1,6 @@
 <?php
 /******************************************************************************
- ** DH Press Project Class
+ ** DHPressProject class  (see below for DHPressMarkerQuery class)
  ** PURPOSE: Encapsulate (some) implementation details of Projects on WordPress
  ** ASSUMES: Running in WordPress environment
  ** NOTES:   Class attempts to do "lazy loading": only retrieve data when needed
@@ -25,9 +25,10 @@
 		    ],
 		    "eps": [										// contents of settings depends on type of entry point
 		    	{
-		            "type": String ("map" or "cards"),
+		            "type": String ("map" | "cards" | "pinboard" | "tree" | "time"),
 		            "label" : String (short and unique across entry points),
-		            "settings": {									// Map settings are as follows
+									// Map settings are as follows
+		            "settings": {
 		                "lat": Number,
 		                "lon": Number,
 		                "zoom": Number,
@@ -46,10 +47,11 @@
 		                    String (name of mote), ...
 		                ]
 		            }
-		            "settings" : {									// Topic Cards settings are as follows
+									// Topic Cards settings are as follows
+		            "settings" : {
 						"title": String (name of mote),				// to display on top of card
-		            	"width" : Number,							// Pixel width of cards
-		            	"height" : Number,							// Pixel height of cards
+		            	"width" : String,							// card width: "auto", thin", "med-width", "wide"
+		            	"height" : String,							// card height: "auto", "short", "med-height", "tall"
 						"color": String (name of mote),				// to determine color of card
 						"defColor" : String (CSS color to use),		// as default when no mote value
 						"bckGrd" : String (CSS color or # hex),
@@ -63,6 +65,52 @@
 							// Array of mote names to use to sort cards (Short Text, Number types)
 						]
 		            }
+									// Pinboard settings are as follows
+		            "settings" : {
+		                "imageURL" : String,						// complete URL to background image
+		            	"width" : Number,							// Pixel width of background image
+		            	"height" : Number,							// Pixel height of background image
+		                "size": Character,							// relative size of markers: "s" | "m" | "l"
+		                "icon": String,								// Name of icon marker to use or "disable"
+						"coordMote": String (name of mote),			// mote which supplies X-Y coordinate
+						"animscript": String,						// URL to animation script
+						"animSVG": String,							// URL to SVG file for animation
+						"ytvcode": String,							// YouTube video code for animation (if any)
+		                "legends": [								// List of mote Legends/categories
+		                    String (name of mote), ...
+		                ],
+		                "layers": [									// List of SVG layers to add on top of image
+		                	{ label: String,
+		                	  file: String (complete URL)
+		                	} , ...
+		                ]
+		            }
+									// Tree settings are as follows
+		            "settings" : {
+		            	"form" : String,							// Tree form: flat, radial, segment
+		            	"width" : Number,							// Pixel width of tree visualization
+		            	"height" : Number,							// Pixel height of tree visualization
+		            	"head" : String,							// ID of marker which is head/top of tree
+		            	"children" : String (name of mote),			// Mote that supplies names of next generation
+		            	"label" : String (name of mote),			// Mote that supplies text for label
+		            	"fSize" : Number,							// Size of label font in pixels
+		            	"radius" : Number,							// Size of circles in pixels (when used)
+		            	"padding" : Number,							// Size of padding (in pixels - form dependent)
+		                "color": String (name of mote)				// For color of mote
+		            }
+									// Timeline settings are as follows
+		            "settings" : {
+						 "date" : String (name of mote),			// mote which provides date range
+		                 "color" : String (name of mote),           // mote to determine color of card
+		                 "label" : String (name of mote),           // mote to display on hover
+		                 "bandHt" : Integer,                        // pixel height of top band rows (also used for fontSize)
+		                 "wAxisLbl" : Integer,                      // pixel width of min/max labels on axis
+		                 "from" : Date,                             // Earliest date to show in timeline
+		                 "to"   : Date,                             // Latest date to show in timeline
+		                 "openFrom": Date,                          // Initial window's start (begin date)
+		                 "openTo": Date                             // Initial window's start (end date)
+             		}
+
 		        }
 		    },
 		    "views": {
@@ -77,7 +125,7 @@
 			        "title": String (name of mote),
 			        "width": "tiny" | "small" | "medium" | "large" | "x-large",
 			        "widgets": [							// List of 'widgets' to display in selected Marker modal
-			        	'transcript'
+			        	'scloud' | 'youtube'
 			        ],
 			        "content": [							// Motes to show when Marker selected in visualization
 			            String (mote name || "the_content"), ...
@@ -245,7 +293,7 @@ class DHPressProject
 			$moteValue = get_post_meta($marker_id, $custom_name, true);
 
 			if ($delim && $delim != '') {
-				$valueArray = split($delim, $moteValue);
+				$valueArray = explode($delim, $moteValue);
 				foreach ($valueArray as $value) {
 		   		 	array_push($moteArray, $value);
 				}
@@ -422,3 +470,281 @@ class DHPressProject
     } // ensureSettings()
 
 } // class DHPressProject
+
+
+/******************************************************************************
+ ** DHPressMarkerQuery class
+ ** PURPOSE: Contain common variables and methods for gathering marker data
+ **/
+
+class DHPressMarkerQuery
+{
+	    // OBJECT PROPERTIES
+		//======================
+
+    public $projID;
+    public $vizIndex;
+    public $projObj;
+    public $projSettings;
+    public $rootTaxName;
+
+    public $audio;
+    public $video;
+    public $transcript;
+    public $transcript2;
+    public $timecode;
+    public $titleMote;
+
+    public $selectContent;
+
+    public $linkParent;
+    public $linkParent2;
+    public $childTerms;
+    public $childTerms2;
+
+
+	    // PUBLIC OBJECT METHODS
+		//======================
+
+    	// PURPOSE: Initialize all fields relating to querying markers in this project
+    public function __construct($projectID, $index)
+    {
+    	$this->projID = $projectID;
+    	$this->vizIndex = $index;
+
+    		// Get Project related settings
+    	$projObj = $this->projObj = new DHPressProject($projectID);
+		$projSettings = $this->projSettings = $projObj->getAllSettings();
+		$this->rootTaxName  = $projObj->getRootTaxName();
+
+			// Initialize placeholders for various feature variables
+		$this->filters = null;
+		$this->audio = null;
+		$this->video = null;
+		$this->transcript = null;
+		$this->transcript2 = null;
+		$this->timecode = null;
+
+			// By default, a marker's content is the set of data needed by select modal, but some
+			//	views may need to augment this
+		$this->selectContent = array();
+		if ($projSettings->views->select->content) {
+			foreach ($projSettings->views->select->content as $theMote) {
+				array_push($this->selectContent, $theMote);
+			}
+		}
+
+			// If a marker is selected and leads to a transcript in modal, need those values also
+		if ($projObj->selectModalHas("scloud")) {
+			$this->audio = $projSettings->views->transcript->audio;
+				// Translate from Mote Name to Custom Field name
+			if (!is_null($this->audio) && ($this->audio !== '') && ($this->audio !== 'disable')) {
+				$this->audio = $projObj->getCustomFieldForMote($this->audio);
+			} else {
+				$this->audio = null;
+			}
+		}
+		if ($projObj->selectModalHas("youtube")) {
+			$this->video = $projSettings->views->transcript->video;
+				// Translate from Mote Name to Custom Field name
+			if (!is_null($this->video) && ($this->video !== '') && ($this->video !== 'disable')) {
+				$this->video = $projObj->getCustomFieldForMote($this->video);
+			} else {
+				$this->video = null;
+			}
+		}
+			// Only check for transcript data if there is audio or video
+		if ($this->audio || $this->video) {
+			if ($projSettings->views->transcript->transcript !== '') {
+				$this->transcript = $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript);
+			}
+			if ($projSettings->views->transcript->transcripts2 !== '') {
+				$this->transcript2= $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript2);
+			}
+			if ($projSettings->views->transcript->timecode !== '') {
+				$this->timecode   = $projObj->getCustomFieldForMote($projSettings->views->transcript->timecode);
+			}
+		}
+
+			// Link parent enables linking to either the Post page for this Marker,
+			//	or to the category/taxonomy which includes this Marker
+		$this->linkParent = $projSettings->views->select->link;
+		if ($this->linkParent) {
+			if ($this->linkParent=='marker') {
+				$this->childTerms = 'marker';
+			} elseif ($this->linkParent=='disable') {
+				$this->childTerms = 'disable';
+			}
+				// Link to mote value
+			elseif (strpos($this->linkParent, '(Mote)') !== FALSE) {
+				$linkMoteName = str_replace(' (Mote)', '', $this->linkParent);
+				$this->childTerms = $projObj->getMoteByName($linkMoteName);
+			} else {
+					// translate into category/term ID
+				$parent_id = get_term_by('name', $this->linkParent, $this->rootTaxName);
+					// find all category terms
+				$this->childTerms = get_term_children($parent_id->term_id, $this->rootTaxName);
+			}
+		}
+
+		$this->linkParent2 = $this->projSettings->views->select->link2;
+		if ($this->linkParent2) {
+			if ($this->linkParent2=='marker') {
+				$this->childTerms2 = 'marker';
+			} elseif ($linkParent2=='disable') {
+				$this->childTerms2 = 'disable';
+			}
+				// Link to mote value
+			elseif (strpos($this->linkParent2, '(Mote)') !== FALSE) {
+				$link2MoteName = str_replace(' (Mote)', '', $this->linkParent2);
+				$this->childTerms2 = $projObj->getMoteByName($link2MoteName);
+			} else {
+				$parent_id2 = get_term_by('name', $this->linkParent2, $this->rootTaxName);
+				$this->childTerms2 = get_term_children($parent_id2->term_id, $this->rootTaxName);
+			}
+		}
+
+			// Determine whether title is default title of marker post or another (custom) field
+		$this->titleMote = $projSettings->views->select->title;
+		if ($this->titleMote != 'the_title') {
+			$temp_mote = $projObj->getMoteByName($this->titleMote);
+			if (is_null($temp_mote)) {
+				trigger_error("Modal view title assigned to unknown mote");
+			}
+			$this->titleMote = $temp_mote->cf;
+		}
+    } // __construct
+
+
+	// PURPOSE:	Get link to category page based on category value, if one of $terms appears in $link_terms
+	// INPUT:	$link_terms = array of taxonomic terms
+	//			$terms = array of terms associated with a particular Marker
+	// RETURNS: PermaLink for marker's term (from $terms) that appears in $link_terms
+	// ASSUMES:	That strings in $terms have been HTML-escaped
+
+	private function getTermByParent($link_terms, $terms)
+	{
+		foreach ($terms as $term) {
+			$real_term = get_term_by('id', $term, $this->rootTaxName);
+			$intersect = array_intersect(array($real_term->term_id), $link_terms);
+			if ($intersect) {
+				 $term_link = get_term_link($real_term);
+				 return $term_link;
+			}
+		}
+	} // getTermByParent()
+
+
+    	// RETURN: properties array for the marker
+    function getMarkerProperties($markerID)
+    {
+			// Most data goes into properties field
+		$thisFeaturesProperties = array();
+
+			// Audio transcript features?
+		if (!is_null($this->audio)) {
+			$audio_val = get_post_meta($markerID, $this->audio, true);
+			$thisFeaturesProperties["audio"] = $audio_val;
+		}
+		if (!is_null($this->video)) {
+			$video_val = get_post_meta($markerID, $this->video, true);
+			$thisFeaturesProperties["video"] = $video_val;
+		}
+		if (!is_null($this->transcript)) {
+			$transcript_val = get_post_meta($markerID, $this->transcript, true);
+			$thisFeaturesProperties["transcript"]  = $transcript_val;
+		}
+		if (!is_null($this->transcript2)) {
+			$transcript2_val = get_post_meta($markerID, $this->transcript2, true);
+			$thisFeaturesProperties["transcript2"] = $transcript2_val;
+		}
+		if (!is_null($this->timecode)) {
+			$timecode_val = get_post_meta($markerID, $this->timecode, true);
+			$thisFeaturesProperties["timecode"]    = $timecode_val;
+		}
+
+		if ($this->titleMote) {
+			if ($this->titleMote=='the_title') {
+				$title = get_the_title();
+			} else {
+				$title = get_post_meta($markerID, $this->titleMote, true);
+			}
+			$thisFeaturesProperties["title"] = $title;
+		}
+
+			// Get all of the legend/category values associated with this marker post
+		$args = array('fields' => 'ids');
+		$post_terms = wp_get_post_terms($markerID, $this->rootTaxName, $args);
+		$term_array = array();
+		foreach ($post_terms as $term) {
+				// Convert tax category names into IDs
+			array_push($term_array, intval($term));
+		}
+		$thisFeaturesProperties["categories"]  = $term_array;
+
+		$content_att = array();
+
+			// Gather all values to be displayed in modal if marker selected
+			// Should not apply filters to post content because DH Press markup gets inserted!
+		if (count($this->selectContent)) {
+			foreach ($this->selectContent as $contentMoteName ) {
+				if ($contentMoteName == 'the_content') {
+					$usedMote = false;
+					$content_val = get_post_field('post_content', $markerID);
+				} elseif ($contentMoteName == 'the_title') {
+					$usedMote = false;
+					$content_val = get_the_title();
+				} else {
+					$usedMote = true;
+					$content_mote = $this->projObj->getMoteByName($contentMoteName);
+					$contentCF = $content_mote->cf;
+					if($contentCF =='the_content') {
+						$content_val = get_post_field('post_content', $markerID);
+					} elseif ($contentCF=='the_title') {
+						$content_val = get_the_title();
+					} else {
+						$content_val = get_post_meta($markerID, $contentCF, true);
+					}
+				}
+				if (!is_null($content_val) && ($content_val !== '')) {
+						// Do we need to wrap data?
+					if ($usedMote && $content_mote->type == 'Image') {
+						$content_val = '<img src="'.addslashes($content_val).'" />';
+					}
+					$content_att[$contentMoteName] = $content_val;
+				}
+			} // foreach
+			$thisFeaturesProperties["content"]     = $content_att;
+		}
+
+			// Does item link to its own Marker page, Taxonomy page, or Mote value?
+		if ($this->linkParent && $this->childTerms && $this->childTerms != 'disable') {
+			if ($this->childTerms=='marker') {
+				$term_links = get_permalink();
+			} elseif (strpos($link_parent, '(Mote)') !== FALSE) {
+				$term_links = get_post_meta($markerID, $this->childTerms->cf, true);
+			} else {
+				$term_links = $this->getTermByParent($this->childTerms, $post_terms);
+			}
+			if ($term_links) {
+				$thisFeaturesProperties["link"] = addslashes($term_links);
+			}
+		}
+
+		if ($this->linkParent2 && $this->childTerms2 && $this->childTerms2 != 'disable') {
+			if ($this->childTerms2=='marker') {
+				$term_links = get_permalink();
+			} elseif (strpos($this->linkParent2, '(Mote)') !== FALSE) {
+				$term_links = get_post_meta($markerID, $this->childTerms2->cf, true);
+			} else {
+				$term_links = $this->getTermByParent($this->childTerms2, $post_terms);
+			}
+			if ($term_links) {
+				$thisFeaturesProperties["link2"] = addslashes($term_links);
+			}
+		}
+
+		return $thisFeaturesProperties;
+    } // getMarkerProperties()
+
+} // class DHPressMarkerQuery

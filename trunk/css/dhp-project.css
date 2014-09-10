@@ -1,0 +1,361 @@
+/** CSS styles specific to Project View in DH Press
+ **/
+
+@charset "UTF-8";
+
+
+	/* FIX: Adjusts foundations nowrap style for code blocks */
+code {
+	white-space: inherit;
+}
+
+	/* ======== NAVIGATION BAR ========= */
+
+.dhp-nav {
+	z-index: 1102;
+	width: 100%;
+}
+
+.dhp-nav.fixed {
+	position: fixed;
+	z-index: 1102;
+	width: 100%;
+}
+
+.fullscreen .dhp-nav {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	z-index: 1105;
+}
+
+.admin-bar .dhp-nav.fixed {
+	top:30px;
+}
+
+.top-bar-section ul li>a {
+	font-size: 1rem;
+}
+
+.tab-content {
+	min-height: 150px;
+}
+
+.nav-tabs {
+	text-transform: capitalize;
+}
+
+	/* =========== MODALS =========== */
+#loading {
+	position: fixed;
+}
+
+.loading-content {
+	width: 100%;
+	background: url('../images/ajax-loader.gif') no-repeat center 10px;
+}
+
+.loading-content h3.loading-title {
+	padding-top: 40px;
+	text-align: center;
+	font-size: 28px;
+}
+
+.reveal-modal-bg {
+	z-index: 1103;
+}
+
+.reveal-modal {
+	z-index: 1104;
+	max-height: 75%;
+	overflow: auto;
+}
+
+.reveal-modal-footer {
+	text-align: right;
+}
+
+.fullscreen h1 {
+	font-size: 2.75rem;
+}
+body.fullscreen .site {
+	margin-top: 0px;
+}
+html.fullscreen {
+	overflow: hidden;
+}
+
+	/* ========== VISUALIZATION FRAME ========= */
+
+#dhp-visual {
+	position: relative;
+	background: #fff;
+}
+
+	/* Must position below upper nav-bar */
+.fullscreen #dhp-visual {
+	width:100%;
+	min-width: 100%;
+	height: auto;
+	position:absolute;
+	top: 45px;
+	left: 0px;
+	bottom: 0;
+}
+
+	/* ========== MODAL WINDOWS =========== */
+
+.modal {
+	z-index: 1150;
+}
+.modal-content {
+	overflow: auto;
+}
+.modal-content div {
+	padding-bottom: 10px;
+	line-height: 1.5;
+}
+.modal.transcript {
+	position: fixed;
+	top: 10%;
+	left: 50%;
+	width: 90%;
+	margin-left: -45%;
+}
+
+.modal-backdrop {
+	z-index: 1140;
+}
+
+.modal-header h3 {
+	clear: none;
+	font-size: 20px;
+}
+.modal-body h3 {
+	font-size: 16px;
+}
+.modal-body .key-title {
+	font-style: italic;
+}
+.modal-body .thumb-right img {
+	float: right;
+	padding-left: 5px;
+	padding-bottom: 5px;
+	width: 33%;
+}
+
+.modal-body .thumb-left img {
+	float: left;
+	padding-right: 5px;
+	padding-bottom: 5px;
+	width: 33%;
+}
+
+.modal-backdrop, .modal-backdrop.fade.in {
+	opacity: .6;
+	filter: alpha(opacity=60);
+}
+
+/* ============= LEGENDS ============= */
+
+.legend {
+	display:none;
+}
+
+	/* Legend style (by default non-fullscreen) */
+#legends {
+	position: relative;	
+	margin-left: 0;
+	overflow: auto;
+
+/*	max-width: 320px; */
+	min-width: 260px;
+	min-height: 120px;
+	max-height: 200px;
+
+	background: #fff;
+	background-color: rgba(255, 255, 255, .95);
+
+	/*foundation font style*/
+	color: #222;
+	font-family: "Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
+}
+
+#legends.mini {
+/*	min-height: 37px; */
+    overflow: hidden;
+}
+
+	/* Override for fullscreen */
+.fullscreen #legends {
+	position:absolute;
+	overflow: auto;
+
+		/* These height settings are not working properly, and it's unclear why.
+			In fullscreen, only the min-height setting is used; max-height is ignored.
+		 */
+	min-height: 300px;
+/*	min-height: 220px; */
+/*	max-height: 90% !important; */
+	max-height: 700px !important;
+
+	top: 6px;
+	left: 6px;
+
+	z-index: 1103;
+	-moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+	-webkit-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+	box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+}
+
+.fullscreen #legends.mini {
+	min-height: 30px;
+    overflow: hidden;
+}
+
+
+@media all and (min-width: 1025px) {
+  .fullscreen #legends {
+  	min-width: 320px;
+  }
+}
+
+.logged-in.fullscreen #legends {
+	/*top:70px;*/
+}
+
+.legend-row {
+	
+}
+
+.legend-row .legend-div {
+	margin-left: 0px;
+}
+
+.legend-div .legend-title {
+	padding-left: 10px;
+	padding-right: 20px;
+	border-bottom: 1px solid #111;
+	font-size: 22px;
+	font-weight: bold;
+	z-index: 20;
+}
+
+.legend-div .terms {
+	position: absolute;
+	top:38px;
+	bottom: 0;
+	width: 100%;
+	z-index: 19;
+	overflow: auto;
+	margin-top: 1px;
+}
+
+.legend-div .terms .row {
+	width:100%;
+	cursor: pointer;
+	line-height: 15px;
+}
+.legend-div .terms .row.hasParent {
+	display: none;
+}
+.legend-div .terms .row:hover,
+.legend-div .terms .row.selected {
+	background: #e8f2e6;
+}
+
+/*
+.legend-div .terms img {
+	float: left;
+}*/
+
+.legend-div .terms .maki-icon {
+	margin: 0;
+	padding: 0;
+
+	margin-left: -5px !important;
+
+	float: left !important;
+	display: inline !important;
+}
+
+.legend-div .terms .png {
+	margin: 0;
+	padding: 0;
+
+	margin-left: -5px !important;
+
+	float: left !important;
+	display: inline !important;
+
+	min-width: 20px !important;
+	min-height: 20px !important;
+}
+
+.legend-div .terms a {
+	line-height: 15px;
+	width: 100%;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	overflow: hidden;
+	display: inherit;
+}
+
+.legend-div input[type='checkbox'] {
+	/*margin: 12px;*/
+	vertical-align: middle;
+	margin-top: 11px;
+}
+
+.legend-div .icon-legend {
+	width: 15px;
+	height: 15px;
+	margin:0;
+	margin-top: 9px;
+}
+
+	/* Little resize button on legends */
+.legend-resize {
+	padding: 7px;
+	position: absolute;
+	right: 0px;
+}
+
+	/* Keep slider small */
+.layer-opacity {
+	max-width: 160px;
+}
+
+	/* Legends for child terms TODO: add html to display child terms */
+#child_legend {
+ 	background: #e8f2e6;
+ 	padding: 5px;
+ 	border: 3px solid #ccc;
+ 	display: none;
+}
+
+#child_legend h3 { 
+ 	padding-bottom: 5px;
+}
+
+#child_legend ul li {
+  	padding-bottom: 5px;
+}
+
+	/* Controls for opacity/on-off for each layer */
+#layers-panel {
+	margin-left: 0px;
+}
+
+    /* Creates color area for non-checkbox Legends */
+.splash {
+    padding: 4px;
+    padding-left: 12px;
+    border: 1px solid black;
+    position: relative;
+    top: 6px;
+    left: 6px;
+/*    min-width: 20px; */
+    width: 20px;
+    min-height: 20px;
+}

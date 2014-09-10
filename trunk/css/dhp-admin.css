@@ -1,4 +1,4 @@
-/** CSS styles specific to Admin Views in DH Press
+/** CSS styles specific to Dashboard Views in DH Press
  **/
 
 @charset "UTF-8";
@@ -7,14 +7,17 @@
 body {
 	background: none;
 }
+
 /* Fixes menu spacing that bootstrap overrides */
 ul.wp-submenu {
 	margin-left: 0;
 }
+
 /* Fixes spacing that bootstrap overrides */
 .submitbox label {
 	display: inline;
 }
+
 /* Pulls entry point X to right */
 #entry-point .close {
 	position: absolute;
@@ -22,25 +25,30 @@ ul.wp-submenu {
 	top: 85px;
 }
 
-
-/* ========== Old styles -- not yet used ========== */
-/* Positions upload button on right for icon upload box */
-
-#dhp_icons_box .misc-pub-section, #TB_ajaxContent .misc-pub-section {
-	padding: 0px;
-	min-height: 34px;
+  /* Viewing Project content */
+.entry-content .dhp-entrytext h3 {
+  clear: none;
+  margin-bottom: 3px;
+  font-weight: bold;
 }
 
-#dhp_icons_box .misc-pub-section span {
-	padding-top: 10px;
-	float: left;
+.entry-content .dhp-entrytext p {
+  margin-top: 3px;
+  margin-bottom: 6px;
 }
-#dhp_icons_box .dhp-icon-upload {
-	margin-top: 5px;
-	text-align: right;
-	float: right;
-	line-height: 23px;
+
+.entry-content .dhp-entrytext p.thumb-right {
+  float: right;
+  padding-left: 5px;
+  padding-bottom: 5px;  
 }
+
+.entry-content .dhp-entrytext p.thumb-left {
+  float: left;
+  padding-right: 5px;
+  padding-bottom: 5px;
+}
+
 
 /* ========== For show/hide of components ========== */
 
@@ -139,6 +147,31 @@ ul.wp-submenu {
   border: 2px solid red;
   background-color: yellow;
 }
+
+
+/* ---- PNG Image Picker ---- */
+
+.png-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.png-list li img {
+  border: 2px dotted gray;
+  list-style-type: none;
+  margin: 4px;
+  float: left;
+}
+
+.png-list li img:hover {
+  border: 2px dotted orange;
+}
+
+.png-list li img.selected {
+  border: 2px solid red;
+  background-color: yellow;
+}
+
 
 /* ---- Nestable Sorter (default styles) ---- */
 
@@ -287,12 +320,15 @@ ul.wp-submenu {
   bottom: 4px;
 }
 
-/*    For user uploaded images for legends -- currently unused
+  /* For user uploaded PNG icons for legends */
 .dd .dd-list .dd-item .select-legend img {
+  position: relative;
+  left: 0px;
+  top: 0px;
   height: 18px;
   width: auto;
+  display: inline-block;
 }
-*/
 
   /* For maki-icon selections for legends */
 .dd .dd-list .dd-item .select-legend .maki-icon {
@@ -316,4 +352,3 @@ ul.wp-submenu {
 .hide-content {
   visibility: hidden;  
 }
-

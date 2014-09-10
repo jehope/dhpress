@@ -57,3 +57,16 @@
   </div>
 </div>
 </script>
+
+
+<script id="dhp-script-legend-head" type="text/x-handlebars-template">
+  <div id="legends" class="" style=""><div class="legend-row"></div></div>
+</script>
+
+
+<script id="dhp-script-legend-hideshow" type="text/x-handlebars-template">
+  <div class="row check-all"> 
+    <div class="small-2 large-1 columns"><input type="checkbox" checked="checked"></div>
+    <div class="small-10 large-10 columns"><a class="value" data-id="all"><b>Hide/Show All</b></a></div>
+  </div>
+</script>

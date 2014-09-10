@@ -1,10 +1,12 @@
 // DH Press Maps View -- contains all data and functions for rendering maps with help of dhpCustomMaps
-// ASSUMES: The sidebar is marked with HTML div as "secondary"
-//          An area for the map has been marked with HTML div as "dhp-visual"
+// ASSUMES: An area for the map has been marked with HTML div as "dhp-visual"
 //          That the custom maps "library" has already been loaded with corresponding map entries
 // NOTES:   Format of Marker and Legend data (GeoJSON) is documented in dhp-project-functions.php
 //          Once size of Marker array increases, may need to make filter more efficient
-//          The class active-legend is added to whichever legend is currently visible and selected
+//          FeatureCollections can now consist of both Points and Polygons; however, mixing makes it
+//              difficult to pass as GeoJSON to Leaflet, as markerStyle() does redundant work. A better
+//              solution would be to create and pass separate GeoJSON arrays for Points and Polygons
+//              but this is not conducive to current architecture. Better support in next Leaflet?
 
 // USES:    JavaScript libraries jQuery, Underscore, Zurb Foundation, Leaflet
 
@@ -12,7 +14,6 @@
 var dhpMapsView = {
 
         // Contains fields: ajaxURL, projectID, mapEP, viewParams, vizIndex
-        //                  callBacks = object containing callback functions to dhp-project-page
 
         //					rawAjaxData = raw data returned from AJAX
         //					allMarkers = All marker posts assoc. w/ Project; see data desc in createMarkerArray() of dhp-project-functions.php
@@ -25,7 +26,8 @@ var dhpMapsView = {
         //                  markerOpacity = opacity of marker layer (for all markers)
         //                  radius = radius of geometric markers
         //                  makiSize = "s" | "m" | "l"
-        //                  makiIcons = array of maki icons
+        //                  makiIcons = array of maki icons, indexed by name
+        //                  pngIcons = array of PNG image icons, indexed by name
 
         //                  mapLayers = array of map overlay data to display (compiled in this code)
         //                  mapLeaflet = Leaflet map object
@@ -41,20 +43,15 @@ var dhpMapsView = {
         //          projectID    = ID of project
         //          mapEP        = settings for map entry point (from project settings)
         //          viewParams   = array of data about map layers (see dhpGetMapLayerData() in dhp-project-functions)
-        //          callBacks    = set of callback functions back to dhp-project-page functions
-    initMapInterface: function(ajaxURL, projectID, vizIndex, mapEP, viewParams, callBacks) {
+    initialize: function(ajaxURL, projectID, vizIndex, mapEP, viewParams) {
              // Constants
         dhpMapsView.checkboxHeight = 12; // default checkbox height
 
             // Save reset data for later
-        dhpMapsView.ajaxURL        = ajaxURL;
-        dhpMapsView.projectID      = projectID;
-        dhpMapsView.vizIndex       = vizIndex;
         dhpMapsView.mapEP          = mapEP;
         dhpMapsView.viewParams     = viewParams;
-        dhpMapsView.callBacks      = callBacks;
 
-        dhpMapsView.isTouch        = dhpMapsView.isTouchDevice();
+        dhpMapsView.isTouch        = dhpServices.isTouchDevice();
 
         dhpMapsView.markerOpacity  = 1;     // default marker opacity
         dhpMapsView.makiSize       = mapEP.size;
@@ -69,18 +66,55 @@ var dhpMapsView = {
             dhpMapsView.radius     = 12;
             break;
         }
-        dhpMapsView.makiIcons      = [];    // array of Maki-icons to be used by markers
+        dhpMapsView.makiIcons      = [];    // array of Maki-icons by name
+        dhpMapsView.pngIcons       = [];    // array of PNG image icons by name
 
         dhpMapsView.mapLayers      = [];
+
             // expand to show/hide child terms and use their colors
         dhpMapsView.useParent = true;
 
         dhpMapsView.initializeMap2();
 
         dhpMapsView.createLayers();
-        dhpMapsView.loadMapMarkers();
         dhpMapsView.createMapControls();
-    }, // initMapInterface()
+
+            // Create Leaflet icons for each defined PNG image
+        for (var i=0; i<viewParams.pngs.length; i++)
+        {
+            var thePNG = viewParams.pngs[i];
+            var pngSize = [ thePNG.w, thePNG.h ];
+            var pngAnchor = [ thePNG.w/2, thePNG.h ];
+            dhpMapsView.pngIcons[thePNG.title] = L.icon(
+                {   iconUrl: thePNG.url,
+                    iconSize: pngSize,
+                    iconAnchor: pngAnchor
+                } );
+        }
+
+
+        jQuery.ajax({
+            type: 'POST',
+            url: ajaxURL,
+            data: {
+                action: 'dhpGetMarkers',
+                project: projectID,
+                index: vizIndex
+            },
+            success: function(data, textStatus, XMLHttpRequest)
+            {
+                dhpMapsView.createDataObjects(JSON.parse(data));
+                    // Remove Loading modal
+                dhpServices.remLoadingModal();
+                jQuery('.reveal-modal-bg').remove();
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown)
+            {
+               alert(errorThrown);
+            }
+        });
+    }, // initialize()
+
 
         // PURPOSE: Initialize map viewing area with controls
     initializeMap2: function()
@@ -91,7 +125,7 @@ var dhpMapsView = {
         jQuery('.dhp-nav .top-bar-section .left').append(Handlebars.compile(jQuery("#dhp-script-map-menus").html()));
 
             // Insert Legend area -- Joe had "after" but menu off map above if not "append"
-        jQuery('#dhp-visual').append(Handlebars.compile(jQuery("#dhp-script-map-legend-head").html()));
+        jQuery('#dhp-visual').append(Handlebars.compile(jQuery("#dhp-script-legend-head").html()));
 
         jQuery('#dhp-visual').append('<div id="dhpMap"/>');
 
@@ -252,23 +286,8 @@ var dhpMapsView = {
         // RETURNS: Object with 2 properties: terms and all
     formatTerms: function(oldTerms)
     {
-        var newTerms = oldTerms;
-        var termArray = [];
+        var newTerms = dhpServices.flattenTerms(oldTerms);
         var allTerms = [];
-
-        _.each(oldTerms.terms, function(theTerm) {
-            termArray.push(theTerm);
-            _.each(theTerm.children, function(theChild) {
-                termArray.push( {
-                    id: theChild.term_id,
-                    parent: theTerm.id,
-                    icon_url: theTerm.icon_url,    // child inherits parent's viz
-                    name: theChild.name
-                });
-            });
-        });
-
-        newTerms.terms = termArray;
 
             // use array of just IDs for speedy intersection checks
         _.each(newTerms.terms, function(theTerm) {
@@ -279,13 +298,15 @@ var dhpMapsView = {
         return newTerms;
     }, // formatTerms()
 
+
         // PURPOSE: Creates and draws marker layer on map
         //          Called whenever the terms are filtered (inc initial display)
     createMarkerLayer: function() {
         dhpMapsView.markerLayer = L.geoJson(dhpMapsView.allMarkers, { 
             onEachFeature: dhpMapsView.onEachFeature,
             pointToLayer: dhpMapsView.pointToLayer,
-            filter: dhpMapsView.filterMapMarkers 
+            // style: dhpMapsView.markerStyle,
+            filter: dhpMapsView.filterMapMarkers
         });
         dhpMapsView.markerLayer.addTo(dhpMapsView.mapLeaflet);
         dhpMapsView.markerLayer.options.layerName = 'Markers';
@@ -301,7 +322,8 @@ var dhpMapsView = {
 
         // PURPOSE: Determine what color to use for marker
         // INPUT:   cats = the array of legend categories for this marker
-        // TO DO:   Make more efficient: goes through 2 to 3 exhaustive searches for each marker
+        // TO DO:   Make more efficient: since Legend/Category terms have been flattened & viz info
+        //              copied to children it should not be necessary to find parent
     getActiveTermColor: function(cats) {
         var returnColor;
             // Find which of this item's legend values match current legend selection
@@ -312,7 +334,7 @@ var dhpMapsView = {
         }
 
             // Now, look through the current legend values for which matches first overlap
-            // TO DO: Make this more efficient: the search is done (exhaustively) twice here!
+            // TO DO: Search for flattened term w/ icon_url info
         var term = _.find(dhpMapsView.catFilter.terms, function(item) {
             return (item.id == matchID);
         });
@@ -335,15 +357,44 @@ var dhpMapsView = {
         return returnColor;
     }, // getActiveTermColor()
 
+
+        // PURPOSE: Return style of Markers
+        // NOTES:   This is needed because otherwise Polygons not given any style; however, since it
+        //              is also called for Circle markers, creates much redundant work
+    // markerStyle: function(feature)
+    // {
+    //     var fColor = dhpMapsView.getActiveTermColor(feature.properties.categories);
+    //     switch (feature.geometry.type) {
+    //     case 'Point':
+    //         return {
+    //             fillColor: fColor,
+    //             color: "#000",
+    //             weight: 1,
+    //             opacity: 1
+    //         };
+    //     case 'Polygon':
+    //         return {
+    //             fillColor: fColor,
+    //             fill: true,
+    //             color: "#000",
+    //             weight: 1,
+    //             opacity: 0.8
+    //         };
+    //     default:
+    //         return { color: fColor };
+    //     }
+    // }, // markerStyle()
+
+
         // PURPOSE: Create the Leaflet feature associated with this entry
     pointToLayer: function(feature, latlng) {
-        var fColor = dhpMapsView.getActiveTermColor(feature.properties.categories);
-        var fType = fColor.substring(0,1);
-        switch (fType) {
+            // get the string associated with Legend ID
+        var fKey = dhpMapsView.getActiveTermColor(feature.properties.categories);
+        switch (fKey.charAt(0)) {
         case '#':
             return L.circleMarker(latlng, {
                 radius: dhpMapsView.radius,
-                fillColor: fColor,
+                fillColor: fKey,
                 color: "#000",
                 weight: 1,
                 opacity: 1,
@@ -351,7 +402,7 @@ var dhpMapsView = {
             });
         case '.':
                 // See if maki-icon has already been created and if not create it
-            var iName = fColor.substring(1);
+            var iName = fKey.substring(1);
             var mIcon = dhpMapsView.makiIcons[iName];
             if (mIcon == undefined || mIcon == null) {
                 mIcon = L.MakiMarkers.icon({
@@ -362,10 +413,18 @@ var dhpMapsView = {
                 dhpMapsView.makiIcons[iName] = mIcon;
             }
             return L.marker(latlng, { icon: mIcon, riseOnHover: true });
+        case '@':
+            var pngTitle = fKey.substring(1);
+            var pngIcon = dhpMapsView.pngIcons[pngTitle];
+            if (pngIcon == undefined || pngIcon === null) {
+                throw new Error("Could not find PNG image for: "+pngTitle);
+            }
+            return L.marker(latlng, { icon: pngIcon, riseOnHover: true });
         default:
-            throw new Error("Unsupported feature type: "+fColor);
+            throw new Error("Unsupported feature type: "+fKey);
         }
     }, // pointToLayer()
+
 
         // PURPOSE: Bind controls for each Marker
     onEachFeature: function(feature, layer)
@@ -465,12 +524,13 @@ var dhpMapsView = {
             jQuery(action).addClass('active-legend');
             jQuery(action).show();
 
+                // Have to do extra check in case we are just switching out layer sliders
             if (newLegend !== dhpMapsView.currentLegend) {
                     // Update the markers to show on map
                 dhpMapsView.switchFilter(newLegend);
                 dhpMapsView.dhpUpdateSize();
 
-                    // Change active menu item
+                    // Change active menu item in navbar drop-down
                 jQuery('.legend-dropdown > .active').removeClass('active');
                 jQuery(target).parent().addClass('active');
 
@@ -527,97 +587,15 @@ var dhpMapsView = {
         dhpMapsView.catFilterSelect = selCatFilter;
     }, // findSelectedCats()
 
+
         // PURPOSE: Create HTML for all of the legends for this visualization
         // INPUT:   legendList = array of legends to display; each element has field "name" and array "terms" of [id, name, icon_url ]
     createLegends: function(legendList) 
     {
-        var legendHtml;
-        var legendHeight;
-
-            // Build Legend controls on the right (category toggles) for each legend value and insert Legend name into dropdown above
-        _.each(legendList, function(theLegend, legIndex) {
-            var filterTerms = theLegend.terms;
-            var legendName = theLegend.name;
-
-                // "Root" DIV for this particular Legend
-            legendHtml = jQuery('<div class="'+legendName+' legend-div" id="term-legend-'+legIndex+
-                            '"><div class="legend-title">'+legendName+'</div><div class="terms"></div></div>');
-                // Create entries for all of the 1st-level terms (do not represent children of terms)
-            _.each(filterTerms, function(theTerm) {
-                if (legendName !== theTerm.name) {
-                    var hasParentClass = '';
-                    if(theTerm.parent) {
-                        hasParentClass = 'hasParent';
-                    }
-                    if (theTerm.icon_url == null || theTerm.icon_url == undefined) {
-                        throw new Error("Legend value "+theTerm.name+" has not been assigned a color or icon");
-                    }
-                    var firstIconChar = theTerm.icon_url.substring(0,1);
-                    var htmlStr;
-                    switch (firstIconChar) {
-                    case '#':
-                        htmlStr = '<div class="small-3 large-2 columns" style="background:'+
-                            theTerm.icon_url+'"><input type="checkbox" checked="checked"></div>';
-                        break;
-                    case '.':
-                        htmlStr = '<div class="small-2 large-1 columns"><div class="maki-icon '+
-                            theTerm.icon_url.substring(1)+'"></div></div><input type="checkbox" checked="checked">';
-                        break;
-                    default:
-                            // TO DO: Support uploaded images!
-                        // icon = 'background: url(\''+theTerm.icon_url+'\') no-repeat right; background-size: 50%;';
-                        throw new Error('Unknown visual feature: '+theTerm.icon_url);
-                    }
-
-                        // Append new legend value to menu according to type
-                    jQuery('.terms', legendHtml).append('<div class="row compare '+hasParentClass+'">'+htmlStr+
-                                                    '<div class="small-9 large-10 columns"><a class="value" data-id="'+
-                                                    theTerm.id+'" data-parent="'+theTerm.parent+'">'+theTerm.name+'</a></div></div>');
-                }
-            });
-            jQuery('.terms',legendHtml).prepend(Handlebars.compile(jQuery("#dhp-script-map-legend-hideshow").html()));
-
-            jQuery('#legends .legend-row').append(legendHtml);
-                // Add Legend title to dropdown menu in navbar -- make 1st Legend active by default
-            var active = (legIndex == 0) ? ' class="active"' : '';
-            jQuery('.dhp-nav .legend-dropdown').append('<li'+active+'><a href="#term-legend-'+legIndex+'">'+legendName+'</a></li>');         
-        });
-            // Update checkbox height(varies by theme/browser) 
-        dhpMapsView.checkboxHeight = jQuery('#legends').find('input:checkbox').height();
-
-            //Initialize new foundation elements
-        jQuery(document).foundation();
-
-            // Handle resizing Legend (min/max)
-        jQuery('#legends').prepend('<a class="legend-resize btn pull-right" href="#" alt="mini"><i class="fi-arrows-compress"></i></a>');
-        if(!jQuery('body').hasClass('isMobile')) {
-            jQuery('.legend-resize').hide();
-            jQuery('#legends').hover(function(){
-                jQuery('.legend-resize').fadeIn(100);
-            },
-            function() {
-                jQuery('.legend-resize').fadeOut(100);
-            });
-        }
-
-            // Add legend hide/show action
-        jQuery('.legend-resize').on('click', function(){
-            if(jQuery('#legends').hasClass('mini')) {
-                jQuery('#legends').animate({ height: legendHeight },
-                    500,
-                    function() {
-                        jQuery('#legends').removeClass('mini');
-                    });
-            } 
-            else {
-                legendHeight = jQuery('#legends').height();
-                jQuery('#legends').addClass('mini');                
-                jQuery('#legends').animate({ height: 37 }, 500 );
-            }
-        });
+        dhpServices.createLegends(legendList, 'Layer Controls');
 
             // Handle user selection of value name from current Legend
-        jQuery('#legends div.terms .row a').on('click', function(event) {
+        jQuery('#legends div.terms .row a').click(function(event) {
             var spanName = jQuery(this).data('id');
 
                 // "Hide/Show all" button
@@ -635,8 +613,8 @@ var dhpMapsView = {
                 jQuery(this).closest('.row').addClass('selected');
                 jQuery(this).closest('.row').find('input').prop('checked', true);
 
-                    //child terms are now hidden in legend. This selects them if parent is checked
-                if(dhpMapsView.useParent) {
+                    // Child terms are hidden in menu -- selects them also automatically if parent is checked
+                if (dhpMapsView.useParent) {
                     jQuery('.active-legend .terms .row').find('*[data-parent="'+spanName+'"]').each(function( index ) {
                         jQuery( this ).closest('.row').find('input').prop('checked',true);
                     }); 
@@ -647,7 +625,7 @@ var dhpMapsView = {
         });
 
             // Handle user selection of checkbox from current Legend
-        jQuery('#legends div.terms input').on('click', function(event) {
+        jQuery('#legends div.terms input').click(function(event) {
             var checkAll = jQuery(this).closest('.row').hasClass('check-all');
             var boxState = jQuery(this).prop('checked');
             var spanName = jQuery(this).closest('.row').find('a').data('id');
@@ -668,13 +646,6 @@ var dhpMapsView = {
             }
             dhpMapsView.refreshMarkerLayer();
         });
-            // Add Layers to legends
-        jQuery('#legends .legend-row').append('<div class="legend-div" id="layers-panel"><div class="legend-title">Layer Controls</div></div>');
-        jQuery('.legend-div').hide();
-
-            // Show Legend 0 by default
-        jQuery('#term-legend-0').show();
-        jQuery('#term-legend-0').addClass('active-legend');
 
             // Handle selection of different Legends from navbar
         jQuery('.dhp-nav .legend-dropdown a').click(function(evt) {
@@ -717,7 +688,6 @@ var dhpMapsView = {
         });
 
           // Show initial Legend selection and show it as active on the menu
-        dhpMapsView.slidersShowing = false;
         dhpMapsView.catFilter = legendList[0];
         dhpMapsView.currentLegend = legendList[0].name;
         dhpMapsView.slidersShowing = false;
@@ -744,13 +714,13 @@ var dhpMapsView = {
 
                 // Don't create checkbox or opacity slider for Blank layer
             if (thisLayer.options.layerName != 'Blank') {
-                jQuery('#layers-panel').append('<div class="layer'+index+'">'+
-                    '<div class="row"><div class="columns small-12 large-12"><input type="checkbox" checked="checked"> '+
-                    '<a class="value" id="'+thisLayer.options.id+'">'+label+'</a></div></div>'+
-                    '<div class="row"><div class="columns small-12 large-12"><div class="layer-opacity"></div></div></div>'+
+                jQuery('#layers-panel').append('<div class="layer-set" id="layer'+index+'">'+
+                    '<div><input type="checkbox" checked="checked"> '+
+                    '<a class="value" id="'+thisLayer.options.id+'">'+label+'</a></div>'+
+                    '<div><div class="layer-opacity"></div></div>'+
                     '</div>');
 
-                jQuery('.layer'+index+' .layer-opacity').slider({
+                jQuery('#layer'+index+' .layer-opacity').slider({
                     range: false,
                     min: 0,
                     max: 1,
@@ -761,7 +731,7 @@ var dhpMapsView = {
                     }
                 });
                     // Handle turning on and off map layer
-                jQuery( '.layer'+index+' input').click(function() {
+                jQuery( '#layer'+index+' input').click(function() {
                     if(jQuery(this).is(':checked')) {
                         dhpMapsView.mapLeaflet.addLayer(thisLayer);
                     } else {
@@ -771,6 +741,7 @@ var dhpMapsView = {
             }
         });
     }, // buildLayerControls()
+
 
         // PURPOSE: Callback to handle user setting of opacity slider
         // NOTES:   Opacity setting will only work for Circle (< Path) markers, not icons
@@ -792,69 +763,13 @@ var dhpMapsView = {
         // ASSUMES: currentFeature is set for reason noted above
     onFeatureSelect: function(e)
     {
-        dhpMapsView.callBacks.showMarkerModal(dhpMapsView.currentFeature);
+        dhpServices.showMarkerModal(dhpMapsView.currentFeature);
     }, // onFeatureSelect()
 
         // PURPOSE: Resizes map-specific elements when browser size changes
     dhpUpdateSize: function()
     {
-        var newRowHeight, checkboxMargin;
-
-            //resize legend term position for long titles
-        jQuery('.active-legend .terms').css({top: jQuery('.active-legend .legend-title').height() });
-
-            //resize legend items that are two lines and center checkbox
-        jQuery('.active-legend .row').each(function(key,value) {
-                //height of row containing text(could be multiple lines)
-            newRowHeight   = jQuery('.columns', this).eq(1).height();
-                // variable to center checkbox in row
-            checkboxMargin = (newRowHeight - dhpMapsView.checkboxHeight) / 2;
-                // set elements in rows with new values
-            jQuery('.columns', this).eq(0).height(newRowHeight);
-            jQuery('.columns', this).eq(0).find('input').css({'margin-top': checkboxMargin});
-        });
-
-            // TO DO: Resize layer opacity DIVs??
-
             // This is an Leaflet function to redraw the markers after map resize
         dhpMapsView.mapLeaflet.invalidateSize();
-    }, // dhpUpdateSize()
-
-        // RETURNS: true if touch is supported (and hence no mouse)
-    isTouchDevice: function() {
-        // var msTouchEnabled = window.navigator.msMaxTouchPoints;
-        // var generalTouchEnabled = "ontouchstart" in document.createElement("div");
-
-        // if (msTouchEnabled || generalTouchEnabled) {
-        //     return true;
-        // }
-        // return false;
-        return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
-    },
-
-        // PURPOSE: Get markers associated with projectID via AJAX, insert into mLayer of map
-    loadMapMarkers: function()
-    {
-    	jQuery.ajax({
-            type: 'POST',
-            url: dhpMapsView.ajaxURL,
-            data: {
-                action: 'dhpGetMarkers',
-                project: dhpMapsView.projectID,
-                index: dhpMapsView.vizIndex
-            },
-            success: function(data, textStatus, XMLHttpRequest)
-            {
-                dhpMapsView.createDataObjects(JSON.parse(data));
-                    // Remove Loading modal
-                dhpMapsView.callBacks.remLoadingModal();
-                jQuery('.reveal-modal-bg').remove();
-            },
-            error: function(XMLHttpRequest, textStatus, errorThrown)
-            {
-               alert(errorThrown);
-            }
-        });
-    } // loadMapMarkers()
-
+    } // dhpUpdateSize()
 };

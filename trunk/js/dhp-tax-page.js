@@ -25,11 +25,10 @@ jQuery(document).ready(function($) {
 
         // Check to see if this is a transcript taxonomy
 	if (isTranscript) {
-        dhpTranscript.initialize();
+        dhpWidget.initialize();
 
-        dhpTranscript.prepareTaxTranscript(ajax_url, project_id, ".dhp-transcript-content", taxTerm.taxonomy, taxTerm.slug);
+        dhpWidget.prepareTaxTranscript(ajax_url, project_id, ".dhp-transcript-content", taxTerm.taxonomy, taxTerm.slug);
 	}
-
 
         // Load specified mote data for each Marker via AJAX
     $('.dhp-post').each(function() {
@@ -121,52 +120,4 @@ jQuery(document).ready(function($) {
             }
         });
     } // loadMeta()
-
-        // find tallest div.row in transcript and set container max-height 40px larger. Default is max 300px
-        // TO DO:  Replace _.each() with _.find()
-    // function searchForMaxHeight(elements) {
-    //     var maxHeight = 0;
-    //     _.each(elements, function(val){ 
-    //         if($(val).height()>maxHeight){
-    //             maxHeight = $(val).height();
-    //         }
-    //     });
-    //     if(maxHeight>400) {
-    //         maxHeight = 400;
-    //     }
-    //     $('.transcript-list').css({'min-height': maxHeight+40});
-    // }
-
-
-        // PURPOSE: Given position in milliseconds, find and highlight tag corresponding to play position
-        // ASSUMES: tcArray has been compiled, contains 1 entry at end beyond # of "playheads"
-    // function hightlightTranscriptLine(millisecond){
-    //     var match;
-    //     _.find(tcArray, function(val, index){
-    //         match = (millisecond < tcArray[index+1]);
-    //         if (match) {
-    //             if(rowIndex!==index) {
-    //                 rowIndex      = index;
-    //                 var topDiff   = $('.transcript-list div.type-timecode').eq(index).offset().top - $('.transcript-list').offset().top;
-    //                 var scrollPos = $('.transcript-list').scrollTop() +topDiff;
-
-    //                 $('.transcript-list').animate({
-    //                    scrollTop: scrollPos
-    //                 }, 500);
-    //                 $('.transcript-list div.type-timecode').removeClass('current-clip');
-    //                 $('.transcript-list div.type-timecode').eq(index).addClass('current-clip');
-    //             }
-    //             return match;
-    //         } 
-    //     });
-    // }
-
-    // function categoryColors(element,color){
-    //     _.each($('.type-timecode'), function(val,index) {
-    // 		var someText = $(val).html().replace(/(\r\n|\n|\r)/gm,"");
-    // 		if(someText=='[00:00:16.19]') {
-    // 			$(val).css('background-color', '#ccc');
-    // 		}
-    // 	});
-    // }
 });

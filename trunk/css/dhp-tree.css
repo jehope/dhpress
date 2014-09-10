@@ -1,0 +1,57 @@
+/** CSS styles specific to Tree visualization in DH Press
+ **/
+
+@charset "UTF-8";
+
+body {
+}
+
+.hide {
+	display: hidden;
+}
+
+    /* MAJOR DIV CONTAINERS ======================= */
+
+    /* Enable scroll bar in case background image is too large */
+#dhp-tree {
+/*    z-index: 1000; */
+    position: relative;
+    top: 50px;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+#dhp-tree svg {
+/*    z-index: 1000; */
+    background: #C0C0C0;
+    border: 1px solid #000;
+}
+
+    /* SVG MARKER ELEMENTS ============================ */
+
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.node {
+  font: 10px sans-serif;
+}
+
+.link {
+  fill: none;
+  stroke: #6699CC;
+  stroke-width: 1.5px;
+}
+
+    /* The dial for depthtrees */
+path.arc {
+  cursor: move;
+  fill: #fff;
+}
+
+.wheel {
+  stroke: black;
+  stroke-width: 1px;
+}

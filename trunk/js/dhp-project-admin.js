@@ -36,6 +36,7 @@ jQuery(document).ready(function($) {
           },
           transcript: {
             audio: 'disable',
+            video: 'disable',
             transcript: 'disable',
             transcript2: 'disable',
             timecode: 'disable',
@@ -45,9 +46,11 @@ jQuery(document).ready(function($) {
         }
     };
 
-    // Parameters passed via localization
+    // Parameters passed by WordPress via localization
   var ajax_url     = dhpDataLib.ajax_url;
   var projectID    = dhpDataLib.projectID;
+  var pngImages    = dhpDataLib.pngImages;
+
 
     // Parameters passed via HTML elements
     // Need to ensure encoded as arrays (not Object properties) and handle empty params
@@ -82,7 +85,8 @@ jQuery(document).ready(function($) {
 //===================================== UTILITIES ===================================
 
     // PURPOSE: Ensure that data is returned as array
-    // NOTES:   This is necessary because of irregular JSON encoding: sometimes array is encoded as Object properties
+    // NOTES:   This was necessary because of irregular JSON encoding in DH Press 1.X:
+    //            sometimes array was encoded as Object properties; shouldn't be needed now.
   function normalizeArray(data) {
     if (_.isArray(data)) {
       return data;
@@ -148,7 +152,7 @@ jQuery(document).ready(function($) {
   } // MapEntryPoint()
 
 
-    // Class constructor for Entry Point
+    // Class constructor for Cards Entry Point
   var CardsEntryPoint = function(epSettings) {
     var self = this;
 
@@ -178,6 +182,73 @@ jQuery(document).ready(function($) {
     });
   } // CardsEntryPoint()
 
+
+    // Class constructor for Pinboard Entry Point
+  var PinboardEntryPoint = function(epSettings) {
+    var self = this;
+
+    self.type = 'pinboard';
+    self.label= ko.observable(epSettings.label || 'name me');
+    self.settings = { };
+    self.settings.imageURL = ko.observable(epSettings.settings.imageURL);
+    self.settings.width = ko.observable(epSettings.settings.width);
+    self.settings.height = ko.observable(epSettings.settings.height);
+    self.settings.size = ko.observable(epSettings.settings.size);
+    self.settings.icon = ko.observable(epSettings.settings.icon);
+    self.settings.coordMote = ko.observable(epSettings.settings.coordMote);
+    self.settings.animscript = ko.observable(epSettings.settings.animscript);
+    self.settings.animSVG = ko.observable(epSettings.settings.animSVG);
+    self.settings.ytvcode = ko.observable(epSettings.settings.ytvcode);
+
+    self.settings.legends = ko.observableArray();
+    ko.utils.arrayForEach(normalizeArray(epSettings.settings.legends), function(theLegend) {
+      self.settings.legends.push(new ArrayString(theLegend));
+    });
+    self.settings.layers = ko.observableArray();
+    ko.utils.arrayForEach(normalizeArray(epSettings.settings.layers), function(theLayer) {
+      self.settings.layers.push(new PinLayer(theLayer));
+    });
+  } // PinboardEntryPoint()
+
+
+    // Class constructor for Tree Entry Point
+  var TreeEntryPoint = function(epSettings) {
+    var self = this;
+
+    self.type = 'tree';
+    self.label= ko.observable(epSettings.label || 'name me');
+    self.settings = { };
+    self.settings.form = ko.observable(epSettings.settings.form);
+    self.settings.width = ko.observable(epSettings.settings.width);
+    self.settings.height = ko.observable(epSettings.settings.height);
+    self.settings.head = ko.observable(epSettings.settings.head);
+    self.settings.children = ko.observable(epSettings.settings.children);
+    self.settings.label = ko.observable(epSettings.settings.label);
+    self.settings.fSize = ko.observable(epSettings.settings.fSize);
+    self.settings.radius = ko.observable(epSettings.settings.radius);
+    self.settings.padding = ko.observable(epSettings.settings.padding);
+    self.settings.color = ko.observable(epSettings.settings.color);
+  } // TreeEntryPoint()
+
+
+    // Class constructor for Timeline Entry Point
+  var TimeEntryPoint = function(epSettings) {
+    var self = this;
+
+    self.type = 'time';
+    self.label= ko.observable(epSettings.label || 'name me');
+    self.settings = { };
+    self.settings.date = ko.observable(epSettings.settings.date);
+    self.settings.color = ko.observable(epSettings.settings.color);
+    self.settings.label = ko.observable(epSettings.settings.label);
+    self.settings.bandHt = ko.observable(epSettings.settings.bandHt);
+    self.settings.wAxisLbl = ko.observable(epSettings.settings.wAxisLbl);
+    self.settings.from = ko.observable(epSettings.settings.from);
+    self.settings.to = ko.observable(epSettings.settings.to);
+    self.settings.openFrom = ko.observable(epSettings.settings.openFrom);
+    self.settings.openTo = ko.observable(epSettings.settings.openTo);
+  } // TimeEntryPoint()
+
     // Create new "blank" layer to store in Map entry point
     // NOTES: opacity is the only property that needs double binding
   var MapLayer = function(theLayer) {
@@ -200,6 +271,14 @@ jQuery(document).ready(function($) {
     self.layerID = layerID;
   } // MapOption()
 
+    // Create new "blank" layer to store in Pinboard entry point
+  var PinLayer = function(theLayer) {
+    var self = this;
+
+    self.label = ko.observable(theLayer.label);
+    self.file  = ko.observable(theLayer.file);
+  } // PinLayer()
+
 
 //=================================== MAIN OBJECT ===================================
 
@@ -209,7 +288,7 @@ jQuery(document).ready(function($) {
   var ProjectSettings = function(allCustomFields, allMapLayers) {
     var self = this;
 
-      // Need to copy into separate arrays according to Base and Overlay
+      // Need to copy map layers into separate arrays according to Base and Overlay
     self.baseLayers = [ ];
     self.overLayers = [ ];
 
@@ -265,7 +344,7 @@ jQuery(document).ready(function($) {
       projSettings.general.homeLabel = self.edHomeBtnLbl();
       projSettings.general.homeURL = self.edHomeURL();
 
-      projSettings['motes'] = [];
+      projSettings.motes = [];
       ko.utils.arrayForEach(self.allMotes(), function(theMote) {
         var savedMote = {};
         savedMote.name    = theMote.name;
@@ -337,6 +416,56 @@ jQuery(document).ready(function($) {
             savedEP.settings.sortMotes.push(sMote.name());
           });
           break;
+
+        case 'pinboard':
+          savedEP.settings.imageURL = theEP.settings.imageURL();
+          savedEP.settings.width = theEP.settings.width();
+          savedEP.settings.height = theEP.settings.height();
+          savedEP.settings.size = theEP.settings.size();
+          savedEP.settings.icon = theEP.settings.icon();
+          savedEP.settings.coordMote = theEP.settings.coordMote();
+          savedEP.settings.animscript = theEP.settings.animscript();
+          savedEP.settings.animSVG = theEP.settings.animSVG();
+          savedEP.settings.ytvcode = theEP.settings.ytvcode();
+
+          savedEP.settings.legends = [];
+          ko.utils.arrayForEach(theEP.settings.legends(), function(theLegend) {
+            savedEP.settings.legends.push(theLegend.name());
+          });
+          savedEP.settings.layers = [];
+            // Create a layer object for each layer to save
+          ko.utils.arrayForEach(theEP.settings.layers(), function(theLayer) {
+            var savedLayer = {};
+            savedLayer.label = theLayer.label();
+            savedLayer.file  = theLayer.file();
+            savedEP.settings.layers.push(savedLayer);
+          });
+          break;
+
+        case 'tree':
+          savedEP.settings.form = theEP.settings.form();
+          savedEP.settings.width = theEP.settings.width();
+          savedEP.settings.height = theEP.settings.height();
+          savedEP.settings.head = theEP.settings.head();
+          savedEP.settings.children = theEP.settings.children();
+          savedEP.settings.label = theEP.settings.label();
+          savedEP.settings.fSize = theEP.settings.fSize();
+          savedEP.settings.radius = theEP.settings.radius();
+          savedEP.settings.padding = theEP.settings.padding();
+          savedEP.settings.color = theEP.settings.color();
+          break;
+
+        case 'time':
+          savedEP.settings.date  = theEP.settings.date();
+          savedEP.settings.color = theEP.settings.color();
+          savedEP.settings.label = theEP.settings.label();
+          savedEP.settings.bandHt = theEP.settings.bandHt();
+          savedEP.settings.wAxisLbl = theEP.settings.wAxisLbl();
+          savedEP.settings.from = theEP.settings.from();
+          savedEP.settings.to = theEP.settings.to();
+          savedEP.settings.openFrom = theEP.settings.openFrom();
+          savedEP.settings.openTo = theEP.settings.openTo();
+          break;
         } // switch ep type
         projSettings.eps.push(savedEP);
       }); // for each EP
@@ -374,6 +503,7 @@ jQuery(document).ready(function($) {
 
       projSettings.views.transcript = {};
       projSettings.views.transcript.audio = self.edTrnsAudio();
+      projSettings.views.transcript.video = self.edTrnsVideo();
       projSettings.views.transcript.transcript = self.edTrnsTransc();
       projSettings.views.transcript.transcript2 = self.edTrnsTransc2();
       projSettings.views.transcript.timecode = self.edTrnsTime();
@@ -445,6 +575,15 @@ jQuery(document).ready(function($) {
     self.coordMoteNames = ko.computed(function() {
       return doGetMoteNames(['Lat/Lon Coordinates']);
     }, self);
+    self.xyMoteNames = ko.computed(function() {
+      return doGetMoteNames(['X-Y Coordinates']);
+    }, self);
+    self.pointerMoteNames = ko.computed(function() {
+      return doGetMoteNames(['Pointer']);
+    }, self);
+    self.dateMoteNames = ko.computed(function() {
+      return doGetMoteNames(['Date']);
+    }, self);
     self.stMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text']);
     }, self);
@@ -454,26 +593,33 @@ jQuery(document).ready(function($) {
     self.transcMoteNames = ko.computed(function() {
       return doGetMoteNames(['Transcript'], true);
     }, self);
+    self.ytMoteNames = ko.computed(function() {
+      return doGetMoteNames(['YouTube'], true);
+    }, self);    
     self.tstMoteNames = ko.computed(function() {
       return doGetMoteNames(['Timestamp']);
     }, self);
-    // self.link2MoteNames = ko.computed(function() {
-    //   return doGetMoteNames(['Link To']. true);
-    // }, self);
     self.imageMoteNames = ko.computed(function() {
       return doGetMoteNames(['Image'], true);
     }, self);
     self.soundMoteNames = ko.computed(function() {
       return doGetMoteNames(['SoundCloud'], true);
     }, self);
+      // Any textual value, including the_title and the_content (but not 'disable')
     self.anyTxtMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text', 'Long Text'], false, true, true);
     }, self);
+      // Any textual value, including the_title, the_content and 'disable'
     self.anyTxtDMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text', 'Long Text'], true, true, true);
     }, self);
+      // Any value that can be displayed as content
     self.contentMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text', 'Long Text', 'Image'], false, true, true);
+    }, self);
+      // Any mote value that can be processed via sorting and filtering
+    self.compMoteNames = ko.computed(function() {
+      return doGetMoteNames(['Short Text', 'Long Text', 'Date'], false, false, false);
     }, self);
 
       // Methods
@@ -571,6 +717,20 @@ jQuery(document).ready(function($) {
                 theEP.settings.filterMotes.remove(function(mote) { return mote.name() === moteName; });
                 theEP.settings.sortMotes.remove(function(mote) { return mote.name() === moteName; });
                 break;
+              case 'pinboard':
+                if (theEP.settings.coordMote() == moteName) { theEP.settings.coordMote(''); }
+                theEP.settings.legends.remove(function(mote) { return mote.name() === moteName; });
+                break;
+              case 'tree':
+                if (theEP.settings.children() == moteName) {  theEP.settings.children(''); }
+                if (theEP.settings.label() == moteName) {  theEP.settings.label(''); }
+                if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
+                break;
+              case 'time':
+                if (theEP.settings.date() == moteName) {  theEP.settings.date(''); }
+                if (theEP.settings.label() == moteName) {  theEP.settings.label(''); }
+                if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
+                break;
               }
             });
 
@@ -585,6 +745,7 @@ jQuery(document).ready(function($) {
             self.taxMoteList.remove(function(mote) { return mote.name() === moteName; });
 
             if (self.edTrnsAudio()  == moteName)  { self.edTrnsAudio('disable'); }
+            if (self.edTrnsVideo()  == moteName)  { self.edTrnsVideo('disable'); }
             if (self.edTrnsTransc() == moteName)  { self.edTrnsTransc('disable'); }
             if (self.edTrnsTransc2() == moteName) { self.edTrnsTransc2('disable'); }
             if (self.edTrnsTime()  == moteName)   { self.edTrnsTime(''); }
@@ -660,7 +821,7 @@ jQuery(document).ready(function($) {
     }; // editMote()
 
 
-      // PURPOSE: Handle user selection to configure associations of legend category: color, Maki icon, or image
+      // PURPOSE: Handle user selection to configure associations of legend category: color, Maki icon, or PNG icon
       // INPUT:   theMote = Mote data structure
       //          event = JS event for button
       // NOTES:   Need to have large fixed width to accommodate category legend data, loaded asynchronously
@@ -678,8 +839,8 @@ jQuery(document).ready(function($) {
       //          Do not store visual data in data- attributes since they cannot be rewritten dynamically:
       //            http://www.learningjquery.com/2011/09/using-jquerys-data-apis/
     self.configCat = function(theMote, event) {
-        // Whether we seem to be using icons or colors in this legend
-      var useIcons=false;
+        // Default visualization type for this Legend #=color, .=maki-icon, @=PNGImage
+      var defVizType='colors';
         // The taxonomic ID of the head term of the Legend
       var headTermID;
 
@@ -688,6 +849,16 @@ jQuery(document).ready(function($) {
         // Make sure wait message is visible
       $('#mdl-config-cat .wait-message').removeClass('hide');
       $('#mdl-config-cat-title').text('Legend configuration for '+theMote.name);
+
+        // Make sure it is initially enabled
+      $('#add-new-term').button({ disabled: false });
+
+        // Are there any user-defined PNG image icons?
+      if (pngImages.length > 0) {
+        $('#mdl-config-cat #use-png').prop('disabled', false);
+      } else {
+        $('#mdl-config-cat #use-png').prop('disabled', true);
+      }
 
       var newModal = $('#mdl-config-cat');
       newModal.dialog({
@@ -742,13 +913,13 @@ jQuery(document).ready(function($) {
               }
             }
           ]
-      }); // configCat()
+      }); // newModal.dialog
 
         // RETURNS: Color in hex format
         // NOTES:   jQuery converts color values to rgb() even if given as hex
         //          DH Press display code assumes in hex format beginning with '#'
       function formatColor(colorStr) {
-        if (colorStr.substring(0,1)=='#') {
+        if (colorStr.charAt(0)=='#') {
           return colorStr;
         }
           // Error in format -- return black
@@ -793,31 +964,48 @@ jQuery(document).ready(function($) {
           } else if ($(domItem).hasClass('maki-icon')) {
             return getIconClass(domItem);
           } else {
-            return '';
+            return '@'+$(domItem).attr('alt');
           }
-            // newItem.icon_url = $(htmlItem).attr('src');    // if images are added
       } // getVizData()
 
+        // PURPOSE: Find the URL for the icon
+      function getPNGSrc(iconName) {
+        var pngItem;
+        if (iconName === 'null') {
+          return '#';
+        }
+        pngItem = ko.utils.arrayFirst(pngImages, function(thePNG) {
+          return iconName === thePNG.title;
+        });
+        return (pngItem === null) ? '#' : pngItem.url;
+      } // getPNGSrc()
+
           // PURPOSE: Create HTML string for visual data according to format
-          // NOTES:   If setDefault, set useIcons default according to data we're parsing
+          // NOTES:   If setDefault, set defVizType default according to data we're parsing
       function getVizHTML(vizData, setDefault) {
           // Color patch is default
         if (vizData == null || vizData=='') {
-          if (setDefault) { useIcons=false; }
+          if (setDefault) { defVizType='colors'; }
           return '<div class="viz-div color-box" style="background-color: #888888"></div>';
-        } else if (vizData.substring(0,1)=='#') {
-          if (setDefault) { useIcons=false; }
+        }
+
+        switch (vizData.charAt(0)) {
+        case '#':
+          if (setDefault) { defVizType='colors'; }
           return '<div class="viz-div color-box" style="background-color:'+vizData+'"></div>';
-        } else if (vizData.substring(0,1)== '.') {
-          if (setDefault) { useIcons=true; }
+        case '.':
+          if (setDefault) { defVizType='icons'; }
             // We need to ignore the leading '.' of classname
           return '<div class="viz-div maki-icon '+vizData.substring(1)+'"></div>';
+        case '@':
+          if (setDefault) { defVizType='pngs'; }
+          return '<img class="viz-div" alt="'+vizData.substring(1)+'" src="'+getPNGSrc(vizData.substring(1))+'"/>';
 
           // Need to handle no data or incorrectly formatted data -- just make it an empty div
-        } else {
+        default:
+          if (setDefault) { defVizType='colors'; }
           return '<div class="viz-div"></div>';
         }
-          // return '<img class="viz-div" src="'+vizData+'"/>';     // can use for uploaded image selections
       } // getVizHTML()
 
         // FUNCTION: Create default visualization data based on current setting of icons-vs-color radio buttons
@@ -832,6 +1020,15 @@ jQuery(document).ready(function($) {
           break;
         case 'colors':
           vizObj.data = '#888888';
+          break;
+        case 'pngs':
+          var pngName;
+          if (pngImages.length) {
+            pngName = pngImages[0]['title'];
+          } else {
+            pngName = 'null';
+          }
+          vizObj.data = '@'+pngName;
           break;
         }
         vizObj.html=getVizHTML(vizObj.data, false);
@@ -850,7 +1047,8 @@ jQuery(document).ready(function($) {
           // which modal to use depends on setting of "viz-type-setting" radio button
         var useSetting = $('input[name="viz-type-setting"]:checked').val();
 
-        if (useSetting === 'icons') {
+        switch (useSetting) {
+        case 'icons':
             // Replace current viz type with icon if necessary
           var iconListDiv = $('.maki-icon:first', selLegDiv);
           if (iconListDiv.length == 0) {
@@ -897,7 +1095,7 @@ jQuery(document).ready(function($) {
           $('#mdl-select-icon #select-icon-list').off('click');
           $('#mdl-select-icon #select-icon-list').click(function(evt) {
               // Did user select an icon?
-            targetIcon = $(evt.target).closest(".maki-icon");
+            var targetIcon = $(evt.target).closest(".maki-icon");
                 // If none found (selected outside one), abort
             if (targetIcon == null || targetIcon == undefined) {
                 return;
@@ -912,9 +1110,10 @@ jQuery(document).ready(function($) {
           });
 
           newModal.dialog('open');
+          break;
 
-        } else {
-            // Replace icon with color-box if necessary
+        case 'colors':
+            // Replace with color-box if necessary
           var colorBoxDiv = $('.color-box', selLegDiv);
           if (colorBoxDiv.length == 0) {
             $('.viz-div:first', liElement).remove();
@@ -940,7 +1139,77 @@ jQuery(document).ready(function($) {
 
           colorPickModal.colorpicker('setColor', initColor);
           colorPickModal.colorpicker('open');
-        }
+          break;
+
+        case 'pngs':
+            // Replace with png image if necessary
+          var pngBoxDiv = $('img', selLegDiv);
+          if (pngBoxDiv.length == 0) {
+            $('.viz-div:first', liElement).remove();
+            $('.select-legend:first', liElement).append(getVizHTML(null, false));
+            pngBoxDiv = $('img', selLegDiv);
+          }
+          var initTitle = $(pngBoxDiv).attr('alt');
+
+          $('#mdl-select-png-title').text('Select PNG image for '+moteName);
+          var newModal = $('#mdl-select-png');
+          newModal.dialog({
+              width: 342,
+              height: 300,
+              modal : true,
+              autoOpen: false,
+              dialogClass: 'wp-dialog',
+              draggable: false,
+              buttons: [
+                {
+                  text: 'Cancel',
+                  click: function() { $(this).dialog('close'); }
+                },
+                {
+                  text: 'Save',
+                  click: function() {
+                      // Determine selected icon
+                    var pngTitle = '@'+$('#mdl-select-png #select-png-list .selected').attr('alt');
+                      // Create new HTML indicating selection and replace old
+                    $('.viz-div:first', liElement).remove();
+                    $('.select-legend:first', liElement).append(getVizHTML(pngTitle, false));
+                    $(this).dialog('close');
+                  }
+                }
+              ]
+          });
+
+            // Build list of PNG images and insert into modal
+          $('#mdl-select-png #select-png-list').empty();
+          ko.utils.arrayForEach(pngImages, function(thePNG) {
+            var newHTML = '<li><img alt="'+thePNG.title+'" class="'+thePNG.title+'" src="'+thePNG.url+'"/></li>';
+            $('#select-png-list').append(newHTML);
+          });
+
+          $('#select-png-list .'+initTitle).addClass('selected');
+
+            // Remove any old binding for handling selection, bind this
+          $('#mdl-select-png #select-png-list').off('click');
+          $('#mdl-select-png #select-png-list').click(function(evt) {
+              // Did user select a PNG image?
+            var targetPNG = $(evt.target).closest("img");
+                // If none found (selected outside one), abort
+            if (targetPNG == null || targetPNG == undefined) {
+                return;
+            }
+            targetPNG = $(targetPNG).get(0);
+            if (targetPNG == null || targetPNG == undefined) {
+                return;
+            }
+              // Remove selected class from previous selection, add to new one
+            $('#select-png-list img').removeClass('selected');
+            $(targetPNG).addClass('selected');
+          });
+
+          newModal.dialog('open');
+
+          break;
+        } // switch assign type
       } // handleAssign()
 
 
@@ -1009,12 +1278,15 @@ jQuery(document).ready(function($) {
           // Bind code for all assignment buttons
         $('#category-tree .select-legend').click(handleAssign);
 
-          // Bind code to handle adding a new term
+          // Bind code to handle adding a new term (only once!)
+        $('#add-new-term').off('click');
         $('#add-new-term').click(function() {
           var newTerm = $('#ed-new-term').val();
+            // Only attempt if a term is given
           if (newTerm != null && newTerm != '') {
             var defaultViz = getDefaultViz();
             function insertNewTerm(newTermID) {
+              $('#add-new-term').button({ disabled: false });
                 // termID 0 is special error code
               if (newTermID) {
                   // Insert new item (without parent) at top of list, binding Assign code to section
@@ -1036,11 +1308,17 @@ jQuery(document).ready(function($) {
                 });
               }
             } // insertNewTerm()
-            dhpCreateTermInTax(newTerm, theMote.name, insertNewTerm);
-          }
+              // abort if the name already exists -- double adds sometimes happen: server hiccups?
+            var candidates=$('.dd-item[data-name="'+newTerm+'"]');
+            if (candidates.length < 1) {
+              $('#add-new-term').button({ disabled: true });
+              dhpCreateTermInTax(newTerm, theMote.name, insertNewTerm);
+            }
+          } // if new term
         });
 
           // Bind code to reset viz data
+        $('#viz-type-reset').off('click');
         $('#viz-type-reset').click(function() {
             // construct new default visualization data
           var defaultViz = getDefaultViz();
@@ -1056,8 +1334,9 @@ jQuery(document).ready(function($) {
         $('#category-tree').nestable( { maxDepth: 2 } );
 
           // Set default for icons / color
-        $('input:radio[value="icons"]').prop('checked', useIcons);
-        $('input:radio[value="colors"]').prop('checked', !useIcons);
+        $('input:radio[value="icons"]').prop('checked', defVizType === 'icons');
+        $('input:radio[value="colors"]').prop('checked', defVizType === 'colors');
+        $('input:radio[value="pngs"]').prop('checked', defVizType === 'pngs');
 
           // Remove wait message
         $('#mdl-config-cat .wait-message').addClass('hide');
@@ -1142,6 +1421,72 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new pinboard entry point
+    self.createPinEP = function() {
+      var _blankPinEP = {
+        type: 'pinboard',
+        label: 'name me',
+        settings: {
+          imageURL: '',
+          width: 500,
+          height: 500,
+          icon: 'circle',
+          size: 'm',
+          coordMote: '',
+          animscript: '',
+          animSVG: '',
+          ytvcode: '',
+          legends: [ ],
+          layers: [ ]
+        }
+      };
+      self.setEP(_blankPinEP);
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to create new pinboard entry point
+    self.createTreeEP = function() {
+      var _blankTreeEP = {
+        type: 'tree',
+        label: 'name me',
+        settings: {
+          form: '',
+          width: 1000,
+          height: 1000,
+          head: '',
+          children: '',
+          label: '',
+          fSize: '10',
+          radius: '4',
+          padding: '120',
+          color: ''
+        }
+      };
+      self.setEP(_blankTreeEP);
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to create new pinboard entry point
+    self.createTimeEP = function() {
+      var _blankTreeEP = {
+        type: 'time',
+        label: 'name me',
+        settings: {
+          date: '',
+          color: '',
+          label: '',
+          bandHt: '13',
+          wAxisLbl: '32',
+          from: '',
+          to: '',
+          openFrom: '',
+          openTo: ''
+        }
+      };
+      self.setEP(_blankTreeEP);
+      self.settingsDirty(true);
+    };
+
       // PURPOSE: Programmatically add an entry point to the settings (not via user interface)
     self.setEP = function(theEP) {
       var newEP;
@@ -1151,6 +1496,15 @@ jQuery(document).ready(function($) {
         break;
       case 'cards':
         newEP = new CardsEntryPoint(theEP);
+        break;
+      case 'pinboard':
+        newEP = new PinboardEntryPoint(theEP);
+        break;
+      case 'tree':
+        newEP = new TreeEntryPoint(theEP);
+        break;
+      case 'time':
+        newEP = new TimeEntryPoint(theEP);
         break;
       }
       self.entryPoints.push(newEP);
@@ -1184,6 +1538,12 @@ jQuery(document).ready(function($) {
         return 'ep-map-template';
       case 'cards':
         return 'ep-cards-template';
+      case 'pinboard':
+        return 'ep-pin-template';
+      case 'tree':
+        return 'ep-tree-template';
+      case 'time':
+        return 'ep-time-template';
       }
     }; // calcEPTemplate()
 
@@ -1212,7 +1572,7 @@ jQuery(document).ready(function($) {
     };
 
       // PURPOSE: Handle user selection to add map overlay
-    self.addLayer = function(theEP) {
+    self.addMapLayer = function(theEP) {
       var _blankLayer = {
         id: 0, name: '', opacity: 1, mapType: 'type-DHP', mapTypeId: 0
       };
@@ -1221,7 +1581,7 @@ jQuery(document).ready(function($) {
     };
 
       // PURPOSE: Handle user selection to remove map overlay
-    self.delLayer = function(theLayer, theEP, index) {
+    self.delMapLayer = function(theLayer, theEP, index) {
       theEP.settings.layers.splice(index, 1);
       self.settingsDirty(true);
     };
@@ -1274,6 +1634,32 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new pinboard legend
+    self.addPinLegend = function(theEP) {
+      theEP.settings.legends.push(new ArrayString(''));
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to create new pinboard legend
+    self.delPinLegend = function(theLegend, theEP, index) {
+      theEP.settings.legends.splice(index, 1);
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to add map overlay
+    self.addPinLayer = function(theEP) {
+      var _blankLayer = {
+        label: '', file: ''
+      };
+      theEP.settings.layers.push(new PinLayer(_blankLayer));
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to remove map overlay
+    self.delPinLayer = function(theLayer, theEP, index) {
+      theEP.settings.layers.splice(index, 1);
+      self.settingsDirty(true);
+    };
 
 //------------------------------------------ Views -----------------------------------------
 
@@ -1299,6 +1685,7 @@ jQuery(document).ready(function($) {
     self.taxMoteList = ko.observableArray([]);
 
     self.edTrnsAudio = ko.observable('');
+    self.edTrnsVideo = ko.observable('');
     self.edTrnsTransc = ko.observable('');
     self.edTrnsTransc2 = ko.observable('');
     self.edTrnsTime = ko.observable('');
@@ -1335,6 +1722,7 @@ jQuery(document).ready(function($) {
       });
 
       self.edTrnsAudio(disableByDefault(viewSettings.transcript.audio));
+      self.edTrnsVideo(disableByDefault(viewSettings.transcript.video));
       self.edTrnsTransc(disableByDefault(viewSettings.transcript.transcript));
       self.edTrnsTransc2(disableByDefault(viewSettings.transcript.transcript2));
       self.edTrnsTime(viewSettings.transcript.timecode);
@@ -1343,7 +1731,7 @@ jQuery(document).ready(function($) {
 
 
       // PURPOSE: Return list of possible modal links for select modal
-      // NOTES:   List contains all URL types and all Text motes that appear in Map legends and Card colors
+      // NOTES:   List contains all URL types and all Text motes that appear in EP legends
     self.getModalLinkNames = ko.computed(function() {
       var linkList = ['disable', 'marker'];
 
@@ -1361,6 +1749,7 @@ jQuery(document).ready(function($) {
       ko.utils.arrayForEach(self.entryPoints(), function(theEP) {
         switch(theEP.type) {
         case 'map':
+        case 'pinboard':
           ko.utils.arrayForEach(theEP.settings.legends(), function (filterMote) {
             var moteName = filterMote.name();
               // Don't add if it already exists
@@ -1370,6 +1759,8 @@ jQuery(document).ready(function($) {
           });
           break;
         case 'cards':
+        case 'tree':
+        case 'time':
           var colorName = theEP.settings.color();
           if (colorName && colorName !== '' && colorName !== 'disable') {
             if (linkList.indexOf(colorName) == -1) {
@@ -1654,6 +2045,8 @@ jQuery(document).ready(function($) {
       $('#runTests').button({ disabled: true });
       $('#testResults').empty();
 
+        // Check global-level settings --------------
+
         // Home URL but no label, or vice-versa?
       if ((self.edHomeBtnLbl() && self.edHomeBtnLbl() != '') || (self.edHomeURL() && self.edHomeURL() != '')) {
         if (self.edHomeBtnLbl() == '' || self.edHomeURL() == '') {
@@ -1670,45 +2063,135 @@ jQuery(document).ready(function($) {
           $('#testResults').append('<p>Your project will not work until you import Markers which are associated with this Project (by using this Project ID).</p>');
       }
 
+        // Check the settings of Mote definitions ---------
+
       if (self.allMotes().length == 0) {
           $('#testResults').append('<p>Your project will not work until you define some motes.</p>');
       }
+
+      ko.utils.arrayForEach(self.allMotes(), function(theMote) {
+        switch(theMote.type) {
+        case 'Pointer':
+          if (theMote.delim == '') {
+            $('#testResults').append('<p>Motes of type Pointer require a delimiter character; the Mote named '+
+                                  theMote.name+' has not yet been assigned a delimiter.</p>');
+          }
+          break;
+        case 'Lat/Lon Coordinates':
+          if (theMote.delim == ',') {
+            $('#testResults').append('<p>The comma has been assigned as the delimiter character for the Lat-Lon Coordinate Mote named '+
+                                  theMote.name+'; its use is reserved for separating Lat from Lon and cannot be used to form Polygons.</p>');
+          }
+          break;
+        } // switch()
+      }); // forEach(motes)
+
+        // Check the settings of Entry Points -----------
 
       if (self.entryPoints().length == 0) {
           $('#testResults').append('<p>Your project will not work until you create at least one entry point.</p>');
       }
 
-        // Have necessary settings been set for all entry points?
       ko.utils.arrayForEach(self.entryPoints(), function(theEP) {
+          // Report errors with help of this utility function
+        function epErrorMessage(errString) {
+          $('#testResults').append('<p>'+errString+' (entry point "'+theEP.label()+'").</p>');
+        }
           // Ensure that all EPs have labels if multiple EPs
         if (theEP.label() == '' && self.entryPoints().length > 1) {
-          $('#testResults').append('<p>You have an labeled entry point. If you have multiple entry points, they must all be named.</p>');
+          $('#testResults').append('<p>You have an unlabeled entry point. All multiple entry points must be named.</p>');
         }
         switch(theEP.type) {
         case 'map':
             // Do maps have at least one legend?
           if (theEP.settings.legends().length == 0) {
-            $('#testResults').append('<p>You have not yet added a legend to the Map entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You have not yet added a legend to the Map');
           }
           if (theEP.settings.coordMote() == '') {
-            $('#testResults').append('<p>You must specify the mote that will provide the coordinate for the Map entry point (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You must specify the mote that will provide the coordinate for the Map');
           }
           break;
         case 'cards':
           var colorName = theEP.settings.color();
           if (!colorName || colorName === 'disable') {
-            $('#testResults').append('<p>We recommend specifying a color legend for the Cards visualization, but none is provided (for the Cards given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('We recommend specifying a color legend for the Cards visualization, but none is provided');
           }
             // Do cards have at least one content mote?
           if (theEP.settings.content().length == 0) {
-            $('#testResults').append('<p>You haven\'t yet specified content for the Cards visualization (given the label "'+
-              theEP.label()+'").</p>');
+            epErrorMessage('You haven\'t yet specified content for the Cards visualization');
           }
           break;
-        }
+        case 'pinboard':
+            // Do pinboards have at least one legend?
+          if (theEP.settings.legends().length == 0) {
+            epErrorMessage('You have not yet added a legend to the Pinboard');
+          }
+          if (theEP.settings.coordMote() == '') {
+            epErrorMessage('You must specify the mote that will provide the coordinate for the Pinboard');
+          }
+          var w;
+          if (theEP.settings.width() == '' || isNaN(w=parseInt(theEP.settings.width(),10)) || w <= 0) {
+            epErrorMessage('You must specify a valid background image width for the Pinboard');
+          }
+          var h;
+          if (theEP.settings.height() == '' || isNaN(h=parseInt(theEP.settings.height(),10)) || h <= 0) {
+            epErrorMessage('You must specify a valid background image height for the Pinboard');
+          }
+          break;
+        case 'tree':
+          if (theEP.settings.head() == '') {
+            epErrorMessage('You must specify the head marker for the Tree');
+          }
+          if (theEP.settings.children() == '') {
+            epErrorMessage('You must specify the Pointer mote which indicates descending generations for the Tree');
+          }
+          if (theEP.settings.label() == '') {
+            epErrorMessage('You must specify the mote which provides node labels for the Tree');
+          }
+          var i;
+          if (theEP.settings.fSize() == '' || isNaN(i=parseInt(theEP.settings.fSize(),10)) || i <= 8) {
+            epErrorMessage('You must specify a valid font size for the Tree');
+          }
+          if (theEP.settings.width() == '' || isNaN(i=parseInt(theEP.settings.width(),10)) || i <= 20) {
+            epErrorMessage('You must specify a valid image width for the Tree');
+          }
+          if (theEP.settings.height() == '' || isNaN(i=parseInt(theEP.settings.height(),10)) || i <= 20) {
+            epErrorMessage('You must specify a valid image height for the Tree');
+          }
+          break;
+        case 'time':
+          if (theEP.settings.date() == '') {
+            epErrorMessage('You must specify the Date mote for the Timeline');
+          }
+          if (theEP.settings.color() == '') {
+            epErrorMessage('You must specify a color legend for the Timeline');
+          }
+          if (theEP.settings.label() == '') {
+            epErrorMessage('You must specify a color legend for the Timeline');
+          }
+          var i;
+          if (theEP.settings.bandHt() == '' || isNaN(i=parseInt(theEP.settings.bandHt(),10)) || i <= 8) {
+            epErrorMessage('You must specify a valid band height for the Timeline');
+          }
+          if (theEP.settings.wAxisLbl() == '' || isNaN(i=parseInt(theEP.settings.wAxisLbl(),10)) || i <= 10) {
+            epErrorMessage('You must specify a valid x axis label width for the Timeline');
+          }
+            // Check Dates and their formats
+          var dateRegEx = /^(open|-?\d+(-(\d)+)?(-(\d)+)?)$/;
+          if (!dateRegEx.test(theEP.settings.from())) {
+            epErrorMessage('You must specify a valid Date for the start frame of the Timeline');
+          }
+          if (!dateRegEx.test(theEP.settings.to())) {
+            epErrorMessage('You must specify a valid Date for the end frame of the Timeline');
+          }
+          if (!dateRegEx.test(theEP.settings.openFrom())) {
+            epErrorMessage('You must specify a valid Date for the start zoom of the Timeline');
+          }
+          if (!dateRegEx.test(theEP.settings.openTo())) {
+            epErrorMessage('You must specify a valid Date for the end zoom of the Timeline');
+          }
+          break;
+        } // switch
       });
 
         // Is there at least one mote for select modal content?
@@ -1716,20 +2199,19 @@ jQuery(document).ready(function($) {
           $('#testResults').append('<p>Your list of motes for the select modal is empty. We suggest you add at least one content mote.</p>');
       }
 
-        // If Audio Source is not disable, ensure Transcript and Timecode are set at minimum
-      if (self.edTrnsAudio() !== 'disable') {
-        if (self.edTrnsTransc() === 'disable') {
-          $('#testResults').append('<p>Although you have enabled audio transcripts via the "Audio Source" selection, you have not yet made a selection from the Transcript list.</p>');
-        }
-        if (self.edTrnsTime() === 'disable') {
-          $('#testResults').append('<p>Although you have enabled audio transcripts via the "Audio Source" selection, you have not yet made a selection from the Timecode list.</p>');
+        // Anamoly: If no selection possible, edTrnsTime() == undefined; added '' for extra protection
+
+        // If configured for transcripts, must have supplied an audio or video source
+      if (self.edTrnsTransc() !== 'disable' || (self.edTrnsTime() != undefined && self.edTrnsTime() !== '')) {
+        if (self.edTrnsAudio() === 'disable' && self.edTrnsVideo() === 'disable') {
+          $('#testResults').append('<p>Although you have enabled transcripts, you have not selected an audio or video URL mote.</p>');
         }
       }
 
         // If Transcript Source mote selected, ensure other settings are as well
       if (self.edTrnsSrc() !== 'disable') {
-        if (self.edTrnsAudio() === 'disable' || self.edTrnsTransc() === 'disable' || self.edTrnsTime() === 'disable') {
-          $('#testResults').append('<p>Although you have enabled full audio transcripts on archive pages via the "Source" selection, you have not yet specified the other necessary transcript settings.</p>');
+        if ((self.edTrnsAudio() === 'disable' && self.edTrnsVideo() === 'disable') || self.edTrnsTransc() === 'disable' || (self.edTrnsTime() == undefined || self.edTrnsTime() === '')) {
+          $('#testResults').append('<p>Although you have enabled transcripts on archive pages via the "Source" selection, you have not yet specified the other necessary transcript settings.</p>');
         }
       }
 

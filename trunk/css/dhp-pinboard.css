@@ -1,0 +1,62 @@
+/** CSS styles specific to Pinboard visualization in DH Press
+ **/
+
+@charset "UTF-8";
+
+.hide {
+	display: hidden;
+}
+
+    /* Enable scroll bar in case background image is too large */
+#svg-container {
+/*    z-index: 1000; */
+    border: 2px solid #000;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+svg {
+/*    z-index: 1000; */
+}
+
+
+/* ==================== NAV BUTTONS ====================*/
+
+    /* image movement & animation control icons */
+#dhp-pin-controls {
+    height: 38px;
+    margin: 3px;
+    margin-right: 6px;
+    padding: 0;
+
+    border: 1px solid #000;
+
+    float: right;
+
+    -moz-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+    -webkit-box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+    box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+}
+
+    /* control buttons are Foundation font icons */
+.pin-fndn-icon {
+    padding: 3px;
+    padding-top: 4px;
+    color: black;
+    margin-left: 4px;
+    font-size: 28px;
+    line-height: 28px;
+}
+
+
+/* ==================== LEGENDS ====================*/
+
+.layer-set {
+    margin: 6px;
+}
+
+#layers-panel a.value {
+    line-height: 15px !important;
+    overflow: hidden;
+    margin-left: 4px;
+}

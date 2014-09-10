@@ -14,7 +14,12 @@ define( 'DHP_HTML_ADMIN_EDIT',  'dhp-html-admin-edit.txt' );
 define( 'DHP_SCRIPT_PROJ_VIEW',  'dhp-script-proj-view.txt' );
 define( 'DHP_SCRIPT_MAP_VIEW',   'dhp-script-map-view.txt' );
 define( 'DHP_SCRIPT_CARDS_VIEW',   'dhp-script-cards-view.txt' );
-// define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unused
+define( 'DHP_SCRIPT_PINBOARD_VIEW',   'dhp-script-pin-view.txt' );
+
+// define( 'DHP_SCRIPT_TREE_VIEW',   'dhp-script-tree-view.txt' );   // currently unneeded
+// define( 'DHP_SCRIPT_TIME_VIEW',   'dhp-script-time-view.txt' );   // currently unneeded
+
+// define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unneeded
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
 
 
@@ -542,27 +547,8 @@ function getCategoryValues($parent_term, $taxonomy)
 } // getCategoryValues()
 
 
-// PURPOSE:	Get link to category page based on category value, if one of $terms appears in $link_terms
-// INPUT:	$link_terms = array of taxonomic terms
-//			$terms = array of terms associated with a particular Marker
-//			$rootTaxName = root taxonomic term for Project
-// RETURNS: PermaLink for marker's term (from $terms) that appears in $link_terms
-// ASSUMES:	That strings in $terms have been HTML-escaped
-
-function dhp_get_term_by_parent($link_terms, $terms, $rootTaxName)
-{
-	foreach( $terms as $term ) {
-		$real_term = get_term_by('id', $term, $rootTaxName);
-		$intersect = array_intersect(array($real_term->term_id), $link_terms);
-		if ($intersect) {
-			 $term_link = get_term_link($real_term);
-			 return $term_link;
-		}
-	}
-} // dhp_get_term_by_parent()
-
-
 // ========================================= AJAX calls ======================================
+
 
 // PURPOSE:	Creates Legends and Feature Collections Object (as per OpenLayer) when looking at a project page;
 //			That is, return array describing all markers based on filter and visualization
@@ -574,11 +560,14 @@ function dhp_get_term_by_parent($link_terms, $terms, $rootTaxName)
 			// {	"type": "FeatureCollection",
 			// 	 	"features" :
 			// 		[
-			// 			{ "type" : "Feature",
-			//							// Only if map
-			// 			  "geometry" : { "type" : "Point", "coordinates" : longlat },
-			//							// Only if topic card
-			//			  "card" : { "title": String },
+			// 			{ "type" : "Feature",	// Only added to FeatureCollections created for Maps
+			//							// Only if map or pinboard
+			// 			  "geometry" : {
+			//					"type" : "Point",
+			//					"coordinates" : LongLat (or X-Y)
+			//			  },
+			//			  "date" : String, 	// Only if Timeline
+			// 			  "title" : String, // Only if Timeline or Topic Card
 			// 			  "properties" :
 			// 				[
 			//							// All data corresponding to categories/legends associated with marker
@@ -593,6 +582,7 @@ function dhp_get_term_by_parent($link_terms, $terms, $rootTaxName)
 			// 					"link2" : URL
 			//							// Those below only in the case of transcript markers
 			// 					"audio" : String,
+			//					"video" : String,
 			// 					"transcript" : String,
 			// 					"transcript2" : String,
 			// 					"timecode" : String,
@@ -601,41 +591,62 @@ function dhp_get_term_by_parent($link_terms, $terms, $rootTaxName)
 			// 		]
 			// 	}
 
-function createMarkerArray($project_id, $index)
+add_action('wp_ajax_dhpGetMarkers', 'dhpGetMarkers' );
+add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkers');
+
+// PURPOSE:	Handle Ajax call to get all markers for a Project for a non-Tree view
+// ASSUMED: The current Entry Point is not a Tree!
+// INPUT:	$_POST['project'] is ID of Project
+//			$_POST['index'] is the 0-based index of the current Entry Point
+// RETURNS:	JSON object of array of marker values
+
+function dhpGetMarkers()
 {
+	$projectID = $_POST['project'];
+	$index = $_POST['index'];
+
 		// initialize result array
 	$json_Object = array();
-		// get Project info
-	$projObj      = new DHPressProject($project_id);
-	$rootTaxName  = $projObj->getRootTaxName();
-	$projSettings = $projObj->getAllSettings();
 
-    	// Initialize settings in case not used -- most of these are custom-field (not mote) names
-	$map_pointsMote = $coordMote = $filters = null;
-	$audio = $transcript = $transcript2 = $timecode = null;
-	$cardTitle = $cardColorMote = null;
+	$mQuery = new DHPressMarkerQuery($projectID, $index);
+	$projObj = $mQuery->projObj;
+	$eps = $mQuery->projSettings->eps[$index];
 
-		// By default, a marker's content is the set of data needed by select modal, but some
-		//	views may need to augment this
-	$selectContent = array();
-	if ($projSettings->views->select->content) {
-		foreach ($projSettings->views->select->content as $theMote) {
-			array_push($selectContent, $theMote);
-		}
-	}
+	$addFeature = false;
 
-	$eps = $projSettings->eps[$index];
 	switch ($eps->type) {
 	case "map":
 			// Which field used to encode Lat-Long on map?
-		$map_pointsMote = $projObj->getMoteByName($eps->settings->coordMote);
+		$mapPointsMote = $projObj->getMoteByName($eps->settings->coordMote);
+		$mapCF = $mapPointsMote->cf;
+		if ($mapPointsMote->delim != '') {
+			$mapDelim = $mapPointsMote->delim;
+		} else {
+			$mapDelim = null;
+		}
 			// Find all possible legends/filters for this map -- each marker needs these fields
 		$filters = $eps->settings->legends;
 			// Collect all possible category values/tax names for each mote in all filters
 		foreach ($filters as $legend) {
-			$term = get_term_by('name', $legend, $rootTaxName);
+			$term = get_term_by('name', $legend, $mQuery->rootTaxName);
 			if ($term) {
-				array_push($json_Object, getCategoryValues($term, $rootTaxName));
+				array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
+			}
+		}
+		$addFeature = true;
+		break;
+
+	case "pinboard":
+			// Which field used to encode Lat-Long on map?
+		$pinPointsMote = $projObj->getMoteByName($eps->settings->coordMote);
+		$pinCF = $pinPointsMote->cf;
+			// Find all possible legends/filters for this pinboard -- each marker needs these fields
+		$filters = $eps->settings->legends;
+			// Collect all possible category values/tax names for each mote in all filters
+		foreach ($filters as $legend) {
+			$term = get_term_by('name', $legend, $mQuery->rootTaxName);
+			if ($term) {
+				array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
 			}
 		}
 		break;
@@ -643,12 +654,12 @@ function createMarkerArray($project_id, $index)
 	case "cards":
 			// Convert title mote to custom field --
 			// If no title, no need (currently) to create cards property for markers
-		$cardTitle = $eps->settings->title;
-		if ($cardTitle == null || $cardTitle == '' || $cardTitle == 'disable') {
-			$cardTitle = null;
-		} else if ($cardTitle != 'the_title') {
-			$cardTitle = $projObj->getCustomFieldForMote($cardTitle);
-			if (is_null($cardTitle)) {
+		$titleMote = $eps->settings->title;
+		if ($titleMote == null || $titleMote == '' || $titleMote == 'disable') {
+			$titleMote = null;
+		} else if ($titleMote != 'the_title') {
+			$titleMote = $projObj->getCustomFieldForMote($titleMote);
+			if (is_null($titleMote)) {
 				trigger_error("Card view title assigned to unknown mote");
 			}
 		}
@@ -656,260 +667,318 @@ function createMarkerArray($project_id, $index)
 		$cardColorMote = $eps->settings->color;
 		if ($cardColorMote != null && $cardColorMote !== '' && $cardColorMote != 'disable') {
 				// Create a legend for the color values
-			$term = get_term_by('name', $cardColorMote, $rootTaxName);
+			$term = get_term_by('name', $cardColorMote, $mQuery->rootTaxName);
 			if ($term) {
-				array_push($json_Object, getCategoryValues($term, $rootTaxName));
+				array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
 			}
 		}
 			// gather card contents
 		foreach ($eps->settings->content as $theContent) {
-			array_push($selectContent, $theContent);
+			array_push($mQuery->selectContent, $theContent);
 		}
 			// must add all sort and filter motes to content
 			// we must also collect all category values/tax names for filters that are Short Text motes,
 			//	but don't duplicate color legend
 		foreach ($eps->settings->filterMotes as $theContent) {
-			array_push($selectContent, $theContent);
+			array_push($mQuery->selectContent, $theContent);
 			$filterMote = $projObj->getMoteByName($theContent);
 			if ($filterMote->type=='Short Text' && $filterMote->name != $cardColorMote) {
-				$term = get_term_by('name', $theContent, $rootTaxName);
+				$term = get_term_by('name', $theContent, $mQuery->rootTaxName);
 				if ($term) {
-					array_push($json_Object, getCategoryValues($term, $rootTaxName));
+					array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
 				}
 			}
 		}
 		foreach ($eps->settings->sortMotes as $theContent) {
-			array_push($selectContent, $theContent);
+			array_push($mQuery->selectContent, $theContent);
+		}
+		break;
+
+	case "time":
+			// Create a legend for the color values
+		$term = get_term_by('name', $eps->settings->color, $mQuery->rootTaxName);
+		if ($term) {
+			array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
+		}
+
+		$dateMote = $projObj->getMoteByName($eps->settings->date);
+		$dateCF = $dateMote->cf;
+
+		$titleMote = $eps->settings->label;
+		if ($titleMote == null || $titleMote == '' || $titleMote == 'disable') {
+			$titleMote = null;
+		} else if ($titleMote != 'the_title') {
+			$titleMote = $projObj->getCustomFieldForMote($titleMote);
+			if (is_null($titleMote)) {
+				trigger_error("Timeline view title assigned to unknown mote");
+			}
 		}
 		break;
 	} // switch
 
-		// If a marker is selected and leads to a transcript in modal, need those values also
-	if ($projObj->selectModalHas("transcript")) {
-		$audio = $projSettings->views->transcript->audio;
-			// Translate from Mote Name to Custom Field name
-		if (!is_null($audio) && ($audio !== '')) {
-			$audio = $projObj->getCustomFieldForMote($audio);
-			$transcript = $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript);
-			$transcript2= $projObj->getCustomFieldForMote($projSettings->views->transcript->transcript2);
-			$timecode   = $projObj->getCustomFieldForMote($projSettings->views->transcript->timecode);
-		}
-	}
-
 		// Ensure that any new content requested from markers is not redundant
-	$selectContent = array_unique($selectContent);
+	$mQuery->selectContent = array_unique($mQuery->selectContent);
 
 	$feature_collection = array();
 	$feature_collection['type'] = 'FeatureCollection';
 	$feature_array = array();
 
 
-		// Link parent enables linking to either the Post page for this Marker,
-		//	or to the category/taxonomy which includes this Marker
-	$link_parent = $projSettings->views->select->link;
-	if($link_parent) {
-		if($link_parent=='marker') {
-		//$parent_id = get_term_by('name', $link_parent, $rootTaxName);
-			$child_terms = 'marker';
-		}
-		elseif($link_parent=='disable') {
-			$term_links = 'disable';
-			$child_terms = 'disable';
-		}
-			// Link to mote value
-		elseif(strpos($link_parent, '(Mote)') !== FALSE) {
-			$linkMoteName = str_replace(' (Mote)', '', $link_parent);
-			$child_terms = $projObj->getMoteByName( $linkMoteName );
-		}
-		else {
-				// translate into category/term ID
-			$parent_id = get_term_by('name', $link_parent, $rootTaxName);
-				// find all category terms
-			$child_terms = get_term_children($parent_id->term_id, $rootTaxName);
-		}
-	}
-
-	$link_parent2 = $projSettings->views->select->link2;
-	if($link_parent2) {
-		if($link_parent2=='marker') {
-		//$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
-			$child_terms2 = 'marker';
-		}
-		elseif($link_parent2=='disable') {
-			$term_links2 = 'disable';
-			$child_terms2 = 'disable';
-		}
-			// Link to mote value
-		elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
-			$link2MoteName = str_replace(' (Mote)', '', $link_parent2);
-			$child_terms2 = $projObj->getMoteByName( $link2MoteName );
-		} else {
-			$parent_id2 = get_term_by('name', $link_parent2, $rootTaxName);
-			$child_terms2 = get_term_children($parent_id2->term_id, $rootTaxName);
-		}
-	}
-
-		// Determine whether title is default title of marker post or another (custom) field
-	$title_mote = $projSettings->views->select->title;
-	if ($title_mote != 'the_title') {
-		$temp_mote = $projObj->getMoteByName($title_mote);
-		if (is_null($temp_mote)) {
-			trigger_error("Modal view title assigned to unknown mote");
-		}
-		$title_mote = $temp_mote->cf;
-	}
-
-	// $feature_collection['debugmsg'] = "coordMote count = ".count($coordMote)." moteName = ".$map_pointsMote["name"];
-	// $feature_collection['debug'] = array();
-
 		// Run query to return all marker posts belonging to this Project
 	$loop = $projObj->setAllMarkerLoop();
 	while ( $loop->have_posts() ) : $loop->the_post();
 
-		$marker_id = get_the_ID();
+		$markerID = get_the_ID();
 
 			// Feature will hold properties and some other values for each marker
 		$thisFeature = array();
-		$thisFeature['type']    = 'Feature';
+
+			// Only add property if necessary
+		if ($addFeature) {
+			$thisFeature['type']    = 'Feature';
+		}
 
 			// Most data goes into properties field
-		$thisFeaturesProperties = array();
+		$thisFeaturesProperties = $mQuery->getMarkerProperties($markerID);
 
 			// First set up fields required by visualizations, abandon marker if missing
 
 			// Map visualization features?
 			// Skip marker if missing necessary LatLong data or not valid numbers
-		if (!is_null($map_pointsMote)) {
-			$latlon = get_post_meta($marker_id, $map_pointsMote->cf, true);
+		if ($mapCF != null) {
+			$latlon = get_post_meta($markerID, $mapCF, true);
 			if (empty($latlon)) {
 				continue;
 			}
-			$splitLatLon = split(',', $latlon);
-			$thisFeature['geometry'] = array("type"=>"Point",
-											"coordinates"=> array((float)$splitLatLon[1],(float)$splitLatLon[0]));
-		}
-
-			// Audio transcript features?
-		if (!is_null($audio)) {
-			$audio_val = get_post_meta($marker_id, $audio, true);
-			$thisFeaturesProperties["audio"] = $audio_val;
-		}
-		if (!is_null($transcript)) {
-			$transcript_val = get_post_meta($marker_id, $transcript, true);
-			$thisFeaturesProperties["transcript"]  = $transcript_val;
-		}
-		if (!is_null($transcript2)) {
-			$transcript2_val = get_post_meta($marker_id, $transcript2, true);
-			$thisFeaturesProperties["transcript2"] = $transcript2_val;
-		}
-		if (!is_null($timecode)) {
-			$timecode_val = get_post_meta($marker_id, $timecode, true);
-			$thisFeaturesProperties["timecode"]    = $timecode_val;
-		}
-
-		if ($title_mote) {
-			if($title_mote=='the_title') {
-				$title = get_the_title();
-			} else {
-				$title = get_post_meta($marker_id,$title_mote,true);
-			}
-			$thisFeaturesProperties["title"] = $title;
-		}
-
-			// NOTE: $cardTitle is currently only card-specific field
-		if ($cardTitle != null) {
-			$cardValues = array();
-			if ($cardTitle=='the_title') {
-				$title = get_the_title();
-			} else {
-				$title = get_post_meta($marker_id, $cardTitle, true);
-			}
-			$cardValues['title'] = $title;
-			$thisFeature['card'] = $cardValues;
-		}
-
-			// Get all of the legend/category values associated with this marker post
-		$args = array('fields' => 'ids');
-		$post_terms = wp_get_post_terms($marker_id, $rootTaxName, $args);
-		$term_array = array();
-		foreach ($post_terms as $term) {
-				// Convert tax category names into IDs
-			array_push($term_array,intval($term));
-		}
-		$thisFeaturesProperties["categories"]  = $term_array;
-
-		// $feature_collection['debug'] = $viewsContent;
-		$content_att = array();
-
-			// Gather all values to be displayed in modal if marker selected
-			// Should not apply filters to post content because DH Press markup gets inserted!
-		if (count($selectContent)) {
-			foreach( $selectContent as $contentMoteName ) {
-				if ($contentMoteName == 'the_content') {
-					$content_val = get_post_field('post_content', $marker_id);
-				} elseif ($contentMoteName == 'the_title') {
-					$content_val = get_the_title();
+				// Create Polygons? Only if delim given
+			if ($mapDelim) {
+				$split = explode($mapDelim, $latlon);
+					// Just treat as Point if only one data item
+				if (count($split) == 1) {
+					$split = explode(',', $latlon);
+					$thisFeature['geometry'] = array("type"=>"Point",
+													"coordinates"=> array((float)$split[1], (float)$split[0]));
 				} else {
-					$content_mote = $projObj->getMoteByName($contentMoteName);
-					$contentCF = $content_mote->cf;
-					if($contentCF =='the_content') {
-						$content_val = get_post_field('post_content', $marker_id);
-					} elseif ($contentCF=='the_title') {
-						$content_val = get_the_title();
-					} else {
-						$content_val = get_post_meta($marker_id, $contentCF, true);
+					$poly = array();
+					foreach ($split as $thisPt) {
+						$pts = explode(',', $thisPt);
+						array_push($poly, array((float)$pts[1], (float)$pts[0]));
 					}
+					$thisFeature['geometry'] = array("type" => "Polygon", "coordinates" => array($poly));
 				}
-				if (!is_null($content_val) && ($content_val !== '')) {
-						// Do we need to wrap data?
-					if($content_mote->type=='Image') {
-						$content_val = '<img src="'.addslashes($content_val).'" />';
-					}
-					$content_att[$contentMoteName] = $content_val;
-				}
-			} // foreach
-			$thisFeaturesProperties["content"]     = $content_att;
+			} else {
+				$split = explode(',', $latlon);
+					// Have to reverse order for GeoJSON
+				$thisFeature['geometry'] = array("type"=>"Point",
+												"coordinates"=> array((float)$split[1],(float)$split[0]));
+			}
 		}
 
-			// Does item link to its own Marker page, Taxonomy page, or Mote value?
-		if ($link_parent && $child_terms && $child_terms != 'disable') {
-			if ($child_terms=='marker') {
-				$term_links = get_permalink();
+			// Pinboard visualization features
+			// Skip marker if missing necessary LatLong data or not valid numbers
+		if ($pinCF != null) {
+			$xycoord = get_post_meta($markerID, $pinCF, true);
+			if (empty($xycoord)) {
+				continue;
 			}
-			elseif(strpos($link_parent, '(Mote)') !== FALSE) {
-				$term_links = get_post_meta($marker_id, $child_terms->cf, true);
-			}
-			else {
-				$term_links = dhp_get_term_by_parent($child_terms, $post_terms, $rootTaxName);
-			}
-			if ($term_links)
-				$thisFeaturesProperties["link"] = addslashes($term_links);
+			$split = explode(',', $xycoord);
+			$thisFeature['geometry'] = array("type"=>"Point",
+											"coordinates"=> array((float)$split[0], (float)$split[1]));
 		}
 
-		if ($link_parent2 && $child_terms2 && $child_terms2 != 'disable') {
-			if ($child_terms2=='marker') {
-				$term_links2 = get_permalink();
+			// Timeline visualization features
+			// Skip marker if missing necessary Date
+		if ($dateCF != null) {
+			$date = get_post_meta($markerID, $dateCF, true);
+			if (empty($date)) {
+				continue;
 			}
-			elseif(strpos($link_parent2, '(Mote)') !== FALSE) {
-				$term_links2 = get_post_meta($marker_id, $child_terms2->cf, true);
+			$thisFeature['date'] = $date;
+		}
+
+		if ($titleMote != null) {
+			if ($titleMote=='the_title') {
+				$title = get_the_title();
+			} else {
+				$title = get_post_meta($markerID, $titleMote, true);
 			}
-			else {
-				$term_links2 = dhp_get_term_by_parent($child_terms2, $post_terms, $rootTaxName);
-			}
-			if ($term_links2)
-				$thisFeaturesProperties["link2"] = addslashes($term_links2);
+			$thisFeature['title'] = $title;
 		}
 
 			// Store all of the properties
 		$thisFeature['properties'] = $thisFeaturesProperties;
 			// Save this marker
-		array_push($feature_array,$thisFeature);
+		array_push($feature_array, $thisFeature);
 	endwhile;
 
 	$feature_collection['features'] = $feature_array;
 	array_push($json_Object, $feature_collection);
-	return $json_Object;
-} // createMarkerArray()
+
+	die(json_encode($json_Object));
+} // dhpGetMarkers()
+
+
+// TREE MARKER CODE ==================
+
+// PURPOSE: Retrieve all of the relevant info about this node and all call recursively for all of its children
+// INPUT:   $nodeName = the name of the custom post
+//			$eps = Entry Point settings
+// RETURNS: Nested Array for $nodeName and all of its children
+
+function createTreeNode($nodeName, $mQuery, $childrenCF, $childrenDelim, $nameCF)
+{
+		// Get the WP post corresponding to this marker
+	$args = array( 
+		'post_type' => 'dhp-markers', 
+		'posts_per_page' => 1,
+		'name' => $nodeName,
+		array( 'meta_key' => 'project_id', 'meta_value' => $mQuery->projID )
+	);
+	$loop = new WP_Query($args);
+
+		// We can only abort if not found
+	if (!$loop->have_posts()) {
+		trigger_error("Tree view label assigned to unknown mote");
+		return null;
+	}
+
+	$loop->the_post();
+	$markerID = get_the_ID();
+
+		// Feature will hold properties and some other values for each marker
+	$thisFeature = array();
+
+		// Fetch name for marker
+	$nameVal = get_post_meta($markerID, $nameCF, true);
+	$thisFeature["name"] = $nameVal;
+
+		// Most data goes into properties field
+	$thisFeaturesProperties = $mQuery->getMarkerProperties($markerID);
+
+		// Store all of the properties
+	$thisFeature['properties'] = $thisFeaturesProperties;
+
+		// Now that we've constructed this feature, call recursively for all of its children
+	$childrenVal = get_post_meta($markerID, $childrenCF, true);
+	if (!is_null($childrenVal) && ($childrenVal !== '')) {
+		$childName = explode($childrenDelim, $childrenVal);
+
+			// Create array for all descendants and call this recursively to fetch them
+		$children = array();
+		foreach($childName as $theChildName) {
+			$trimName = trim($theChildName);
+			$theChildData = createTreeNode($trimName, $mQuery, $childrenCF, $childrenDelim, $nameCF);
+				// Don't add if data error (name not found)
+			if ($theChildData != null) {
+				array_push($children, $theChildData);
+			}
+		}
+			// Store in feature if any descendents generated
+		if(count($children) > 0) {
+			$thisFeature['children'] = $children;
+		}
+	}
+
+		// Return this marker
+	return $thisFeature;
+} // createTreeNode()
+
+
+
+// Enable for both editing and viewing
+
+add_action('wp_ajax_dhpGetMarkerTree', 'dhpGetMarkerTree' );
+add_action('wp_ajax_nopriv_dhpGetMarkerTree', 'dhpGetMarkerTree');
+
+// PURPOSE:	Handle Ajax call to get all markers for a Project
+// 			Similar to createMarkerArray() but creates tree of marker data not flat array
+// INPUT:	$_POST['project'] = ID of Project to view
+//			$_POST['index'] = index of entry-point to display
+// RETURNS: JSON object describing all markers associated with Project
+//			[0] contains results from getCategoryValues() defined above;
+//			[1] is a Nested tree
+//				{
+// 					"name": String,
+//					"properties" :
+//					[
+//							// All data corresponding to categories/legends associated with marker
+//						"categories" : [ integer IDs of category terms ],
+//							// Data used to create modals
+//						"title" : String,
+//							// Data needed by select modal or card filter/sort
+//						"content" : [
+//							{ moteName : moteValue }, ...
+//						],
+//						"link" : URL,
+//						"link2" : URL
+//							// Those below only in the case of transcript markers
+//						"audio" : String,
+//						"transcript" : String,
+//						"transcript2" : String,
+//						"timecode" : String,
+//					],
+//					"children" : [
+//						Objects of the same sort
+//					]
+//				}
+// ASSUMES:  Color Legend has been created and category/taxonomy bound to Markers
+
+function dhpGetMarkerTree()
+{
+	$projectID = $_POST['project'];
+	$index = $_POST['index'];
+
+		// initialize result array
+	$json_Object = array();
+
+	$mQuery = new DHPressMarkerQuery($projectID, $index);
+	$projObj = $mQuery->projObj;
+	$eps = $mQuery->projSettings->eps[$index];
+
+		// Prepare for fetching name of markers
+	$nameCF = $eps->settings->label;
+	if ($nameCF != 'the_title' && $nameCF != 'the_content') {
+		$nameCF = $projObj->getCustomFieldForMote($nameCF);
+		if (is_null($nameCF)) {
+			trigger_error("Tree view label assigned to unknown mote");
+		}
+	}
+
+		// Prepare for fetching markers' children pointer
+	$childrenMote = $projObj->getMoteByName($eps->settings->children);
+	$childrenDelim = $childrenMote->delim;
+	$childrenCF = $childrenMote->cf;
+	if (is_null($childrenCF)) {
+		trigger_error("Tree view children assigned to unknown mote");
+		die("Tree view children assigned to unknown mote");
+	}
+
+		// Get the Legend info for this Tree view's Legend data
+		// We will assume that Legend has been created and category/taxonomy bound to Markers
+	$colorCF = $eps->settings->color;
+	if ($colorCF != '' && $colorCF != 'disable') {
+		$colorCF = $projObj->getCustomFieldForMote($colorCF);
+		if (is_null($colorCF)) {
+			trigger_error("Tree view color assigned to unknown mote");
+			die("Tree view color assigned to unknown mote");
+		}
+			// Create a legend for the color values
+		$term = get_term_by('name', $eps->settings->color, $mQuery->rootTaxName);
+		if ($term) {
+			array_push($json_Object, getCategoryValues($term, $mQuery->rootTaxName));
+		}
+	}
+
+		// Ensure that any new content requested from markers is not redundant
+	$mQuery->selectContent = array_unique($mQuery->selectContent);
+
+		// Begin with head node
+	$markers = createTreeNode($eps->settings->head, $mQuery, $childrenCF, $childrenDelim, $nameCF);
+
+	array_push($json_Object, $markers);
+
+	die(json_encode($json_Object));
+} // createMarkerTree()
 
 
 // ====================== AJAX Functions ======================
@@ -977,7 +1046,7 @@ function dhpBindTaxonomyToMarkers($projObj, $custom_field, $parent_id, $rootTaxN
 		if (!is_null($tempMoteValue) && $tempMoteValue != '') {
 			$tempMoteArray = array();
 			if ($mote_delim) {
-				$tempMoteArray = split($mote_delim, $tempMoteValue );
+				$tempMoteArray = explode($mote_delim, $tempMoteValue );
 			} else {
 				$tempMoteArray = array($tempMoteValue);
 			}
@@ -1190,8 +1259,9 @@ function dhpCreateTermInTax()
 	$dhp_term_name		= $_POST['newTerm'];
 	$parent_term_name	= $_POST['legendName'];
 
+		// First get Term/Tax info for the Legend (assoc w/this project)
 	$projRootTaxName = DHPressProject::ProjectIDToRootTaxName($projectID);
-	$parent_term = term_exists( $parent_term_name, $projRootTaxName );
+	$parent_term = term_exists($parent_term_name, $projRootTaxName);
 	$parent_term_id = $parent_term['term_id'];
 	$args = array( 'parent' => $parent_term_id );
 
@@ -1200,17 +1270,24 @@ function dhpCreateTermInTax()
 	$results['parent'] = $parent_term;
 	$results['parentID'] = $parent_term_id;
 
-		// create new term
-	$newTerm = wp_insert_term($dhp_term_name, $projRootTaxName, $args);
-	$results['newTerm'] = $newTerm;
-	if ($newTerm == WP_Error) {
-		// trigger_error("WP will not create new term ".$dhp_term_name." in taxonomy".$parent_term_name);
+		// make sure the new term doesn't already exist
+	$testTerm = term_exists($dhp_term_name, $projRootTaxName, $parent_term_id);
+	if ($testTerm !== 0 && $testTerm !== null) {
 		$results['termID'] = 0;
+		$results['debug'] = $testTerm['term_id'];
 	} else {
-		$results['termID'] = $newTerm['term_id'];
+			// create new term
+		$newTerm = wp_insert_term($dhp_term_name, $projRootTaxName, $args);
+		$results['newTerm'] = $newTerm;
+		if ($newTerm == WP_Error) {
+			// trigger_error("WP will not create new term ".$dhp_term_name." in taxonomy".$parent_term_name);
+			$results['termID'] = 0;
+		} else {
+			$results['termID'] = $newTerm['term_id'];
 
-			// Clear term taxonomy
-		delete_option("{$projRootTaxName}_children");
+				// Clear term taxonomy
+			delete_option("{$projRootTaxName}_children");
+		}
 	}
 
 	die(json_encode($results));
@@ -1254,33 +1331,9 @@ function dhpDeleteHeadTerm()
 
 // Enable for both editing and viewing
 
-add_action('wp_ajax_dhpGetMarkers', 'dhpGetMarkers' );
-add_action('wp_ajax_nopriv_dhpGetMarkers', 'dhpGetMarkers');
-
-// dhpGetMarkers()
-// PURPOSE:	Handle Ajax call to get all markers for a Project
-// INPUT:	$_POST['project'] is ID of Project
-// RETURNS:	JSON object of array of marker values
-
-function dhpGetMarkers()
-{
-	$dhp_project = $_POST['project'];
-	$index =		$_POST['index'];
-	$mArray = createMarkerArray($dhp_project, $index);
-
-	// $result = json_encode($mArray);
-	// $result = stripslashes($result);
-	// die($result);
-	die(json_encode($mArray));
-} // dhpGetMarkers()
-
-
-// Enable for both editing and viewing
-
-add_action( 'wp_ajax_dhpGetMoteContent', 'dhpGetMoteContent' );
+add_action('wp_ajax_dhpGetMoteContent', 'dhpGetMoteContent');
 add_action('wp_ajax_nopriv_dhpGetMoteContent', 'dhpGetMoteContent');
 
-// dhpGetMoteContent()
 // PURPOSE: Handle Ajax call to fetch the Project-specific data for a specific marker
 // INPUT:	$_POST['post'] = ID of marker post
 // RETURNS:	JSON object of marker data
@@ -1293,12 +1346,12 @@ function dhpGetMoteContent()
 	die(json_encode($post_meta_content));
 } // dhpGetMoteContent()
 
+
 // Enable for both editing and viewing
 
-add_action( 'wp_ajax_dhpGetTranscriptClip', 'dhpGetTranscriptClip' );
+add_action('wp_ajax_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 add_action('wp_ajax_nopriv_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 
-// getTranscriptClip($tran,$clip)
 // PURPOSE:	Retrieve section of text file for transcript
 // INPUT:	$tran = full text of transcript
 //			$clip = String containing from-end time of segment
@@ -1308,7 +1361,7 @@ add_action('wp_ajax_nopriv_dhpGetTranscriptClip', 'dhpGetTranscriptClip');
 function getTranscriptClip($transcript, $clip)
 {
 	$codedTranscript  = utf8_encode($transcript);
-	$clipArray        = split("-", $clip);
+	$clipArray        = explode("-", $clip);
 	$clipStart        = mb_strpos($codedTranscript, $clipArray[0]);
 	$clipEnd          = mb_strpos($codedTranscript, $clipArray[1]);
 		// length must include start and end timestamps
@@ -1325,7 +1378,6 @@ function getTranscriptClip($transcript, $clip)
 } // getTranscriptClip()
 
 
-// loadTranscriptFromFile($fileUrl)
 // PURPOSE:	Load the contents of a transcript file
 // INPUT:	$fileUrl = the URL to the file
 // RETURNS:	The data in file, if successful
@@ -1340,7 +1392,6 @@ function loadTranscriptFromFile($fileUrl)
 } // loadTranscriptFromFile()
 
 
-// dhpGetTranscriptClip()
 // PURPOSE: AJAX function to retrieve section of transcript when viewing a Marker
 // INPUT:	$_POST['project'] = ID of Project post
 //			$_POST['transcript'] = URL to file containing contents of transcript
@@ -1370,7 +1421,7 @@ add_action( 'wp_ajax_nopriv_dhpGetTaxTranscript', 'dhpGetTaxTranscript');
 //			$_POST['transcript'] = (end of URL) to file containing contents of transcript; slug based on mote value
 //			$_POST['tax_term'] = the root taxonomic term that marker must match (based on Project ID)
 // RETURNS:	null if not found, or if not associated with transcript; otherwise, JSON-encoded complete transcript with fields:
-//				audio = data from custom field
+//				audio, video = data from custom fields
 //				settings = entry-point settings for transcript
 //				transcript, transcript2 = transcript data itself for each of 2 possible transcripts
 
@@ -1393,11 +1444,11 @@ function dhpGetTaxTranscript()
 		)
 	);
 		// Get the result and its metadata (fail if not found)
-	$first_marker = get_posts( $args );
+	$first_marker = get_posts($args);
 	if (is_null($first_marker) || (count($first_marker) == 0)) {
-		return null;
+		die('');
 	}
-	$marker_meta = get_post_meta( $first_marker[0]->ID );
+	$marker_meta = get_post_meta($first_marker[0]->ID);
 
 	$projObj      = new DHPressProject($projectID);
 	$rootTaxName  = $projObj->getRootTaxName();
@@ -1406,29 +1457,41 @@ function dhpGetTaxTranscript()
 		// Store results to return here
 	$dhp_object = array();
 
-		// What custom field holds appropriate data? Fetch it from Marker
-	$dhp_audio_mote = $projObj->getMoteByName($proj_settings->views->transcript->audio);
-	$dhp_transcript_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript);
+		// set defaults
+	$dhp_object['audio'] = $dhp_object['video'] = $dhp_object['transcript'] = $dhp_object['transcript2'] = null;
 
-	$dhp_transcript_cfield = $dhp_transcript_mote->cf;
-	$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
-	if($dhp_transcript!='none') {
-		$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
+		// What custom fields holds appropriate data? Fetch from Marker
+	$dhp_audio_mote = null;
+	if ($proj_settings->views->transcript->audio && $proj_settings->views->transcript->audio != '') {
+		$dhp_audio_mote = $projObj->getMoteByName($proj_settings->views->transcript->audio);
+		$dhp_object['audio'] = $marker_meta[$dhp_audio_mote->cf][0];
+	}
+	$dhp_video_mote = null;
+	if ($proj_settings->views->transcript->video && $proj_settings->views->transcript->video != '') {
+		$dhp_video_mote = $projObj->getMoteByName($proj_settings->views->transcript->video);
+		$dhp_object['video'] = $marker_meta[$dhp_video_mote->cf][0];
 	}
 
-		//if project has two transcripts
-	if($proj_settings->views->transcript->transcript2) {
-		$dhp_transcript2_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript2);
-		$dhp_transcript2_cfield = $dhp_transcript2_mote->cf;
-		$dhp_transcript2 = $marker_meta[$dhp_transcript2_cfield][0];
-		if ($dhp_transcript2 != 'none') {
-			$dhp_object['transcript2'] = loadTranscriptFromFile($dhp_transcript2);
+	if ($proj_settings->views->transcript->transcript && $proj_settings->views->transcript->transcript != '') {
+		$dhp_transcript_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript);
+		$dhp_transcript_cfield = $dhp_transcript_mote->cf;
+		$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
+		if ($dhp_transcript != 'none') {
+			$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
+			$dhp_object['transcript'] = $dhp_transcript;
 		}
 	}
 
-	$dhp_object['settings'] = $dhp_transcript_ep;
-	$dhp_object['audio'] = $marker_meta[$dhp_audio_mote->cf][0];
-	$dhp_object['transcript'] = $dhp_transcript;
+		// if project has 2nd transcripts
+	if ($proj_settings->views->transcript->transcript2 && $proj_settings->views->transcript->transcript2 != '') {
+		$dhp_transcript_mote = $projObj->getMoteByName($proj_settings->views->transcript->transcript2);
+		$dhp_transcript_cfield = $dhp_transcript_mote->cf;
+		$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
+		if ($dhp_transcript != 'none') {
+			$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
+			$dhp_object['transcript2'] = $dhp_transcript;
+		}
+	}
 
 	die(json_encode($dhp_object));
 } // dhpGetTaxTranscript()
@@ -1734,6 +1797,29 @@ function dhpGetCustomFields()
 } // dhpGetCustomFields()
 
 
+// PURPOSE: Find all PNG images attached to the given post
+// INPUT:   pID is the ID of the post
+// RETURNS: Array of [ ]
+
+function getAttachedPNGs($pID)
+{
+	$pngs = array();
+
+	$images = get_attached_media('image/png', $post->ID);
+	foreach($images as $image) {
+	    $onePNG = array();
+	    $onePNG['id'] = $image->ID;
+	    $onePNG['title'] = $image->post_title;
+	    $imageData = wp_get_attachment_image_src($image->ID);
+	    $onePNG['url'] = $imageData[0];
+	    $onePNG['w'] = $imageData[1];
+	    $onePNG['h'] = $imageData[2];
+	    array_push($pngs, $onePNG);
+	}
+	return $pngs;
+} // getAttachedPNGs()
+
+
 // PURPOSE:	Verify that all timestamps can be found in transcription file
 // INPUT:	$transcMoteName = name of mote for a transcription setting
 // RETURNS:	Error string or ''
@@ -1777,7 +1863,7 @@ function verifyTranscription($projObj, $projSettings, $transcMoteName)
 						$error = true;
 					} else {
 						$content  = utf8_encode($content);
-						$stamps	  = split("-", $timecode);
+						$stamps	  = explode("-", $timecode);
 						$clipStart= mb_strpos($content, $stamps[0]);
 						if ($clipStart == false) {
 							$result .= '<p> Cannot find timestamp '.$stamps[0].' in file '.$transFile.'</p>';
@@ -1912,12 +1998,14 @@ function dhpPerformTests()
 		foreach ($projSettings->eps as $ep) {
 			switch ($ep->type) {
 			case 'map':
+					// Map Legends can be color or icons -- just consistency
 				foreach ($ep->settings->legends as $theLegend) {
-					$results .= verifyLegend($projObj, $theLegend, 1);
+					$results .= verifyLegend($projObj, $theLegend, 2);
 				}
 				break;
 			case 'cards':
-				$results .= verifyLegend($projObj, $ep->settings->color, 2);
+					// Card Legends must be color only
+				$results .= verifyLegend($projObj, $ep->settings->color, 1);
 					// all Short Text Filter Motes must have been created as Legend but values don't matter
 				foreach ($ep->settings->filterMotes as $filterMote) {
 					if ($filterMote->type === 'Short Text') {
@@ -1925,7 +2013,17 @@ function dhpPerformTests()
 					}
 				}
 				break;
-			}
+			case 'pinboard':
+					// Pinboard Legends currently only support color
+				foreach ($ep->settings->legends as $theLegend) {
+					$results .= verifyLegend($projObj, $theLegend, 1);
+				}
+				break;
+			case 'tree':
+					// Tree legends currently only support color
+				$results .= verifyLegend($projObj, $ep->settings->color, 1);
+				break;
+			} // switch()
 		}
 
 			// Go through markers and ensure all values are valid:
@@ -1945,8 +2043,9 @@ function dhpPerformTests()
 					$error = false;
 					switch ($mote->type) {
 					case 'Lat/Lon Coordinates':
+					case 'X-Y Coordinates':
 						if (preg_match("/(-?\d+(\.?\d?)?),(\s?-?\d+(\.?\d?)?)/", $moteValue) === 0) {
-							$results .= '<p>Invalid Lat/Long Coordinate '.$moteValue;
+							$results .= '<p>Invalid Coordinate '.$moteValue;
 							$error = true;
 						}
 						break;
@@ -1957,11 +2056,13 @@ function dhpPerformTests()
 							$error = true;
 						}
 						break;
+					case 'YouTube':
+							// Cannot verify because it is just a raw code
+						break;
 					case 'Link To':
 					case 'Image':
 							// Just look at beginning and end of URL
-						if (preg_match("!^(https?|ftp)://[^\s]*!i",
-								$moteValue) === 0) {
+						if (preg_match("!^(https?|ftp)://[^\s]*!i", $moteValue) === 0) {
 							$results .= '<p>Invalid URL';
 							$error = true;
 						}
@@ -1981,6 +2082,16 @@ function dhpPerformTests()
 							$transcErrors = true;
 						}
 						break;
+					case 'Pointer':
+							// Only way to check would be to explode string and check existence of each
+							// marker, but this would likely break the WP Query loop -- so ignore for now
+						break;
+					case 'Date':
+						if (preg_match("/^(open|-?\d+(-(\d)+)?(-(\d)+)?)(\/(open|-?\d+(-(\d)+)?(-(\d)+)?))?$/", $moteValue) === 0) {
+							$results .= '<p>Invalid Date range';
+							$error = true;
+						}
+						break;
 					} // switch
 						// Add rest of error information
 					if ($error) {
@@ -1997,7 +2108,7 @@ function dhpPerformTests()
 		endwhile;
 
 			// If transcript (fragmentation) source is set, ensure the category has been created
-		$source = $projSettings->views->source;
+		$source = $projSettings->views->transcript->source;
 		if ($source && $source !== '' && $source !== 'disable') {
 			$transSrcCheck = verifyLegend($projObj, $source, 0);
 			if ($transSrcCheck != '') {
@@ -2072,11 +2183,11 @@ function add_dhp_project_admin_scripts( $hook )
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
         if ( $post->post_type == 'project' ) {
         		// Library styles
-			wp_enqueue_style('jquery-ui-style', plugins_url('/lib/jquery-ui-1.10.4/themes/base/jquery.ui.all.css', dirname(__FILE__)) );
+			wp_enqueue_style('jquery-ui-style', plugins_url('/lib/jquery-ui-1.11.1/themes/base/all.css', dirname(__FILE__)) );
 			wp_enqueue_style('jquery-colorpicker-style', plugins_url('/lib/colorpicker/jquery.colorpicker.css',  dirname(__FILE__)),
 					array('jquery-ui-style') );
 			// wp_enqueue_style('wp-jquery-ui-dialog' );
-			wp_enqueue_style('maki-sprite-style', plugins_url('/css/maki-sprite.css',  dirname(__FILE__)) );
+			wp_enqueue_style('maki-sprite-style', plugins_url('/lib/maki/maki-sprite.css',  dirname(__FILE__)) );
 				// Lastly, our plug-in specific styles
 			wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)),
 					array('jquery-ui-style', 'maki-sprite-style') );
@@ -2086,16 +2197,16 @@ function add_dhp_project_admin_scripts( $hook )
 			wp_enqueue_script('underscore');
 
 				// Will call our own versions of jquery-ui to minimize compatibility problems
-			wp_enqueue_script('dhp-jquery-ui-core', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.core.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-widget', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.widget.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-accordion', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.accordion.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-mouse', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.mouse.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-button', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.button.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-draggable', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.draggable.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-position', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.position.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-dialog', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.dialog.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-accordion', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.accordian.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-slider', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.slider.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-core', plugins_url('/lib/jquery-ui-1.11.1/ui/core.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-widget', plugins_url('/lib/jquery-ui-1.11.1/ui/widget.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-accordion', plugins_url('/lib/jquery-ui-1.11.1/ui/accordion.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-mouse', plugins_url('/lib/jquery-ui-1.11.1/ui/mouse.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-button', plugins_url('/lib/jquery-ui-1.11.1/ui/button.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-draggable', plugins_url('/lib/jquery-ui-1.11.1/ui/draggable.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-position', plugins_url('/lib/jquery-ui-1.11.1/ui/position.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-dialog', plugins_url('/lib/jquery-ui-1.11.1/ui/dialog.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-accordion', plugins_url('/lib/jquery-ui-1.11.1/ui/accordian.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-slider', plugins_url('/lib/jquery-ui-1.11.1/ui/slider.js', dirname(__FILE__)), 'jquery' );
 
 				// JS libraries specific to DH Press
 			wp_enqueue_script('jquery-nestable', plugins_url('/lib/jquery.nestable.js', dirname(__FILE__)), 'jquery' );
@@ -2113,9 +2224,12 @@ function add_dhp_project_admin_scripts( $hook )
 			$allDepends = array('jquery', 'underscore', 'dhp-jquery-ui-core', 'jquery-nestable', 'jquery-colorpicker',
 								'knockout');
 			wp_enqueue_script('dhp-project-script', plugins_url('/js/dhp-project-admin.js', dirname(__FILE__)), $allDepends );
+
+			$pngs = getAttachedPNGs($postID);
 			wp_localize_script('dhp-project-script', 'dhpDataLib', array(
 				'ajax_url' => $dev_url,
-				'projectID' => $postID
+				'projectID' => $postID,
+				'pngImages' => $pngs
 			) );
 
         } else if ( $post->post_type == 'dhp-markers' ) {
@@ -2181,7 +2295,7 @@ function dhp_get_script_text($scriptname)
 } // dhp_get_script_text()
 
 
-add_filter( 'the_content', 'dhp_mod_page_content' );
+add_filter('the_content', 'dhp_mod_page_content');
 
 // PURPOSE:	Called by WP to modify content to be rendered for a post page
 // INPUT:	$content = material to show on page
@@ -2212,14 +2326,25 @@ function dhp_mod_page_content($content) {
 		case 'cards':
 	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_CARDS_VIEW);
 			break;
+		case 'pinboard':
+	    	$projscript .= dhp_get_script_text(DHP_SCRIPT_PINBOARD_VIEW);
+			break;
+		case 'tree':
+				// currently nothing is used
+	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_TREE_VIEW);
+			break;
+		case 'time':
+				// currently nothing is used
+	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_TREE_VIEW);
+			break;
 		}
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
 		break;
 	default:
-		$to_append = '';
+		$to_append = '<div class="dhp-entrytext"></div>';
 		break;
 	}
-	return $content.'<div class="dhp-post" id="'.$postID.'"><div class="dhp-entrytext"></div>'.$to_append.'</div>';
+	return $content.'<div class="dhp-post" id="'.$postID.'">'.$to_append.'</div>';
 } // dhp_mod_page_content()
 
 
@@ -2233,7 +2358,7 @@ function dhp_viz_query_var($vars) {
 
 add_filter( 'single_template', 'dhp_page_template' );
 
-// PURPOSE:	Called by WP to modify output for rendering page, inc template to be used, acc to Project
+// PURPOSE:	Called by WP to modify output when viewing a page of any type
 // INPUT:	$page_template = default path to file to use for template to render page
 // RETURNS:	Modified $page_template setting (file path to new php template file)
 
@@ -2255,12 +2380,12 @@ function dhp_page_template( $page_template )
     		// Communicate to visualizations by sending parameters in this array
     	$vizParams = array();
 
-		//foundation styles
+			// Foundation styles
         wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
         wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
-		wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
-		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		// wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
+		wp_enqueue_style('dhp-project', plugins_url('/css/dhp-project.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('underscore');
 		wp_enqueue_script('jquery');
@@ -2284,17 +2409,26 @@ function dhp_page_template( $page_template )
     	$thisEP = $projObj->getEntryPointByIndex($vizIndex);
     	switch ($thisEP->type) {
     	case 'map':
+			wp_enqueue_style('dhp-jquery-ui-base-style', plugins_url('/lib/jquery-ui-1.11.1/themes/base/core.css', dirname(__FILE__)) );
+			wp_enqueue_style('dhp-jquery-ui-slider-style', plugins_url('/lib/jquery-ui-1.11.1/themes/base/slider.css', dirname(__FILE__)),
+								 'dhp-jquery-ui-base-style' );
+			wp_enqueue_style('dhp-jquery-ui-smooth-style', plugins_url('/lib/jquery-ui-1.11.1/jquery-ui.theme.min.css', dirname(__FILE__)),
+								 array('dhp-jquery-ui-base-style', 'dhp-jquery-ui-slider-style') );
+
 			wp_enqueue_style('dhp-map-css', plugins_url('/css/dhp-map.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 			wp_enqueue_style('leaflet-css', plugins_url('/lib/leaflet-0.7.3/leaflet.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-			wp_enqueue_style('maki-sprite-style', plugins_url('/css/maki-sprite.css',  dirname(__FILE__)) );
+			wp_enqueue_style('maki-sprite-style', plugins_url('/lib/maki/maki-sprite.css',  dirname(__FILE__)) );
 
 	    	wp_enqueue_script('dhp-google-map-script', 'http'. ( is_ssl() ? 's' : '' ) .'://maps.google.com/maps/api/js?v=3&amp;sensor=false');
 
 				// Will call our own versions of jquery-ui to minimize compatibility problems
-			wp_enqueue_script('dhp-jquery-ui-core',   plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.core.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-widget', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.widget.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-mouse', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.mouse.min.js', dirname(__FILE__)), 'jquery' );
-			wp_enqueue_script('dhp-jquery-ui-slider', plugins_url('/lib/jquery-ui-1.10.4/ui/minified/jquery.ui.slider.min.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-core', plugins_url('/lib/jquery-ui-1.11.1/ui/core.js', dirname(__FILE__)), 'jquery' );
+			wp_enqueue_script('dhp-jquery-ui-widget', plugins_url('/lib/jquery-ui-1.11.1/ui/widget.js', dirname(__FILE__)), 
+						array('jquery', 'dhp-jquery-ui-core') );
+			wp_enqueue_script('dhp-jquery-ui-mouse', plugins_url('/lib/jquery-ui-1.11.1/ui/mouse.js', dirname(__FILE__)), 
+						array('jquery', 'dhp-jquery-ui-core', 'dhp-jquery-ui-widget') );
+			wp_enqueue_script('dhp-jquery-ui-slider', plugins_url('/lib/jquery-ui-1.11.1/ui/slider.js', dirname(__FILE__)),
+						array('jquery', 'dhp-jquery-ui-core', 'dhp-jquery-ui-widget') );
 
 			wp_enqueue_script('leaflet', plugins_url('/lib/leaflet-0.7.3/leaflet.js', dirname(__FILE__)));
 			wp_enqueue_script('leaflet-maki', plugins_url('/lib/Leaflet.MakiMarkers.js', dirname(__FILE__)), 'leaflet');
@@ -2304,11 +2438,15 @@ function dhp_page_template( $page_template )
 
 				// Get any DHP custom map parameters
 			$layerData = dhpGetMapLayerData($thisEP->settings->layers);
-			$vizParams["layerData"] = $layerData;
+			$vizParams['layerData'] = $layerData;
+
+				// Get any PNG image icons
+			$vizParams['pngs'] = getAttachedPNGs($post->ID);
 
 	    	array_push($dependencies, 'leaflet', 'dhp-google-map-script', 'dhp-maps-view', 'dhp-custom-maps',
 	    							'dhp-jquery-ui-slider');
 	    	break;
+
 	    case 'cards':
 			wp_enqueue_style('dhp-cards-css', plugins_url('/css/dhp-cards.css',  dirname(__FILE__)) );
 
@@ -2318,24 +2456,78 @@ function dhp_page_template( $page_template )
 
 	    	array_push($dependencies, 'isotope', 'dhp-cards-view');
 	    	break;
+
+	    case 'pinboard':
+			wp_enqueue_style('foundation-icons-css', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
+			wp_enqueue_style('dhp-pinboard-css', plugins_url('/css/dhp-pinboard.css',  dirname(__FILE__)) );
+
+			wp_enqueue_script('snap', plugins_url('/lib/snap.svg-min.js', dirname(__FILE__)));
+			wp_enqueue_script('dhp-pinboard-view', plugins_url('/js/dhp-pinboard-view.js', dirname(__FILE__)), 
+				'snap' );
+
+			if ($thisEP->settings->animscript && $thisEP->settings->animscript !== '') {
+				$content = @file_get_contents($thisEP->settings->animscript);
+				if ($content === false) {
+					trigger_error("Cannot load animation script file ".$thisEP->settings->animscript);
+				}
+				$vizParams['animscript'] = $content;
+			}
+
+				// Get any PNG image icons
+			$vizParams['pngs'] = getAttachedPNGs($post->ID);
+
+	    	array_push($dependencies, 'snap', 'dhp-pinboard-view');
+	    	break;
+
+	    case 'tree':
+			wp_enqueue_style('dhp-tree-css', plugins_url('/css/dhp-tree.css',  dirname(__FILE__)) );
+
+			wp_enqueue_script('d3', plugins_url('/lib/d3.min.js', dirname(__FILE__)));
+			wp_enqueue_script('dhp-tree-view', plugins_url('/js/dhp-tree-view.js', dirname(__FILE__)), 'd3' );
+
+	    	array_push($dependencies, 'd3', 'dhp-tree-view');
+	    	break;
+
+	    case 'time':
+			wp_enqueue_style('dhp-time-css', plugins_url('/css/dhp-time.css',  dirname(__FILE__)) );
+
+			wp_enqueue_script('d3', plugins_url('/lib/d3.min.js', dirname(__FILE__)));
+			wp_enqueue_script('dhp-time-view', plugins_url('/js/dhp-time-view.js', dirname(__FILE__)), 'd3' );
+
+	    	array_push($dependencies, 'd3', 'dhp-time-view');
+	    	break;
+
 	    default:
 	 		trigger_error("Unknown visualization type: ".$thisEP->type);
 	    	break;
 	    }
 
 	    	// Transcript specific
-	    if ($projObj->selectModalHas('transcript')) {
-			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-	        wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
-			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
-				 array('jquery', 'underscore', 'soundcloud-api'), DHP_PLUGIN_VERSION);
-	    	array_push($dependencies, 'dhp-transcript');
+	    if ($projObj->selectModalHas('scloud') || $projObj->selectModalHas('youtube')) {
+			wp_enqueue_style('dhp-transcript-css', plugins_url('/css/transcriptions.css',  dirname(__FILE__)) );
+			wp_enqueue_script('dhp-widget', plugins_url('/js/dhp-widget.js',  dirname(__FILE__)),
+				 array('jquery', 'underscore') );
+			if ($projObj->selectModalHas('scloud')) {
+	        	wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js');
+	    		array_push($dependencies, 'soundcloud-api');
+	        }
+			// if ($projObj->selectModalHas('youtube')) {
+			// }
+	    	array_push($dependencies, 'dhp-widget');
 	    }
+
+			// For touch-screen mechanisms
+		// wp_enqueue_script('dhp-touch-punch', plugins_url('/lib/jquery.ui.touch-punch.js', dirname(__FILE__)),
+		// 	array('jquery', 'dhp-jquery-ui-widget', 'dhp-jquery-ui-mouse') );
+
+		wp_enqueue_script('dhp-services', plugins_url('/js/dhp-services.js', dirname(__FILE__)),
+						array('jquery', 'underscore'), DHP_PLUGIN_VERSION );
+	    array_push($dependencies, 'dhp-services');
 
 	    	// Enqueue page JS last, after we've determine what dependencies might be
 		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-project-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
 
-		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
+		wp_localize_script('dhp-public-project-script', 'dhpData', array(
 			'ajax_url'   => $dev_url,
 			'vizParams'  => $vizParams,
 			'settings'   => $allSettings
@@ -2346,21 +2538,16 @@ function dhp_page_template( $page_template )
 		$project_id = get_post_meta($post->ID, 'project_id',true);
 		$projObj = new DHPressProject($project_id);
 
-		//foundation styles
-		wp_enqueue_style( 'dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
-		wp_enqueue_style( 'dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
-
-		wp_enqueue_style('dhp-admin-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		wp_enqueue_style('dhp-style-css', plugins_url('/css/dhp-admin.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('jquery');
-		wp_enqueue_script( 'dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
-		wp_enqueue_script( 'dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
+		wp_enqueue_script('dhp-modernizr', plugins_url('/lib/foundation-5.1.1/js/vendor/modernizr.js', dirname(__FILE__)), 'jquery');
 		wp_enqueue_script('underscore');
 
 			// Enqueue last, after dependencies determined
 		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION);
 
-		wp_localize_script( 'dhp-public-project-script', 'dhpData', array(
+		wp_localize_script('dhp-public-project-script', 'dhpData', array(
 			'ajax_url' => $dev_url,
 			'settings' => $projObj->getAllSettings()
 		) );
@@ -2418,11 +2605,20 @@ function dhp_tax_template( $page_template )
 
 	    if ($isTranscript) {
 			wp_enqueue_style('transcript', plugins_url('/css/transcriptions.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
-		    wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js','jquery');
-			wp_enqueue_script('dhp-transcript', plugins_url('/js/dhp-transcript.js',  dirname(__FILE__)),
-				 array('jquery', 'underscore', 'soundcloud-api'), DHP_PLUGIN_VERSION);
-		    array_push($dependencies, 'dhp-transcript');
+			if ($projObj->selectModalHas('scloud')) {
+	        	wp_enqueue_script('soundcloud-api', 'http://w.soundcloud.com/player/api.js');
+		    	array_push($dependencies, 'soundcloud-api');
+	        }
+			// if ($projObj->selectModalHas('youtube')) {
+			// }
+			wp_enqueue_script('dhp-widget', plugins_url('/js/dhp-widget.js',  dirname(__FILE__)),
+				 array('jquery', 'underscore'), DHP_PLUGIN_VERSION);
+		    array_push($dependencies, 'dhp-widget');
 		}
+
+		wp_enqueue_script('dhp-services', plugins_url('/js/dhp-services.js', dirname(__FILE__)),
+						array('jquery', 'underscore'), DHP_PLUGIN_VERSION );
+	    array_push($dependencies, 'dhp-services');
 
 			// Enqueue last, after dependencies have been determined
 		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
