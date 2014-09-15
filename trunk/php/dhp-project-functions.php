@@ -252,72 +252,6 @@ function show_tax_on_project_markers()
 } // show_tax_on_project_markers()
 
 
-// // add_meta_boxes called when Edit Post runs
-// add_action('add_meta_boxes_project', 'add_dhp_project_icons_box');
-
-// // PURPOSE:	Add the editing box for Marker icons (shown on maps)
-
-// function add_dhp_project_icons_box()
-// {
-//     add_meta_box(
-// 		'dhp_icons_box', // $id
-// 		'Marker Icons', // $title
-// 		'show_dhp_project_icons_box', // $callback
-// 		'project', // $page
-// 		'side', // $context 
-// 		'default'); // $priority
-// } // add_dhp_project_icons_box()
-
-// function show_dhp_project_icons_box()
-// {
-// 	//dhp_deploy_icons();
-// 	bdw_get_images();
-// } // show_dhp_project_icons_box()
-
-
-// // PURPOSE: Create HTML icon box on right sidebox
-// // SIDE FX:	Outputs HTML of thumbnail images of images associated with post
-// // ASSUMES:	$post global is set to Project post
-
-// function bdw_get_images()
-// {
-// 	global $post;
-
-//     // Get the post ID
-//     $iPostID = $post->ID;
- 
-//     // Get images associated with this Project post
-//     $arrImages = get_children('post_type=attachment&post_mime_type=image&numberpost=-1&post_parent=' . $iPostID );
- 
-//     // If images exist for this page
-//     if($arrImages) {
- 
-//         // Get array keys representing attached image numbers
-//         $arrKeys = array_keys($arrImages);
- 
-//         $sImgString .= '<div class="misc-pub-section icons">';
- 
-//         // UNCOMMENT THIS IF YOU WANT THE FULL SIZE IMAGE INSTEAD OF THE THUMBNAIL
-//         //$sImageUrl = wp_get_attachment_url($iNum);
-//         $i = 0;
-//  		foreach ($arrKeys as $field) {
-//  			// Get the first image attachment
-//         	$iNum = $arrKeys[$i];
-//  			$i++;
-//         	// Get the thumbnail url for the attachment
-//        		$sThumbUrl = wp_get_attachment_thumb_url($iNum);
-//         	// Build the <img> string
-//         	$sImgString .= '<a id="'.$iNum.'" >' .
-//                             '<img src="' . $sThumbUrl . '"/>' .
-//                         '</a>';
-//  		}
-//  		$sImgString .= '</div>';
-//         // Print the image
-//         echo $sImgString;
-//     }
-// } // bdw_get_images()
-
-
 // add_meta_boxes called when Edit Post runs
 add_action('add_meta_boxes_project', 'add_dhp_project_admin_edit');
 
@@ -434,15 +368,6 @@ function save_dhp_project_settings($post_id)
 	} elseif ($new == '' && $old) {
 		delete_metadata('post', $post_id, 'project_settings', $old);
 	}
-
-		// Not currently supporting project icons
-	// $old = get_post_meta($srcToCheck, 'project_icons', true);
-	// $new = $_POST['project_icons'];
-	// if ($new && $new != $old) {
-	// 	update_metadata('post', $post_id, 'project_icons', $new);
-	// } elseif ($new == '' && $old) {
-	// 	delete_metadata('post', $post_id, 'project_icons', $old);
-	// }
 } // save_dhp_project_settings()
 
 
@@ -2634,47 +2559,3 @@ function dhp_tax_template( $page_template )
 	return $page_template;
 } // dhp_tax_template()
 
-
-// dhp_deploy_icons()
-// PURPOSE:	Produce HTML to display all marker icons in sidebar; search for all gif, jpg and png files
-
-// function dhp_deploy_icons()
-// { 	
-// 	$icon_path = DHP_PLUGIN_URL.'/images/icons/';
-// 	$icon_dir = DHP_PLUGIN_DIR.'/images/icons/';	
-	
-// 	$icons_array = array();
-	
-	
-// 	if ($handle = opendir($icon_dir)) {
-		
-// 		while (false !== ($file = readdir($handle))) {
-	
-// 			$file_type = wp_check_filetype($file);
-	
-// 			$file_ext = $file_type['ext'];
-		
-// 			if ($file != "." && $file != ".." && ($file_ext == 'gif' || $file_ext == 'jpg' || $file_ext == 'png') ) {
-// 				array_push($icons_array,$icon_path.$file);
-// 			}
-// 		}
-// 	}
-/** 	?>
-          	   
-// 		<div id="dhp_icon_cont">
-        	
-// 		<?php $i = 1; foreach ($icons_array as $icon){ ?>
-// 		  <div class="dhp_icon" id="icon_<?php echo $i;?>">
-// 		  <img src="<?php echo $icon; $i++; ?>" /> 
-// 		  </div>
-// 		<?php } ?>
-        
-// 		 </div> 
-//          <div id="icon-cats"><ul>
-         
-//          </ul></div>
-         
-         	
-// 	<?php
-// } // dhp_deploy_icons()
-**/
