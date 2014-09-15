@@ -5,7 +5,7 @@ Donate link: http://dhpress.org/
 Tags: plugin, map, open layers, markers, humanities, toolkit, video, historical, tours
 Requires at least: 3.4
 Tested up to: 3.8
-Stable tag: 2.0
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,14 @@ Go to DHPress > New Project and create a new project to get started
 
 
 == Changelog ==
+
+= 2.5 =
+* New visualizations: Pinboard, Timeline, Trees…
+* Insert YouTube videos into Select Modals
+* TopicCards can sort and filter Dates
+* SoundCloud and YouTube widgets can be displayed in Select Modals without transcriptions
+* Maps view and Pinboard views can display PNG image icons
+* and much more...
 
 = 2.0 =
 * Entirely new Admin edit panel
