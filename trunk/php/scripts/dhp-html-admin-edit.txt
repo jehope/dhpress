@@ -14,6 +14,7 @@
         <div><ul>
     	    <li>Label for Home Button: <input data-bind="value: edHomeBtnLbl" type="text" size="12" placeholder="Home"/></li>
     	    <li>Home URL: <input data-bind="value: edHomeURL" type="text" size="30" placeholder="http://"/></li>
+          <li>Marker Labels: <select data-bind="options: mTitleMoteNames, value: edMTitle" ></select>
     	  </ul></div>
 
 
@@ -56,6 +57,7 @@
             <button data-bind="jqButton, click: createPinEP">New Pinboard</button>
             <button data-bind="jqButton, click: createTreeEP">New Tree</button>
             <button data-bind="jqButton, click: createTimeEP">New Timeline</button>
+            <button data-bind="jqButton, click: createFlowEP">New Facet Flow</button>
           </p>
           <div data-bind="template: { name: calcEPTemplate, foreach: entryPoints, as: 'theEP' }"></div>
       </div>
@@ -71,7 +73,6 @@
           <div id="subaccordion">
             <h3>Select Modal windows (item selected from visualization)</h3>
             <div>
-              Modal title: <select data-bind="options: anyTxtDMoteNames, value: edSelTitle" ></select>
               Modal size:
               <select data-bind="value: edSelWidth">
                     <option value="tiny">Tiny</option>
@@ -248,7 +249,6 @@
     </h2>
     <ul>
         <li>Card short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
-        <li>Card Title <select data-bind="value: theEP.settings.title, options: $root.anyTxtDMoteNames"></select></li>
         <li>Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Must be configured for colors)</li>
         <li>Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="9"/>&nbsp;
         Width <select data-bind="value: theEP.settings.width">
@@ -386,8 +386,7 @@
         <li>Head/Top Marker of Tree <input data-bind="value: theEP.settings.head" type="text" size="24"/>
             Children stored in <select data-bind="value: theEP.settings.children, options: $root.pointerMoteNames"></select>
         </li>
-        <li>Marker label <select data-bind="value: theEP.settings.label, options: $root.anyTxtMoteNames"></select>
-            Font size (pixels) <input data-bind="value: theEP.settings.fSize" type="number" size="2"/>
+        <li>Font size (pixels) <input data-bind="value: theEP.settings.fSize" type="number" size="2"/>
             Marker radius (pixels) <input data-bind="value: theEP.settings.radius" type="number" size="2"/>
         </li>
         <li>Marker Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Must be configured for colors)</li>
@@ -409,7 +408,6 @@
     <ul>
         <li>Timeline short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
         <li>Date range <select data-bind="value: theEP.settings.date, options: $root.dateMoteNames"></select>
-          Label <select data-bind="value: theEP.settings.label, options: $root.anyTxtMoteNames"></select>
           Marker Color <select data-bind="value: theEP.settings.color, options: $root.stMoteNames"></select> (Must be configured for colors)
         </li>
         <li>Height of each band (in pixels) <input data-bind="value: theEP.settings.bandHt" type="number" size="4"/>
@@ -422,6 +420,37 @@
           to end date <input data-bind="value: theEP.settings.openTo" type="text" size="12"/>
         </li>
     </ul>
+</script>
+
+
+<!-- Facet Flow Entry Point Templates -->
+<script type="text/html" id="ep-flow-template">
+    <h2><b>Facet Flow Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Facet Flow</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
+    <ul>
+        <li>Facet Flow short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
+        <li>Flow Panel Size: Width (in pixels)
+            <input data-bind="value: theEP.settings.width" type="number" size="4"/>
+            Height (in pixels) <input data-bind="value: theEP.settings.height" type="number" size="4"/>
+        </li>
+        <li>Facet Flow views require at least 2 Short Text motes to work</li>
+        <div data-bind="template: { name: 'flow-mote-template', foreach: theEP.settings.motes }"></div>
+        <button data-bind="jqButton, click: $root.addFlowMote.bind(theEP)">Add Mote to Flow</button>
+    </ul>
+</script>
+
+<script type="text/html" id="flow-mote-template">
+    <li>
+        Mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.stMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delFlowMote($data, theEP, $index()); }">Delete</button>
+    </li>
 </script>
 
 

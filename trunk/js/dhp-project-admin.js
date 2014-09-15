@@ -16,7 +16,8 @@ jQuery(document).ready(function($) {
         general: {
           version: 3,
           homeLabel: '',
-          homeURL: ''
+          homeURL: '',
+          mTitle: 'the_title'
         },
         motes: [],
         eps: [],
@@ -159,7 +160,6 @@ jQuery(document).ready(function($) {
     self.type = 'cards';
     self.label= ko.observable(epSettings.label || 'name me');
     self.settings = { };
-    self.settings.title = ko.observable(epSettings.settings.title);
     self.settings.color = ko.observable(epSettings.settings.color);
     self.settings.defColor = ko.observable(epSettings.settings.defColor);
     self.settings.bckGrd = ko.observable(epSettings.settings.bckGrd);
@@ -223,7 +223,6 @@ jQuery(document).ready(function($) {
     self.settings.height = ko.observable(epSettings.settings.height);
     self.settings.head = ko.observable(epSettings.settings.head);
     self.settings.children = ko.observable(epSettings.settings.children);
-    self.settings.label = ko.observable(epSettings.settings.label);
     self.settings.fSize = ko.observable(epSettings.settings.fSize);
     self.settings.radius = ko.observable(epSettings.settings.radius);
     self.settings.padding = ko.observable(epSettings.settings.padding);
@@ -240,7 +239,6 @@ jQuery(document).ready(function($) {
     self.settings = { };
     self.settings.date = ko.observable(epSettings.settings.date);
     self.settings.color = ko.observable(epSettings.settings.color);
-    self.settings.label = ko.observable(epSettings.settings.label);
     self.settings.bandHt = ko.observable(epSettings.settings.bandHt);
     self.settings.wAxisLbl = ko.observable(epSettings.settings.wAxisLbl);
     self.settings.from = ko.observable(epSettings.settings.from);
@@ -248,6 +246,23 @@ jQuery(document).ready(function($) {
     self.settings.openFrom = ko.observable(epSettings.settings.openFrom);
     self.settings.openTo = ko.observable(epSettings.settings.openTo);
   } // TimeEntryPoint()
+
+    // Class constructor for Facet Flow Entry Point
+  var FlowEntryPoint = function(epSettings) {
+    var self = this;
+
+    self.type = 'flow';
+    self.label= ko.observable(epSettings.label || 'name me');
+    self.settings = { };
+    self.settings.width = ko.observable(epSettings.settings.width);
+    self.settings.height = ko.observable(epSettings.settings.height);
+
+    self.settings.motes = ko.observableArray();
+    ko.utils.arrayForEach(normalizeArray(epSettings.settings.motes), function(mote) {
+      self.settings.motes.push(new ArrayString(mote));
+    });
+  } // FlowEntryPoint()
+
 
     // Create new "blank" layer to store in Map entry point
     // NOTES: opacity is the only property that needs double binding
@@ -343,6 +358,7 @@ jQuery(document).ready(function($) {
 
       projSettings.general.homeLabel = self.edHomeBtnLbl();
       projSettings.general.homeURL = self.edHomeURL();
+      projSettings.general.mTitle = self.edMTitle();
 
       projSettings.motes = [];
       ko.utils.arrayForEach(self.allMotes(), function(theMote) {
@@ -394,7 +410,6 @@ jQuery(document).ready(function($) {
           break;
 
         case 'cards':
-          savedEP.settings.title = theEP.settings.title();
           savedEP.settings.color = theEP.settings.color();
           savedEP.settings.defColor = theEP.settings.defColor();
           savedEP.settings.bckGrd = theEP.settings.bckGrd();
@@ -448,7 +463,6 @@ jQuery(document).ready(function($) {
           savedEP.settings.height = theEP.settings.height();
           savedEP.settings.head = theEP.settings.head();
           savedEP.settings.children = theEP.settings.children();
-          savedEP.settings.label = theEP.settings.label();
           savedEP.settings.fSize = theEP.settings.fSize();
           savedEP.settings.radius = theEP.settings.radius();
           savedEP.settings.padding = theEP.settings.padding();
@@ -458,13 +472,22 @@ jQuery(document).ready(function($) {
         case 'time':
           savedEP.settings.date  = theEP.settings.date();
           savedEP.settings.color = theEP.settings.color();
-          savedEP.settings.label = theEP.settings.label();
           savedEP.settings.bandHt = theEP.settings.bandHt();
           savedEP.settings.wAxisLbl = theEP.settings.wAxisLbl();
           savedEP.settings.from = theEP.settings.from();
           savedEP.settings.to = theEP.settings.to();
           savedEP.settings.openFrom = theEP.settings.openFrom();
           savedEP.settings.openTo = theEP.settings.openTo();
+          break;
+
+        case 'flow':
+          savedEP.settings.width = theEP.settings.width();
+          savedEP.settings.height = theEP.settings.height();
+
+          savedEP.settings.motes = [];
+          ko.utils.arrayForEach(theEP.settings.motes(), function(mote) {
+            savedEP.settings.motes.push(mote.name());
+          });
           break;
         } // switch ep type
         projSettings.eps.push(savedEP);
@@ -483,7 +506,6 @@ jQuery(document).ready(function($) {
       });
 
       projSettings.views.select = {};
-      projSettings.views.select.title = self.edSelTitle();
       projSettings.views.select.width = self.edSelWidth();
       projSettings.views.select.widgets = [];
       ko.utils.arrayForEach(self.widgetList(), function (theWidget) {
@@ -523,11 +545,13 @@ jQuery(document).ready(function($) {
       // User-editable values
     self.edHomeBtnLbl = ko.observable('');
     self.edHomeURL = ko.observable('');
+    self.edMTitle = ko.observable('the_title');
 
       // Methods
     self.setDetails = function(theDetails) {
       self.edHomeBtnLbl(theDetails.homeLabel);
       self.edHomeURL(theDetails.homeURL);
+      self.edMTitle(theDetails.mTitle);
     };
 
 //-------------------------------------- Motes --------------------------------------
@@ -605,9 +629,9 @@ jQuery(document).ready(function($) {
     self.soundMoteNames = ko.computed(function() {
       return doGetMoteNames(['SoundCloud'], true);
     }, self);
-      // Any textual value, including the_title and the_content (but not 'disable')
-    self.anyTxtMoteNames = ko.computed(function() {
-      return doGetMoteNames(['Short Text', 'Long Text'], false, true, true);
+      // for Titles of Markers
+    self.mTitleMoteNames = ko.computed(function() {
+      return doGetMoteNames(['Short Text', 'Long Text'], false, true);
     }, self);
       // Any textual value, including the_title, the_content and 'disable'
     self.anyTxtDMoteNames = ko.computed(function() {
@@ -710,7 +734,6 @@ jQuery(document).ready(function($) {
                 theEP.settings.legends.remove(function(mote) { return mote.name() === moteName; });
                 break;
               case 'cards':
-                if (theEP.settings.title() == moteName) { theEP.settings.title(''); }
                 if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
 
                 theEP.settings.content.remove(function(mote) { return mote.name() === moteName; });
@@ -723,18 +746,18 @@ jQuery(document).ready(function($) {
                 break;
               case 'tree':
                 if (theEP.settings.children() == moteName) {  theEP.settings.children(''); }
-                if (theEP.settings.label() == moteName) {  theEP.settings.label(''); }
                 if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
                 break;
               case 'time':
                 if (theEP.settings.date() == moteName) {  theEP.settings.date(''); }
-                if (theEP.settings.label() == moteName) {  theEP.settings.label(''); }
                 if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
+                break;
+              case 'flow':
+                theEP.settings.motes.remove(function(mote) { return mote.name() === moteName; });
                 break;
               }
             });
 
-            if (self.edSelTitle()  == moteName) { self.edSelTitle(''); }
             if (self.edSelLinkMt() == moteName) { self.edSelLinkMt('disable'); }
             if (self.edSelLink2Mt()== moteName) { self.edSelLink2Mt('disable'); }
             self.selMoteList.remove(function(mote) { return mote.name() === moteName; });
@@ -1405,8 +1428,7 @@ jQuery(document).ready(function($) {
       var _blankCardsEP = {
         type: 'cards',
         label: 'name me',
-        settings: { 
-          title: 'disable',
+        settings: {
           color: 'disable',
           defColor: '#00BFFF',
           bckGrd: '',
@@ -1444,7 +1466,7 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
-      // PURPOSE: Handle user selection to create new pinboard entry point
+      // PURPOSE: Handle user selection to create new Tree entry point
     self.createTreeEP = function() {
       var _blankTreeEP = {
         type: 'tree',
@@ -1455,7 +1477,6 @@ jQuery(document).ready(function($) {
           height: 1000,
           head: '',
           children: '',
-          label: '',
           fSize: '10',
           radius: '4',
           padding: '120',
@@ -1466,15 +1487,14 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
-      // PURPOSE: Handle user selection to create new pinboard entry point
+      // PURPOSE: Handle user selection to create new Timeline entry point
     self.createTimeEP = function() {
-      var _blankTreeEP = {
+      var _blankTimeEP = {
         type: 'time',
         label: 'name me',
         settings: {
           date: '',
           color: '',
-          label: '',
           bandHt: '13',
           wAxisLbl: '32',
           from: '',
@@ -1483,7 +1503,22 @@ jQuery(document).ready(function($) {
           openTo: ''
         }
       };
-      self.setEP(_blankTreeEP);
+      self.setEP(_blankTimeEP);
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to create new pinboard entry point
+    self.createFlowEP = function() {
+      var _blankFlowEP = {
+        type: 'flow',
+        label: 'name me',
+        settings: {
+          width: 500,
+          height: 400,
+          motes: []
+        }
+      };
+      self.setEP(_blankFlowEP);
       self.settingsDirty(true);
     };
 
@@ -1505,6 +1540,9 @@ jQuery(document).ready(function($) {
         break;
       case 'time':
         newEP = new TimeEntryPoint(theEP);
+        break;
+      case 'flow':
+        newEP = new FlowEntryPoint(theEP);
         break;
       }
       self.entryPoints.push(newEP);
@@ -1544,6 +1582,8 @@ jQuery(document).ready(function($) {
         return 'ep-tree-template';
       case 'time':
         return 'ep-time-template';
+      case 'flow':
+        return 'ep-flow-template';
       }
     }; // calcEPTemplate()
 
@@ -1610,25 +1650,25 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
-      // PURPOSE: Handle user selection to create new content mote in Topic Cards
+      // PURPOSE: Handle user selection to create new filter mote in Topic Cards
     self.addCardFilter =  function(theEP) {
       theEP.settings.filterMotes.push(new ArrayString(''));
       self.settingsDirty(true);
     };
 
-      // PURPOSE: Handle user selection to create new map legend
+      // PURPOSE: Handle user selection to delete filter mote on cards
     self.delCardFilter = function(theFilter, theEP, index) {
       theEP.settings.filterMotes.splice(index, 1);
       self.settingsDirty(true);
     };
 
-      // PURPOSE: Handle user selection to create new content mote in Topic Cards
+      // PURPOSE: Handle user selection to create new sort mote in Topic Cards
     self.addCardSort =  function(theEP) {
       theEP.settings.sortMotes.push(new ArrayString(''));
       self.settingsDirty(true);
     };
 
-      // PURPOSE: Handle user selection to create new map legend
+      // PURPOSE: Handle user selection to delete cards sort mote
     self.delCardSort = function(theSort, theEP, index) {
       theEP.settings.sortMotes.splice(index, 1);
       self.settingsDirty(true);
@@ -1640,7 +1680,7 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
-      // PURPOSE: Handle user selection to create new pinboard legend
+      // PURPOSE: Handle user selection to delete pinboard legend
     self.delPinLegend = function(theLegend, theEP, index) {
       theEP.settings.legends.splice(index, 1);
       self.settingsDirty(true);
@@ -1661,6 +1701,18 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new mote in Facet Flow list
+    self.addFlowMote =  function(theEP) {
+      theEP.settings.motes.push(new ArrayString(''));
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to create new map legend
+    self.delFlowMote = function(theSort, theEP, index) {
+      theEP.settings.motes.splice(index, 1);
+      self.settingsDirty(true);
+    };
+
 //------------------------------------------ Views -----------------------------------------
 
       // User-editable values
@@ -1668,7 +1720,6 @@ jQuery(document).ready(function($) {
     self.edVizWidth = ko.observable(600);
     self.edVizHeight = ko.observable(600);
 
-    self.edSelTitle = ko.observable('');
     self.edSelWidth = ko.observable('medium');
     self.edSelLinkMt  = ko.observable('');
     self.edSelLinkLbl = ko.observable('');
@@ -1697,7 +1748,6 @@ jQuery(document).ready(function($) {
       self.edVizWidth(viewSettings.miniWidth);
       self.edVizHeight(viewSettings.miniHeight);
 
-      self.edSelTitle(viewSettings.select.title);
       self.edSelWidth(viewSettings.select.width);
       self.edSelLinkMt(disableByDefault(viewSettings.select.link));
       self.edSelLinkLbl(viewSettings.select.linkLabel);
@@ -1767,6 +1817,15 @@ jQuery(document).ready(function($) {
               linkList.push(colorName);
             }
           }
+          break;
+        case 'flow':
+          ko.utils.arrayForEach(theEP.settings.motes(), function (mote) {
+            var moteName = mote.name();
+              // Don't add if it already exists
+            if (linkList.indexOf(moteName) == -1) {
+              linkList.push(moteName);
+            }
+          });
           break;
         }
       });
@@ -2145,9 +2204,6 @@ jQuery(document).ready(function($) {
           if (theEP.settings.children() == '') {
             epErrorMessage('You must specify the Pointer mote which indicates descending generations for the Tree');
           }
-          if (theEP.settings.label() == '') {
-            epErrorMessage('You must specify the mote which provides node labels for the Tree');
-          }
           var i;
           if (theEP.settings.fSize() == '' || isNaN(i=parseInt(theEP.settings.fSize(),10)) || i <= 8) {
             epErrorMessage('You must specify a valid font size for the Tree');
@@ -2164,9 +2220,6 @@ jQuery(document).ready(function($) {
             epErrorMessage('You must specify the Date mote for the Timeline');
           }
           if (theEP.settings.color() == '') {
-            epErrorMessage('You must specify a color legend for the Timeline');
-          }
-          if (theEP.settings.label() == '') {
             epErrorMessage('You must specify a color legend for the Timeline');
           }
           var i;
@@ -2191,6 +2244,18 @@ jQuery(document).ready(function($) {
             epErrorMessage('You must specify a valid Date for the end zoom of the Timeline');
           }
           break;
+        case 'flow':
+          var w;
+          if (theEP.settings.width() == '' || isNaN(w=parseInt(theEP.settings.width(),10)) || w <= 0) {
+            epErrorMessage('You must specify a valid background image width for the Facet Flow');
+          }
+          var h;
+          if (theEP.settings.height() == '' || isNaN(h=parseInt(theEP.settings.height(),10)) || h <= 0) {
+            epErrorMessage('You must specify a valid background image height for the Facet Flow');
+          }
+          if (theEP.settings.motes().length < 2) {
+            epErrorMessage('You need at least two sets of motes for the Facet Flow');
+          }
         } // switch
       });
 
