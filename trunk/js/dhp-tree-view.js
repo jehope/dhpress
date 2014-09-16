@@ -245,7 +245,7 @@ var dhpTreeView = {
                   .attr("dy", 3)
                   // .style("font-size", dhpTreeView.fSize+'px')
                   .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
-                  .text(function(d) { return d.name; });
+                  .text(function(d) { return d.title; });
             break;
 
         case 'radial':
@@ -285,7 +285,7 @@ var dhpTreeView = {
                 .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
                     // May also need to turn text upside down
                 .attr("transform", function(d) { return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)"; })
-                .text(function(d) { return d.name; });
+                .text(function(d) { return d.title; });
             break;
 
         case 'segment':
@@ -333,21 +333,21 @@ var dhpTreeView = {
                           // return "translate(-"+topNodeLOffset+",-"+topNodeTOffset+")";
                           return "";
                       }
-                }) // .text(function(d) { return d.name; })
+                }) // .text(function(d) { return d.title; })
                 ;
 
                 // Enable up to three word segments in label
             aLabel.append("tspan")
                 .attr("x", 0)
-                .text(function(d) { return d.name.split(" ")[0]; });
+                .text(function(d) { return d.title.split(" ")[0]; });
             aLabel.append("tspan")
                 .attr("x", 0)
                 .attr("dy", "1em")
-                .text(function(d) { return d.name.split(" ")[1]; });
+                .text(function(d) { return d.title.split(" ")[1]; });
             aLabel.append("tspan")
                 .attr("x", 0)
                 .attr("dy", "1em")
-                .text(function(d) { return d.name.split(" ")[2]; });
+                .text(function(d) { return d.title.split(" ")[2]; });
             break;
         } // switch(tree form)
     }, // createData()

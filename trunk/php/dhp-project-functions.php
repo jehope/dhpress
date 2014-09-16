@@ -18,6 +18,7 @@ define( 'DHP_SCRIPT_PINBOARD_VIEW',   'dhp-script-pin-view.txt' );
 
 // define( 'DHP_SCRIPT_TREE_VIEW',   'dhp-script-tree-view.txt' );   // currently unneeded
 // define( 'DHP_SCRIPT_TIME_VIEW',   'dhp-script-time-view.txt' );   // currently unneeded
+// define( 'DHP_SCRIPT_FLOW_VIEW',   'dhp-script-flow-view.txt' );   // currently unneeded
 
 // define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unneeded
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
@@ -577,17 +578,6 @@ function dhpGetMarkers()
 		break;
 
 	case "cards":
-			// Convert title mote to custom field --
-			// If no title, no need (currently) to create cards property for markers
-		$titleMote = $eps->settings->title;
-		if ($titleMote == null || $titleMote == '' || $titleMote == 'disable') {
-			$titleMote = null;
-		} else if ($titleMote != 'the_title') {
-			$titleMote = $projObj->getCustomFieldForMote($titleMote);
-			if (is_null($titleMote)) {
-				trigger_error("Card view title assigned to unknown mote");
-			}
-		}
 			// Convert color mote to custom field
 		$cardColorMote = $eps->settings->color;
 		if ($cardColorMote != null && $cardColorMote !== '' && $cardColorMote != 'disable') {
@@ -628,16 +618,14 @@ function dhpGetMarkers()
 
 		$dateMote = $projObj->getMoteByName($eps->settings->date);
 		$dateCF = $dateMote->cf;
+		break;
 
-		$titleMote = $eps->settings->label;
-		if ($titleMote == null || $titleMote == '' || $titleMote == 'disable') {
-			$titleMote = null;
-		} else if ($titleMote != 'the_title') {
-			$titleMote = $projObj->getCustomFieldForMote($titleMote);
-			if (is_null($titleMote)) {
-				trigger_error("Timeline view title assigned to unknown mote");
-			}
+	case "flow":
+			// Force all flow motes to be retrieved for each marker
+		foreach ($eps->settings->motes as $theMote) {
+			array_push($mQuery->selectContent, $theMote);
 		}
+			// We rely on property.title for name of marker
 		break;
 	} // switch
 
@@ -721,13 +709,11 @@ function dhpGetMarkers()
 			$thisFeature['date'] = $date;
 		}
 
-		if ($titleMote != null) {
-			if ($titleMote=='the_title') {
-				$title = get_the_title();
-			} else {
-				$title = get_post_meta($markerID, $titleMote, true);
-			}
-			$thisFeature['title'] = $title;
+			// Fetch title for marker
+		if ($mQuery->titleMote=='the_title') {
+			$thisFeature["title"] = get_the_title();
+		} else {
+			$thisFeature["title"] = get_post_meta($markerID, $mQuery->titleMote, true);
 		}
 
 			// Store all of the properties
@@ -750,7 +736,7 @@ function dhpGetMarkers()
 //			$eps = Entry Point settings
 // RETURNS: Nested Array for $nodeName and all of its children
 
-function createTreeNode($nodeName, $mQuery, $childrenCF, $childrenDelim, $nameCF)
+function createTreeNode($nodeName, $mQuery, $childrenCF, $childrenDelim)
 {
 		// Get the WP post corresponding to this marker
 	$args = array( 
@@ -773,15 +759,18 @@ function createTreeNode($nodeName, $mQuery, $childrenCF, $childrenDelim, $nameCF
 		// Feature will hold properties and some other values for each marker
 	$thisFeature = array();
 
-		// Fetch name for marker
-	$nameVal = get_post_meta($markerID, $nameCF, true);
-	$thisFeature["name"] = $nameVal;
-
 		// Most data goes into properties field
 	$thisFeaturesProperties = $mQuery->getMarkerProperties($markerID);
 
 		// Store all of the properties
 	$thisFeature['properties'] = $thisFeaturesProperties;
+
+		// Fetch title for marker
+	if ($mQuery->titleMote=='the_title') {
+		$thisFeature["title"] = get_the_title();
+	} else {
+		$thisFeature["title"] = get_post_meta($markerID, $mQuery->titleMote, true);
+	}
 
 		// Now that we've constructed this feature, call recursively for all of its children
 	$childrenVal = get_post_meta($markerID, $childrenCF, true);
@@ -792,7 +781,7 @@ function createTreeNode($nodeName, $mQuery, $childrenCF, $childrenDelim, $nameCF
 		$children = array();
 		foreach($childName as $theChildName) {
 			$trimName = trim($theChildName);
-			$theChildData = createTreeNode($trimName, $mQuery, $childrenCF, $childrenDelim, $nameCF);
+			$theChildData = createTreeNode($trimName, $mQuery, $childrenCF, $childrenDelim);
 				// Don't add if data error (name not found)
 			if ($theChildData != null) {
 				array_push($children, $theChildData);
@@ -860,15 +849,6 @@ function dhpGetMarkerTree()
 	$projObj = $mQuery->projObj;
 	$eps = $mQuery->projSettings->eps[$index];
 
-		// Prepare for fetching name of markers
-	$nameCF = $eps->settings->label;
-	if ($nameCF != 'the_title' && $nameCF != 'the_content') {
-		$nameCF = $projObj->getCustomFieldForMote($nameCF);
-		if (is_null($nameCF)) {
-			trigger_error("Tree view label assigned to unknown mote");
-		}
-	}
-
 		// Prepare for fetching markers' children pointer
 	$childrenMote = $projObj->getMoteByName($eps->settings->children);
 	$childrenDelim = $childrenMote->delim;
@@ -898,7 +878,7 @@ function dhpGetMarkerTree()
 	$mQuery->selectContent = array_unique($mQuery->selectContent);
 
 		// Begin with head node
-	$markers = createTreeNode($eps->settings->head, $mQuery, $childrenCF, $childrenDelim, $nameCF);
+	$markers = createTreeNode($eps->settings->head, $mQuery, $childrenCF, $childrenDelim);
 
 	array_push($json_Object, $markers);
 
@@ -1948,6 +1928,14 @@ function dhpPerformTests()
 					// Tree legends currently only support color
 				$results .= verifyLegend($projObj, $ep->settings->color, 1);
 				break;
+			case 'time':
+					// Time legends currently only support color
+				$results .= verifyLegend($projObj, $ep->settings->color, 1);
+				break;
+			case 'flow':
+					// Facet Flows legends currently only require consistency
+				$results .= verifyLegend($projObj, $ep->settings->motes, 2);
+				break;
 			} // switch()
 		}
 
@@ -2260,7 +2248,11 @@ function dhp_mod_page_content($content) {
 			break;
 		case 'time':
 				// currently nothing is used
-	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_TREE_VIEW);
+	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_TIME_VIEW);
+			break;
+		case 'flow':
+				// currently nothing is used
+	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_FLOW_VIEW);
 			break;
 		}
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
@@ -2420,6 +2412,17 @@ function dhp_page_template( $page_template )
 			wp_enqueue_script('dhp-time-view', plugins_url('/js/dhp-time-view.js', dirname(__FILE__)), 'd3' );
 
 	    	array_push($dependencies, 'd3', 'dhp-time-view');
+	    	break;
+
+	    case 'flow':
+			wp_enqueue_style('dhp-flow-css', plugins_url('/css/dhp-flow.css',  dirname(__FILE__)) );
+
+			wp_enqueue_script('d3', plugins_url('/lib/d3.min.js', dirname(__FILE__)));
+			wp_enqueue_script('d3-parsets', plugins_url('/lib/d3.dhp-parsets.js', dirname(__FILE__)), 'd3');
+			wp_enqueue_script('dhp-flow-view', plugins_url('/js/dhp-flow-view.js', dirname(__FILE__)),
+				array('d3', 'd3-parsets') );
+
+	    	array_push($dependencies, 'd3', 'd3-parsets', 'dhp-flow-view');
 	    	break;
 
 	    default:

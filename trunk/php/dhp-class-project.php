@@ -14,6 +14,7 @@
 		        "version": Integer,									// Must be 3
 		        "homeLabel": String,
 		        "homeURL": String,
+		        "mTitle": String 									// Mote to use for title of Markers, or the_title
 		    },
 		    "motes": [
 		        {
@@ -25,7 +26,7 @@
 		    ],
 		    "eps": [										// contents of settings depends on type of entry point
 		    	{
-		            "type": String ("map" | "cards" | "pinboard" | "tree" | "time"),
+		            "type": String ("map" | "cards" | "pinboard" | "tree" | "time" | "flow"),
 		            "label" : String (short and unique across entry points),
 									// Map settings are as follows
 		            "settings": {
@@ -49,7 +50,6 @@
 		            }
 									// Topic Cards settings are as follows
 		            "settings" : {
-						"title": String (name of mote),				// to display on top of card
 		            	"width" : String,							// card width: "auto", thin", "med-width", "wide"
 		            	"height" : String,							// card height: "auto", "short", "med-height", "tall"
 						"color": String (name of mote),				// to determine color of card
@@ -92,7 +92,6 @@
 		            	"height" : Number,							// Pixel height of tree visualization
 		            	"head" : String,							// ID of marker which is head/top of tree
 		            	"children" : String (name of mote),			// Mote that supplies names of next generation
-		            	"label" : String (name of mote),			// Mote that supplies text for label
 		            	"fSize" : Number,							// Size of label font in pixels
 		            	"radius" : Number,							// Size of circles in pixels (when used)
 		            	"padding" : Number,							// Size of padding (in pixels - form dependent)
@@ -102,13 +101,20 @@
 		            "settings" : {
 						 "date" : String (name of mote),			// mote which provides date range
 		                 "color" : String (name of mote),           // mote to determine color of card
-		                 "label" : String (name of mote),           // mote to display on hover
 		                 "bandHt" : Integer,                        // pixel height of top band rows (also used for fontSize)
 		                 "wAxisLbl" : Integer,                      // pixel width of min/max labels on axis
 		                 "from" : Date,                             // Earliest date to show in timeline
 		                 "to"   : Date,                             // Latest date to show in timeline
 		                 "openFrom": Date,                          // Initial window's start (begin date)
 		                 "openTo": Date                             // Initial window's start (end date)
+             		}
+									// Facet Flow settings are as follows
+		            "settings" : {
+		            	"width" : Number,							// Pixel width of tree visualization
+		            	"height" : Number,							// Pixel height of tree visualization
+		                "motes": [									// List of mote Legends/categories
+		                    String (name of mote), ...
+		                ]
              		}
 
 		        }
@@ -122,7 +128,6 @@
 			        "content": [ String, ...  ]				// Names of motes to show
 		    	},
 		    	"select" : {								// For modal when item selected from visualation
-			        "title": String (name of mote),
 			        "width": "tiny" | "small" | "medium" | "large" | "x-large",
 			        "widgets": [							// List of 'widgets' to display in selected Marker modal
 			        	'scloud' | 'youtube'
@@ -604,8 +609,8 @@ class DHPressMarkerQuery
 			}
 		}
 
-			// Determine whether title is default title of marker post or another (custom) field
-		$this->titleMote = $projSettings->views->select->title;
+			// Determine source of marker post's title field
+		$this->titleMote = $projSettings->general->mTitle;
 		if ($this->titleMote != 'the_title') {
 			$temp_mote = $projObj->getMoteByName($this->titleMote);
 			if (is_null($temp_mote)) {
@@ -634,7 +639,6 @@ class DHPressMarkerQuery
 		}
 	} // getTermByParent()
 
-
     	// RETURN: properties array for the marker
     function getMarkerProperties($markerID)
     {
@@ -661,15 +665,6 @@ class DHPressMarkerQuery
 		if (!is_null($this->timecode)) {
 			$timecode_val = get_post_meta($markerID, $this->timecode, true);
 			$thisFeaturesProperties["timecode"]    = $timecode_val;
-		}
-
-		if ($this->titleMote) {
-			if ($this->titleMote=='the_title') {
-				$title = get_the_title();
-			} else {
-				$title = get_post_meta($markerID, $this->titleMote, true);
-			}
-			$thisFeaturesProperties["title"] = $title;
 		}
 
 			// Get all of the legend/category values associated with this marker post

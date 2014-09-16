@@ -51,7 +51,7 @@ var dhpPinboardView = {
         // INPUT:   ajaxURL      = URL to WP
         //          projectID    = ID of project
         //          mapEP        = settings for map entry point (from project settings)
-        //          viewParams   = array of data about map layers (see dhpGetMapLayerData() in dhp-project-functions)
+        //          viewParams   = array of extra data about visualization
     initialize: function(ajaxURL, projectID, vizIndex, pinboardEP, viewParams) {
              // GUI Constants
         dhpPinboardView.controlHeight   = 49;  // max(navButtonHeight[30], LegendHeight[45]) + 4

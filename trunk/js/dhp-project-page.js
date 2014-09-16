@@ -169,6 +169,10 @@ jQuery(document).ready(function($) {
 
         updateVizSpace = dhpTimeline.dhpUpdateSize;
         break;
+
+    case 'flow':
+        dhpFacetFlow.initialize(ajaxURL, projectID, vizIndex, thisEP.settings);
+        break;
     }
 
     // ========================= FUNCTIONS

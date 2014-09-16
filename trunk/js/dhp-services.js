@@ -447,16 +447,14 @@ var dhpServices = {
     showMarkerModal: function(feature)
     {
         var selectParams = projSettings.views.select;
-        var titleAtt='';
+        var titleAtt;
         var builtHTML;
         var link1, link2, link1Target, link2Target;
 
-        if(selectParams.title) {
-            titleAtt =  feature.properties.title;
-        }
-
+        titleAtt = feature.title;
         link1  = feature.properties.link;
         link2  = feature.properties.link2;
+
             // Open in new tab?
         if (selectParams.linkNewTab) {
             link1Target = 'target="_blank"';
