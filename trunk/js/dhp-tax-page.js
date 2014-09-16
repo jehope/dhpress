@@ -14,12 +14,6 @@ jQuery(document).ready(function($) {
     var taxTerm         = dhpData.tax;
     var isTranscript    = dhpData.isTranscript;
 
-    // console.log("Preparing tax transcript with AJAX URL "+ajax_url+" for ProjectID " + project_id + " tax head term "+taxTerm.taxonomy+" at URL "+taxTerm.slug);
-    // console.log(dhpData.project['motes']);
-    // console.log("Term name: "+taxTerm.name);
-    // console.log("Parent name: "+taxTerm.parent_name);
-    // console.log("Is transcript: "+isTranscript);
-
         // Insert name of taxonomy on top of page, where A/V widget will go
 	$('#content').prepend('<h1>'+taxTerm.name+'</h1><div class="dhp-transcript-content"></div>');
 
