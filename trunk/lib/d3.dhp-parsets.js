@@ -197,7 +197,7 @@
 
           updateCategories(dimension);
           updateRibbons();
-        }
+        } // updateDimensions()
 
         function sortBy(type, f, dimension) {
           return function(d) {
@@ -235,7 +235,7 @@
                 d3.event.stopPropagation();
               })
                 // <d> will point to last node of connecting path; in case a->b, <d> points to b
-              .on("click", function(d) {
+              .on("click.parsets", function(d) {
                   // Clear out display
                 jQuery('#marker-list').empty();
                   // Populate with names of items and create data index
@@ -456,7 +456,7 @@
     var body = d3.select("body");
     var tooltip = body.append("div")
         .style("display", "none")
-        .attr("class", "parsets tooltip");
+        .attr("class", "parsets facet-info");
 
     return d3.rebind(parsets, event, "on").value(1).width(960).height(600);
 
@@ -468,7 +468,7 @@
       var m = d3.mouse(body.node());
       tooltip
           .style("display", null)
-          .style("left", m[0] + 30 + "px")
+          .style("left", m[0] + 10 + "px")
           .style("top", m[1] - 20 + "px")
           .html(html);
     }
@@ -655,6 +655,8 @@
         // PURPOSE: Recursive function to build tree -- needed because facet can have multiple values
       function buildFromNodes(startNode, dimIndex)
       {
+        startNode.count += v;
+
           // done if we have gone through all dimensions
         if (dimIndex == nd) { return; }
 
@@ -662,8 +664,6 @@
         var dimension = dimensions[dimIndex];
         var categories = accessD(d, dimension);   // get all values for this particular facet
         var theCategory;
-
-        startNode.count += v;
 
           // for each of the possible categories (facet values)
         for (var j=0; j<categories.length; j++) {
@@ -680,7 +680,6 @@
                   name: theCategory,
                   indices: []
                 };
-          cNode.count += v;
             // No need to save indices for first stage
           if (dimIndex) {
             cNode.indices.push(i);

@@ -16,6 +16,7 @@ var dhpFacetFlow = {
         dhpFacetFlow.ffEP        = ffEP;
 
 		  // PURPOSE: Get array of discrete values as Strings from markers
+		  // RETURNS: An array of values (as text) for dItem for the facet dimName
 		  // NOTE: 	  There are two possible ways of approaching this:
 		  //			(1) Retrieve text for each mote setting, save in marker and parse text acc. to delimiter character of Mote
 		  //			(2) Save only indices in properties.categories, lookup each value in Legend keys and retrieve that text
@@ -26,7 +27,7 @@ var dhpFacetFlow = {
 		  	// Find mote definition and use delimiter character
 		  var moteDef = dhpServices.findMoteByName(dimName);
 
-		  if (moteDef.delim && moteDef.delim !== '') {
+		  if (moteDef.delim !== '') {
 			  var valArray = valStr.split(moteDef.delim);
 			  for (var i=0; i<valArray.length; i++) {
 			    valArray[i] = valArray[i].trim();
@@ -44,7 +45,6 @@ var dhpFacetFlow = {
 		var vis = d3.select("#dhp-visual").append("svg")
 		    .attr("width", dhpFacetFlow.iWidth)
 		    .attr("height", dhpFacetFlow.iHeight);
-
 
         jQuery(document).foundation();
 
@@ -90,10 +90,8 @@ var dhpFacetFlow = {
 				    if (targetItem == null || targetItem == undefined) {
 				        return;
 				    }
-				        // Convert cardID to index of feature in marker array
+				        // Convert to index of feature in marker array
 				    index = parseInt(jQuery(targetItem).data('index'));
-
-console.log("Selected index: "+index);
 
 				    selectedFeature = dhpFacetFlow.rawData[dhpFacetFlow.rawData.length-1]['features'][index];
 				    dhpServices.showMarkerModal(selectedFeature);

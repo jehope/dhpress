@@ -31,22 +31,23 @@
 .category-8 { fill: #bcbd22; stroke: #bcbd22; }
 .category-9 { fill: #17becf; stroke: #17becf; }
 
-.tooltip {
-	background-color: rgba(242, 242, 242, .6);
+.facet-info {
+	background-color: rgba(242, 242, 242, .8);
+	color: black;
 	position: absolute;
 	padding: 5px;
 }
 
+#dhp-visual {
+	overflow: auto;
+}
+
 #dhp-visual svg {
-	position: relative;
-	left: 6px;
-	top: 6px;
+	margin: 6px;
 }
 
 #list-scroll {
-	position: relative;
-	left: 6px;
-	top: 6px;
+	margin: 6px;
 	height: 100px;
 	overflow: auto;
 	border: 1px black solid;
@@ -56,4 +57,8 @@
 
 #marker-list {
 	padding: 4px;
+}
+
+.marker-item:hover {
+	background-color: yellow;
 }
