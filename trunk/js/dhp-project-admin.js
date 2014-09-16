@@ -2247,11 +2247,11 @@ jQuery(document).ready(function($) {
         case 'flow':
           var w;
           if (theEP.settings.width() == '' || isNaN(w=parseInt(theEP.settings.width(),10)) || w <= 0) {
-            epErrorMessage('You must specify a valid background image width for the Facet Flow');
+            epErrorMessage('You must specify a valid background palette width for the Facet Flow view');
           }
           var h;
           if (theEP.settings.height() == '' || isNaN(h=parseInt(theEP.settings.height(),10)) || h <= 0) {
-            epErrorMessage('You must specify a valid background image height for the Facet Flow');
+            epErrorMessage('You must specify a valid background palette height for the Facet Flow view');
           }
           if (theEP.settings.motes().length < 2) {
             epErrorMessage('You need at least two sets of motes for the Facet Flow');

@@ -1792,14 +1792,14 @@ function verifyTranscription($projObj, $projSettings, $transcMoteName)
 } // verifyTranscription()
 
 
-// PURPOSE: Ensure metadata attached to category/legend is correct
+// PURPOSE: Ensure metadata attached to category/Legend is consistent and of correct format
 // INPUT:   $projObj = project object
 //			$theLegend = name of mote to check
-//			$degree = 	0 if values don't matter at all,
-//						1 if metadata must represent colors only,
-//						2 if only consistency important (icon or color)
+//			$checkValues = true if Legend values are to be validated
+//			$makiOK = true if can use maki icons
+//			$pngOK = true if can use PNG image icons
 
-function verifyLegend($projObj, $theLegend, $degree)
+function verifyLegend($projObj, $theLegend, $checkValues, $makiOK, $pngOK)
 {
 	if ($theLegend === null || $theLegend === '' || $theLegend === 'disable') {
 		return '<p>Cannot verify unspecified legend.</p>';
@@ -1811,12 +1811,12 @@ function verifyLegend($projObj, $theLegend, $degree)
 
 		// Has Legend not been created yet?
 	if (!term_exists($moteDef->name, $rootTaxName)) {
-		return '<p>Legend '.$theLegend.' has not yet been created but must be for project to work.</p>';
+		return '<p>Legend "'.$theLegend.'" has not yet been created but must be for project to work.</p>';
 	}
 
 	$results    = '';
 
-	if ($degree > 0) {
+	if ($checkValues) {
 			// Find all of the terms derived from mote (parent/head term) in the Project's taxonomy
 		$parent_terms_to_exclude = get_terms($rootTaxName, 'parent=0&orderby=term_group&hide_empty=0');
 
@@ -1838,32 +1838,42 @@ function verifyLegend($projObj, $theLegend, $degree)
 	 	$t_count = count($terms_loaded);
 
 		$usedColor  = false;
-		$usedIcon   = true;
+		$usedMaki   = false;
+		$usedPNG 	= false;
 		$mixFlagged = false;
 
 	 		// Check visualization data (encoded in the description metadata)
 	 		// 	Value must specified for all category/legend terms
 			//	Ensure value is a parseable value
-	 		//	Ensure only color values are used if required
 			//	Ensure there is not a mixture of icon and color
+	 		//	Ensure only color values are used if required
 	 	if ($t_count > 0) {
 	   		foreach ($terms_loaded as $term) {
 	   			if ($term->description == null || $term->description == '') {
 	   				$results .= '<p>The value '.$term->name.' for legend '.$theLegend.' has no visual setting.</p>';
 	   			} else {
 					$isColor = preg_match("/^#[:xdigit:]{6}$/", $term->description);
-					$isIcon = preg_match("/^.maki\-/", $term->description);
+					$isMaki = preg_match("/^.maki\-\S/", $term->description);
+					$isPNG = preg_match("/^@\S/", $term->description);
 					if ($isColor) {
 						$usedColor = true;
-						if ($usedIcon && !$mixFlagged && $degree == 2) {
+						if (!$mixFlagged && ($usedMaki || $usedPNG)) {
 							$results .= '<p>Illegal mixture of color and icon settings in legend '.$theLegend.'.</p>';
 							$mixFlagged = true;
 						}
-					} elseif ($isIcon) {
-						$usedIcon = true;
-						if ($degree == 1) {
-							$results .= '<p>The non-color setting'.$term->description.' has been used for legend '.$theLegend.' value '.$term->name.'.</p>';
-						} elseif ($usedColor && !$mixFlagged && $degree == 2) {
+					} elseif ($isMaki) {
+						$usedMaki = true;
+						if (!$makiOK) {
+							$results .= '<p>The assigned Entry Point cannot use maki-icon setting '.$term->description.' for legend '.$theLegend.' value '.$term->name.'.</p>';
+						} elseif ($usedColor && !$mixFlagged) {
+							$results .= '<p>Illegal mixture of color and icon settings in legend '.$theLegend.'.</p>';
+							$mixFlagged = true;
+						}
+					} elseif ($isPNG) {
+						$usedPNG = true;
+						if (!$pngOK) {
+							$results .= '<p>The assigned Entry Point cannot use PNG image '.$term->description.' for legend '.$theLegend.' value '.$term->name.'.</p>';
+						} elseif ($usedColor && !$mixFlagged) {
 							$results .= '<p>Illegal mixture of color and icon settings in legend '.$theLegend.'.</p>';
 							$mixFlagged = true;
 						}
@@ -1873,7 +1883,7 @@ function verifyLegend($projObj, $theLegend, $degree)
 				}
 			}
 		}
-	} // if (degree > 0)
+	} // if checkValues)
 
 	return $results;
 } // verifyLegend()
@@ -1903,38 +1913,40 @@ function dhpPerformTests()
 		foreach ($projSettings->eps as $ep) {
 			switch ($ep->type) {
 			case 'map':
-					// Map Legends can be color or icons -- just consistency
+					// Map Legends can be color, maki-icons or PNG
 				foreach ($ep->settings->legends as $theLegend) {
-					$results .= verifyLegend($projObj, $theLegend, 2);
+					$results .= verifyLegend($projObj, $theLegend, true, true, true);
 				}
 				break;
 			case 'cards':
 					// Card Legends must be color only
-				$results .= verifyLegend($projObj, $ep->settings->color, 1);
+				$results .= verifyLegend($projObj, $ep->settings->color, true, false, false);
 					// all Short Text Filter Motes must have been created as Legend but values don't matter
 				foreach ($ep->settings->filterMotes as $filterMote) {
 					if ($filterMote->type === 'Short Text') {
-						$results .= verifyLegend($projObj, $filterMote, 0);
+						$results .= verifyLegend($projObj, $filterMote, false, false, false);
 					}
 				}
 				break;
 			case 'pinboard':
-					// Pinboard Legends currently only support color
+					// Pinboard Legends currently support color and PNG
 				foreach ($ep->settings->legends as $theLegend) {
-					$results .= verifyLegend($projObj, $theLegend, 1);
+					$results .= verifyLegend($projObj, $theLegend, true, false, true);
 				}
 				break;
 			case 'tree':
 					// Tree legends currently only support color
-				$results .= verifyLegend($projObj, $ep->settings->color, 1);
+				$results .= verifyLegend($projObj, $ep->settings->color, true, false, false);
 				break;
 			case 'time':
 					// Time legends currently only support color
-				$results .= verifyLegend($projObj, $ep->settings->color, 1);
+				$results .= verifyLegend($projObj, $ep->settings->color, true, false, false);
 				break;
 			case 'flow':
-					// Facet Flows legends currently only require consistency
-				$results .= verifyLegend($projObj, $ep->settings->motes, 2);
+					// Facet Flows legends currently only require Legend existence
+				foreach ($ep->settings->motes as $fMote) {
+					$results .= verifyLegend($projObj, $fMote, false, false, false);
+				}
 				break;
 			} // switch()
 		}
@@ -2023,7 +2035,7 @@ function dhpPerformTests()
 			// If transcript (fragmentation) source is set, ensure the category has been created
 		$source = $projSettings->views->transcript->source;
 		if ($source && $source !== '' && $source !== 'disable') {
-			$transSrcCheck = verifyLegend($projObj, $source, 0);
+			$transSrcCheck = verifyLegend($projObj, $source, false, false, false);
 			if ($transSrcCheck != '') {
 				$results .= '<p>You have specified the Source mote '.$source.
 							' for Transcription fragmentation but you have not built it yet as a category.</p>';
