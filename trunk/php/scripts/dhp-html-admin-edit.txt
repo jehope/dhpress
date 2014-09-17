@@ -249,9 +249,7 @@
     </h2>
     <ul>
         <li>Card short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
-        <li>Show marker title at top of card <input type="checkbox" data-bind="checked: theEP.settings.titleOn"/>
-        Card Color <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> (Must be configured for colors)</li>
-        <li>Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="9"/>&nbsp;
+        <li>
         Width <select data-bind="value: theEP.settings.width">
                               <option value="auto">Automatic</option>
                               <option value="thin">Thin</option>
@@ -264,6 +262,11 @@
                               <option value="med-height">Medium</option>
                               <option value="tall">Tall</option>
               </select>
+        Show marker title at top of card <input type="checkbox" data-bind="checked: theEP.settings.titleOn"/>
+        </li>
+        <li>
+          Card Color (must be configured for colors) <select data-bind="value: theEP.settings.color, options: $root.stdMoteNames"></select> 
+          Default Color <input data-bind="value: theEP.settings.defColor" type="text" size="9"/>
         </li>
         <li>Background Color <input data-bind="value: theEP.settings.bckGrd" type="text" size="12"/> (CSS color name, #hexvalue, or blank for default)</li>
         <div data-bind="template: { name: 'cards-content-template', foreach: theEP.settings.content }"></div>
