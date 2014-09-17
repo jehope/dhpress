@@ -2256,6 +2256,18 @@ jQuery(document).ready(function($) {
           if (theEP.settings.motes().length < 2) {
             epErrorMessage('You need at least two sets of motes for the Facet Flow');
           }
+            // Ensure that each facet-mote is only used once in list
+          var redundFacets=false;
+          ko.utils.arrayForEach(theEP.settings.motes(), function(theMote) {
+            var matchCnt=0;
+            ko.utils.arrayForEach(theEP.settings.motes(), function(mote2) {
+              if (theMote.name() === mote2.name()) { matchCnt+=1; }
+            });
+            if (matchCnt > 1) { redundFacets=true; }
+          });
+          if (redundFacets) {
+            epErrorMessage('Facet Flow requires unique (not redundant) motes in the list to display');
+          }
         } // switch
       });
 

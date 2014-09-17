@@ -493,14 +493,12 @@ function getCategoryValues($parent_term, $taxonomy)
 			//					"coordinates" : LongLat (or X-Y)
 			//			  },
 			//			  "date" : String, 	// Only if Timeline
-			// 			  "title" : String, // Only if Timeline or Topic Card
+			// 			  "title" : String, // Used by Select Modal and all EPs
 			// 			  "properties" :
 			// 				[
 			//							// All data corresponding to categories/legends associated with marker
 			// 					"categories" : [ integer IDs of category terms ],
 			//							// Data used to create modals
-			// 					"title" : String,
-			//							// Data needed by select modal or card filter/sort
 			// 					"content" : [
 			//						{ moteName : moteValue }, ...
 			//					],
