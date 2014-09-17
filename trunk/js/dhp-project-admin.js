@@ -160,6 +160,7 @@ jQuery(document).ready(function($) {
     self.type = 'cards';
     self.label= ko.observable(epSettings.label || 'name me');
     self.settings = { };
+    self.settings.titleOn = ko.observable(epSettings.settings.titleOn);
     self.settings.color = ko.observable(epSettings.settings.color);
     self.settings.defColor = ko.observable(epSettings.settings.defColor);
     self.settings.bckGrd = ko.observable(epSettings.settings.bckGrd);
@@ -410,6 +411,7 @@ jQuery(document).ready(function($) {
           break;
 
         case 'cards':
+          savedEP.settings.titleOn = theEP.settings.titleOn();
           savedEP.settings.color = theEP.settings.color();
           savedEP.settings.defColor = theEP.settings.defColor();
           savedEP.settings.bckGrd = theEP.settings.bckGrd();
@@ -1429,6 +1431,7 @@ jQuery(document).ready(function($) {
         type: 'cards',
         label: 'name me',
         settings: {
+          titleOn: true,
           color: 'disable',
           defColor: '#00BFFF',
           bckGrd: '',

@@ -50,6 +50,7 @@
 		            }
 									// Topic Cards settings are as follows
 		            "settings" : {
+		            	"titleOn": Boolean,							// true if marker title is to be shown as card title on top
 		            	"width" : String,							// card width: "auto", thin", "med-width", "wide"
 		            	"height" : String,							// card height: "auto", "short", "med-height", "tall"
 						"color": String (name of mote),				// to determine color of card
