@@ -8,6 +8,7 @@
 	 * @link http://dhpress.org/download/
 	 */
 
+
 // ================== Global Constants and Variables ===================
 
 define( 'DHP_HTML_ADMIN_EDIT',  'dhp-html-admin-edit.txt' );
@@ -144,7 +145,6 @@ function getLayerList()
 // post_updated_messages enables us to customize the messages for our custom post types
 add_filter( 'post_updated_messages', 'dhp_project_updated_messages' );
 
-// dhp_project_updated_messages()
 // PURPOSE:	Supply strings specific to Project custom type
 // ASSUMES:	Global variables $post, $post_ID set
 
@@ -171,6 +171,24 @@ function dhp_project_updated_messages( $messages )
 
   return $messages;
 } // dhp_project_updated_messages()
+
+
+// post_row_actions enables us to modify the hover links in the Dashboard directories
+add_filter( 'post_row_actions', 'dhp_export_post_link', 10, 2 );
+
+// PURPOSE: Add a "CSV Export" hover link to listing of DH Press Projects
+
+function dhp_export_post_link( $actions, $post )
+{
+    if ( $post->post_type != 'project' ) {
+        return $actions;
+    }
+
+	if (current_user_can('edit_posts')) {
+		$actions['CSV_Export'] = '<a href="admin.php?action=dhp_export_as_csv&amp;post=' . $post->ID . '" title="Export this item as CSV" rel="permalink">CSV Export</a>';
+	}
+	return $actions;
+} // dhp_export_post_link()
 
 
 // =========================== Customize handling of taxonomies ============================
@@ -372,7 +390,72 @@ function save_dhp_project_settings($post_id)
 } // save_dhp_project_settings()
 
 
-// getCategoryValues($parent_term, $taxonomy)
+add_action( 'admin_action_dhp_export_as_csv', 'dhp_export_as_csv' );
+
+// PURPOSE: Return all of the marker data associated with Project in CSV format
+// NOTES:   This is invoked by URL added to Project Dashboard by dhp_export_post_link()
+//			CSV file will start with row names:
+//				csv_post_title, csv_post_type, project_id, <custom-fields>...
+//			Followed by one row per marker, with column values corresponding to above
+//				<post title>, 'dhp-marker', <Project ID>, ...
+
+function dhp_export_as_csv()
+{
+	global $wpdb;
+	if (! ( isset( $_GET['post']) || isset( $_POST['post'])  || ( isset($_REQUEST['action']) && 'rd_duplicate_post_as_draft' == $_REQUEST['action'] ) ) ) {
+		wp_die('No post to export has been supplied!');
+	}
+ 
+ 		// Get post ID and associated Project Data
+	$postID = (isset($_GET['post']) ? $_GET['post'] : $_POST['post']);
+	$projObj = new DHPressProject($postID);
+
+		// Create appropriate filename
+    $date = new DateTime();
+    $dateFormatted = $date->format("Y-m-d");
+
+	$filename = "csv-$dateFormatted.csv";
+
+    	// Tells the browser to expect a csv file and bring up the save dialog in the browser
+    header( 'Content-Type: text/csv' );
+    header( 'Content-Disposition: attachment;filename='.$filename);
+
+    	// This opens up the output buffer as a "file"
+    $fp = fopen('php://output', 'w');
+
+    $cfs = $projObj->getAllCustomFieldNames();
+    $headers = array_merge( array('csv_post_title', 'csv_post_type', 'project_id' ), $cfs);
+
+    	// Output the names of columns first
+    fputcsv($fp, $headers);
+
+    	// Go through all of the Project's Markers and gather data
+	$loop = $projObj->setAllMarkerLoop();
+	while ( $loop->have_posts() ) : $loop->the_post();
+		$markerID = get_the_ID();
+
+		$values = array(get_the_title(), 'dhp-marker', $postID);
+
+		foreach ($cfs as $theCF) {
+			$content_val = get_post_meta($markerID, $theCF, true);
+			array_push($values, $content_val);
+		} // foreach
+
+    	fputcsv($fp, $values);
+	endwhile;
+
+        // Send the size of the output buffer to the browser
+    $contLength = ob_get_length();
+    header( 'Content-Length: '.$contLength);
+
+        // Close the output buffer
+    fclose($fp);
+ 
+	ob_end_clean();
+	exit();
+} // dhp_export_as_csv()
+
+
 // PURPOSE: Get all of the visual features associated via metadata with the taxonomic terms associated with 1 Mote
 // INPUT:	$parent_term = Object for mote/top-level term
 //			$taxonomy = root name of taxonomy for Project

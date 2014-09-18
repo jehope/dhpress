@@ -1,6 +1,5 @@
 <?php 
 
-
 // Hook for adding admin menus
 add_action('admin_menu', 'dhp_add_pages');
 
