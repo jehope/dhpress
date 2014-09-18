@@ -424,7 +424,7 @@ function dhp_export_as_csv()
     $fp = fopen('php://output', 'w');
 
     $cfs = $projObj->getAllCustomFieldNames();
-    $headers = array_merge( array('csv_post_title', 'csv_post_type', 'project_id' ), $cfs);
+    $headers = array_merge( array('csv_post_title', 'csv_post_type' ), $cfs);
 
     	// Output the names of columns first
     fputcsv($fp, $headers);
@@ -434,7 +434,7 @@ function dhp_export_as_csv()
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$markerID = get_the_ID();
 
-		$values = array(get_the_title(), 'dhp-marker', $postID);
+		$values = array(get_the_title(), 'dhp-marker' );
 
 		foreach ($cfs as $theCF) {
 			$content_val = get_post_meta($markerID, $theCF, true);
