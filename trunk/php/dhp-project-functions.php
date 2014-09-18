@@ -185,7 +185,7 @@ function dhp_export_post_link( $actions, $post )
     }
 
 	if (current_user_can('edit_posts')) {
-		$actions['CSV_Export'] = '<a href="admin.php?action=dhp_export_as_csv&amp;post=' . $post->ID . '" title="Export this item as CSV" rel="permalink">CSV Export</a>';
+		$actions['CSV_Export'] = '<a href="admin.php?action=dhp_export_as_csv&amp;post='.$post->ID.'" title="Export this item as CSV" rel="permalink">CSV Export</a>';
 	}
 	return $actions;
 } // dhp_export_post_link()
@@ -401,9 +401,13 @@ add_action( 'admin_action_dhp_export_as_csv', 'dhp_export_as_csv' );
 
 function dhp_export_as_csv()
 {
-	global $wpdb;
 	if (! ( isset( $_GET['post']) || isset( $_POST['post'])  || ( isset($_REQUEST['action']) && 'rd_duplicate_post_as_draft' == $_REQUEST['action'] ) ) ) {
 		wp_die('No post to export has been supplied!');
+	}
+
+		// ensure that this URL has not been faked by non-admin user
+	if (!current_user_can('edit_posts')) {
+		wp_die('Invalid request');
 	}
  
  		// Get post ID and associated Project Data
@@ -417,14 +421,14 @@ function dhp_export_as_csv()
 	$filename = "csv-$dateFormatted.csv";
 
     	// Tells the browser to expect a csv file and bring up the save dialog in the browser
-    header( 'Content-Type: text/csv' );
-    header( 'Content-Disposition: attachment;filename='.$filename);
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment;filename='.$filename);
 
     	// This opens up the output buffer as a "file"
     $fp = fopen('php://output', 'w');
 
     $cfs = $projObj->getAllCustomFieldNames();
-    $headers = array_merge( array('csv_post_title', 'csv_post_type' ), $cfs);
+    $headers = array_merge(array('csv_post_title', 'csv_post_type' ), $cfs);
 
     	// Output the names of columns first
     fputcsv($fp, $headers);
@@ -446,7 +450,7 @@ function dhp_export_as_csv()
 
         // Send the size of the output buffer to the browser
     $contLength = ob_get_length();
-    header( 'Content-Length: '.$contLength);
+    header('Content-Length: '.$contLength);
 
         // Close the output buffer
     fclose($fp);
@@ -475,7 +479,6 @@ function dhp_export_as_csv()
 			// 				"term_id" : integer,
 			// 				"parent" : integer,
 			// 				"count" : String,
-			// 				"slug" : String,
 			// 				"description" : String,
 			//				"icon_url" : String,
 			// 				"term_taxonomy_id" : String,
@@ -572,7 +575,7 @@ function getCategoryValues($parent_term, $taxonomy)
 			// 			{ "type" : "Feature",	// Only added to FeatureCollections created for Maps
 			//							// Only if map or pinboard
 			// 			  "geometry" : {
-			//					"type" : "Point",
+			//					"type" : "Point" | "Polygon"
 			//					"coordinates" : LongLat (or X-Y)
 			//			  },
 			//			  "date" : String, 	// Only if Timeline
@@ -2654,4 +2657,3 @@ function dhp_tax_template( $page_template )
 	}
 	return $page_template;
 } // dhp_tax_template()
-
