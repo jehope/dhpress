@@ -4,9 +4,9 @@
 	 * Registers and handles DHPress Marker functions
 	 *	(i.e., posts representing a single data point)
 	 *
-	 * @package diPH Toolkit
-	 * @author diPH Team
-	 * @link http://diph.org/download/
+     * @package DHPress Toolkit
+     * @author DHPress Team
+     * @link http://dhpress.org/download/
 	 */
 
 // ====================== Global Variables ==========================
@@ -239,7 +239,7 @@ function add_dhp_marker_settings_box() {
 
 function show_dhp_marker_settings_box()
 {
-	global $post,$dhp_marker_settings_fields ;
+	global $post, $dhp_marker_settings_fields;
 
 	// Field Array
 	$prefix = 'marker_';
@@ -294,7 +294,7 @@ function show_dhp_marker_settings_box()
 
 	$markerMeta = get_post_meta( $post->ID );
 	//print_r($markerMeta);
-	echo buildMarkerMetaFields($markerMeta);
+	echo dhp_build_marker_meta_fields($markerMeta);
 } // show_dhp_marker_settings_box()
 
 
@@ -303,17 +303,17 @@ function show_dhp_marker_settings_box()
 // RETURNS:	HTML string the data in $theMeta as unordered list
 // NOTE:	CSS class delete-mote was used by (now dead) JavaScript code
 
-function buildMarkerMetaFields($theMeta)
+function dhp_build_marker_meta_fields($theMeta)
 {
 	$markerHtml ='<ul class="marker-fields">';
 	foreach ($theMeta as $key => $value) {
 		if(($key!="_edit_lock") && ($key!="_edit_last")) {
-			$markerHtml .='<li id="'.createIDfromName($key).'" class="motes"><label>'.$key.' </label><textarea class="mote-value">'.$value[0].'</textarea><a class="delete-mote">X</a></li>';			
+			$markerHtml .='<li id="'.dhp_slug_from_name($key).'" class="motes"><label>'.$key.' </label><textarea class="mote-value">'.$value[0].'</textarea><a class="delete-mote">X</a></li>';			
 		}
 	}
 	$markerHtml .='</ul>';
-	//return $markerHtml;
-} // buildMarkerMetaFields()
+	// return $markerHtml;
+} // dhp_build_marker_meta_fields()
 
 
 // PURPOSE:	Create WP slug corresonding custom field
@@ -321,12 +321,12 @@ function buildMarkerMetaFields($theMeta)
 // RETURNS:	WP-style slug form of mote name
 // TO DO:	Rename and encapsulate in Marker class?
 
-function createIDfromName($theName)
+function dhp_slug_from_name($theName)
 {
 	$moteID = strtolower($theName);
     $moteID = str_replace(" ","_",$moteID);
     return $moteID;
-} // createIDfromName()
+} // dhp_slug_from_name()
 
 
 // Save the Data
