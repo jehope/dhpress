@@ -451,7 +451,6 @@ function dhp_export_as_csv()
         // Close the output buffer
     fclose($fp);
  
-	ob_end_clean();
 	exit();
 } // dhp_export_as_csv()
 
