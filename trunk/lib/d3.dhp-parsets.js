@@ -17,7 +17,7 @@
         tension0,
         duration = 500,
 
-          // New addition -- function to accessing dimension data
+          // DH Press addition -- function to accessing dimension data
           //  default assumes object with properties with names of dimensions
         accessDim_ = function(dItem, dimName) { return dItem[dimName]; };
 
@@ -234,6 +234,7 @@
                 showTooltip(tooltip_.call(this, d));
                 d3.event.stopPropagation();
               })
+                // DH Press addition
                 // <d> will point to last node of connecting path; in case a->b, <d> points to b
               .on("click.parsets", function(d) {
                   // Clear out display
@@ -434,7 +435,7 @@
       return parsets;
     };
 
-      // New custom addition -- optional function for accessing "dimension" value of data
+      // DH Press addition -- optional function for accessing "dimension" value of data
     parsets.accessDim = function(_) {
       if (!arguments.length) return accessDim_;
       accessDim_ = _;
@@ -641,6 +642,7 @@
       parsetsEase = "elastic",
       parsetsId = 0;
 
+  // DH Press modification
   // Construct tree of all category counts for a given ordered list of
   // dimensions.  Similar to d3.nest, except we also set the parent.
   function buildTree(root, data, dimensions, value, accessD) {
