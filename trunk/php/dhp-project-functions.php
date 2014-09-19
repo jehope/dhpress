@@ -421,17 +421,17 @@ function dhp_export_as_csv()
 	$filename = "csv-$dateFormatted.csv";
 
     	// Tells the browser to expect a csv file and bring up the save dialog in the browser
-    header('Content-Type: text/csv');
+    header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment;filename='.$filename);
 
     	// This opens up the output buffer as a "file"
     $fp = fopen('php://output', 'w');
 
     $cfs = $projObj->getAllCustomFieldNames();
-    $headers = array_merge(array('csv_post_title', 'csv_post_type' ), $cfs);
+    $firstLine = array_merge(array('csv_post_title', 'csv_post_type' ), $cfs);
 
     	// Output the names of columns first
-    fputcsv($fp, $headers);
+    fputcsv($fp, $firstLine);
 
     	// Go through all of the Project's Markers and gather data
 	$loop = $projObj->setAllMarkerLoop();
@@ -447,10 +447,6 @@ function dhp_export_as_csv()
 
     	fputcsv($fp, $values);
 	endwhile;
-
-        // Send the size of the output buffer to the browser
-    $contLength = ob_get_length();
-    header('Content-Length: '.$contLength);
 
         // Close the output buffer
     fclose($fp);
