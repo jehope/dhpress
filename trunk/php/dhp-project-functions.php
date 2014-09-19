@@ -1052,7 +1052,7 @@ function dhp_bind_tax_to_markers($projObj, $custom_field, $parent_id, $rootTaxNa
 
 
 // creates terms in taxonomy when a legend is created
-add_action( 'wp_ajax_dhp_get_legend_vals', 'dhp_get_legend_vals' );
+add_action( 'wp_ajax_dhpGetLegendValues', 'dhp_get_legend_vals' );
 
 // PURPOSE:	Handle Ajax call to retrieve Legend values; create if does not exist already
 // RETURNS:	Array of unique values/tax-terms as JSON object
@@ -1389,7 +1389,7 @@ function dhp_get_transcript_json()
 	$dhp_clip = $_POST['timecode'];
 
 	$dhp_transcript = dhp_load_transcript_from_file($dhp_transcript_field);
-	$dhp_transcript_clip = dhp_load_transcript_from_file($dhp_transcript,$dhp_clip);
+	$dhp_transcript_clip = dhp_get_transcript_clip($dhp_transcript,$dhp_clip);
 
 	die(json_encode($dhp_transcript_clip));
 } // dhp_get_transcript_json()
@@ -1461,7 +1461,7 @@ function dhp_get_tax_transcript()
 		$dhp_transcript_cfield = $dhp_transcript_mote->cf;
 		$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
 		if ($dhp_transcript != 'none') {
-			$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
+			$dhp_transcript = dhp_load_transcript_from_file($dhp_transcript);
 			$dhp_object['transcript'] = $dhp_transcript;
 		}
 	}
@@ -1472,7 +1472,7 @@ function dhp_get_tax_transcript()
 		$dhp_transcript_cfield = $dhp_transcript_mote->cf;
 		$dhp_transcript = $marker_meta[$dhp_transcript_cfield][0];
 		if ($dhp_transcript != 'none') {
-			$dhp_transcript = loadTranscriptFromFile($dhp_transcript);
+			$dhp_transcript = dhp_load_transcript_from_file($dhp_transcript);
 			$dhp_object['transcript2'] = $dhp_transcript;
 		}
 	}
