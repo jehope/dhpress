@@ -2,7 +2,7 @@
 // USES:    JavaScript libraries jQuery, Underscore, (Zurb) Foundation ...
 
 
-    // Ensure that current Array methods are defined
+    // Ensure that latest Array methods are defined
     // ============================================
 
 if (!Array.prototype.find) {
@@ -351,12 +351,13 @@ var dhpServices = {
     }, // flattenTerms()
 
 
-        // RETURNS: Color for feature given a particular Legend filter or null (no match)
+        // PURPOSE: Find a Legend filter record that matches a category term in the Marker
+        // RETURNS: The matching Legend filter (the parent in case of 2ndary level) or null (no match)
         // INPUT:   catTerms = array of category IDs (integers) associated with a feature/marker
         //          legendTerms = array of category IDs for Legend key
-        // NOTES:   Will use first match on color to use for icon, or else default color
+        // NOTES:   Will return first match found
         //          This could be optimized if legendTerms and/or catTerms were guaranteed to be in numeric order
-    getItemColor: function(catTerms, legendTerms)
+    findCatTermInLegend: function(catTerms, legendTerms)
     {
         var countCats = catTerms.length;
 
@@ -367,23 +368,23 @@ var dhpServices = {
             var catChildren;
             var i,j,k;
 
-            for(i=0;i<countTerms;i++) {         // for all category terms
+            for(i=0;i<countTerms;i++) {         // for all category terms in Legend
                 thisCat = legendTerms[i];
                 thisCatID = thisCat.id;
 
-                for(j=0; j<countCats; j++) {      // for all marker terms
+                for(j=0; j<countCats; j++) {      // for all terms IDs in Marker
                     // legend categories
                     thisMarkerID = catTerms[j];
                         // have we matched this element?
                     if (thisCatID===thisMarkerID) {
-                        return thisCat.icon_url;
+                        return thisCat;
                         // check for matches on its children
                     } else {
                         catChildren = thisCat.children;
                         if (catChildren) {
                             for (k=0; k<catChildren.length; k++) {
                                 if (catChildren[k].term_id==thisMarkerID) {
-                                    return thisCat.icon_url;
+                                    return thisCat;
                                 }
                             }
                         }
@@ -393,7 +394,69 @@ var dhpServices = {
         }
             // no match: default with null result
         return null;
+    }, // findCatTermInLegend()
+
+
+        // RETURNS: Color for feature given a particular Legend filter or null (no match)
+        // INPUT:   catTerms = array of category IDs (integers) associated with a feature/marker
+        //          legendTerms = array of category IDs for Legend key
+    getItemColor: function(catTerms, legendTerms)
+    {
+        var catMatch = dhpServices.findCatTermInLegend(catTerms, legendTerms);
+        if (catMatch) {
+            return catMatch.icon_url;
+        } else {
+            return null;
+        }
     }, // getItemColor()
+
+
+      // PURPOSE: Get array of discrete values of Marker's given mote as Strings
+      // RETURNS: An array of text labels for any legendTerms that exist in dataItem
+      // NOTES:   Supports 2ndary values -- only reports (single case of) 1st level value names
+      //          There are two possible ways of approaching this:
+      //            (1) Retrieve text for each mote setting, save in marker and parse text acc. to delimiter character of Mote
+      //            (2) Save only indices in properties.categories, lookup each value in Legend keys and retrieve that text
+      //          Since we need to support 2ndary-level hierarchical values, method (2) is best solution
+    getValueLabels: function(dataItem, legendTerms) {
+        var results = [];
+        var catTerms = dataItem.properties.categories;
+        var countCats = catTerms.length;
+
+        if (countCats) {
+            var countTerms = legendTerms.length;
+            var thisCat, thisCatID;
+            var thisMarkerID;
+            var catChildren;
+            var i,j,k;
+
+            for(i=0;i<countTerms;i++) {         // for all category terms in Legend
+                thisCat = legendTerms[i];
+                thisCatID = thisCat.id;
+
+                for(j=0; j<countCats; j++) {      // for all terms IDs in Marker
+                    // legend categories
+                    thisMarkerID = catTerms[j];
+                        // have we matched this element at 1st level?
+                    if (thisCatID===thisMarkerID) {
+                        results.push(thisCat.name);
+                    } else {
+                            // check for a match on its children
+                        catChildren = thisCat.children;
+                        if (catChildren) {
+                            for (k=0; k<catChildren.length; k++) {
+                                if (catChildren[k].term_id==thisMarkerID) {
+                                    results.push(thisCat.name);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return results;
+    }, // getValueLabels()
 
 
         // RETURNS: Text color for card depending on background color

@@ -2,7 +2,8 @@
 // ASSUMES: A view area for the cards has been marked with HTML div as "dhp-visual"
 // NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
 // USES:    JavaScript libraries jQuery, Isotope, Underscore
-// TO DO:   Handle sorting new mote data types
+// TO DO:   Support filter & sort on hierarchical Legend values in Short Text motes!
+//          Handle sorting new mote data types
 //              When numeric motes supported, sort will need to convert strings to integers
 //          Could possibly speed up filter of Short Text mote types, given that category values
 //              come with each Marker

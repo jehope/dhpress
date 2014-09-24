@@ -13,36 +13,29 @@ var dhpFacetFlow = {
         //          viewParams   = array of extra data about visualization
     initialize: function(ajaxURL, projectID, vizIndex, ffEP, viewParams)
     {
+    	var rawData, legendData, chart, vis;
+
         dhpFacetFlow.ffEP        = ffEP;
 
-		  // PURPOSE: Get array of discrete values as Strings from markers
-		  // RETURNS: An array of values (as text) for dItem for the facet dimName
-		  // NOTE: 	  There are two possible ways of approaching this:
-		  //			(1) Retrieve text for each mote setting, save in marker and parse text acc. to delimiter character of Mote
-		  //			(2) Save only indices in properties.categories, lookup each value in Legend keys and retrieve that text
-		  //		  Method 2 saves memory but is slower; Method 1 is current implementation
-		function getFacetValue(dItem, dimName) {
-		  var valStr = dItem.properties.content[dimName];
-
-		  	// Find mote definition and use delimiter character
-		  var moteDef = dhpServices.findMoteByName(dimName);
-
-		  if (moteDef.delim !== '') {
-			  var valArray = valStr.split(moteDef.delim);
-			  for (var i=0; i<valArray.length; i++) {
-			    valArray[i] = valArray[i].trim();
-			  }
-			  return valArray;
-		  } else {
-		  	return [valStr];
-		  }
+		  // PURPOSE: Get array of discrete values as Strings from marker
+		  // RETURNS: An array of values (as text) for dataItem for the facet moteName
+		function getFacetValue(dataItem, moteName) {
+			var i, legend;
+			for (var i=0; i<(rawData.length-1); i++) {
+				legend = rawData[i];
+				if (moteName === legend.name) {
+					return dhpServices.getValueLabels(dataItem, legend.terms);
+				}
+			}
+			return [""];
 		} // getFacetValue()
+
 
         dhpFacetFlow.iWidth  = typeof(ffEP.width)  === 'number' ? ffEP.width  : parseInt(ffEP.width);
         dhpFacetFlow.iHeight = typeof(ffEP.height) === 'number' ? ffEP.height : parseInt(ffEP.height);
 
 		    // Create the space where the facet flow will appear
-		var vis = d3.select("#dhp-visual").append("svg")
+		vis = d3.select("#dhp-visual").append("svg")
 		    .attr("width", dhpFacetFlow.iWidth)
 		    .attr("height", dhpFacetFlow.iHeight);
 
@@ -61,16 +54,18 @@ var dhpFacetFlow = {
             success: function(data, textStatus, XMLHttpRequest)
             {
                     // Prepare the data for use
-                dhpFacetFlow.rawData = JSON.parse(data);
-                if (data == undefined || dhpFacetFlow.rawData == undefined ) {
+                    // The first N-1 array entries will be Legends
+                    // Element N will be marker data
+                rawData = JSON.parse(data);
+                if (data == undefined || rawData == undefined ) {
                     console.log("Error with data; "+data);
                 }
 
-				var chart = d3.parsets().accessDim(getFacetValue)
+				chart = d3.parsets().accessDim(getFacetValue)
 										.dimensions(ffEP.motes)
 										.width(dhpFacetFlow.iWidth)
 										.height(dhpFacetFlow.iHeight);
-				vis.datum(dhpFacetFlow.rawData[dhpFacetFlow.rawData.length-1]['features']).call(chart);
+				vis.datum(rawData[rawData.length-1]['features']).call(chart);
 
 				    // Now create a select list to show the items that 
 				jQuery('#dhp-visual').append('<div id="list-scroll"><div id="marker-list"></div></div>');
@@ -93,7 +88,7 @@ var dhpFacetFlow = {
 				        // Convert to index of feature in marker array
 				    index = parseInt(jQuery(targetItem).data('index'));
 
-				    selectedFeature = dhpFacetFlow.rawData[dhpFacetFlow.rawData.length-1]['features'][index];
+				    selectedFeature = rawData[rawData.length-1]['features'][index];
 				    dhpServices.showMarkerModal(selectedFeature);
 				});
 

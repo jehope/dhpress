@@ -617,6 +617,7 @@ function dhp_get_markers()
 	$projObj = $mQuery->projObj;
 	$eps = $mQuery->projSettings->eps[$index];
 
+		// Does each Marker need a "type": "Feature" property?  Yes if GeoJSON
 	$addFeature = false;
 
 	switch ($eps->type) {
@@ -624,6 +625,7 @@ function dhp_get_markers()
 			// Which field used to encode Lat-Long on map?
 		$mapPointsMote = $projObj->getMoteByName($eps->settings->coordMote);
 		$mapCF = $mapPointsMote->cf;
+			// Might data contain Polygons (rather than just Points)?
 		if ($mapPointsMote->delim != '') {
 			$mapDelim = $mapPointsMote->delim;
 		} else {
@@ -700,11 +702,13 @@ function dhp_get_markers()
 		break;
 
 	case "flow":
-			// Force all flow motes to be retrieved for each marker
-		foreach ($eps->settings->motes as $theMote) {
-			array_push($mQuery->selectContent, $theMote);
+			// Gather all Short Text Legends used for Facet dimensions
+		foreach ($eps->settings->motes as $legend) {
+			$term = get_term_by('name', $legend, $mQuery->rootTaxName);
+			if ($term) {
+				array_push($json_Object, dhp_get_category_vals($term, $mQuery->rootTaxName));
+			}
 		}
-			// We rely on property.title for name of marker
 		break;
 	} // switch
 
