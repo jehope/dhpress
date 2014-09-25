@@ -53,6 +53,7 @@
 	border: 1px black solid;
 	font: 12px sans-serif;
 	background-color: white;
+	resize: both;
 }
 
 #marker-list {
