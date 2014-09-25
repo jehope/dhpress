@@ -20,6 +20,7 @@ define( 'DHP_SCRIPT_PINBOARD_VIEW',   'dhp-script-pin-view.txt' );
 // define( 'DHP_SCRIPT_TREE_VIEW',   'dhp-script-tree-view.txt' );   // currently unneeded
 // define( 'DHP_SCRIPT_TIME_VIEW',   'dhp-script-time-view.txt' );   // currently unneeded
 // define( 'DHP_SCRIPT_FLOW_VIEW',   'dhp-script-flow-view.txt' );   // currently unneeded
+// define( 'DHP_SCRIPT_BROWSER_VIEW',   'dhp-script-browser-view.txt' );   // currently unneeded
 
 // define( 'DHP_SCRIPT_TAX_TRANS',  'dhp-script-tax-trans.txt' );	// currently unneeded
 // define( 'DHP_SCRIPT_TRANS_VIEW', 'dhp-script-trans-view.txt' );   // currently unneeded
@@ -720,6 +721,7 @@ function dhp_get_markers()
 		break;
 
 	case "flow":
+	case "browser":
 			// Gather all Short Text Legends used for Facet dimensions
 		foreach ($eps->settings->motes as $legend) {
 			$term = get_term_by('name', $legend, $mQuery->rootTaxName);
@@ -2044,6 +2046,7 @@ function dhp_perform_tests()
 				$results .= dhp_verify_legend($projObj, $ep->settings->color, true, false, false);
 				break;
 			case 'flow':
+			case 'browser':
 					// Facet Flows legends currently only require Legend existence
 				foreach ($ep->settings->motes as $fMote) {
 					$results .= dhp_verify_legend($projObj, $fMote, false, false, false);
@@ -2367,6 +2370,10 @@ function dhp_mod_page_content($content) {
 				// currently nothing is used
 	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_FLOW_VIEW);
 			break;
+		case 'browser':
+				// currently nothing is used
+	    	// $projscript .= dhp_get_script_text(DHP_SCRIPT_BROWSER_VIEW);
+			break;
 		}
 		$to_append = '<div id="dhp-visual"></div>'.$projscript;
 		break;
@@ -2536,6 +2543,16 @@ function dhp_page_template( $page_template )
 				array('d3', 'd3-parsets') );
 
 	    	array_push($dependencies, 'd3', 'd3-parsets', 'dhp-flow-view');
+	    	break;
+
+	    case 'browser':
+			wp_enqueue_style('dhp-browser-css', plugins_url('/css/dhp-browser.css',  dirname(__FILE__)) );
+
+			wp_enqueue_script('d3', plugins_url('/lib/d3.min.js', dirname(__FILE__)));
+			wp_enqueue_script('dhp-browser-view', plugins_url('/js/dhp-browser-view.js', dirname(__FILE__)),
+				'd3' );
+
+	    	array_push($dependencies, 'd3', 'dhp-browser-view');
 	    	break;
 
 	    default:

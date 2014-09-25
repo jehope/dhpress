@@ -1,4 +1,4 @@
-// DH Press Maps View -- contains all data and functions for rendering cards
+// DH Press Cards View -- contains all data and functions for rendering cards
 // ASSUMES: A view area for the cards has been marked with HTML div as "dhp-visual"
 // NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
 // USES:    JavaScript libraries jQuery, Isotope, Underscore

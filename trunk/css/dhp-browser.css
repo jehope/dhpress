@@ -1,0 +1,108 @@
+
+/*********************
+ ** Faceted Browser
+ **/
+
+#dhp-visual {
+    overflow: auto;
+}
+
+
+    /* The entire container for facets -- the svg element goes inside this */
+#facets-frame {
+    margin: 6px;
+    border: 1px black solid;
+}
+
+    /* A single vertical frame for one facet */
+.facet-column {
+}
+
+    /* The top label for a facet (its background rectangle) */
+    /* Each has the ID "facet-"+facetIndex */
+.facet-label {
+    fill:  #0099FF;           /* sky-blue */
+}
+
+.facet-label-text {
+    font-size: 16px;
+    font-family: sans-serif;
+    font-weight: bold;
+    fill: black;
+}
+
+    /* The button+label for a single facet value */
+    /* Each has the ID "facet-"+facetIndex+"-"+facetValueIndex */
+.facet-val {
+}
+
+.facet-val-button {
+    fill: #00CCFF;      /* light-blue */
+    transition: fill .75s;
+}
+
+    /* the color to show percentage */
+.facet-val-bar {
+    fill: #0099FF;      /* dark-blue */
+    transition: fill .75s;
+}
+
+.inactive .facet-val-button {
+    fill: #D0D0D0;      /* light-grey */
+}
+
+    /* the color to show percentage */
+.inactive .facet-val-bar {
+    fill: #B0B0B0;      /* dark-grey */
+}
+
+
+.facet-val-text {
+    font-size: 12px;
+    font-family: sans-serif;
+    font-weight: normal;
+    fill: black;          /* deep red */
+}
+
+    /* The RESET button for a facet column */
+.facet-reset-button {
+    fill: #FF3333;          /* light-red */
+    transition: fill .75s;
+}
+
+.facet-reset-text {
+    font-weight: bold;
+    font-size: 12px;
+    font-family: sans-serif;
+    fill: black;
+}
+
+    /* Grey out RESET if inactive */
+.inactive .facet-reset-button {
+    fill: #A8A8A8 ;         /* light-grey */
+}
+
+.inactive .facet-reset-text {
+    fill: #808080;
+}
+
+    /* ======== SELECT LIST BOX BELOW ======== */
+
+#list-scroll {
+    margin: 6px;
+    height: 100px;
+    overflow: auto;
+    border: 1px black solid;
+    font: 12px sans-serif;
+    background-color: white;
+    resize: both;
+}
+
+#marker-list {
+    padding: 4px;
+}
+
+.marker-item:hover {
+    background-color: yellow;
+}
+

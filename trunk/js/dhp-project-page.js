@@ -173,6 +173,10 @@ jQuery(document).ready(function($) {
     case 'flow':
         dhpFacetFlow.initialize(ajaxURL, projectID, vizIndex, thisEP.settings);
         break;
+
+    case 'browser':
+        dhpBrowser.initialize(ajaxURL, projectID, vizIndex, thisEP.settings);
+        break;
     }
 
     // ========================= FUNCTIONS
