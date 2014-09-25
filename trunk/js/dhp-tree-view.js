@@ -310,8 +310,8 @@ var dhpTreeView = {
                     dhpServices.showMarkerModal(d);
                 } )
                 .style("fill", function(d) {
-                  var color = dhpTreeView.getItemColor(d.properties.categories);
-                  return dhpServices.getTextColor(color);
+                    var colors = dhpServices.getItemColors(d.properties.categories, dhpTreeView.legendTerms);
+                    return colors[1];
                 })
                     // Does the text point belong on the left or right side?
                 .attr("text-anchor", function(d) {

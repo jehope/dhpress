@@ -3,8 +3,7 @@
 // NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
 // USES:    JavaScript libraries jQuery, Isotope, Underscore
 // TO DO:   Support filter & sort on hierarchical Legend values in Short Text motes!
-//          Handle sorting new mote data types
-//              When numeric motes supported, sort will need to convert strings to integers
+//          When numeric motes supported, sort will need to convert strings to integers
 //          Could possibly speed up filter of Short Text mote types, given that category values
 //              come with each Marker
 
@@ -531,54 +530,16 @@ var dhpCardsView = {
         // SIDEFX:  Caches textColor in text field of Legend, which builds first time encountered
     getItemColor: function(featureVals)
     {
-        var countTerms = dhpCardsView.colorValues.length; 
-        var countCats = featureVals.length;
-        var thisCat, thisCatID;
-        var thisMarkerID;
-        var catChildren;
-        var i,j,k;
-
             // If no color motes or if marker has no category values, return default
-        if (countTerms==0 || countCats==0) {
+        if (dhpCardsView.colorValues.length == 0 || featureVals.length == 0) {
             return dhpCardsView.cardsEP.defColor+'; color:'+dhpCardsView.defTextColor;
         }
 
-        for(i=0;i<countTerms;i++) {         // for all category values
-            thisCat = dhpCardsView.colorValues[i];
-            thisCatID = thisCat.id;
-
-            for(j=0;j<countCats;j++) {      // for all marker values
-                // legend categories
-                thisMarkerID = featureVals[j];
-                    // have we matched this element?
-                if (thisCatID===thisMarkerID) {
-                    if(thisCat.icon_url.substring(0,1) == '#') {
-                        if (thisCat.txtColor == undefined) {
-                            thisCat.txtColor = dhpServices.getTextColor(thisCat.icon_url);
-                        }
-                        return thisCat.icon_url+'; color:'+thisCat.txtColor;
-                    } else {
-                        return dhpCardsView.cardsEP.defColor+'; color:'+dhpCardsView.defTextColor;
-                    }
-                    // check for matches on its children
-                } else {
-                    if (thisCat.children) {
-                        catChildren = thisCat.children;
-                        for (k=0;k<catChildren.length;k++) {
-                            if(catChildren[k].term_id==thisMarkerID) {
-                               if(thisCat.icon_url.substring(0,1) == '#') {
-                                    if (thisCat.txtColor == undefined) {
-                                        thisCat.txtColor = dhpServices.getTextColor(thisCat.icon_url);
-                                    }
-                                    return thisCat.icon_url+'; color:'+thisCat.txtColor;
-                                } else {
-                                    return dhpCardsView.cardsEP.defColor+'; color:'+dhpCardsView.defTextColor;
-                                }
-                            }
-                        }
-                    }
-                }
-           }
+        var colors = dhpServices.getItemColors(featureVals, dhpCardsView.colorValues);
+        if (colors) {
+            return colors[0]+'; color:'+colors[1];
+        } else {
+            return dhpCardsView.cardsEP.defColor+'; color:'+dhpCardsView.defTextColor;
         }
     }, // getItemColor()
 

@@ -411,6 +411,20 @@ var dhpServices = {
     }, // getItemColor()
 
 
+        // RETURNS: Color and black|white for feature given a particular Legend filter or null (no match)
+        // INPUT:   catTerms = array of category IDs (integers) associated with a feature/marker
+        //          legendTerms = array of category IDs for Legend key
+    getItemColors: function(catTerms, legendTerms)
+    {
+        var catMatch = dhpServices.findCatTermInLegend(catTerms, legendTerms);
+        if (catMatch) {
+            return [catMatch.icon_url, (catMatch.black ? 'black' : 'white')];
+        } else {
+            return null;
+        }
+    }, // getItemColors()
+
+
       // PURPOSE: Get array of discrete values of Marker's given mote as Strings
       // RETURNS: An array of text labels for any legendTerms that exist in dataItem
       // NOTES:   Supports 2ndary values -- only reports (single case of) 1st level value names

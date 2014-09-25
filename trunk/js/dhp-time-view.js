@@ -393,7 +393,8 @@ var dhpTimeline = {
                 .attr("y", fontPos)
                 .style("fill", function(d) {
                     var eventData = dhpTimeline.features[d.index];
-                    return dhpServices.getTextColor(dhpServices.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms));
+                    var colors = dhpServices.getItemColors(eventData.properties.categories, dhpTimeline.legendTerms);
+                    return colors[1];
                 })
                 .style("font-size", fontSize)
                 .text(function (d) {

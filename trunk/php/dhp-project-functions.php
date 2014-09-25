@@ -458,7 +458,8 @@ function dhp_export_as_csv()
 // PURPOSE: Get all of the visual features associated via metadata with the taxonomic terms associated with 1 Mote
 // INPUT:	$parent_term = Object for mote/top-level term
 //			$taxonomy = root name of taxonomy for Project
-// NOTE:	JS code will break if icon_url field not set, so we will check it here and die if failure
+// NOTES:	JS code will break if icon_url field not set, so we will check it here and die if failure
+//			If icon_url is a color, the "black" field will be set to true if black will contrast with it
 // RETURNS: Description of Legends to appear on Map in the following format:
 			// {	"type" : "filter",
 			// 		"name" : String (top-level-mote-name),
@@ -467,6 +468,7 @@ function dhp_export_as_csv()
 			// 		  {	"name" :  String (inc. top-level-mote-name),
 			// 			"id" : integer,
 			// 			"icon_url": URL,
+			//			"black": boolean,
 			// 			"children_names" : [ Strings of names ],
 			// 			"children" :
 			// 			[
@@ -506,16 +508,17 @@ function dhp_get_category_vals($parent_term, $taxonomy)
 					 'parent'        => $parent_term->term_id );
 	$children_terms  = get_terms( $taxonomy, $myargs );
 
-		// Go through each of the values in the category
+		// Go through each of the 1st-level values in the category
 	foreach ($children_terms as $child) {
 		array_push($children_names, $child->name);
-			// Does this term have any children?
+			// Does 1st-level term have any 2ndary children?
 		$childArgs = array( 'orderby' 		=> 'term_group',
 		 					'hide_empty'    => false,
 							'parent'        => $child->term_id );
 		$children_terms2 = get_terms( $taxonomy, $childArgs );
 		$children_names2 = array();
-			// Save each of the (sub)children
+
+			// Save each of the 2ndary children
 		foreach ($children_terms2 as $child2) {
 				// convert IDs from String to Integer
 			$child2->term_id = intval($child2->term_id);
@@ -526,26 +529,41 @@ function dhp_get_category_vals($parent_term, $taxonomy)
 			} else {
 				$child2->icon_url = null;
 			}
-
 			array_push($children_names2, $child2->name);
-		}
+		} // for each 2ndary-level value
 
-		if($child->description) {
+		if ($child->description) {
 			$icon_url = $child->description;
 		} else {
 			$icon_url = null;
 		}
 
 			// Now save the top-level category term
-		$temp_child_filter				  = array();
-		$temp_child_filter['name']        = $child->name;
-		$temp_child_filter['id']          = intval($child->term_id);
-		$temp_child_filter['icon_url']    = $icon_url;
-		$temp_child_filter['children_names'] = $children_names2;
-		$temp_child_filter['children']    = $children_terms2;
+		$child_filter				 = array();
+		$child_filter['name']        = $child->name;
+		$child_filter['id']          = intval($child->term_id);
+		$child_filter['icon_url']    = $icon_url;
+		$child_filter['children_names'] = $children_names2;
+		$child_filter['children']    = $children_terms2;
 
-		array_push($filter_object['terms'], $temp_child_filter);
-	}
+			// If icon_url is a color value, determine if black or white will contrast: algorithms at
+        	//    http://www.particletree.com/notebook/calculating-color-contrast-for-legible-text/
+        	//    http://stackoverflow.com/questions/5650924/javascript-color-contraster
+		if (substr($icon_url, 0, 1) === '#') {
+	        $brightness = ((hexdec(substr($icon_url, 1, 2)) * 299.0) +
+	                    (hexdec(substr($icon_url, 3, 2)) * 587.0) +
+	                    (hexdec(substr($icon_url, 5, 2)) * 114.0)) / 255000.0;
+
+	        if ($brightness >= 0.5) {
+	            $child_filter['black'] = true;
+	        } else {
+	            $child_filter['black'] = false;
+	        }
+		}
+
+		array_push($filter_object['terms'], $child_filter);
+	} // for each 1st-level value
+
 		// Update top-level mote pushed near top of function
 	$filter_parent['children_names'] = $children_names;
 	$filter_parent['children'] = $children_terms;
