@@ -120,12 +120,12 @@ var dhpBrowser = {
 		function updateAllValButtons()
 		{
 		    facetData.forEach(function(theFacet) {
-		            // First update the text labels
-		        var facetSel = fbSVG.select("#facet-"+theFacet.index).selectAll(".facet-val-text");
+		            // First update the percentage labels
+		        var facetSel = fbSVG.select("#facet-"+theFacet.index).selectAll(".facet-val-perc");
 		        facetSel.data(theFacet.vals)
 		                .text(function(d) {
 		                    var newIntersect = _.intersection(constrainedSet, d.indices);
-		                    return d.key+" ("+newIntersect.length+"/"+constrainedSet.length+")";
+		                    return newIntersect.length;
 		                });
 		            // Next update the bars
 		        var facetSel = fbSVG.select("#facet-"+theFacet.index).selectAll(".facet-val-bar");
@@ -239,11 +239,18 @@ var dhpBrowser = {
 			        // Create actual label text
 			    facetSel
 			        .append("text")
-			        .attr("class", "facet-val-text" )
+			        .attr("class", "facet-val-text")
 			        .attr("x", 3)
 			        .attr("y", facetLabelHeight-6)
-			        .attr("text-anchor", "start")
-			        .text(function(d) { return d.key+" ("+d.indices.length+"/"+constrainedSet.length+")"; });
+			        .text(function(d) { return d.key; });
+
+			        // Create percentage text
+			    facetSel
+			        .append("text")
+			        .attr("class", "facet-val-perc")
+			        .attr("x", facetLabelWidth-3)
+			        .attr("y", facetLabelHeight-6)
+			        .text(function(d) { return d.indices.length; });
 
 			        // Create each column's RESET button
 			    facetSel = fbSVG.select("#facet-"+theFacet.index).selectAll(".facet-reset")
@@ -281,7 +288,6 @@ var dhpBrowser = {
 			        .attr("class", "facet-reset-text" )
 			        .attr("x", 3)
 			        .attr("y", facetLabelHeight-6)
-			        .attr("text-anchor", "start")
 			        .text("RESET");
 			});
 		} // createSVG()
