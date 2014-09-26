@@ -2058,10 +2058,18 @@ function dhp_perform_tests()
 				$results .= dhp_verify_legend($projObj, $ep->settings->color, true, false, false);
 				break;
 			case 'flow':
-			case 'browser':
 					// Facet Flows legends currently only require Legend existence
 				foreach ($ep->settings->motes as $fMote) {
 					$results .= dhp_verify_legend($projObj, $fMote, false, false, false);
+				}
+				break;
+			case 'browser':
+					// Browser legends currently only require Legend existence for Short Motes
+				foreach ($ep->settings->motes as $fMote) {
+					$moteDef = $projObj->getMoteByName($fMote);
+					if ($moteDef->type === 'Short Text') {
+						$results .= dhp_verify_legend($projObj, $fMote, false, false, false);
+					}
 				}
 				break;
 			} // switch()
