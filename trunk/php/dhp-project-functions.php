@@ -470,17 +470,13 @@ function dhp_export_as_csv()
 			// 			"id" : integer,
 			// 			"icon_url": URL,
 			//			"black": boolean,
-			// 			"children_names" : [ Strings of names ],
 			// 			"children" :
 			// 			[
 			// 			  {	"name" : String,
 			// 				"term_id" : integer,
 			// 				"parent" : integer,
 			// 				"count" : String,
-			// 				"description" : String,
 			//				"icon_url" : String,
-			// 				"term_taxonomy_id" : String,
-			// 				"taxonomy" : String,
 			// 				"term_group" : String
 			//			  }, ...
 			// 			]
@@ -490,7 +486,6 @@ function dhp_export_as_csv()
 
 function dhp_get_category_vals($parent_term, $taxonomy)
 {
-	$children_names = array();
 	$filter_object  = array();
 	$filter_parent  = array();
 
@@ -511,26 +506,31 @@ function dhp_get_category_vals($parent_term, $taxonomy)
 
 		// Go through each of the 1st-level values in the category
 	foreach ($children_terms as $child) {
-		array_push($children_names, $child->name);
 			// Does 1st-level term have any 2ndary children?
 		$childArgs = array( 'orderby' 		=> 'term_group',
 		 					'hide_empty'    => false,
 							'parent'        => $child->term_id );
 		$children_terms2 = get_terms( $taxonomy, $childArgs );
-		$children_names2 = array();
 
 			// Save each of the 2ndary children
+		$new_children = array();
 		foreach ($children_terms2 as $child2) {
-				// convert IDs from String to Integer
-			$child2->term_id = intval($child2->term_id);
-			$child2->parent = intval($child2->parent);
+			$new_child = array();
 
+			$new_child['name'] = $child2->name;
+			$new_child['count'] = intval($child2->count);
+
+				// convert IDs from String to Integer
+			$new_child['term_id'] = intval($child2->term_id);
+			$new_child['parent'] = intval($child2->parent);
+
+				// 2ndary level colors not currently used, so won't compute B/W contrast
 			if ($child2->description) {
-				$child2->icon_url = $child2->description;
+				$new_child['icon_url'] = $child2->description;
 			} else {
-				$child2->icon_url = null;
+				$new_child['icon_url'] = null;
 			}
-			array_push($children_names2, $child2->name);
+			array_push($new_children, $new_child);
 		} // for each 2ndary-level value
 
 		if ($child->description) {
@@ -544,8 +544,7 @@ function dhp_get_category_vals($parent_term, $taxonomy)
 		$child_filter['name']        = $child->name;
 		$child_filter['id']          = intval($child->term_id);
 		$child_filter['icon_url']    = $icon_url;
-		$child_filter['children_names'] = $children_names2;
-		$child_filter['children']    = $children_terms2;
+		$child_filter['children']    = $new_children;
 
 			// If icon_url is a color value, determine if black or white will contrast: algorithms at
         	//    http://www.particletree.com/notebook/calculating-color-contrast-for-legible-text/
@@ -566,7 +565,6 @@ function dhp_get_category_vals($parent_term, $taxonomy)
 	} // for each 1st-level value
 
 		// Update top-level mote pushed near top of function
-	$filter_parent['children_names'] = $children_names;
 	$filter_parent['children'] = $children_terms;
 
 	return $filter_object;
