@@ -106,18 +106,18 @@ var dhpBrowser = {
 								if (dateParts.length == 1) {
 									fValues[0] = yearPre+dateParts[0]+"1";
 								} else {
-									fValues[0] = yearPre+dateParts[0]+dateParts[1];
+									fValues[0] = yearPre+dateParts[0]+"-"+dateParts[1];
 								}
 								break;
 							case 'year':
 								fValues[0] = yearPre+dateParts[0];
 								break;
 							case 'decade':
-								var yearInt = Math.round(parseInt(yearPre+dateParts[0])/10);
+								var yearInt = Math.floor(parseInt(yearPre+dateParts[0])/10);
 								fValues[0] = String(yearInt)+'0';
 								break;
 							case 'century':
-								var yearInt = Math.round(parseInt(yearPre+dateParts[0])/100);
+								var yearInt = Math.floor(parseInt(yearPre+dateParts[0])/100);
 								fValues[0] = String(yearInt)+'00';
 								break;
 							} // switch
@@ -137,9 +137,31 @@ var dhpBrowser = {
 		                }
 		                fEntry.indices.push(dIndex);
 		            });
-		        });
+		        });	// for each data item
+
+	            	// Sort facet keys, according to the type of mote
+	            switch (moteRec.type) {
+	            case 'Short Text':
+	            case 'Long Text':
+	            	newFacet.vals.sort(function(a, b) {
+  						return a.key.localeCompare(b.key);
+					});
+	            	break;
+	            case 'Date':
+	            	newFacet.vals.sort(function(a, b) {
+	            		var aDate = dhpServices.parseADate(a.key, true);
+	            		var bDate = dhpServices.parseADate(b.key, true);
+	            		return aDate > bDate ? 1 : -1;
+	            	});
+	            	break;
+	            }
+	            	// Reset index values
+	            for (var i=0; i<newFacet.vals.length; i++) {
+	            	newFacet.vals[i]['index'] = i;
+	            }
+
 		        result.push(newFacet);
-		    });
+		    }); // for each facet
 
 		    return result;
 		} // compileFacetData()
