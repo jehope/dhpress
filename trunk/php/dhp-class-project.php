@@ -121,7 +121,8 @@
 		            "settings" : {
 		                "motes": [									// List of mote Legends/categories
 		                    String (name of mote), ...
-		                ]
+		                ],
+		                "dateGrp": "exact"|"month"|"year"|"decade"|"century" // granularity of dates grouped together
              		}
 
 		        }

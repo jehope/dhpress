@@ -721,12 +721,26 @@ function dhp_get_markers()
 		break;
 
 	case "flow":
-	case "browser":
 			// Gather all Short Text Legends used for Facet dimensions
 		foreach ($eps->settings->motes as $legend) {
 			$term = get_term_by('name', $legend, $mQuery->rootTaxName);
 			if ($term) {
 				array_push($json_Object, dhp_get_category_vals($term, $mQuery->rootTaxName));
+			}
+		}
+		break;
+
+	case "browser":
+			// If mote is Short Text Legends, compute Legend values, else add to marker content
+		foreach ($eps->settings->motes as $legend) {
+			$defDef = $projObj->getMoteByName($legend);
+			if ($defDef->type=='Short Text') {
+				$term = get_term_by('name', $legend, $mQuery->rootTaxName);
+				if ($term) {
+					array_push($json_Object, dhp_get_category_vals($term, $mQuery->rootTaxName));
+				}
+			} else {
+				array_push($mQuery->selectContent, $legend);
 			}
 		}
 		break;

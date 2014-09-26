@@ -271,6 +271,7 @@ jQuery(document).ready(function($) {
     self.type = 'browser';
     self.label= ko.observable(epSettings.label || 'name me');
     self.settings = { };
+    self.settings.dateGrp = ko.observable(epSettings.settings.dateGrp);
 
     self.settings.motes = ko.observableArray();
     ko.utils.arrayForEach(normalizeArray(epSettings.settings.motes), function(mote) {
@@ -507,6 +508,8 @@ jQuery(document).ready(function($) {
           break;
 
         case 'browser':
+          savedEP.settings.dateGrp = theEP.settings.dateGrp();
+
           savedEP.settings.motes = [];
           ko.utils.arrayForEach(theEP.settings.motes(), function(mote) {
             savedEP.settings.motes.push(mote.name());
@@ -1553,6 +1556,7 @@ jQuery(document).ready(function($) {
         type: 'browser',
         label: 'name me',
         settings: {
+          dateGrp: 'year',
           motes: []
         }
       };

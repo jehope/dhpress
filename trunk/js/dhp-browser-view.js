@@ -3,6 +3,8 @@
 // ASSUMES: A view area for the browser has been marked with HTML div as "dhp-visual"
 // NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
 // USES:    JavaScript libraries jQuery, Underscore, D3 and dhpServices
+// ASSUMES: Can only process Short Text, Long Text and Date data type motes
+//			Date motes contain only single DateRange entry -- will group together by start, ignore end
 // TO DO:   Should 2ndary values hierarchical Legend values in Short Text motes be shown?
 //			Allow user to drag & reorder columns
 
@@ -30,46 +32,99 @@ var dhpBrowser = {
 		constrainedSet, 		// array of indices resulting from current constraints
 		rawData;
 
-		  // PURPOSE: Get array of discrete values as Strings from marker
-		  // RETURNS: An array of values (as text) for dataItem for the facet moteName
-		function getFacetValue(dataItem, moteName) {
-			var i, legend;
-			for (var i=0; i<(rawData.length-1); i++) {
-				legend = rawData[i];
-				if (moteName === legend.name) {
-					return dhpServices.getItemSTLabels(dataItem, legend.terms);
-				}
-			}
-			return [""];
-		} // getFacetValue()
 
 		    // FacetData = [ 
 		    //      {
-		    //          name: String,
-		    //          index: Integer,
+		    //          name: String,			// name of facet/mote
+		    //          index: Integer,			// index of this facet entry
 		    //          selected: Integer       // index of current selection or -1 = none
 		    //          vals: [
 		    //              {
-		    //                  key: String,
-		    //                  index: Integer,
-		    //                  indices: [ ]
+		    //                  key: String,	// facet value
+		    //                  index: Integer,	// index of this value entry
+		    //                  indices: [ ]	// indices of all markers with this facet value
 		    //              }, ...
 		    //          ]
 		    //      }, ...
 		    //  ]
-		    // NOTE: For now assume Short Text data type mote
-		    //      Could alternatively use each marker's properties.categories values
-
-		function compileFacetData(facetNames, data, accessFacetVal)
+		function compileFacetData(facetNames, data)
 		{
-		    var fEntry, valIndex, fValues;
+		    var fEntry, valIndex, fValues, moteRec, legTerms;
 		    var result = [];
 
+		    	// For each facet
 		    facetNames.forEach(function(theFacet, fIndex) {
-		        var newFacet = { name: theFacet, index: fIndex, selected: -1, vals: [] }
+		        var newFacet = { name: theFacet, index: fIndex, selected: -1, vals: [] };
+
+		        	// Gather data about this mote
+		        moteRec = dhpServices.findMoteByName(theFacet);
+		        legTerms = null;
+		        	// If mote is Short Text, find Legend terms for it
+		        if (moteRec.type === 'Short Text') {
+					for (var i=0; i<(rawData.length-1); i++) {
+						if (theFacet === rawData[i]['name']) {
+							legTerms = rawData[i]['terms'];
+							break;
+						}
+					}
+		        }
+
+		        	// For each data item
 		        data.forEach(function(dataItem, dIndex) {
-		            fValues = accessFacetVal(dataItem, theFacet);
-		                // Locate vals entries for each
+		        		// If not Short Text, must fetch values from properties.content
+		        	if (legTerms) {
+		            	fValues = dhpServices.getItemSTLabels(dataItem, legTerms);
+		            } else {
+		            		// Does mote allow for multiple values?
+		            	if (moteRec.delim !== '') {
+							var valStr = dataItem.properties.content[theFacet];
+
+							fValues = valStr.split(moteRec.delim);
+							for (var i=0; i<fValues.length; i++) {
+						    	fValues[i] = fValues[i].trim();
+							}
+						} else {
+							fValues = [dataItem.properties.content[theFacet]];
+						}
+							// Do values need to be processed acc to mote type?
+						if (moteRec.type === 'Date') {
+								// Only using start segment of DateRanges
+							var theDate = fValues[0].split("/")[0];
+							var yearPre="";
+
+							if (theDate.charAt(0) == '-') {
+					            yearPre = "-";
+					            theDate = theDate.substring(1);
+					        }
+		        			var dateParts = theDate.split("-");
+							switch (browserEP.dateGrp) {
+							case 'exact':
+								fValues[0] = yearPre+theDate;
+								break;
+							case 'month':
+									// Provide default if none given
+								if (dateParts.length == 1) {
+									fValues[0] = yearPre+dateParts[0]+"1";
+								} else {
+									fValues[0] = yearPre+dateParts[0]+dateParts[1];
+								}
+								break;
+							case 'year':
+								fValues[0] = yearPre+dateParts[0];
+								break;
+							case 'decade':
+								var yearInt = Math.round(parseInt(yearPre+dateParts[0])/10);
+								fValues[0] = String(yearInt)+'0';
+								break;
+							case 'century':
+								var yearInt = Math.round(parseInt(yearPre+dateParts[0])/100);
+								fValues[0] = String(yearInt)+'00';
+								break;
+							} // switch
+						} // if Date
+		            } // not Short Text
+
+		                // Locate vals[] entries for each of the values
 		            fValues.forEach(function(thisVal) {
 		                valIndex = newFacet.vals.findIndex(function(theVal) {
 		                    return thisVal === theVal.key;
@@ -83,8 +138,6 @@ var dhpBrowser = {
 		                fEntry.indices.push(dIndex);
 		            });
 		        });
-		            // Compute total # facet values
-		        // newFacet.sum = d3.sum(newFacet.vals, function(v) { return v.indices.length; } );
 		        result.push(newFacet);
 		    });
 
@@ -323,7 +376,7 @@ var dhpBrowser = {
 
 				    // compute facet data
 				resetSelectedSet();
-				facetData = compileFacetData(browserEP.motes, rawData[rawData.length-1]['features'], getFacetValue);
+				facetData = compileFacetData(browserEP.motes, rawData[rawData.length-1]['features']);
 
 				    // Initially all objects enabled
 				populateList();
@@ -335,12 +388,12 @@ var dhpBrowser = {
 				        maxRows = theFacet.vals.length;
 				    }
 				});
-				width = ((browserEP.motes.length-1)*facetColWidth)+facetLabelWidth+resizeW;
+				width = ((browserEP.motes.length-1)*facetColWidth)+facetLabelWidth;
 
 				    // Need to add an extra row for RESET button
-				height = facetLabel0Height+(facetLabelHeight * ++maxRows)+resizeH;
+				height = facetLabel0Height+(facetLabelHeight * ++maxRows);
 
-				jQuery('#facets-frame').width(width).height(height);
+				jQuery('#facets-frame').width(width+resizeW).height(height+resizeH);
 				jQuery('#list-scroll').width(width);
 
 				createSVG();
@@ -372,6 +425,6 @@ var dhpBrowser = {
             {
                alert(errorThrown);
             }
-        });
-    }
-}
+        }); // jQuery.ajax
+    } // initialize()
+} // dhpBrowser

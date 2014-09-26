@@ -472,7 +472,15 @@
     </h2>
     <ul>
         <li>Browser short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
-        <li>Browser views require at least 1 Short Text mote to work</li>
+        <li>Group Date mote values by <select data-bind="value: theEP.settings.dateGrp">
+                <option value="exact">Keep exact dates</option>
+                <option value="month">Same month</option>
+                <option value="year">Same year</option>
+                <option value="decade">Same decade</option>
+                <option value="century">Same century</option>
+            </select>
+        </li>
+        <li>Browser views require at least 1 mote to work</li>
         <div data-bind="template: { name: 'browser-mote-template', foreach: theEP.settings.motes }"></div>
         <button data-bind="jqButton, click: $root.addBrowserMote.bind(theEP)">Add Mote to Browser</button>
     </ul>
@@ -480,7 +488,7 @@
 
 <script type="text/html" id="browser-mote-template">
     <li>
-        Mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.stMoteNames"></select>
+        Mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.compMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delBrowserMote($data, theEP, $index()); }">Delete</button>
     </li>
 </script>
