@@ -12,6 +12,7 @@
 #facets-frame {
     margin: 6px;
     border: 1px black solid;
+    overflow: auto;
     resize: both;
 }
 

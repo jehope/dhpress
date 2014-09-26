@@ -535,7 +535,7 @@ var dhpCardsView = {
             return dhpCardsView.cardsEP.defColor+'; color:'+dhpCardsView.defTextColor;
         }
 
-        var colors = dhpServices.getItemColors(featureVals, dhpCardsView.colorValues);
+        var colors = dhpServices.getItemSTColors(featureVals, dhpCardsView.colorValues);
         if (colors) {
             return colors[0]+'; color:'+colors[1];
         } else {
@@ -608,7 +608,7 @@ var dhpCardsView = {
             // set default background and text colors
         var match = dhpCardsView.cardsEP.defColor.match(/^#([0-9a-f]{6})$/i);
         if (match) {
-            defTextColor = dhpServices.getTextColor(dhpCardsView.cardsEP.defColor);
+            defTextColor = dhpServices.getContrastColor(dhpCardsView.cardsEP.defColor);
             colorStr = dhpCardsView.cardsEP.defColor+'; color:'+defTextColor;
         } else {
             colorStr = dhpCardsView.cardsEP.defColor+'; color:#000000';

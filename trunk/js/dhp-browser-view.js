@@ -16,10 +16,12 @@ var dhpBrowser = {
     initialize: function(ajaxURL, projectID, vizIndex, browserEP)
     {
 		var 	// Constants
-	    facetColWidth  = 208,
-	    facetLabelWidth = 200,
+	    facetColWidth  = 228,
+	    facetLabelWidth = 220,
 	    facetLabel0Height = 26,
 	    facetLabelHeight = 22,
+	    resizeW = 18,			// extra space for resize drag corner / scrollbars
+	    resizeH = 18,
 	    	// Computed variables
 		width,
 		height,
@@ -35,7 +37,7 @@ var dhpBrowser = {
 			for (var i=0; i<(rawData.length-1); i++) {
 				legend = rawData[i];
 				if (moteName === legend.name) {
-					return dhpServices.getValueLabels(dataItem, legend.terms);
+					return dhpServices.getItemSTLabels(dataItem, legend.terms);
 				}
 			}
 			return [""];
@@ -90,11 +92,11 @@ var dhpBrowser = {
 		} // compileFacetData()
 
 
+			// PURPOSE: Reset selection to all possible markers
 		function resetSelectedSet()
 		{
 			var numMarkers = rawData[rawData.length-1]['features']['length'];
 
-		        // Begin by creating array with all indices
 		    constrainedSet = [];
 		    for (var i=0; i<numMarkers; i++) {
 		    	constrainedSet.push(i);
@@ -143,7 +145,7 @@ var dhpBrowser = {
 		} // updateAllValButtons()
 
 
-		    // PURPOSE: Fill list-box with markers in 
+		    // PURPOSE: Fill list-box with markers in current selection
 		function populateList()
 		{
 			var features = rawData[rawData.length-1]['features'];
@@ -161,6 +163,8 @@ var dhpBrowser = {
 			// PURPOSE: Create SVG elements with D3
 		function createSVG()
 		{
+			var facetSel;
+
 			fbSVG = d3.select('#facets-frame').append("svg")
 			    .attr("width", width)
 			    .attr("height", height);
@@ -189,16 +193,57 @@ var dhpBrowser = {
 			    .attr("text-anchor", "start")
 			    .text(function(d) { return d.name; });
 
+			    // Need dummy data to bind to RESET buttons
 			var resetDummy=[1];
 
 			        // Now create labels for specific values, column by column
 			facetData.forEach(function(theFacet) {
-			    var facetSel = fbSVG.select("#facet-"+theFacet.index).selectAll(".facet-val")
+			        // Create each column's RESET button
+			    facetSel = fbSVG.select("#facet-"+theFacet.index).selectAll(".facet-reset")
+			        .data(resetDummy)
+			        .enter()
+			        .append("g")
+			            // RESET button initially starts out inactive
+			        .attr("transform", "translate(0," + (facetLabel0Height+1) +  ")" )
+			        .attr("class", "facet-reset inactive")
+			        .attr("id", "reset-"+theFacet.index)
+			        .attr("height", facetLabelHeight-1)
+			        .on("click", function(d) {
+			            if (theFacet.selected != -1) {
+			                theFacet.selected = -1;
+			                computeRestrainedSet();
+			                updateAllValButtons();
+			                    // Make all buttons in this column active
+			                var btnSel = fbSVG.select("#facet-"+theFacet.index).selectAll(".facet-val")
+			                    .data(theFacet.vals)
+			                    .classed('inactive', false);
+			                    // Make RESET button inactive
+			                var resetSel = fbSVG.select("#reset-"+theFacet.index);
+			                    resetSel.classed('inactive', true);
+			                populateList();
+			            }
+			        });
+
+			    facetSel
+			        .append("rect")
+			        .attr("class", "facet-reset-button")
+			        .attr("height", facetLabelHeight-1)
+			        .attr("width", facetLabelWidth);
+			    facetSel
+			        .append("text")
+			        .attr("class", "facet-reset-text" )
+			        .attr("x", 3)
+			        .attr("y", facetLabelHeight-6)
+			        .text("RESET");
+
+			        	// Create button for each facet value
+			    facetSel = fbSVG.select("#facet-"+theFacet.index).selectAll(".facet-val")
 			        .data(theFacet.vals)
 			        .enter()
-
 			        .append("g")
-			        .attr("transform", function(d, i) { return "translate(0," + (facetLabel0Height+1+(i*facetLabelHeight)) +  ")"; } )
+
+			        	// Must move down one for RESET button
+			        .attr("transform", function(d, i) { return "translate(0," + (facetLabel0Height+1+((i+1)*facetLabelHeight)) +  ")"; } )
 			        .attr("class", "facet-val" )
 			        .attr("id", function(d, i) { return "facet-"+theFacet.index+"-"+i; } )
 			        .on("click", function(d) {
@@ -251,44 +296,6 @@ var dhpBrowser = {
 			        .attr("x", facetLabelWidth-3)
 			        .attr("y", facetLabelHeight-6)
 			        .text(function(d) { return d.indices.length; });
-
-			        // Create each column's RESET button
-			    facetSel = fbSVG.select("#facet-"+theFacet.index).selectAll(".facet-reset")
-			        .data(resetDummy)
-			        .enter()
-			        .append("g")
-			            // RESET button initially starts out inactive
-			        .attr("transform", "translate(0," + (facetLabel0Height+1+(theFacet.vals.length*facetLabelHeight)) +  ")" )
-			        .attr("class", "facet-reset inactive")
-			        .attr("id", "reset-"+theFacet.index)
-			        .attr("height", facetLabelHeight-1)
-			        .on("click", function(d) {
-			            if (theFacet.selected != -1) {
-			                theFacet.selected = -1;
-			                computeRestrainedSet();
-			                updateAllValButtons();
-			                    // Make all buttons in this column active
-			                var btnSel = fbSVG.select("#facet-"+theFacet.index).selectAll(".facet-val")
-			                    .data(theFacet.vals)
-			                    .classed('inactive', false);
-			                    // Make RESET button inactive
-			                var resetSel = fbSVG.select("#reset-"+theFacet.index);
-			                    resetSel.classed('inactive', true);
-			                populateList();
-			            }
-			        });
-
-			    facetSel
-			        .append("rect")
-			        .attr("class", "facet-reset-button")
-			        .attr("height", facetLabelHeight-1)
-			        .attr("width", facetLabelWidth);
-			    facetSel
-			        .append("text")
-			        .attr("class", "facet-reset-text" )
-			        .attr("x", 3)
-			        .attr("y", facetLabelHeight-6)
-			        .text("RESET");
 			});
 		} // createSVG()
 
@@ -328,10 +335,10 @@ var dhpBrowser = {
 				        maxRows = theFacet.vals.length;
 				    }
 				});
-				width = ((browserEP.motes.length-1)*facetColWidth)+facetLabelWidth;
+				width = ((browserEP.motes.length-1)*facetColWidth)+facetLabelWidth+resizeW;
 
 				    // Need to add an extra row for RESET button
-				height = facetLabel0Height+(facetLabelHeight * ++maxRows);
+				height = facetLabel0Height+(facetLabelHeight * ++maxRows)+resizeH;
 
 				jQuery('#facets-frame').width(width).height(height);
 				jQuery('#list-scroll').width(width);

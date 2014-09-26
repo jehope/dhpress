@@ -382,7 +382,7 @@ var dhpTimeline = {
             .attr("height", "100%")
             .style("fill", function(d) {
                 var eventData = dhpTimeline.features[d.index];
-                return dhpServices.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms);
+                return dhpServices.getItemSTColor(eventData.properties.categories, dhpTimeline.legendTerms);
             });
 
             // Label for interval -- only for top band
@@ -393,7 +393,7 @@ var dhpTimeline = {
                 .attr("y", fontPos)
                 .style("fill", function(d) {
                     var eventData = dhpTimeline.features[d.index];
-                    var colors = dhpServices.getItemColors(eventData.properties.categories, dhpTimeline.legendTerms);
+                    var colors = dhpServices.getItemSTColors(eventData.properties.categories, dhpTimeline.legendTerms);
                     return colors[1];
                 })
                 .style("font-size", fontSize)
@@ -412,7 +412,7 @@ var dhpTimeline = {
             .attr("r", instR)
             .style("fill", function(d) {
                 var eventData = dhpTimeline.features[d.index];
-                return dhpServices.getItemColor(eventData.properties.categories, dhpTimeline.legendTerms);
+                return dhpServices.getItemSTColor(eventData.properties.categories, dhpTimeline.legendTerms);
             });
 
             // Labels only on top zoom frame
