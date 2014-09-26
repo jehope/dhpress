@@ -1,4 +1,4 @@
-// DH Press Maps View -- contains all data and functions for rendering cards
+// DH Press Cards View -- contains all data and functions for rendering cards
 // ASSUMES: A view area for the cards has been marked with HTML div as "dhp-visual"
 // NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
 // USES:    JavaScript libraries jQuery, Isotope, Underscore
@@ -535,7 +535,7 @@ var dhpCardsView = {
             return dhpCardsView.cardsEP.defColor+'; color:'+dhpCardsView.defTextColor;
         }
 
-        var colors = dhpServices.getItemColors(featureVals, dhpCardsView.colorValues);
+        var colors = dhpServices.getItemSTColors(featureVals, dhpCardsView.colorValues);
         if (colors) {
             return colors[0]+'; color:'+colors[1];
         } else {
@@ -608,7 +608,7 @@ var dhpCardsView = {
             // set default background and text colors
         var match = dhpCardsView.cardsEP.defColor.match(/^#([0-9a-f]{6})$/i);
         if (match) {
-            defTextColor = dhpServices.getTextColor(dhpCardsView.cardsEP.defColor);
+            defTextColor = dhpServices.getContrastColor(dhpCardsView.cardsEP.defColor);
             colorStr = dhpCardsView.cardsEP.defColor+'; color:'+defTextColor;
         } else {
             colorStr = dhpCardsView.cardsEP.defColor+'; color:#000000';

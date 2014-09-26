@@ -197,7 +197,7 @@ var dhpTreeView = {
         if (dhpTreeView.legendTerms == null) {
             return '#3333FF';
         }
-        var color = dhpServices.getItemColor(featureVals, dhpTreeView.legendTerms);
+        var color = dhpServices.getItemSTColor(featureVals, dhpTreeView.legendTerms);
         return (color == null) ? '#3333FF' : color;
     }, // getItemColor()
 
@@ -310,7 +310,7 @@ var dhpTreeView = {
                     dhpServices.showMarkerModal(d);
                 } )
                 .style("fill", function(d) {
-                    var colors = dhpServices.getItemColors(d.properties.categories, dhpTreeView.legendTerms);
+                    var colors = dhpServices.getItemSTColors(d.properties.categories, dhpTreeView.legendTerms);
                     return colors[1];
                 })
                     // Does the text point belong on the left or right side?

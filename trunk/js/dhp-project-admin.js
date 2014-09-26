@@ -7,7 +7,7 @@
 // NOTES:   Relies on some HTML data generated in show_dhp_project_settings_box() of dhp-project-functions.php
 //          Data that relies on WP queries cannot be passed in via "localization" pf dhpDataLib because that
 //            causes WP globals (like $post) to be overwritten
-//          Problems with jQueryUI in WordPress means that must set dialogs to 'draggable: false'
+//          Problems with jQueryUI in WordPress mean that dialogs must be set to 'draggable: false'
 
 jQuery(document).ready(function($) {
 
@@ -264,6 +264,21 @@ jQuery(document).ready(function($) {
     });
   } // FlowEntryPoint()
 
+    // Class constructor for Facet Browser Entry Point
+  var BrowserEntryPoint = function(epSettings) {
+    var self = this;
+
+    self.type = 'browser';
+    self.label= ko.observable(epSettings.label || 'name me');
+    self.settings = { };
+    self.settings.dateGrp = ko.observable(epSettings.settings.dateGrp);
+
+    self.settings.motes = ko.observableArray();
+    ko.utils.arrayForEach(normalizeArray(epSettings.settings.motes), function(mote) {
+      self.settings.motes.push(new ArrayString(mote));
+    });
+  } // BrowserEntryPoint()
+
 
     // Create new "blank" layer to store in Map entry point
     // NOTES: opacity is the only property that needs double binding
@@ -485,6 +500,15 @@ jQuery(document).ready(function($) {
         case 'flow':
           savedEP.settings.width = theEP.settings.width();
           savedEP.settings.height = theEP.settings.height();
+
+          savedEP.settings.motes = [];
+          ko.utils.arrayForEach(theEP.settings.motes(), function(mote) {
+            savedEP.settings.motes.push(mote.name());
+          });
+          break;
+
+        case 'browser':
+          savedEP.settings.dateGrp = theEP.settings.dateGrp();
 
           savedEP.settings.motes = [];
           ko.utils.arrayForEach(theEP.settings.motes(), function(mote) {
@@ -755,6 +779,7 @@ jQuery(document).ready(function($) {
                 if (theEP.settings.color() == moteName) { theEP.settings.color(''); }
                 break;
               case 'flow':
+              case 'browser':
                 theEP.settings.motes.remove(function(mote) { return mote.name() === moteName; });
                 break;
               }
@@ -1525,6 +1550,20 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new pinboard entry point
+    self.createBrowserEP = function() {
+      var _blankBrowserEP = {
+        type: 'browser',
+        label: 'name me',
+        settings: {
+          dateGrp: 'year',
+          motes: []
+        }
+      };
+      self.setEP(_blankBrowserEP);
+      self.settingsDirty(true);
+    };
+
       // PURPOSE: Programmatically add an entry point to the settings (not via user interface)
     self.setEP = function(theEP) {
       var newEP;
@@ -1546,6 +1585,9 @@ jQuery(document).ready(function($) {
         break;
       case 'flow':
         newEP = new FlowEntryPoint(theEP);
+        break;
+      case 'browser':
+        newEP = new BrowserEntryPoint(theEP);
         break;
       }
       self.entryPoints.push(newEP);
@@ -1587,6 +1629,8 @@ jQuery(document).ready(function($) {
         return 'ep-time-template';
       case 'flow':
         return 'ep-flow-template';
+      case 'browser':
+        return 'ep-browser-template';
       }
     }; // calcEPTemplate()
 
@@ -1716,6 +1760,18 @@ jQuery(document).ready(function($) {
       self.settingsDirty(true);
     };
 
+      // PURPOSE: Handle user selection to create new mote in Facet Browser list
+    self.addBrowserMote =  function(theEP) {
+      theEP.settings.motes.push(new ArrayString(''));
+      self.settingsDirty(true);
+    };
+
+      // PURPOSE: Handle user selection to create new map legend
+    self.delBrowserMote = function(theSort, theEP, index) {
+      theEP.settings.motes.splice(index, 1);
+      self.settingsDirty(true);
+    };
+
 //------------------------------------------ Views -----------------------------------------
 
       // User-editable values
@@ -1822,6 +1878,7 @@ jQuery(document).ready(function($) {
           }
           break;
         case 'flow':
+        case 'browser':
           ko.utils.arrayForEach(theEP.settings.motes(), function (mote) {
             var moteName = mote.name();
               // Don't add if it already exists
@@ -2271,6 +2328,24 @@ jQuery(document).ready(function($) {
           if (redundFacets) {
             epErrorMessage('Facet Flow requires unique (not redundant) motes in the list to display');
           }
+          break;
+        case 'browser':
+          if (theEP.settings.motes().length < 1) {
+            epErrorMessage('You need at least one mote for the Facet Browser');
+          }
+            // Ensure that each facet-mote is only used once in list
+          var redundFacets=false;
+          ko.utils.arrayForEach(theEP.settings.motes(), function(theMote) {
+            var matchCnt=0;
+            ko.utils.arrayForEach(theEP.settings.motes(), function(mote2) {
+              if (theMote.name() === mote2.name()) { matchCnt+=1; }
+            });
+            if (matchCnt > 1) { redundFacets=true; }
+          });
+          if (redundFacets) {
+            epErrorMessage('You have listed redundant motes to display');
+          }
+          break;          
         } // switch
       });
 

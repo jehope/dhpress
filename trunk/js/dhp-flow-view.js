@@ -24,7 +24,7 @@ var dhpFacetFlow = {
 			for (var i=0; i<(rawData.length-1); i++) {
 				legend = rawData[i];
 				if (moteName === legend.name) {
-					return dhpServices.getValueLabels(dataItem, legend.terms);
+					return dhpServices.getItemSTLabels(dataItem, legend.terms);
 				}
 			}
 			return [""];

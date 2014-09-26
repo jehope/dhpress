@@ -26,7 +26,7 @@
 		    ],
 		    "eps": [										// contents of settings depends on type of entry point
 		    	{
-		            "type": String ("map" | "cards" | "pinboard" | "tree" | "time" | "flow"),
+		            "type": String ("map" | "cards" | "pinboard" | "tree" | "time" | "flow" | "browser"),
 		            "label" : String (short and unique across entry points),
 									// Map settings are as follows
 		            "settings": {
@@ -116,6 +116,13 @@
 		                "motes": [									// List of mote Legends/categories
 		                    String (name of mote), ...
 		                ]
+             		}
+									// Facet Browser settings are as follows
+		            "settings" : {
+		                "motes": [									// List of mote Legends/categories
+		                    String (name of mote), ...
+		                ],
+		                "dateGrp": "exact"|"month"|"year"|"decade"|"century" // granularity of dates grouped together
              		}
 
 		        }

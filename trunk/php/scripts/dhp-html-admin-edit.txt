@@ -52,6 +52,7 @@
       <h3>Entry Points</h3>
       <div>
           <p>
+            <button data-bind="jqButton, click: createBrowserEP">New Browser</button>
             <button data-bind="jqButton, click: createMapEP">New Map</button>
             <button data-bind="jqButton, click: createCardsEP">New Cards</button>
             <button data-bind="jqButton, click: createPinEP">New Pinboard</button>
@@ -454,6 +455,41 @@
     <li>
         Mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.stMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delFlowMote($data, theEP, $index()); }">Delete</button>
+    </li>
+</script>
+
+
+<!-- Facet Browser Entry Point Templates -->
+<script type="text/html" id="ep-browser-template">
+    <h2><b>Facet Browser Entry Point</b>
+      <button data-bind="jqButton, click: $root.delEP">Delete Browser</button>
+      <span data-bind="if: $index() > 0">
+        <button data-bind="jqButton, click: function() { $root.topEP($data, $index()); }">To Top</button>
+      </span>
+      <span data-bind="if: $index() < $root.maxEPindex()">
+        <button data-bind="jqButton, click: function() { $root.bottomEP($data, $index()); }">To Bottom</button>
+      </span>
+    </h2>
+    <ul>
+        <li>Browser short label <input data-bind="value: theEP.label" type="text" size="12"/></li>
+        <li>Group Date mote values by <select data-bind="value: theEP.settings.dateGrp">
+                <option value="exact">Keep exact dates</option>
+                <option value="month">Same month</option>
+                <option value="year">Same year</option>
+                <option value="decade">Same decade</option>
+                <option value="century">Same century</option>
+            </select>
+        </li>
+        <li>Browser views require at least 1 mote to work</li>
+        <div data-bind="template: { name: 'browser-mote-template', foreach: theEP.settings.motes }"></div>
+        <button data-bind="jqButton, click: $root.addBrowserMote.bind(theEP)">Add Mote to Browser</button>
+    </ul>
+</script>
+
+<script type="text/html" id="browser-mote-template">
+    <li>
+        Mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.compMoteNames"></select>
+        <button data-bind="jqButton, click: function() { $root.delBrowserMote($data, theEP, $index()); }">Delete</button>
     </li>
 </script>
 
