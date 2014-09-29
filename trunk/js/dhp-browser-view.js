@@ -6,7 +6,6 @@
 // ASSUMES: Can only process Short Text, Long Text and Date data type motes
 //			Date motes contain only single DateRange entry -- will group together by start, ignore end
 // TO DO:   Should 2ndary values hierarchical Legend values in Short Text motes be shown?
-//			Allow user to drag & reorder columns
 
 var dhpBrowser = {
 
@@ -18,12 +17,16 @@ var dhpBrowser = {
     initialize: function(ajaxURL, projectID, vizIndex, browserEP)
     {
 		var 	// Constants
-	    facetColWidth  = 228,
+	    facetColWidth = 228,
+	    facetColHot = facetColWidth/3,		// dragged column scoots other column in first 1/3 of width
 	    facetLabelWidth = 220,
 	    facetLabel0Height = 26,
 	    facetLabelHeight = 22,
 	    resizeW = 18,			// extra space for resize drag corner / scrollbars
 	    resizeH = 18,
+	    	// GUI variables
+		dragging = false,		// true when column is being dragged
+		overCol,				// the current facetCol # over which the dragged column is
 	    	// Computed variables
 		width,
 		height,
@@ -36,8 +39,9 @@ var dhpBrowser = {
 		    // FacetData = [ 
 		    //      {
 		    //          name: String,			// name of facet/mote
-		    //          index: Integer,			// index of this facet entry
-		    //          selected: Integer       // index of current selection or -1 = none
+		    //          index: Integer,			// index of this facet entry in array
+		    //			colNum: Integer,		// order of this column in display (0..N-1)
+		    //          selected: Integer       // index of current value selection or -1 = none
 		    //          vals: [
 		    //              {
 		    //                  key: String,	// facet value
@@ -54,7 +58,7 @@ var dhpBrowser = {
 
 		    	// For each facet
 		    facetNames.forEach(function(theFacet, fIndex) {
-		        var newFacet = { name: theFacet, index: fIndex, selected: -1, vals: [] };
+		        var newFacet = { name: theFacet, index: fIndex, colNum: fIndex, selected: -1, vals: [] };
 
 		        	// Gather data about this mote
 		        moteRec = dhpServices.findMoteByName(theFacet);
@@ -193,6 +197,37 @@ var dhpBrowser = {
 		} // computeRestrainedSet()
 
 
+			// PURPOSE: Refresh the horizontal positions of given facets
+			// INPUT: 	from, to = column numbers of facets
+		function refreshFacetCols(from, to)
+		{
+			facetData.forEach(function(theFacet) {
+				if (from <= theFacet.colNum && theFacet.colNum <= to) {
+					fbSVG.select("#facet-"+theFacet.index)
+						.transition()
+			    		.attr("transform", function(d) { return "translate(" + (d.colNum*facetColWidth) +  ", 0)"; } );
+				}
+			});
+		} // refreshFacetCols()
+
+
+			// PURPOSE: Scoot over columns to insert dragging column by updating <colNum> field
+			// INPUT:   oldCol = previous column position of dragged column
+			//			newCol = new column position of dragged column (where item getting displaced)
+			// NOTES: 	We simply exchange column numbers of facetData and 
+		function scootColumns(oldCol, newCol)
+		{
+			for (var i=0; i<facetData.length; i++) {
+				var theFacet = facetData[i];
+				if (theFacet.colNum === newCol) {
+					theFacet.colNum = oldCol;
+					refreshFacetCols(oldCol, oldCol);
+					break;
+				}
+			}
+		} // scootColumns
+
+
 		    // PURPOSE: Recompute totals in labels and bars (transition animation)
 		function updateAllValButtons()
 		{
@@ -250,7 +285,7 @@ var dhpBrowser = {
 			    .enter()
 			        // Facet Label Grouping
 			    .append("g")
-			    .attr("transform", function(d) { return "translate(" + (d.index*facetColWidth) +  ", 0)"; } )
+			    .attr("transform", function(d) { return "translate(" + (d.colNum*facetColWidth) +  ", 0)"; } )
 			    .attr("class", "facet-column" )
 			    .attr("id", function(d) { return "facet-"+d.index; } );
 
@@ -267,6 +302,38 @@ var dhpBrowser = {
 			    .attr("y", facetLabel0Height-7)
 			    .attr("text-anchor", "start")
 			    .text(function(d) { return d.name; });
+
+			    	// Handle drag and drop of facet columns
+			    	// Only move horizontally -- scoot over columns when appropriate
+			cols.call(d3.behavior.drag()
+                .on("dragstart", function(d) {
+                	dragging = true;
+                	overCol = d.colNum;		// starting in this column
+                	d.x = d.colNum*facetColWidth;
+                	d.colNum = -1;			// prevent from updating this facet's colNum as dragging
+                })
+                .on("drag", function(d) {
+                  		// First move this dragged column horizontally
+                	d.x += d3.event.dx;
+                	d3.select(this)
+                		.attr("transform", "translate(" + d.x + ",0)");
+
+                		// What column are we in now?
+                	var newOverCol = Math.max(0, Math.min(Math.floor(d.x / facetColWidth), facetData.length));
+
+                    	// Do we need to scoot another column left or right?
+                    if (newOverCol !== overCol && ((d.x % facetColWidth) < facetColHot)) {
+                    	scootColumns(overCol, newOverCol);
+                    	overCol = newOverCol;
+                    }
+                })
+                .on("dragend", function(d) {
+                	dragging = false;
+                	d.colNum = overCol;		// save final column
+
+                		// Slide dragged column into place
+					refreshFacetCols(d.colNum, d.colNum);
+                })); // call
 
 			    // Need dummy data to bind to RESET buttons
 			var resetDummy=[1];
