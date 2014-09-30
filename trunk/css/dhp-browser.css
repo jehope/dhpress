@@ -23,7 +23,8 @@
     /* The top label for a facet (its background rectangle) */
     /* Each has the ID "facet-"+facetIndex */
 .facet-label {
-    fill:  #0099FF;           /* sky-blue */
+    fill:  #0099FF;     /* sky-blue */
+    cursor: ew-resize;  /* horizontal resize */
 }
 
 .facet-label-text {
@@ -32,6 +33,7 @@
     font-weight: bold;
     fill: black;
     text-anchor: start;
+    cursor: ew-resize;  /* horizontal resize */
 }
 
     /* The button+label for a single facet value */
@@ -40,12 +42,14 @@
 }
 
 .facet-val-button {
+    cursor: pointer;
     fill: #00CCFF;      /* light-blue */
     transition: fill .75s;
 }
 
     /* the color to show percentage */
 .facet-val-bar {
+    cursor: pointer;
     fill: #0099FF;      /* dark-blue */
     transition: fill .75s;
 }
@@ -60,6 +64,7 @@
 }
 
 .facet-val-text {
+    cursor: pointer;
     font-size: 12px;
     font-family: sans-serif;
     font-weight: normal;
@@ -68,6 +73,7 @@
 }
 
 .facet-val-perc {
+    cursor: pointer;
     font-size: 12px;
     font-family: sans-serif;
     font-weight: normal;
@@ -77,11 +83,13 @@
 
     /* The RESET button for a facet column */
 .facet-reset-button {
+    cursor: pointer;
     fill: #FF3333;          /* light-red */
     transition: fill .75s;
 }
 
 .facet-reset-text {
+    cursor: pointer;
     font-weight: bold;
     font-size: 12px;
     font-family: sans-serif;
