@@ -107,7 +107,7 @@ class NS_TMO_Plugin {
 	/**
 	 *
 	*/
-	public function get_instance () {
+	public static function get_instance () {
 		
 		if (empty(self::$instance)) {
 			

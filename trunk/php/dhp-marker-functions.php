@@ -16,7 +16,7 @@ $dhp_marker_settings_fields = array(
 	array(
 		'label'=> 'Associated Project',
 		'desc'	=> 'Select Project to which this marker should belong',
-		'id'	=> $prefix .'project_id',
+		'id'	=> 'project_id',
 		'type'	=> 'select',
 		'options' => dhp_get_projects()
 		)

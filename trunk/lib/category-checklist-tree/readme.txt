@@ -1,10 +1,10 @@
 === Category Checklist Tree ===
-Contributors: scribu
-Tags: admin, ui, categories, hierarchy
-Requires at least: 3.4
-Tested up to: 3.4
-Stable tag: 1.3
-License: GPLv2 or later
+Contributors: scribu  
+Tags: admin, ui, categories, hierarchy  
+Requires at least: 3.4  
+Tested up to: 3.7  
+Stable tag: 1.3.2  
+License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 Preserves the category hierarchy on the post editing screen
@@ -21,6 +21,12 @@ Links: [Plugin News](http://scribu.net/wordpress/category-checklist-tree) | [Aut
 
 == Changelog ==
 
+= 1.3.2 =
+* fixed static warnings. props daankortenbach
+
+= 1.3.1 =
+* fixed compatibility with radio button plugins. props theoephraim
+
 = 1.3 =
 * WP 3.4 compatibility
 
@@ -33,4 +39,3 @@ Links: [Plugin News](http://scribu.net/wordpress/category-checklist-tree) | [Aut
 = 1.0 =
 * initial release
 * [more info](http://scribu.net/wordpress/category-checklist-tree/cct-1-0.html)
-
