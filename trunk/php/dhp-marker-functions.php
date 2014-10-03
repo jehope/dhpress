@@ -92,12 +92,11 @@ function add_dhp_marker_admin_scripts( $hook )
                 // Try resetting global post vars
             $post = $savePost;
 
-			wp_enqueue_style('dhp-map', plugins_url('/css/dhp-map.css',  dirname(__FILE__) ));
-			wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
+			wp_enqueue_style('dhp-admin', plugins_url('/css/dhp-admin.css',  dirname(__FILE__) ));
 			wp_enqueue_script('jquery');
 
-			wp_enqueue_script(  'dhp-marker-script', plugins_url('/js/dhp-marker-admin.js', dirname(__FILE__) ));
-			wp_localize_script( 'dhp-marker-script', 'dhpDataLib', array(
+			wp_enqueue_script('dhp-marker-script', plugins_url('/js/dhp-marker-admin.js', dirname(__FILE__) ));
+			wp_localize_script('dhp-marker-script', 'dhpDataLib', array(
 				'ajax_url' => $dev_url,
                 'projectID' => $project_id,
                 'markerID' => $markerID,
@@ -108,7 +107,6 @@ function add_dhp_marker_admin_scripts( $hook )
         // Shows list of all Markers in admin panel
     } else if ( $hook == 'edit.php'  ) {
         if ($post->post_type === 'dhp-markers') {
-			wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__) ));
 			wp_enqueue_script('jquery');
         }
     }

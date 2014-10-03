@@ -496,7 +496,6 @@ class DHPressMarkerQuery
 		//======================
 
     public $projID;
-    public $vizIndex;
     public $projObj;
     public $projSettings;
     public $rootTaxName;
@@ -520,10 +519,9 @@ class DHPressMarkerQuery
 		//======================
 
     	// PURPOSE: Initialize all fields relating to querying markers in this project
-    public function __construct($projectID, $index)
+    public function __construct($projectID)
     {
     	$this->projID = $projectID;
-    	$this->vizIndex = $index;
 
     		// Get Project related settings
     	$projObj = $this->projObj = new DHPressProject($projectID);

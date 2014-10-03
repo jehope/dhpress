@@ -630,7 +630,7 @@ function dhp_get_markers()
 		// initialize result array
 	$json_Object = array();
 
-	$mQuery = new DHPressMarkerQuery($projectID, $index);
+	$mQuery = new DHPressMarkerQuery($projectID);
 	$projObj = $mQuery->projObj;
 	$eps = $mQuery->projSettings->eps[$index];
 
@@ -960,7 +960,7 @@ function dhp_get_marker_tree()
 		// initialize result array
 	$json_Object = array();
 
-	$mQuery = new DHPressMarkerQuery($projectID, $index);
+	$mQuery = new DHPressMarkerQuery($projectID);
 	$projObj = $mQuery->projObj;
 	$eps = $mQuery->projSettings->eps[$index];
 
@@ -1351,20 +1351,87 @@ function dhp_delete_head_term()
 
 // Enable for both editing and viewing
 
-add_action('wp_ajax_dhpGetMoteContent', 'dhp_get_mote_content');
-add_action('wp_ajax_nopriv_dhpGetMoteContent', 'dhp_get_mote_content');
+add_action('wp_ajax_dhpGetPostContent', 'dhp_get_post_content');
+add_action('wp_ajax_nopriv_dhpGetPostContent', 'dhp_get_post_content');
 
-// PURPOSE: Handle Ajax call to fetch the Project-specific data for a specific marker
-// INPUT:	$_POST['post'] = ID of marker post
+// PURPOSE: Handle Ajax call to fetch the post-view data for a specific marker
+// INPUT:	$_POST['marker_id'] = ID of Marker post
+//			$_POST['proj_id'] = ID of Project post
 // RETURNS:	JSON object of marker data
 
-function dhp_get_mote_content()
+function dhp_get_post_content()
 {
-	$dhp_post_id = $_POST['post'];
+	// $dhp_post_id = $_POST['post'];
 
-	$post_meta_content = get_post_meta($dhp_post_id);
-	die(json_encode($post_meta_content));
-} // dhp_get_mote_content()
+	// $post_meta_content = get_post_meta($dhp_post_id);
+	// die(json_encode($post_meta_content));
+
+	$marker_id = $_POST['marker_id'];
+	$proj_id = $_POST['proj_id'];
+
+	$mQuery = new DHPressMarkerQuery($proj_id);
+
+		// modify select contents so that all post motes are included
+	foreach ($mQuery->projSettings->views->post->content as $theMote) {
+		array_push($mQuery->selectContent, $theMote);
+	}
+	$pTitle = $mQuery->projSettings->views->post->title;
+	if ($pTitle && $pTitle !== '' && $pTitle !== 'disable') {
+		array_push($mQuery->selectContent, $pTitle);
+	}
+	$mQuery->selectContent = array_unique($mQuery->selectContent);
+
+		// Construct a pseudo marker
+
+		// Feature will hold properties and some other values for each marker
+	$thisFeature = array();
+
+		// Most data goes into properties field
+	$thisFeaturesProperties = $mQuery->getMarkerProperties($marker_id);
+
+		// Store all of the properties
+	$thisFeature['properties'] = $thisFeaturesProperties;
+
+	die(json_encode($thisFeature));
+} // dhp_get_post_content()
+
+
+// Enable for both editing and viewing
+
+add_action('wp_ajax_dhpGetTaxContent', 'dhp_get_tax_content');
+add_action('wp_ajax_nopriv_dhpGetTaxContent', 'dhp_get_tax_content');
+
+// PURPOSE: Handle Ajax call to fetch the tax-view data for a specific marker
+// INPUT:	$_POST['marker_id'] = ID of Marker post
+//			$_POST['proj_id'] = ID of Project post
+// RETURNS:	JSON object of marker data
+
+function dhp_get_tax_content()
+{
+	$marker_id = $_POST['marker_id'];
+	$proj_id = $_POST['proj_id'];
+
+	$mQuery = new DHPressMarkerQuery($proj_id);
+
+		// modify select contents so that all post motes are included
+	foreach ($mQuery->projSettings->views->transcript->content as $theMote) {
+		array_push($mQuery->selectContent, $theMote);
+	}
+	$mQuery->selectContent = array_unique($mQuery->selectContent);
+
+		// Construct a pseudo marker
+
+		// Feature will hold properties and some other values for each marker
+	$thisFeature = array();
+
+		// Most data goes into properties field
+	$thisFeaturesProperties = $mQuery->getMarkerProperties($marker_id);
+
+		// Store all of the properties
+	$thisFeature['properties'] = $thisFeaturesProperties;
+
+	die(json_encode($thisFeature));
+} // dhp_get_tax_content()
 
 
 // Enable for both editing and viewing
@@ -2442,7 +2509,7 @@ function dhp_page_template( $page_template )
         wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
 		// wp_enqueue_style('dhp-jquery-ui-style', 'http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css');
-		wp_enqueue_style('dhp-project', plugins_url('/css/dhp-project.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		wp_enqueue_style('dhp-project-css', plugins_url('/css/dhp-project.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('underscore');
 		wp_enqueue_script('jquery');
@@ -2623,11 +2690,14 @@ function dhp_page_template( $page_template )
 		wp_enqueue_script('underscore');
 
 			// Enqueue last, after dependencies determined
-		wp_enqueue_script('dhp-public-project-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION);
+		wp_enqueue_script('dhp-services', plugins_url('/js/dhp-services.js', dirname(__FILE__)),
+						array('jquery', 'underscore'), DHP_PLUGIN_VERSION );
+		wp_enqueue_script('dhp-marker-script', plugins_url('/js/dhp-marker-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION);
 
-		wp_localize_script('dhp-public-project-script', 'dhpData', array(
+		wp_localize_script('dhp-marker-script', 'dhpData', array(
 			'ajax_url' => $dev_url,
-			'settings' => $projObj->getAllSettings()
+			'settings' => $projObj->getAllSettings(),
+			'proj_id' => $project_id
 		) );
     } // else if ($post_type == 'dhp-markers')
 
@@ -2670,10 +2740,10 @@ function dhp_tax_template( $page_template )
 	    $isTranscript = ($project_settings->views->transcript->source == $term_parent->name);
 
 			// Foundation styles
-		wp_enqueue_style('dhp-foundation-style', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
+		wp_enqueue_style('dhp-foundation-css', plugins_url('/lib/foundation-5.1.1/css/foundation.min.css',  dirname(__FILE__)));
 		wp_enqueue_style('dhp-foundation-icons', plugins_url('/lib/foundation-icons/foundation-icons.css',  dirname(__FILE__)));
 
-		wp_enqueue_style('dhp-style', plugins_url('/css/dhp-style.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
+		wp_enqueue_style('dhp-project-css', plugins_url('/css/dhp-project.css',  dirname(__FILE__)), '', DHP_PLUGIN_VERSION );
 
 		wp_enqueue_script('jquery' );
 		wp_enqueue_script('dhp-foundation', plugins_url('/lib/foundation-5.1.1/js/foundation.min.js', dirname(__FILE__)), 'jquery');
@@ -2699,9 +2769,9 @@ function dhp_tax_template( $page_template )
 	    array_push($dependencies, 'dhp-services');
 
 			// Enqueue last, after dependencies have been determined
-		wp_enqueue_script( 'dhp-tax-script', plugins_url('/js/dhp-tax-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
+		wp_enqueue_script('dhp-tax-script', plugins_url('/js/dhp-tax-page.js', dirname(__FILE__)), $dependencies, DHP_PLUGIN_VERSION );
 
-		wp_localize_script( 'dhp-tax-script', 'dhpData', array(
+		wp_localize_script('dhp-tax-script', 'dhpData', array(
 				'project_id' => $projectID,
 				'ajax_url' => $dev_url,
 				'tax' => $term,

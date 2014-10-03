@@ -623,18 +623,7 @@ var dhpServices = {
             builtHTML = '<div><h3>Details:</h3></div>';
                 // Go through each of the motes specified to be shown in select modal
             _.each(selectParams.content, function(cMote) {
-                var mVal = feature.properties.content[cMote];
-                if (mVal) {
-                    if (cMote==='Thumbnail Right') {
-                        builtHTML += '<div class="thumb-right">'+mVal+'</div>';
-                    } else if (cMote==='Thumbnail Left') {
-                        builtHTML += '<div class="thumb-left">'+mVal+'</div>';
-                    } else if (cMote == 'the_content') {
-                        builtHTML += '<div>'+mVal+'</div>';
-                    } else {
-                        builtHTML += '<div><span class="key-title">'+cMote+'</span>: '+mVal+'</div>';
-                    }
-                }
+                builtHTML += dhpServices.moteValToHTML(feature, cMote);
             }); // _.each()
         }
 
@@ -828,10 +817,49 @@ var dhpServices = {
         return newEvent;
     }, // eventFromDateStr
 
+
+        // PURPOSE: Format mote value as HTML
+        // RETURNS: Complete HTML string for displaying the mote value
+        // TO DO:   Format Dates, YouTube, SoundCloud …?
+    moteValToHTML: function(markerData, moteName)
+    {
+        var builtHTML='';
+
+        var moteDef = dhpServices.findMoteByName(moteName);
+        var mVal = markerData.properties.content[moteName];
+
+        if (mVal) {
+            switch (moteDef.type) {
+            case 'Image':
+                if (moteName==='Thumbnail Right') {
+                    builtHTML = '<div class="thumb-right">'+mVal+'</div>';
+                } else if (moteName==='Thumbnail Left') {
+                    builtHTML = '<div class="thumb-left">'+mVal+'</div>';
+                } else {
+                    builtHTML = '<div><span class="key-title">'+moteName+'</span><br/>'+mVal+'</div>';
+                }
+                break;
+            case 'Link To':
+                builtHTML = '<div><a href="'+mVal+'">'+moteName+'</a></div>';
+                break;
+            default:
+                if (moteName == 'the_content') {
+                    builtHTML = '<div>'+mVal+'</div>';
+                } else {
+                    builtHTML = '<div><span class="key-title">'+moteName+'</span>: '+mVal+'</div>';
+                }
+                break;
+            } // switch type
+        } // if mVal
+
+        return builtHTML;
+    }, // moteValToHTML()
+
+
         // PURPOSE: Convert timecode string into # of milliseconds
         // INPUT:   timecode must be in format [HH:MM:SS] or [HH:MM:SS.ss]
         // ASSUMES: timecode in correct format, parseTimeCode contains compiled RegEx
-    tcToMilliSeconds: function (timecode)
+    tcToMilliSeconds: function(timecode)
     {
         var milliSecondsCode = new Number();
         var matchResults;

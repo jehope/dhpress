@@ -103,6 +103,11 @@ html.fullscreen {
 	bottom: 0;
 }
 
+
+.key-title {
+	font-style: italic;
+}
+
 	/* ========== MODAL WINDOWS =========== */
 
 .modal {
@@ -134,9 +139,11 @@ html.fullscreen {
 .modal-body h3 {
 	font-size: 16px;
 }
+
 .modal-body .key-title {
 	font-style: italic;
 }
+
 .modal-body .thumb-right img {
 	float: right;
 	padding-left: 5px;

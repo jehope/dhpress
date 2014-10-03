@@ -17,6 +17,8 @@ jQuery(document).ready(function($) {
         // Insert name of taxonomy on top of page, where A/V widget will go
 	$('#content').prepend('<h1>'+taxTerm.name+'</h1><div class="dhp-transcript-content"></div>');
 
+    dhpServices.initialize(ajax_url, project_id, dhpSettings);
+
         // Check to see if this is a transcript taxonomy
 	if (isTranscript) {
         dhpWidget.initialize();
@@ -35,7 +37,7 @@ jQuery(document).ready(function($) {
         // PURPOSE: Add dynamic content to Marker page from AJAX response
         // INPUT:   postID = ID of the Marker (also ID of DIV of CLASS "dhp-post")
         //          response = Hash of field name / value of Custom Fields read from Marker Page
-    function addContentToDiv(postID, response) {
+    function addContentToDiv(postID, markerData) {
             // Title for view of Marker content Page
         // var markerTitle = dhpSettings['views']['post-view-title'];
 
@@ -55,23 +57,25 @@ jQuery(document).ready(function($) {
 
             // Go through each Legend and show corresponding values
         _.each(dhpSettings.views.transcript.content, function(legName) {
+            contentHTML += dhpServices.moteValToHTML(markerData, legName);
+
                 // Convert Legend name to custom field name
-            var cfName = getCustomField(legName);
-            if (cfName) {
-                    // Use custom field to retrieve value
-                var tempVal = response[cfName];
-                if (tempVal) {
-                        // Special legend names to show thumbnails
-                    if (legName=='Thumbnail Right') {
-                        contentHTML += '<p class="thumb-right"><img src="'+tempVal+'" /></p>';
-                    } else if (legName=='Thumbnail Left') {
-                        contentHTML +='<p class="thumb-left"><img src="'+tempVal+'" /></p>';
-                        // Otherwise, just add the legend name and value to the string we are building
-                    } else if (tempVal) {
-                        contentHTML += '<h3>'+legName+'</h3><p>'+tempVal+'</p>';
-                    }
-                }
-            }
+            // var cfName = getCustomField(legName);
+            // if (cfName) {
+            //         // Use custom field to retrieve value
+            //     var tempVal = response[cfName];
+            //     if (tempVal) {
+            //             // Special legend names to show thumbnails
+            //         if (legName=='Thumbnail Right') {
+            //             contentHTML += '<p class="thumb-right"><img src="'+tempVal+'" /></p>';
+            //         } else if (legName=='Thumbnail Left') {
+            //             contentHTML +='<p class="thumb-left"><img src="'+tempVal+'" /></p>';
+            //             // Otherwise, just add the legend name and value to the string we are building
+            //         } else if (tempVal) {
+            //             contentHTML += '<h3>'+legName+'</h3><p>'+tempVal+'</p>';
+            //         }
+            //     }
+            // }
         });
         // console.log("contentHTML = "+contentHTML);
         $('#'+postID+' .dhp-entrytext').append(contentHTML);
@@ -79,18 +83,18 @@ jQuery(document).ready(function($) {
     } // addContentToDiv()
 
 
-        // PURPOSE: Convert from moteName to custom-field name
-    function getCustomField(moteName)
-    {
-        var theMote = _.find(dhpSettings.motes, function(thisMote) {
-            return moteName == thisMote.name;
-        });
-        if (theMote) {
-            return theMote.cf;
-        } else {
-            return null;
-        }
-    } // getCustomField()
+    //     // PURPOSE: Convert from moteName to custom-field name
+    // function getCustomField(moteName)
+    // {
+    //     var theMote = _.find(dhpSettings.motes, function(thisMote) {
+    //         return moteName == thisMote.name;
+    //     });
+    //     if (theMote) {
+    //         return theMote.cf;
+    //     } else {
+    //         return null;
+    //     }
+    // } // getCustomField()
 
 
         // PURPOSE: Update Marker content page to show all of Marker's custom fields
@@ -101,9 +105,9 @@ jQuery(document).ready(function($) {
             type: 'POST',
             url: ajax_url,
             data: {
-                action: 'dhpGetMoteContent',
-                post: postID
-                // fields: field_names
+                action: 'dhpGetTaxContent',
+                marker_id: postID,
+                proj_id: project_id
             },
             success: function(data, textStatus, XMLHttpRequest) {
                 //console.log(JSON.parse(data));
