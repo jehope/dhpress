@@ -74,7 +74,9 @@ var dhpBrowser = {
 		        }
 
 		        	// For each data item
-		        data.forEach(function(dataItem, dIndex) {
+		        var dataItem, dIndex;
+		        for (dIndex=0; dIndex<data.length; dIndex++) {
+		        	dataItem = data[dIndex];
 		        		// If not Short Text, must fetch values from properties.content
 		        	if (legTerms) {
 		            	fValues = dhpServices.getItemSTLabels(dataItem, legTerms);
@@ -83,12 +85,19 @@ var dhpBrowser = {
 		            	if (moteRec.delim !== '') {
 							var valStr = dataItem.properties.content[theFacet];
 
-							fValues = valStr.split(moteRec.delim);
-							for (var i=0; i<fValues.length; i++) {
-						    	fValues[i] = fValues[i].trim();
-							}
+							if (valStr) {
+								fValues = valStr.split(moteRec.delim);
+								for (var i=0; i<fValues.length; i++) {
+							    	fValues[i] = fValues[i].trim();
+								}
+							} else
+								continue;
 						} else {
-							fValues = [dataItem.properties.content[theFacet]];
+							var theVal = dataItem.properties.content[theFacet];
+							if (theVal) {
+								fValues = [theVal];
+							} else
+								continue;
 						}
 							// Do values need to be processed acc to mote type?
 						if (moteRec.type === 'Date') {
@@ -141,7 +150,7 @@ var dhpBrowser = {
 		                }
 		                fEntry.indices.push(dIndex);
 		            });
-		        });	// for each data item
+		        } // for each data item
 
 	            	// Sort facet keys, according to the type of mote
 	            switch (moteRec.type) {
