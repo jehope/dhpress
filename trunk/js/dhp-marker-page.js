@@ -3,7 +3,7 @@
 // ASSUMES: dhpData is used to pass parameters to this function via wp_localize_script()
 //			Title for page marked by DIV CLASS="entry-title" or "post-title"
 //			Content for each set of data marked by DIV CLASS="dhp-post" and has ID of marker
-// USES:    JavaScript libraries jQuery, Underscore, ...
+// USES:    JavaScript libraries jQuery, Underscore, dhpServices
 
 
 jQuery(document).ready(function($) { 
