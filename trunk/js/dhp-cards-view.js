@@ -103,7 +103,9 @@ var dhpCardsView = {
                     jQuery(newFilterMenu).parent().addClass('active');
                     dhpCardsView.currentFilter = newFilterMote;
                         // reset filter
-                    dhpCardsView.resetFilter();
+                    dhpCardsView.curFilterVal = null;
+                        // automatically invoke filter option menu
+                    dhpCardsView.setFilter();
                 }
             });
 

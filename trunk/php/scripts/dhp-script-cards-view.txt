@@ -16,7 +16,7 @@
           <!-- links -->
       </ul>
   </li>
-  <li class="active"><a id="dhp-filter-set" href="#">Options</a></li>
+  <li class="active"><a id="dhp-filter-set" href="#">Filter Options</a></li>
   <li class="divider"></li>
   <li class="active"><a id="dhp-filter-reset" href="#">No Filter</a></li>
 </script>
