@@ -93,7 +93,7 @@
               	</select><br/>
               <div data-bind="template: { name: 'widget-template', foreach: widgetList }"></div>
 
-              Motes to show:  <button data-bind="jqButton, click: addSelMote">Add</button> this mote: <select id="selModalMote" data-bind="options: contentMoteNames"></select><br/>
+              Motes to show:  <button data-bind="jqButton, click: addSelMote">Add</button> this mote: <select id="selModalMote" data-bind="options: allMoteNames"></select><br/>
               <div data-bind="template: { name: 'sel-mote-template', foreach: selMoteList }"></div>
             </div>
 
@@ -504,7 +504,7 @@
 
 <script type="text/html" id="sel-mote-template">
     <li>
-        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.contentMoteNames"></select>
+        <b>Modal mote <span data-bind="text: $index"></span></b>: <select data-bind="value: name, options: $root.allMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delSelMote($index()); }">Delete</button>
     </li>
 </script>

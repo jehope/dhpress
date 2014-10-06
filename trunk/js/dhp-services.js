@@ -830,23 +830,43 @@ var dhpServices = {
 
         if (mVal) {
             switch (moteDef.type) {
+            case 'Date':
+                var dateSegs = mVal.split('/');
+                dateSegs[0] = dateSegs[0].trim();
+                if (dateSegs.length == 1) {
+                    builtHTML = '<div><span class="dhp-mote-title">'+moteName+'</span>: '+dateSegs[0]+'</div>';
+                } else {
+                    dateSegs[1] = dateSegs[1].trim();
+                    builtHTML = '<div><span class="dhp-mote-title">'+moteName+'</span>: From '+dateSegs[0]+
+                                ' To '+dateSegs[1]+'</div>';
+                }
+                break;
             case 'Image':
                 if (moteName==='Thumbnail Right') {
                     builtHTML = '<div class="thumb-right">'+mVal+'</div>';
                 } else if (moteName==='Thumbnail Left') {
                     builtHTML = '<div class="thumb-left">'+mVal+'</div>';
                 } else {
-                    builtHTML = '<div><span class="key-title">'+moteName+'</span><br/>'+mVal+'</div>';
+                    builtHTML = '<div><span class="dhp-mote-title">'+moteName+'</span><br/>'+mVal+'</div>';
                 }
                 break;
             case 'Link To':
-                builtHTML = '<div><a href="'+mVal+'">'+moteName+'</a></div>';
+                builtHTML = '<div><a href="'+mVal+'" target="_blank"> See '+moteName+' webpage</a></div>';
+                break;
+            case 'SoundCloud':
+                builtHTML = '<div><a href="'+mVal+'" target="_blank">Go to SoundCloud page</a></div>';
+                break;
+            case 'YouTube':
+                builtHTML = '<div><a href="https://www.youtube.com/watch?v='+mVal+'" target="_blank">Go to YouTube page</a></div>';
+                break;
+            case 'Transcript':
+                builtHTML = '<div><a href="'+mVal+'" target="_blank">Look at Transcript file</a></div>';
                 break;
             default:
                 if (moteName == 'the_content') {
                     builtHTML = '<div>'+mVal+'</div>';
                 } else {
-                    builtHTML = '<div><span class="key-title">'+moteName+'</span>: '+mVal+'</div>';
+                    builtHTML = '<div><span class="dhp-mote-title">'+moteName+'</span>: '+mVal+'</div>';
                 }
                 break;
             } // switch type
