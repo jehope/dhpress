@@ -60,15 +60,15 @@ p {
     /* Scale card acc to size */
 
 .card.short {
-    height: 100px;
+    height: 120px;
 }
 
 .card.med-height {
-    height: 160px;
+    height: 200px;
 }
 
 .card.tall {
-    height: 220px;
+    height: 300px;
 }
 
 .card.thin {
@@ -76,11 +76,11 @@ p {
 }
 
 .card.med-width {
-    width: 180px;
+    width: 200px;
 }
 
 .card.wide {
-    width: 220px;
+    width: 300px;
 }
 
 
