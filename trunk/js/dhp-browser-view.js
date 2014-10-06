@@ -22,14 +22,16 @@ var dhpBrowser = {
 	    facetLabelWidth = 220,
 	    facetLabel0Height = 26,
 	    facetLabelHeight = 22,
-	    resizeW = 18,			// extra space for resize drag corner / scrollbars
-	    resizeH = 18,
+	    resizeW = 20,			// extra space for resize drag corner / scrollbars
+	    resizeH = 20,
+	    maxDefHt = facetLabel0Height+(facetLabelHeight*10), // default maximum height of visible frame
 	    	// GUI variables
 		dragging = false,		// true when column is being dragged
 		overCol,				// the current facetCol # over which the dragged column is
 	    	// Computed variables
 		width,
-		height,
+		intHeight,				// logical total height of facet frame
+		extHeight,				// initial visible height of facet scroll area
 		facetData,      		// All compiled Facet Data
 		fbSVG,          		// D3 object for top-level SVG
 		constrainedSet, 		// array of indices resulting from current constraints
@@ -286,7 +288,7 @@ var dhpBrowser = {
 
 			fbSVG = d3.select('#facets-frame').append("svg")
 			    .attr("width", width)
-			    .attr("height", height);
+			    .attr("height", intHeight);
 
 			    // Now create populate Facet Frames with data about facets
 			var cols = fbSVG.selectAll(".facet-column")
@@ -479,20 +481,16 @@ var dhpBrowser = {
 				    // Initially all objects enabled
 				populateList();
 
-				    // Create space for facets and size DIVs according to #facets and max rows
-				var maxRows = 0;
-				facetData.forEach(function(theFacet) {
-				    if (theFacet.vals.length > maxRows) {
-				        maxRows = theFacet.vals.length;
-				    }
-				});
 				width = ((browserEP.motes.length-1)*facetColWidth)+facetLabelWidth;
 
-				    // Need to add an extra row for RESET button
-				height = facetLabel0Height+(facetLabelHeight * ++maxRows);
+				    // Add extra button row for RESET button
+				var maxRows = d3.max(facetData, function(theFacet) { return theFacet.vals.length; });
+				intHeight = facetLabel0Height+(facetLabelHeight * ++maxRows);
+				extHeight = Math.min(maxDefHt, intHeight)+8;
 
-				jQuery('#facets-frame').width(width+resizeW).height(height+resizeH);
-				jQuery('#list-scroll').width(width);
+				jQuery('#facets-frame').width(intHeight <= extHeight ? width : width+resizeW)
+										.height(extHeight);
+				jQuery('#list-scroll').width(intHeight <= extHeight ? width : width+resizeW);
 
 				createSVG();
 
