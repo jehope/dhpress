@@ -496,66 +496,64 @@ function dhp_markers_custom_column($column, $post_id)
 // ================================ Ajax Functions =============================
 
 	// Edit only
-add_action( 'wp_ajax_dhpAddUpdateMetaField', 'dhpAddUpdateMetaField' );
+add_action( 'wp_ajax_dhpAddUpdateMetaField', 'dhp_add_update_metafield' );
 
 // PURPOSE: Handle saving edited values for a single field
 // INPUT:	$_POST['post_id'] = the ID of the Marker post
 //			$_POST['field_name'] = the name of the custom field
 //			$_POST['field_value'] = the value to save in the field
 
-function dhpAddUpdateMetaField()
+function dhp_add_update_metafield()
 {
     $post_id = $_POST['post_id'];
 	$field_name = $_POST['field_name'];
     $field_value = $_POST['field_value'];
 
 	update_post_meta($post_id, $field_name, $field_value);
-} // hpAddUpdateMetaField()
+} // dhp_add_update_metafield()
 
 	// Edit only
-add_action( 'wp_ajax_dhpDeleteMoteMeta', 'dhpDeleteMoteMeta' );
+add_action( 'wp_ajax_dhpDeleteMoteMeta', 'dhp_delete_mote_meta' );
 
 // PURPOSE: Handle deleting custom value/mote from a Marker post
 // INPUT:	$_POST['post_id'] = ID of Marker post
 //			$_POST['post_id'] = ID of custom field to remove
 
-function dhpDeleteMoteMeta()
+function dhp_delete_mote_meta()
 {
 	$dhp_post = $_POST['post_id'];
 	$dhp_mote = $_POST['mote_id'];
 
 	delete_post_meta($dhp_post, $dhp_mote);
-	//die($project_settings);
-} // dhpDeleteMoteMeta()
+} // dhp_delete_mote_meta()
 
 	// Edit only
-add_action( 'wp_ajax_dhpUpdateProjectSettings', 'dhpUpdateProjectSettings' );
+add_action( 'wp_ajax_dhpUpdateProjectSettings', 'dhp_update_projectsettings' );
 
 // PURPOSE:	Handle updating the big, hairy project_settings string in the Project post
 // INPUT:	$_POST['project'] = ID of the Project post
 //			$_POST['project_settings'] = new settings String
 
-function dhpUpdateProjectSettings()
+function dhp_update_projectsettings()
 {
 	$dhp_project = $_POST['project'];
 	$dhp_project_settings = $_POST['project_settings'];
 
 	update_post_meta($dhp_project, 'project_settings', $dhp_project_settings);
-	//die($project_settings);
-} // dhpUpdateProjectSettings()
+} // dhp_update_projectsettings()
 
 	// Edit only
-add_action( 'wp_ajax_dhpGetProjectSettings', 'dhpGetProjectSettings' );
+add_action( 'wp_ajax_dhpGetProjectSettings', 'dhp_get_projectsettings' );
 
 // PURPOSE: Retrieve project_settings String for Project
 // INPUT:	$_POST['project'] = ID of Project post whose settings are to be retrieved
 
-function dhpGetProjectSettings()
+function dhp_get_projectsettings()
 {
 	$dhp_project = $_POST['project'];
 
 	$project_settings = get_post_meta($dhp_project, 'project_settings', true);
 	die($project_settings);
-} // dhpGetProjectSettings()
+} // dhp_get_projectsettings()
 
 ?>
