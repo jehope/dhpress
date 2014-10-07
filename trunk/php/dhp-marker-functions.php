@@ -527,33 +527,4 @@ function dhp_delete_mote_meta()
 	delete_post_meta($dhp_post, $dhp_mote);
 } // dhp_delete_mote_meta()
 
-	// Edit only
-add_action( 'wp_ajax_dhpUpdateProjectSettings', 'dhp_update_projectsettings' );
-
-// PURPOSE:	Handle updating the big, hairy project_settings string in the Project post
-// INPUT:	$_POST['project'] = ID of the Project post
-//			$_POST['project_settings'] = new settings String
-
-function dhp_update_projectsettings()
-{
-	$dhp_project = $_POST['project'];
-	$dhp_project_settings = $_POST['project_settings'];
-
-	update_post_meta($dhp_project, 'project_settings', $dhp_project_settings);
-} // dhp_update_projectsettings()
-
-	// Edit only
-add_action( 'wp_ajax_dhpGetProjectSettings', 'dhp_get_projectsettings' );
-
-// PURPOSE: Retrieve project_settings String for Project
-// INPUT:	$_POST['project'] = ID of Project post whose settings are to be retrieved
-
-function dhp_get_projectsettings()
-{
-	$dhp_project = $_POST['project'];
-
-	$project_settings = get_post_meta($dhp_project, 'project_settings', true);
-	die($project_settings);
-} // dhp_get_projectsettings()
-
 ?>
