@@ -80,7 +80,7 @@ function dhp_project_init()
   		// Are there any 'project' custom post types from 2.5.4 or earlier -- if so, change CPT
 
 		// If no version # in DB, definitely old version of DH Press whose data needs checking
-	if (get_option('dhp_plugin_version') === false {
+	if (get_option('dhp_plugin_version') === false) {
 		$args = array('post_type' => 'project', 'posts_per_page' => -1);
 		$loop = new WP_Query( $args );
 		while ( $loop->have_posts() ) : $loop->the_post();
