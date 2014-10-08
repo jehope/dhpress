@@ -28,13 +28,10 @@ define( 'DHP_SCRIPT_PINBOARD_VIEW',   'dhp-script-pin-view.txt' );
 
 // ================== Initialize Plug-in ==================
 
-// init action called to initialize a plug-in
-add_action( 'init', 'dhp_project_init' );
-
-// dhp_project_init()
 // PURPOSE: To create custom post type for Projects in WP
+// NOTES:   Called by both dhp_project_init() and dhp_project_activate()
 
-function dhp_project_init()
+function dhp_register_project_cpt()
 {
   $labels = array(
     'name' => _x('Projects', 'post type general name'),
@@ -68,7 +65,38 @@ function dhp_project_init()
     /* if hierarchical, then may want to add 'page-attributes' to supports */
     'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments','revisions', 'custom-fields' )
   ); 
-  register_post_type('project',$args);
+  register_post_type('dhp-project',$args);
+} // dhp_register_project_cpt()
+
+
+// init action called to initialize a plug-in
+add_action( 'init', 'dhp_project_init' );
+
+// NOTES:   This is called by dhp_project_activate(), which only expects it to register CPT
+function dhp_project_init()
+{
+	dhp_register_project_cpt();
+
+  		// Are there any 'project' custom post types from 2.5.4 or earlier -- if so, change CPT
+
+		// If no version # in DB, definitely old version of DH Press whose data needs checking
+	if (get_option('dhp_plugin_version') === false {
+		$args = array('post_type' => 'project', 'posts_per_page' => -1);
+		$loop = new WP_Query( $args );
+		while ( $loop->have_posts() ) : $loop->the_post();
+			$proj_id = get_the_ID();
+
+				// Only does this change if CPT has associated metadata
+    		$proj_set = get_post_meta($proj_id, 'project_settings', true);
+			if(!empty($proj_set)) {
+				$update_params = array( 'ID' => $proj_id, 'post_type' => 'dhp-project');
+				wp_update_post($update_params);
+			}
+		endwhile;
+		wp_reset_query();
+	}
+		// store version # in options
+	update_option('dhp_plugin_version', DHP_PLUGIN_VERSION);
 } // dhp_project_init
 
 
@@ -80,6 +108,16 @@ if ( function_exists( 'add_theme_support' ) ) {
 	set_post_thumbnail_size( 32, 37 ); 
 }
 
+
+register_activation_hook( __FILE__, 'dhp_project_activate');
+
+// PURPOSE: Ensure that custom post types have been registered before we flush rewrite rules
+//			See http://solislab.com/blog/plugin-activation-checklist/#flush-rewrite-rules
+function dhp_project_activate()
+{
+	dhp_register_project_cpt();
+	flush_rewrite_rules();
+}
 
 // ================== Produce Admin Panel Header ==================
 
@@ -181,7 +219,7 @@ add_filter( 'post_row_actions', 'dhp_export_post_link', 10, 2 );
 
 function dhp_export_post_link( $actions, $post )
 {
-    if ( $post->post_type != 'project' ) {
+    if ($post->post_type != 'dhp-project') {
         return $actions;
     }
 
@@ -200,7 +238,7 @@ add_action( 'init', 'create_tax_for_projects', 0 );
 	// PURPOSE: Create custom taxonomies for all existing DHP Projects if they don't exist (head term for Project)
 function create_tax_for_projects()
 {
-	$args = array( 'post_type' => 'project', 'posts_per_page' => -1 );
+	$args = array('post_type' => 'dhp-project', 'posts_per_page' => -1);
 	$projects = get_posts($args);
 	if ($projects) {
 			// Go through all currently existing Projects
@@ -2297,7 +2335,7 @@ function add_dhp_project_admin_scripts( $hook )
 
  		// Editing a specific project in admin panel
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
-        if ( $post->post_type == 'project' ) {
+        if ( $post->post_type == 'dhp-project' ) {
         		// Library styles
 			wp_enqueue_style('jquery-ui-style', plugins_url('/lib/jquery-ui-1.11.1/themes/base/all.css', dirname(__FILE__)) );
 			wp_enqueue_style('jquery-colorpicker-style', plugins_url('/lib/colorpicker/jquery.colorpicker.css',  dirname(__FILE__)),
@@ -2354,8 +2392,7 @@ function add_dhp_project_admin_scripts( $hook )
 
         // Shows list of all Project in admin panel
     } else if ( $hook == 'edit.php'  ) {
-        if ( $post->post_type == 'project' ) {
-			// wp_enqueue_style('dhp-map', plugins_url('/css/dhp-map.css',  dirname(__FILE__) ));
+        if ( $post->post_type == 'dhp-project' ) {
 			wp_enqueue_script('jquery' );
         }
     }
@@ -2424,7 +2461,7 @@ function dhp_mod_page_content($content) {
 
 		// Only produce dhp-visual div hook for Project posts
 	switch ($postType) {
-	case 'project':
+	case 'dhp-project':
     	$projObj = new DHPressProject($postID);
 
 		$projscript = dhp_get_script_text(DHP_SCRIPT_PROJ_VIEW);
@@ -2497,7 +2534,7 @@ function dhp_page_template( $page_template )
 	$post_type = get_query_var('post_type');
 
 		// Viewing a Project?
-    if ( $post_type == 'project' ) {
+    if ( $post_type == 'dhp-project' ) {
     	$projObj = new DHPressProject($post->ID);
     	$allSettings = $projObj->getAllSettings();
 

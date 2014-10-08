@@ -26,6 +26,9 @@ $dhp_marker_settings_fields = array(
 
 add_action( 'init', 'dhp_marker_init' );
 
+// PURPOSE: To create custom post type for Markers in WP
+// NOTES:   This is called by dhp_marker_activate(), which only expects it to register CPT
+
 function dhp_marker_init()
 {
   $labels = array(
@@ -59,6 +62,17 @@ function dhp_marker_init()
   ); 
   register_post_type('dhp-markers',$args);
 } // dhp_marker_init()
+
+
+register_activation_hook( __FILE__, 'dhp_markers_activate');
+
+// PURPOSE: Ensure that custom post types have been registered before we flush rewrite rules
+//          See http://solislab.com/blog/plugin-activation-checklist/#flush-rewrite-rules
+function dhp_markers_activate()
+{
+    dhp_marker_init();
+    flush_rewrite_rules();
+}
 
 
 add_action( 'admin_enqueue_scripts', 'add_dhp_marker_admin_scripts', 10, 1 );
@@ -194,7 +208,7 @@ function dhp_get_projects()
 	global $wpdb;
 
 	$args = array( 
-		'post_type' => 'project',
+		'post_type' => 'dhp-project',
 		'post_status' => array('drafts', 'publish'),
 		'posts_per_page'   => -1
 	);
@@ -400,7 +414,7 @@ function dhp_markers_filter_restrict_manage_posts()
     }
  
     //only add filter to post type you want
-    if ('dhp-markers' == $type)
+    if ($type == 'dhp-markers')
     {
         //change this to the list of values you want to show
         //in 'label' => 'value' format
@@ -442,7 +456,7 @@ function dhp_markers_filter( $query )
     if (isset($_GET['post_type'])) {
         $type = $_GET['post_type'];
     }
-    if ( 'dhp-markers' == $type && is_admin() && $pagenow=='edit.php' && isset($_GET['PROJECT_ID_VALUE']) && $_GET['PROJECT_ID_VALUE'] != '') {
+    if ($type == 'dhp-markers' && is_admin() && $pagenow == 'edit.php' && isset($_GET['PROJECT_ID_VALUE']) && $_GET['PROJECT_ID_VALUE'] != '') {
         $query->query_vars['meta_key'] = 'project_id';
         $query->query_vars['meta_value'] = $_GET['PROJECT_ID_VALUE'];
     }
