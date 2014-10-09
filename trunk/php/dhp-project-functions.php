@@ -191,7 +191,7 @@ function dhp_project_updated_messages( $messages )
 {
   global $post, $post_ID;
 
-  $messages['project'] = array(
+  $messages['dhp-project'] = array(
     0 => '', // Unused. Messages start at index 1.
     1 => sprintf( __('Project updated. <a href="%s">View project</a>'), esc_url( get_permalink($post_ID) ) ),
     2 => __('Custom field updated.'),
@@ -311,7 +311,7 @@ function show_tax_on_project_markers()
 
 
 // add_meta_boxes called when Edit Post runs
-add_action('add_meta_boxes_project', 'add_dhp_project_admin_edit');
+add_action('add_meta_boxes_dhp-project', 'add_dhp_project_admin_edit');
 
 // PURPOSE: Called when Project is edited in admin panel to create Project-specific GUI
 
@@ -321,7 +321,7 @@ function add_dhp_project_admin_edit()
 		'dhp_settings_box', 			// id of edit box
 		'Project Details',				// textual title of box
 		'show_dhp_project_admin_edit', 			// name of callback function
-		'project',						// custom page name
+		'dhp-project',					// name of custom post type
 		'normal',						// part of page to add box
 		'high'); 						// priority
 } // add_dhp_project_settings_box()
@@ -1399,11 +1399,6 @@ add_action('wp_ajax_nopriv_dhpGetPostContent', 'dhp_get_post_content');
 
 function dhp_get_post_content()
 {
-	// $dhp_post_id = $_POST['post'];
-
-	// $post_meta_content = get_post_meta($dhp_post_id);
-	// die(json_encode($post_meta_content));
-
 	$marker_id = $_POST['marker_id'];
 	$proj_id = $_POST['proj_id'];
 
@@ -1891,14 +1886,11 @@ function dhp_delete_custom_field()
 	$dhp_custom_field_name = $_POST['field_name'];
 	$projObj = new DHPressProject($projectID);
 	
-	// $args = array( 'post_type' => 'dhp-markers', 'meta_key' => 'project_id','meta_value'=>$projectID, 'posts_per_page' => -1 );
-	// $loop = new WP_Query( $args );
 	$loop = $projObj->setAllMarkerLoop();
 	while ( $loop->have_posts() ) : $loop->the_post();
 
 		$marker_id = get_the_ID();
 		delete_post_meta($marker_id, $dhp_custom_field_name);
-		//add_post_meta($marker_id, $dhp_custom_field_name, $dhp_custom_field_value, true);
 
 	endwhile;
 	
@@ -2301,7 +2293,7 @@ add_action( 'wp_restore_post_revision', 'dhp_project_restore_revision', 10, 2 );
 
 function dhp_project_restore_revision($post_id, $revision_id)
 {
-	$dhp_project_settings_fields = array( 'project_settings' /* , 'project_icons' */ );
+	$dhp_project_settings_fields = array( 'project_settings' );
 
 	$post     = get_post($post_id);
 	$revision = get_post($revision_id);
@@ -2456,8 +2448,12 @@ add_filter('the_content', 'dhp_mod_page_content');
 // NOTES:   Need to insert Handlebars script texts into HTML, depending on visualizations
 
 function dhp_mod_page_content($content) {
-	$postID = get_the_ID();
-	$postType = get_query_var('post_type');
+	// $postID = get_the_ID();
+	// $postType = get_query_var('post_type');
+
+	global $post;
+	$postID = $post->ID;
+	$postType = $post->post_type;
 
 		// Only produce dhp-visual div hook for Project posts
 	switch ($postType) {
