@@ -63,7 +63,7 @@ function dhp_register_project_cpt()
     'hierarchical' => false,
     'menu_position' => null,
     /* if hierarchical, then may want to add 'page-attributes' to supports */
-    'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments','revisions', 'custom-fields' )
+    'supports' => array( 'title', 'thumbnail', 'revisions', 'custom-fields' )
   ); 
   register_post_type('dhp-project',$args);
 } // dhp_register_project_cpt()
