@@ -182,6 +182,25 @@ var dhpCardsView = {
     }, // findFilterByMoteName()
 
 
+        // PURPOSE: Find list of all secondary (child) mote values of parentVal within moteName
+    getSTParentsChildVals: function(moteName, parentVal) {
+        var filter = dhpCardsView.findFilterByMoteName(moteName);
+
+        var childVals = [];
+
+        _.find(filter.terms, function(theTerm) {
+            if (theTerm.name === parentVal) {
+                _.each(theTerm.children, function(childTerm) {
+                    childVals.push(childTerm.name);
+                });
+                return true;
+            }
+            return false;
+        });
+        return childVals;
+    }, // getSTParentsChildVals()
+
+
         // PURPOSE: Reset filter criteria to allow all cards to pass
     resetFilter: function()
     {
@@ -453,6 +472,17 @@ var dhpCardsView = {
         // INPUT:   moteDef is the mote used for filtering
     doFilter: function(moteDef)
     {
+            // RETURNS: Regular expression for searching for theVal in multiple value string
+            // NOTE:    If multi-value mote, must allow for variations: (^string$)|(, ?string$)|(^string,)|(, ?string,)
+        function regExpSearchString(theVal, delim)
+        {
+            if (delim != '') {
+                return '(^'+theVal+'$)|('+delim+' ?'+theVal+'$)|(^'+theVal+delim+')|('+delim+' ?'+theVal+delim+')';
+            } else {
+                return '(^'+theVal+'$)';
+            }
+        }
+
         switch(moteDef.type) {
         case 'Short Text':
             dhpCardsView.curFilterVal = { };
@@ -487,16 +517,16 @@ var dhpCardsView = {
                     }
 
                         // A match on any of the values will qualify a card
-                        // Each possibility must have variations: (^string$)|(, ?string$)|(^string,)|(, ?string,)
-                        // TO DO: If hierarchical filter categories are to be supported, will need
-                        //      to deal with 2ndary values here
                     var filterText='';
                     _.each(dhpCardsView.curFilterVal.values, function(theValue, index) {
                         if (index) {
                             filterText += '|';
                         }
-                        filterText += '(^'+theValue+'$)|('+delim+' ?'+theValue+'$)|(^'+theValue+delim+')|('+
-                            delim+' ?'+theValue+delim+')';
+                        filterText += regExpSearchString(theValue, delim);
+                        var childVals = dhpCardsView.getSTParentsChildVals(moteDef.name, theValue);
+                        _.each(childVals, function(childVal) {
+                            filterText += '|'+regExpSearchString(childVal, delim);
+                        });
                     });
 
                     var regExp = new RegExp(filterText, "i");
@@ -663,13 +693,9 @@ var dhpCardsView = {
 
                 // Go through all content motes specified for each card view
             _.each(dhpCardsView.cardsEP.content, function(moteName) {
-                    // get the index into allDataMotes for this content mote
-                contentData = theFeature.properties.content[moteName];
+                contentData = dhpServices.moteValToHTML(theFeature, moteName);
                 if (contentData) {
-                    label = (moteName === 'Thumbnail Left' || moteName === 'Thumbnail Right') ?
-                                '' : '<i>'+moteName+'</i>: ';
-                    contentElement = jQuery('<p>'+label+contentData+'</p>');
-                    jQuery(theCard).append(contentElement);
+                    jQuery(theCard).append(contentData);
                 }
             });
                 // Now add invisible data
