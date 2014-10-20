@@ -659,9 +659,9 @@ jQuery(document).ready(function($) {
     self.mTitleMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text', 'Long Text'], false, true);
     }, self);
-      // Any textual value, including the_title, the_content and 'disable'
+      // Any textual value, incl the_title and 'disable'
     self.anyTxtDMoteNames = ko.computed(function() {
-      return doGetMoteNames(['Short Text', 'Long Text'], true, true, true);
+      return doGetMoteNames(['Short Text', 'Long Text'], true, true, false);
     }, self);
       // Any value that can be displayed as card content
     self.cardContentMoteNames = ko.computed(function() {
