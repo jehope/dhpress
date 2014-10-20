@@ -468,6 +468,7 @@ function dhp_export_as_csv()
 
     $cfs = $projObj->getAllCustomFieldNames();
     $firstLine = array_merge(array('csv_post_title', 'csv_post_type' ), $cfs);
+    array_push($firstLine, 'csv_post_post');
 
     	// Output the names of columns first
     fputcsv($fp, $firstLine);
@@ -483,6 +484,8 @@ function dhp_export_as_csv()
 			$content_val = get_post_meta($markerID, $theCF, true);
 			array_push($values, $content_val);
 		} // foreach
+
+		array_push($values, get_the_content());
 
     	fputcsv($fp, $values);
 	endwhile;
