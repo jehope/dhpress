@@ -463,17 +463,12 @@ var dhpCardsView = {
                 dhpCardsView.curFilterVal.text = jQuery('#filter-text-input').val();
                 dhpCardsView.doTextFilter();
             } else {
-                // var regTexts = [];
-
                 dhpCardsView.curFilterVal.index = 0;
                 dhpCardsView.curFilterVal.values = [];
                     // Gather the values chosen
                 jQuery('#st-filter-vals input:checked').each(function(index, item) {
                     var oneItem = jQuery(item).attr('name');
-                        // We have to store plain text values separate from Reg Exp strings because former
-                        //  used to remember selection for later, while latter need to ensure exact match
                     dhpCardsView.curFilterVal.values.push(oneItem);
-                    // regTexts.push('^'+oneItem+'$');
                 });
 
                 if (dhpCardsView.curFilterVal.values.length) {
@@ -673,7 +668,6 @@ var dhpCardsView = {
                 if (contentData) {
                     label = (moteName === 'Thumbnail Left' || moteName === 'Thumbnail Right') ?
                                 '' : '<i>'+moteName+'</i>: ';
-                    // contentElement = jQuery('<p class="datamote'+moteIndex+'">'+label+contentData+'</p>');
                     contentElement = jQuery('<p>'+label+contentData+'</p>');
                     jQuery(theCard).append(contentElement);
                 }
