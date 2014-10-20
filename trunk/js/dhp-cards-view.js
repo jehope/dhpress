@@ -643,7 +643,7 @@ var dhpCardsView = {
         }
 
             // Create Legend for colors (if colors exist)
-        if (dhpCardsView.colorValues.length > 1) {
+        if (dhpCardsView.colorValues && dhpCardsView.colorValues.length > 1) {
             dhpServices.create1Legend(dhpCardsView.cardsEP.color, dhpCardsView.colorValues);
         } // if colorValues
 
@@ -660,7 +660,7 @@ var dhpCardsView = {
             colorStr = dhpCardsView.cardsEP.defColor+'; color:'+defTextColor;
         } else {
             colorStr = dhpCardsView.cardsEP.defColor+'; color:#000000';
-            defTextColor = '#000000';
+            defTextColor = dhpServices.getContrastColor('#000000');
         }
 
             // get class for these cards

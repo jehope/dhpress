@@ -283,7 +283,7 @@
 
 <script type="text/html" id="cards-content-template">
     <li>
-        Cards content mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.contentMoteNames"></select>
+        Cards content mote <span data-bind="text: $index"></span>: <select data-bind="value: name, options: $root.cardContentMoteNames"></select>
         <button data-bind="jqButton, click: function() { $root.delCardContent($data, theEP, $index()); }">Delete</button>
     </li>
 </script>
