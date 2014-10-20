@@ -821,7 +821,6 @@ var dhpServices = {
 
         // PURPOSE: Format mote value as HTML
         // RETURNS: Complete HTML string for displaying the mote value
-        // TO DO:   Format Dates, YouTube, SoundCloud …?
     moteValToHTML: function(markerData, moteName)
     {
         var builtHTML='';

@@ -663,9 +663,9 @@ jQuery(document).ready(function($) {
     self.anyTxtDMoteNames = ko.computed(function() {
       return doGetMoteNames(['Short Text', 'Long Text'], true, true, true);
     }, self);
-      // Any value that can be displayed as content
-    self.contentMoteNames = ko.computed(function() {
-      return doGetMoteNames(['Short Text', 'Long Text', 'Image'], false, true, true);
+      // Any value that can be displayed as card content
+    self.cardContentMoteNames = ko.computed(function() {
+      return doGetMoteNames(['Short Text', 'Long Text', 'Image', 'Date'], false, true, true);
     }, self);
       // Any mote value that can be processed via sorting and filtering
     self.compMoteNames = ko.computed(function() {

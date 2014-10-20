@@ -3,12 +3,12 @@
 // NOTES:   All content/filter/sort data for markers contained in theFeature.properties.content[]
 //          The code in createCards() that produces "cards" creates DIVs that embed data for each
 //              of the mote values that will be filtered or sorted. Each of these motes is assigned
-//              a classname of 'datamote'+index where 'index' is its position in allMotes.
+//              a classname of 'datamote'+index where 'index' is its position in allDataMotes.
 //          Mote value stored as data is made invisible
 //          Code that filters and sorts simply searches for the mote value by its classname
 //          It is necessary to put all sort & filter data in separate invisible fields from content
-//          Because of multiple mote values, regular expression for a string with delim (say "*") must be
-//              (^string$)|(*string$)|(^string*)|(*string*)
+//          Because of multiple mote values, regular expression for a string with delim (say ",") must be
+//              (^string$)|(, ?string$)|(^string,)|(, ?string,)
 //              exact matches are necessary because of false substring matches ('me' would match 'name')
 // USES:    JavaScript libraries jQuery, Isotope, Underscore
 // TO DO:   Support filter & sort on hierarchical Legend values in Short Text motes!
@@ -22,9 +22,7 @@ var dhpCardsView = {
         //                  rawData
         //                  colorValues   = array of { id, icon_url }
         //                  defTextColor  = default text color
-        //                  allMotes      = array (unique sorted) of all data and content mote names
         //                  allDataMotes  = array of all sort and filter mote names
-        //                  dataAttrs     = array of motes names whose data is only stored in attributes
         //                  currentSort   = name of mote currently used for sorting
         //                  currentFilter = name of mote currently used for filtering
         //                  curFilterVal  = current filter value (specific to mote type)
@@ -45,7 +43,6 @@ var dhpCardsView = {
         dhpCardsView.currentFilter  = null;
 
         dhpCardsView.allDataMotes   = [];
-        dhpCardsView.dataAttrs      = [];
 
 
             // Change background color if user has provided one
@@ -149,14 +146,6 @@ var dhpCardsView = {
             // Ensure all fields unique -- this is needed for creating cards
         dhpCardsView.allDataMotes = _.uniq(dhpCardsView.allDataMotes);
         dhpCardsView.allDataMotes = _.sortBy(dhpCardsView.allDataMotes, function(moteName) { return moteName; });
-            // Create complete list of content and data fields, unique and sorted
-        dhpCardsView.allMotes     = _.union(dhpCardsView.allDataMotes, cardsEP.content);
-        dhpCardsView.allMotes     = _.sortBy(dhpCardsView.allMotes, function(moteName) { return moteName; });
-
-            // What motes are in allDataMotes[] but not in cardsEP.content?
-            // Will need to add data attributes for these
-        dhpCardsView.dataAttrs     = _.difference(dhpCardsView.allDataMotes, dhpCardsView.cardsEP.content);
-        dhpCardsView.dataAttrs     = _.sortBy(dhpCardsView.dataAttrs, function(moteName) { return moteName; });
 
         jQuery.ajax({
             type: 'POST',
@@ -191,6 +180,25 @@ var dhpCardsView = {
         });
         return result;
     }, // findFilterByMoteName()
+
+
+        // PURPOSE: Find list of all secondary (child) mote values of parentVal within moteName
+    getSTParentsChildVals: function(moteName, parentVal) {
+        var filter = dhpCardsView.findFilterByMoteName(moteName);
+
+        var childVals = [];
+
+        _.find(filter.terms, function(theTerm) {
+            if (theTerm.name === parentVal) {
+                _.each(theTerm.children, function(childTerm) {
+                    childVals.push(childTerm.name);
+                });
+                return true;
+            }
+            return false;
+        });
+        return childVals;
+    }, // getSTParentsChildVals()
 
 
         // PURPOSE: Reset filter criteria to allow all cards to pass
@@ -293,7 +301,7 @@ var dhpCardsView = {
         if (filterText.length) {
                 // Create regular expression from filter string
             var regExp = new RegExp(filterText, "i");
-            var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
+            var className = '.datamote'+_.indexOf(dhpCardsView.allDataMotes, dhpCardsView.currentFilter, true);
             var text;
 
                 // Get the text for each item and check against regular expression
@@ -407,7 +415,7 @@ var dhpCardsView = {
         } // if and
 
             // Date parameters are now computed -- just need to do the calculations!
-        var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
+        var className = '.datamote'+_.indexOf(dhpCardsView.allDataMotes, dhpCardsView.currentFilter, true);
         var text, dateSegs, evStart, evEnd;
 
             // Get the text for each item and check against date range
@@ -464,6 +472,17 @@ var dhpCardsView = {
         // INPUT:   moteDef is the mote used for filtering
     doFilter: function(moteDef)
     {
+            // RETURNS: Regular expression for searching for theVal in multiple value string
+            // NOTE:    If multi-value mote, must allow for variations: (^string$)|(, ?string$)|(^string,)|(, ?string,)
+        function regExpSearchString(theVal, delim)
+        {
+            if (delim != '') {
+                return '(^'+theVal+'$)|('+delim+' ?'+theVal+'$)|(^'+theVal+delim+')|('+delim+' ?'+theVal+delim+')';
+            } else {
+                return '(^'+theVal+'$)';
+            }
+        }
+
         switch(moteDef.type) {
         case 'Short Text':
             dhpCardsView.curFilterVal = { };
@@ -474,26 +493,44 @@ var dhpCardsView = {
                 dhpCardsView.curFilterVal.text = jQuery('#filter-text-input').val();
                 dhpCardsView.doTextFilter();
             } else {
-                var regTexts = [];
-
                 dhpCardsView.curFilterVal.index = 0;
                 dhpCardsView.curFilterVal.values = [];
                     // Gather the values chosen
                 jQuery('#st-filter-vals input:checked').each(function(index, item) {
                     var oneItem = jQuery(item).attr('name');
-                        // We have to store plain text values separate from Reg Exp strings because former
-                        //  used to remember selection for later, while latter need to ensure exact match
                     dhpCardsView.curFilterVal.values.push(oneItem);
-                    regTexts.push('^'+oneItem+'$');
                 });
 
-                if (regTexts.length) {
+                if (dhpCardsView.curFilterVal.values.length) {
+                        // may need to modify delimiter character if has special reg exp meaning
+                    var delim = moteDef.delim;
+                    switch (delim) {
+                    case '^':
+                    case '$':
+                    case '*':
+                    case '+':
+                    case '?':
+                    case '.':
+                    case '|':
+                        delim = '\\'+delim;
+                        break;
+                    }
+
                         // A match on any of the values will qualify a card
-                        // TO DO: If hierarchical filter categories are to be supported, will need
-                        //      to deal with parent values here
-                    var filterText = regTexts.join('|');
+                    var filterText='';
+                    _.each(dhpCardsView.curFilterVal.values, function(theValue, index) {
+                        if (index) {
+                            filterText += '|';
+                        }
+                        filterText += regExpSearchString(theValue, delim);
+                        var childVals = dhpCardsView.getSTParentsChildVals(moteDef.name, theValue);
+                        _.each(childVals, function(childVal) {
+                            filterText += '|'+regExpSearchString(childVal, delim);
+                        });
+                    });
+
                     var regExp = new RegExp(filterText, "i");
-                    var className = '.datamote'+_.indexOf(dhpCardsView.allMotes, dhpCardsView.currentFilter, true);
+                    var className = '.datamote'+_.indexOf(dhpCardsView.allDataMotes, dhpCardsView.currentFilter, true);
                     var text;
 
                         // Get the text for each item and check against regular expression
@@ -606,7 +643,7 @@ var dhpCardsView = {
         }
 
             // Create Legend for colors (if colors exist)
-        if (dhpCardsView.colorValues.length > 1) {
+        if (dhpCardsView.colorValues && dhpCardsView.colorValues.length > 1) {
             dhpServices.create1Legend(dhpCardsView.cardsEP.color, dhpCardsView.colorValues);
         } // if colorValues
 
@@ -623,7 +660,7 @@ var dhpCardsView = {
             colorStr = dhpCardsView.cardsEP.defColor+'; color:'+defTextColor;
         } else {
             colorStr = dhpCardsView.cardsEP.defColor+'; color:#000000';
-            defTextColor = '#000000';
+            defTextColor = dhpServices.getContrastColor('#000000');
         }
 
             // get class for these cards
@@ -649,29 +686,21 @@ var dhpCardsView = {
             }
 
                 // Create container element for the card
-            theCard = jQuery('<div class="card '+classStr+'" id="cardID'+index+'" style="background-color:' + colorStr +'"></div');
+            theCard = jQuery('<div class="card '+classStr+'" id="cardID'+index+'" style="background-color:' + colorStr +'"></div>');
             if (theTitle) {
                 jQuery(theCard).append('<p style="font-weight: bold">'+theTitle+'</p></div>');
             }
 
-                // Add class IDs to all data; mote names can be irregular, so class IDs must be index
-
                 // Go through all content motes specified for each card view
             _.each(dhpCardsView.cardsEP.content, function(moteName) {
-                    // get the index into allDataMotes for this content mote
-                moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
-                contentData = theFeature.properties.content[moteName];
+                contentData = dhpServices.moteValToHTML(theFeature, moteName);
                 if (contentData) {
-                    label = (moteName === 'Thumbnail Left' || moteName === 'Thumbnail Right') ?
-                                '' : '<i>'+moteName+'</i>: ';
-                    contentElement = jQuery('<p class="datamote'+moteIndex+'">'+label+contentData+'</p>');
-                    jQuery(theCard).append(contentElement);
+                    jQuery(theCard).append(contentData);
                 }
             });
                 // Now add invisible data
-            _.each(dhpCardsView.dataAttrs, function(moteName) {
+            _.each(dhpCardsView.allDataMotes, function(moteName, moteIndex) {
                     // get the index into allDataMotes for this content mote
-                moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
                 contentData = theFeature.properties.content[moteName];
                 if (contentData) {
                     contentElement = jQuery('<div class="datamote'+moteIndex+'" style="display: none">'+contentData+'</div>');
@@ -691,7 +720,7 @@ var dhpCardsView = {
                 //  must parse Date, Number, etc.
             _.each(dhpCardsView.cardsEP.sortMotes, function(moteName) {
                 moteDef = dhpServices.findMoteByName(moteName);
-                moteIndex = _.indexOf(dhpCardsView.allMotes, moteName, true);
+                moteIndex = _.indexOf(dhpCardsView.allDataMotes, moteName, true);
 
                 switch (moteDef.type) {
                 case 'Short Text':
