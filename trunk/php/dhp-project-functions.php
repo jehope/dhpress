@@ -728,8 +728,8 @@ function dhp_get_markers()
 			array_push($mQuery->selectContent, $theContent);
 		}
 			// must add all sort and filter motes to content
-			// we must also collect all category values/tax names for filters that are Short Text motes,
-			//	but don't duplicate color legend
+			// We must also collect all category values/tax names for filters that are Short Text motes
+			//	(so Card filter knows possible values) but don't duplicate color legend
 		foreach ($eps->settings->filterMotes as $theContent) {
 			array_push($mQuery->selectContent, $theContent);
 			$filterMote = $projObj->getMoteByName($theContent);

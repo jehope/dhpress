@@ -1,6 +1,15 @@
 // DH Press Cards View -- contains all data and functions for rendering cards
 // ASSUMES: A view area for the cards has been marked with HTML div as "dhp-visual"
-// NOTES:   Format of Marker and Legend data is documented in dhp-project-functions.php
+// NOTES:   All content/filter/sort data for markers contained in theFeature.properties.content[]
+//          The code in createCards() that produces "cards" creates DIVs that embed data for each
+//              of the mote values that will be filtered or sorted. Each of these motes is assigned
+//              a classname of 'datamote'+index where 'index' is its position in allMotes.
+//          Mote value stored as data is made invisible
+//          Code that filters and sorts simply searches for the mote value by its classname
+//          It is necessary to put all sort & filter data in separate invisible fields from content
+//          Because of multiple mote values, regular expression for a string with delim (say "*") must be
+//              (^string$)|(*string$)|(^string*)|(*string*)
+//              exact matches are necessary because of false substring matches ('me' would match 'name')
 // USES:    JavaScript libraries jQuery, Isotope, Underscore
 // TO DO:   Support filter & sort on hierarchical Legend values in Short Text motes!
 //          When numeric motes supported, sort will need to convert strings to integers

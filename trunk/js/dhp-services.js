@@ -462,6 +462,7 @@ var dhpServices = {
       //            (1) Retrieve text for each mote setting, save in marker and parse text acc. to delimiter character of Mote
       //            (2) Save only indices in properties.categories, lookup each value in Legend keys and retrieve that text
       //          Since we need to support 2ndary-level hierarchical values, method (2) is best solution
+      //          Also need to prevent redundancy due to multiple 2ndary-level values of same parent
     getItemSTLabels: function(dataItem, legendTerms) {
         var results = [];
         var catTerms = dataItem.properties.categories;
@@ -500,7 +501,7 @@ var dhpServices = {
             }
         }
         return results;
-    }, // getValueLabels()
+    }, // getItemSTLabels()
 
 
         // RETURNS: black or white, to contrast with given background color
