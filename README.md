@@ -9,7 +9,9 @@ Tested up to: 3.8
 Stable tag: 2.0  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html  
-  
+
+### This is a legacy repository. For DH Press versions 2.5 onwards, go to [https://github.com/Digital-Innovation-Lab/dhpress](https://github.com/Digital-Innovation-Lab/dhpress)
+ 
 DHPress is a flexible, repurposable, fully extensible digital public humanities toolkit designed for non-technical users.  
   
 == Description ==
